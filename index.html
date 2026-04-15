@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>hrtos - System</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#05070d;
+  color:#e5e7eb;
+}
+
+/* 顶栏 */
+.nav{
+  display:flex;
+  justify-content:space-between;
+  padding:18px 40px;
+  border-bottom:1px solid #1f2937;
+}
+
+.nav a{
+  color:#9ca3af;
+  margin-left:15px;
+  text-decoration:none;
+}
+
+.nav a:hover{color:#fff;}
+
+/* HERO */
+.hero{
+  text-align:center;
+  padding:90px 20px;
+}
+
+.hero h1{
+  font-size:72px;
+  background:linear-gradient(90deg,#60a5fa,#a78bfa,#22d3ee);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.panel{
+  max-width:1000px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:16px;
+  padding:20px;
+}
+
+.card{
+  background:#0f172a;
+  border:1px solid #1f2937;
+  border-radius:12px;
+  padding:16px;
+  transition:.3s;
+}
+
+.card:hover{
+  transform:translateY(-5px);
+  border-color:#4f46e5;
+}
+
+a.btn{
+  display:inline-block;
+  margin-top:15px;
+  padding:10px 14px;
+  background:#4f46e5;
+  color:white;
+  text-decoration:none;
+  border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div><b>hrtos</b></div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="docs.html">Docs</a>
+    <a href="releases.html">Releases</a>
+    <a href="status.html">Status</a>
+  </div>
+</div>
+
+<div class="hero">
+  <h1>hrtos</h1>
+  <p>工程化实验性操作系统系统（System-Level OS Project）</p>
+  <a class="btn" href="docs.html">进入系统文档</a>
+</div>
+
+<div class="panel">
+
+  <div class="card">
+    <h3>系统定位</h3>
+    <p>用于学习操作系统内核设计的工程级项目</p>
+  </div>
+
+  <div class="card">
+    <h3>开发状态</h3>
+    <p>核心系统：设计阶段</p>
+    <p>稳定性：实验级</p>
+  </div>
+
+  <div class="card">
+    <h3>技术方向</h3>
+    <p>Kernel / Scheduler / Memory / Syscall</p>
+  </div>
+
+</div>
+
+</body>
+</html>
