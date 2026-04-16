@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>HRTOS 系统文档 - API 手册</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+  margin:0;
+  font-family:"Segoe UI","Microsoft YaHei",Arial,sans-serif;
+  background:#0f172a; color:#e5e7eb;
+}
+header {
+  position:fixed; top:0; left:0; right:0;
+  background:#1e293b; padding:10px 20px; z-index:1000;
+  display:flex; justify-content:space-between; align-items:center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+header a.left-link {
+  font-size:20px; color:#60a5fa; text-decoration:none; font-weight:bold;
+}
+header span.right-title {
+  font-size:18px; color:#fbbf24;
+  font-weight:bold;
+}
+main { padding:100px 20px 20px; max-width:1200px; margin:auto; }
+h2{ font-size:22px; margin:20px 0 10px; color:#a78bfa; border-bottom:1px solid #374151; padding-bottom:5px; }
+h3{ font-size:18px; margin:15px 0 5px; color:#fbbf24; }
+p.intro{ background:#1e293b; padding:15px; border-left:5px solid #60a5fa; line-height:1.6; color:#e5e7eb; }
+ul{ list-style:none; padding:0; margin:10px 0; }
+ul li{ margin:5px 0; }
+ul li a{
+  color:#60a5fa; text-decoration:none; padding:5px 10px; display:inline-block;
+  border-radius:4px; transition:0.2s; font-weight:500;
+}
+ul li a:hover{
+  background:#3b82f6; color:#fff;
+}
+table{ width:100%; border-collapse:collapse; margin-bottom:20px; font-size:14px; }
+th, td{ border:1px solid #1f2937; padding:10px; text-align:left; }
+th{ background:#1e293b; color:#60a5fa; }
+td{ background:#1c2536; color:#e5e7eb; }
+.footer{ text-align:center; padding:20px; background:#1e293b; color:#9ca3af; font-size:14px; border-top:1px solid #1f2937; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="left-link" href="https://hrtos.com" target="_blank">HRTOS</a>
+  <span class="right-title">HRTOS API 手册</span>
+</header>
+
+<main>
+<!-- 首页 -->
+<section id="home">
+  <h2>系统概览</h2>
+  <p class="intro">
+    HRTOS 是一个基于优先级的抢占方式的实时操作系统，支持多任务，同优先级任务采用时间片轮转调度。
+    系统扩展了中断管理、任务同步、定时器管理、进程通信、文件管理、互斥和内存管理机制等功能。
+    锁支持互斥体的优先级继承，防止优先级反转问题；创新性突破传统中断处理模式，将处理器支持的32个中断源集中处理，
+    提高中断可控性并保证任务堆栈安全，同时节约有限硬件堆栈空间。
+    系统支持动态优先级调整，任务可动态创建、挂起、就绪及删除，并配备内存池管理功能，可动态申请内存空间。
+  </p>
+
+  <h2>目录</h2>
+  <ul>
+    <li><a href="#tasks">1. 任务管理</a></li>
+    <li><a href="#priority">2. 优先级管理</a></li>
+    <li><a href="#kernel">3. 内核相关</a></li>
+    <li><a href="#sync">4. 任务同步</a></li>
+    <li><a href="#lock">5. 锁管理</a></li>
+    <li><a href="#time">6. 时间管理</a></li>
+    <li><a href="#signal">7. 信号管理</a></li>
+    <li><a href="#interrupt">8. 中断</a></li>
+    <li><a href="#mail">9. 邮箱管理</a></li>
+    <li><a href="#myos">10. MyOS 功能</a></li>
+  </ul>
+</section>
+
+<!-- 任务管理 -->
+<section id="tasks">
+<h2>1. 任务管理</h2>
+<table>
+<tr>
+<th>函数名</th><th>功能</th><th>输入</th><th>返回</th><th>嵌套层</th><th>识别号</th>
+</tr>
+<tr><td>os_task_ready(unsigned char id)</td><td>挂起→就绪</td><td>任务编号</td><td>-1/0</td><td>0</td><td>B007</td></tr>
+<tr><td>os_task_hang(unsigned char id)</td><td>就绪→挂起</td><td>任务编号</td><td>-1/0</td><td>0</td><td>B002</td></tr>
+<tr><td>os_task_function(unsigned char id)</td><td>指定下次运行任务</td><td>任务编号</td><td>-1/0</td><td>0</td><td>B005</td></tr>
+<tr><td>os_task_delete(unsigned char id)</td><td>删除任务</td><td>任务编号</td><td>-1/0</td><td>0</td><td>B104</td></tr>
+<tr><td>os_task_exit()</td><td>退出当前任务</td><td>无</td><td>无</td><td>0</td><td>B003</td></tr>
+<tr><td>os_task_state(unsigned char id)</td><td>查询任务状态</td><td>任务编号</td><td>0~4/-1</td><td>0</td><td>B101</td></tr>
+</table>
+</section>
+
+<!-- 优先级 -->
+<section id="priority">
+<h2>2. 优先级管理</h2>
+<table>
+<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th><th>嵌套层</th></tr>
+<tr><td>os_priority_query(unsigned char id)</td><td>查询任务优先级</td><td>任务编号</td><td>0-8/-1</td><td>0</td></tr>
+<tr><td>os_priority_modify(unsigned char id,unsigned char pr)</td><td>修改优先级</td><td>任务编号,目标优先级</td><td>-1/0/编号</td><td>0</td></tr>
+</table>
+</section>
+
+<!-- 内核相关 -->
+<section id="kernel">
+<h2>3. 内核相关</h2>
+<table>
+<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th><th>嵌套层</th></tr>
+<tr><td>os_rtos(unsigned char id)</td><td>选择任务模式</td><td>0/1</td><td>0/-1</td><td>0</td></tr>
+<tr><td>os_scheduling(unsigned char id)</td><td>选择调度器</td><td>0/1</td><td>0/-1</td><td>0</td></tr>
+<tr><td>os_task(unsigned int addr,unsigned char id,unsigned char pr,unsigned char sd)</td><td>注册任务</td><td>任务地址,编号,优先级,嵌套层</td><td>0/-1</td><td>0</td></tr>
+<tr><td>os_interrupt_exit()</td><td>中断退出</td><td>无</td><td>无</td><td>0</td></tr>
+<tr><td>os_dispatch_id(U8 INTERRUPT_ID)</td><td>选择调度器中断源</td><td>0~31</td><td>0/-1</td><td>0</td></tr>
+</table>
+</section>
+
+<!-- 任务同步 -->
+<section id="sync">
+<h2>4. 任务同步</h2>
+<table>
+<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
+<tr><td>os_semaphore(u8 id)</td><td>同步调用</td><td>0~15</td><td>0/-1</td></tr>
+<tr><td>os_semaphore_control(u8 id,u8 x)</td><td>同步控制</td><td>0~15,x</td><td>0/-1</td></tr>
+</table>
+</section>
+
+<!-- 锁 -->
+<section id="lock">
+<h2>5. 锁</h2>
+<table>
+<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
+<tr><td>os_lock_init()</td><td>初始化锁</td><td>无</td><td>无</td></tr>
+<tr><td>os_lock(unsigned char i)</td><td>取得锁</td><td>0~7</td><td>0/-1</td></tr>
+<tr><td>os_lock_release(unsigned char id)</td><td>释放锁</td><td>0~7</td><td>0/-1</td></tr>
+</table>
+</section>
+
+<!-- 时间 -->
+<section id="time">
+<h2>6. 时间</h2>
+<table>
+<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
+<tr><td>os_nop()</td><td>短延时</td><td>无</td><td>无</td></tr>
+<tr><td>os_timer_length(unsigned char j,unsigned int i)</td><td>定时器管理</td><td>片数,大小</td><td>0/-1</td></tr>
+<tr><td>os_wait(u8 i,u8 j)</td><td>系统延时</td><td>类型,次数</td><td>0/-1</td></tr>
+<tr><td>os_wait1(u8 i)</td><td>系统延时子集</td><td>片数</td><td>无</td></tr>
+<tr><td>os_wait2(u16 j)</td><td>延时</td><td>时钟数</td><td>无</td></tr>
+</table>
+</section>
+
+<!-- 信号 -->
+<section id="signal">
+<h2>7. 信号</h2>
+<table>
+<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
+<tr><td>os_event_out(u8 id)</td><td>发送信号</td><td>0~15</td><td>0/-1</td></tr>
+<tr><td>os_event_xy(u8 id)</td><td>查询信号</td><td>0~15</td><td>0/1/-1</td></tr>
+<tr><td>os_event_del(u8 id)</td><td>删除信号</td><td>0~15</td><td>0/-1</td></tr>
+</table>
+</section>
+
+<!-- 中断 -->
+<section id="interrupt">
+<h2>8. 中断</h2>
+<table>
+<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
+<tr><td>os_inter()</td><td>中断编号查询</td><td>无</td><td>编号</td></tr>
+</table>
+</section>
+
+<!-- 邮箱 -->
+<section id="mail">
+<h2>9. 邮箱</h2>
+<table>
+<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
+<tr><td>os_news_send(id,oo)</td><td>私有邮箱发送</td><td>0~15,内容</td><td>0/-1</td></tr>
+<tr><td>os_news_send1(id,oo)</td><td>单字节公共邮箱发送</td><td>0~7,内容</td><td>0/-1</td></tr>
+<tr><td>os_news_send2(id,oo)</td><td>双字节公共邮箱发送</td><td>0~7,内容</td><td>0/-1</td></tr>
+<tr><td>os_news_query(id)</td><td>私有邮箱查询</td><td>0~15</td><td>0/-1</td></tr>
+<tr><td>os_news_delete(id)</td><td>私有邮箱清除</td><td>0~15</td><td>0/-1</td></tr>
+</table>
+</section>
+
+<!-- MyOS -->
+<section id="myos">
+<h2>10. MyOS</h2>
+<table>
+<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
+<tr><td>os_operate(u16 addr)</td><td>运行指定函数</td><td>地址</td><td>无</td></tr>
+<tr><td>os_task_id()</td><td>查询当前任务编号</td><td>无</td><td>编号</td></tr>
+<tr><td>os_task_service(u8 id)</td><td>记录下一个运行任务</td><td>任务编号</td><td>无</td></tr>
+<tr><td>os_task_release(u8 id)</td><td>运行任务</td><td>任务编号</td><td>无</td></tr>
+<tr><td>os_task_protect(u8 id)</td><td>保护之前运行任务</td><td>任务编号</td><td>无</td></tr>
+<tr><td>os_select(u8 id)</td><td>选择下一个任务</td><td>当前任务编号</td><td>下一任务编号</td></tr>
+<tr><td>os_inter_sp()</td><td>查询中断堆栈地址</td><td>无</td><td>堆栈地址</td></tr>
+</table>
+</section>
+
+<div class="footer">
+版权所有 © 谭舒 2017 - 2026 HRTOS 保留所有权利
+</div>
+
+</main>
+</body>
+</html>

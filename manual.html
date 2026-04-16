@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>HRTOS 操作说明</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* 全局样式 */
+body {
+  margin:0;
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background:#0f172a;
+  color:#e5e7eb;
+  line-height:1.6;
+}
+
+/* 顶部栏 */
+header {
+  position:fixed; top:0; left:0; right:0;
+  background:#1e293b; padding:12px 24px; z-index:1000;
+  display:flex; justify-content:space-between; align-items:center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+header a.left-link {
+  font-size:22px; color:#60a5fa; text-decoration:none; font-weight:600;
+}
+header span.right-title {
+  font-size:18px; color:#facc15;
+  font-weight:600;
+}
+
+/* 主体内容 */
+main { 
+  padding:120px 20px 20px; 
+  max-width:900px; 
+  margin:auto; 
+}
+
+/* 标题样式 */
+h2{
+  font-size:24px; margin:20px 0 15px; 
+  color:#a78bfa; 
+  border-bottom:2px solid #374151; 
+  padding-bottom:8px;
+}
+h3{
+  font-size:19px; margin:15px 0 8px; 
+  color:#facc15;
+}
+
+/* 步骤列表样式 */
+ol.steps{
+  counter-reset: step;
+  padding-left:25px;
+}
+ol.steps li{
+  margin:18px 0;
+  padding:14px 18px;
+  background:#1c2536;
+  border-left:6px solid #60a5fa;
+  border-radius:6px;
+  position:relative;
+  font-size:16px;
+}
+ol.steps li::before{
+  counter-increment: step;
+  content: counter(step);
+  position:absolute;
+  left:-40px;
+  top:12px;
+  background:#3b82f6;
+  color:#fff;
+  width:28px;
+  height:28px;
+  text-align:center;
+  line-height:28px;
+  border-radius:50%;
+  font-weight:bold;
+}
+
+/* 提示文字 */
+p.note{
+  font-size:15px; color:#fbbf24; margin-top:10px;
+  background:#1f2937; padding:10px 15px; border-radius:4px;
+  border-left:4px solid #facc15;
+}
+
+/* 页脚 */
+.footer{ 
+  text-align:center; 
+  padding:20px; 
+  background:#1e293b; 
+  color:#9ca3af; 
+  font-size:14px; 
+  border-top:1px solid #1f2937;
+  margin-top:30px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="left-link" href="https://hrtos.com" target="_blank">HRTOS</a>
+  <span class="right-title">HRTOS 操作说明</span>
+</header>
+
+<main>
+<h2>HRTOS KEIL 4 操作指南</h2>
+
+<ol class="steps">
+  <li>将 <code>\SourceCode\</code> 目录下的 <code>*.h</code> 文件复制到 KEIL 4 安装目录下的 <code>\C51\INC\</code> 目录。</li>
+  <li>打开 KEIL 4。</li>
+  <li>点击菜单 <strong>Project</strong> 下的第一个选项 <strong>New Project</strong>，创建一个工程，命名为 <code>hrtos实例</code>，然后点击“保存”。</li>
+  <li>选择 CPU 型号，选择对应的单片机型号后点击 <strong>OK</strong>，弹出提示窗口询问是否添加初始化文件，选择 <strong>否 (N)</strong>。</li>
+  <li>将 <code>\SourceCode\</code> 目录下的 <code>*.LIB</code> 文件添加到工程中。</li>
+  <li>双击 “Source Group 1”，打开对话框，添加 <code>HRTOS.LIB</code> 文件到工程中，然后点击 <strong>Close</strong> 关闭对话框。</li>
+  <li>配置工程，设置完成后点击 <strong>OK</strong>。</li>
+  <li>重复步骤 5，将 <code>*.LIB</code> 文件添加完成后进行编译。</li>
+</ol>
+
+<p class="note">注意：确保所有文件路径正确，避免编译时找不到库文件或头文件。</p>
+
+</main>
+
+<div class="footer">
+&copy; 2026 HRTOS 系统文档 | 版权所有：谭舒
+</div>
+
+</body>
+</html>
