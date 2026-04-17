@@ -114,6 +114,21 @@ pre.code .type{color:#f472b6; font-weight:500;}
 /* 响应式 */
 @media(max-width:992px){.panel{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.panel{grid-template-columns:1fr;}.hero h1{font-size:50px;}.hero p{font-size:18px;}}
+/* HERO 按钮 */
+.hero a.btn{
+  display:inline-block;
+  padding:12px 24px;
+  background:#4f46e5;
+  color:white;
+  border-radius:8px;
+  font-weight:500;
+  transition:0.3s;
+  position: relative; /* 让 z-index 生效 */
+  z-index: 2;         /* 保证按钮在 canvas 之上 */
+}
+.hero a.btn:hover{
+  background:#6366f1;
+}
 </style>
 </head>
 <body>
