@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>HRTOS 应用示例</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* 全局样式 */
+body {
+  margin:0;
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background:#0f172a;
+  color:#e5e7eb;
+  line-height:1.6;
+}
+
+/* 顶部栏 */
+header {
+  position:fixed; top:0; left:0; right:0;
+  background:#1e293b; padding:12px 24px; z-index:1000;
+  display:flex; justify-content:space-between; align-items:center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+header a.left-link {
+  font-size:22px; color:#60a5fa; text-decoration:none; font-weight:600;
+}
+header span.right-title {
+  font-size:18px; color:#facc15;
+  font-weight:600;
+}
+
+/* 主体内容 */
+main {
+  padding:120px 20px 20px;
+  max-width:900px;
+  margin:auto;
+}
+
+/* 标题样式 */
+h2{
+  font-size:24px; margin:20px 0 15px;
+  color:#a78bfa;
+  border-bottom:2px solid #374151;
+  padding-bottom:8px;
+}
+h3{
+  font-size:19px; margin:15px 0 8px;
+  color:#facc15;
+}
+
+/* 步骤列表样式 */
+ol.steps{
+  counter-reset: step;
+  padding-left:25px;
+}
+ol.steps li{
+  margin:18px 0;
+  padding:14px 18px;
+  background:#1c2536;
+  border-left:6px solid #60a5fa;
+  border-radius:6px;
+  position:relative;
+  font-size:16px;
+}
+ol.steps li::before{
+  counter-increment: step;
+  content: counter(step);
+  position:absolute;
+  left:-40px;
+  top:12px;
+  background:#3b82f6;
+  color:#fff;
+  width:28px;
+  height:28px;
+  text-align:center;
+  line-height:28px;
+  border-radius:50%;
+  font-weight:bold;
+}
+
+/* 提示文字 */
+p.note{
+  font-size:15px; color:#fbbf24; margin-top:10px;
+  background:#1f2937; padding:10px 15px; border-radius:4px;
+  border-left:4px solid #facc15;
+}
+
+/* 页脚 */
+.footer{
+  text-align:center;
+  padding:20px;
+  background:#1e293b;
+  color:#9ca3af;
+  font-size:14px;
+  border-top:1px solid #1f2937;
+  margin-top:30px;
+}
+
+html {
+  scroll-behavior:smooth;
+}
+
+main.page-layout {
+  max-width:1280px;
+  display:grid;
+  grid-template-columns:260px minmax(0, 1fr);
+  gap:28px;
+  align-items:start;
+}
+
+.doc-toc {
+  position:sticky;
+  top:92px;
+  background:linear-gradient(180deg, rgba(30,41,59,0.95), rgba(15,23,42,0.95));
+  border:1px solid #334155;
+  border-radius:18px;
+  padding:18px;
+  box-shadow:0 18px 45px rgba(0,0,0,0.28);
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  max-height:calc(100vh - 112px);
+  overflow-y:auto;
+  scrollbar-gutter:stable;
+  overscroll-behavior:contain;
+}
+
+.doc-toc h3 {
+  margin:0 0 10px;
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:0.04em;
+  line-height:1.35;
+  color:#60a5fa;
+}
+
+.toc-note {
+  margin:0 0 14px;
+  font-size:12px;
+  line-height:1.75;
+  letter-spacing:0.02em;
+  color:#94a3b8;
+}
+
+.doc-toc ul {
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+
+.doc-toc li + li {
+  margin-top:8px;
+}
+
+.doc-toc a {
+  display:block;
+  color:#dbeafe;
+  text-decoration:none;
+  padding:8px 10px;
+  border-radius:10px;
+  font-size:14px;
+  font-weight:600;
+  line-height:1.45;
+  letter-spacing:0.01em;
+  transition:background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.doc-toc a:hover {
+  background:rgba(59,130,246,0.16);
+  color:#ffffff;
+  transform:translateX(2px);
+}
+
+.doc-toc .toc-group {
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid rgba(148,163,184,0.16);
+}
+
+.doc-toc .toc-group-title {
+  margin:0 0 8px;
+  font-size:13px;
+  color:#fbbf24;
+  font-weight:700;
+  letter-spacing:0.08em;
+}
+
+.doc-toc .toc-group > ul:first-of-type a {
+  font-size:13px;
+  font-weight:600;
+  line-height:1.5;
+  letter-spacing:0.02em;
+}
+
+.doc-toc .toc-sub a {
+  padding:6px 10px;
+  font-size:13px;
+  font-weight:500;
+  line-height:1.5;
+  letter-spacing:0.01em;
+  color:#cbd5e1;
+}
+
+.doc-toc .toc-sub a[href$="-section"] {
+  padding:10px 10px 7px;
+  font-size:15px;
+  font-weight:700;
+  line-height:1.45;
+  letter-spacing:0.03em;
+  color:#e2e8f0;
+}
+
+.doc-toc .toc-sub a:not([href$="-section"]) {
+  padding:4px 10px 4px 22px;
+  font-size:12px;
+  font-weight:500;
+  line-height:1.55;
+  letter-spacing:0.01em;
+  color:#cbd5e1;
+}
+
+.content-stack {
+  min-width:0;
+}
+
+.examples {
+  margin-top:0;
+}
+
+.examples > h2 {
+  margin-top:0;
+}
+
+.section-caption {
+  margin:0 0 18px;
+  color:#cbd5e1;
+  font-size:15px;
+}
+
+.examples-toolbar {
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  margin:0 0 20px;
+}
+
+.toolbar-btn,
+.copy-btn {
+  border:none;
+  border-radius:999px;
+  padding:10px 16px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toolbar-btn {
+  background:#334155;
+  color:#e2e8f0;
+}
+
+.toolbar-btn:hover,
+.copy-btn:hover {
+  transform:translateY(-1px);
+  box-shadow:0 10px 24px rgba(0,0,0,0.22);
+}
+
+.copy-btn {
+  background:#2563eb;
+  color:#ffffff;
+}
+
+.copy-btn.is-copied {
+  background:#16a34a;
+}
+
+.example-group {
+  margin:26px 0;
+  padding:22px;
+  background:linear-gradient(180deg, rgba(30,41,59,0.86), rgba(15,23,42,0.96));
+  border:1px solid #334155;
+  border-radius:22px;
+}
+
+.group-title {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:0 0 10px;
+}
+
+.group-index {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:#1d4ed8;
+  color:#ffffff;
+  font-weight:700;
+}
+
+.group-desc {
+  margin:0 0 16px;
+  color:#cbd5e1;
+  font-size:14px;
+}
+
+.code-card {
+  border:1px solid #334155;
+  border-radius:16px;
+  overflow:hidden;
+  background:rgba(2,6,23,0.72);
+}
+
+.code-card + .code-card {
+  margin-top:14px;
+}
+
+.code-card summary {
+  list-style:none;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:16px 18px;
+  background:rgba(15,23,42,0.88);
+  font-weight:700;
+  color:#f8fafc;
+}
+
+.code-card summary::-webkit-details-marker {
+  display:none;
+}
+
+.code-card summary::after {
+  content:"展开";
+  flex:0 0 auto;
+  font-size:12px;
+  color:#93c5fd;
+  background:rgba(37,99,235,0.16);
+  border:1px solid rgba(96,165,250,0.24);
+  border-radius:999px;
+  padding:4px 10px;
+}
+
+.code-card[open] summary::after {
+  content:"收起";
+}
+
+.code-card-body {
+  padding:18px;
+}
+
+.code-actions {
+  display:flex;
+  justify-content:flex-end;
+  margin-bottom:12px;
+}
+
+.code-area {
+  width:100%;
+  box-sizing:border-box;
+  border:1px solid #1e293b;
+  border-radius:14px;
+  background:#020617;
+  color:#dbeafe;
+  padding:16px;
+  font-family:"Consolas", "Courier New", monospace;
+  font-size:14px;
+  line-height:1.65;
+  resize:vertical;
+  white-space:pre;
+  overflow:auto;
+}
+
+.kernel-label {
+  margin:0 0 8px;
+  color:#fcd34d;
+  font-size:14px;
+}
+
+@media (max-width: 960px) {
+  header {
+    padding:12px 16px;
+  }
+
+  header a.left-link {
+    font-size:20px;
+  }
+
+  header span.right-title {
+    font-size:16px;
+    text-align:right;
+  }
+
+  main.page-layout {
+    grid-template-columns:1fr;
+    gap:18px;
+    padding:100px 16px 20px;
+  }
+
+  .doc-toc {
+    position:relative;
+    top:0;
+    max-height:none;
+    overflow:visible;
+  }
+
+  .example-group {
+    padding:18px;
+  }
+}
+
+@media (max-width: 640px) {
+  header {
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
+  }
+
+  main.page-layout {
+    padding-top:122px;
+  }
+
+  .code-card summary {
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .examples-toolbar,
+  .code-actions {
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .toolbar-btn,
+  .copy-btn {
+    width:100%;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="left-link" href="https://hrtos.com" target="_blank">HRTOS</a>
+  <span class="right-title">HRTOS 应用示例</span>
+</header>
+
+<main class="page-layout">
+  <aside class="doc-toc">
+    <h3>目录导航</h3>
+    <p class="toc-note">左侧快速跳转，案例支持折叠和一键复制。</p>
+    <div class="toc-group">
+      <p class="toc-group-title">案例示例</p>
+      
+      <ul class="toc-sub">
+        <li><a href="#mailbox-section">1. 邮箱类</a></li>
+        <li><a href="#mail-case-1">案例1：公用邮箱1</a></li>
+        <li><a href="#mail-case-2">案例2：公用邮箱2</a></li>
+        <li><a href="#mail-case-3">案例3：私有邮箱</a></li>
+        <li><a href="#priority-section">2. 优先级类</a></li>
+        <li><a href="#priority-case-1">案例1：优先级查询</a></li>
+        <li><a href="#priority-case-2">案例2：优先级修改</a></li>
+        <li><a href="#task-section">3. 任务类</a></li>
+        <li><a href="#task-case-1">案例1：任务删除</a></li>
+        <li><a href="#task-case-2">案例2：同步</a></li>
+        <li><a href="#task-case-3">案例3：推出任务</a></li>
+        <li><a href="#task-case-4">案例4：指定任务运行</a></li>
+        <li><a href="#task-case-5">案例5：指定任务运行</a></li>
+        <li><a href="#time-section">4. 时间类</a></li>
+        <li><a href="#time-case-1">案例1：延时wait</a></li>
+        <li><a href="#time-case-2">案例2：延时wait1</a></li>
+        <li><a href="#time-case-3">案例3：延时wait2</a></li>
+        <li><a href="#time-case-4">案例4：延迟一个nop</a></li>
+        <li><a href="#lock-section">5. 进程锁类</a></li>
+        <li><a href="#lock-case-1">案例1：进程锁</a></li>
+        <li><a href="#kernel-section">6. 内核测试类</a></li>
+        <li><a href="#kernel-case-1">HRT主函数</a></li>
+        <li><a href="#kernel-case-2">MyOS自建调度策略</a></li>
+        <li><a href="#kernel-case-3">TASK模拟用户程序</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <div class="content-stack">
+    <section class="examples" id="examples-root">
+      <h2>HRTOS 应用示例</h2>
+      <p class="section-caption">以下为HRTOS应用案例区。每个案例都可以单独展开、收起，并支持一键复制代码。</p>
+
+      <div class="examples-toolbar">
+        <button class="toolbar-btn" type="button" data-toggle="expand-all">展开全部案例</button>
+        <button class="toolbar-btn" type="button" data-toggle="collapse-all">收起全部案例</button>
+      </div>
+
+      <section class="example-group" id="mailbox-section">
+        <div class="group-title">
+          <span class="group-index">1</span>
+          <h3>邮箱类</h3>
+        </div>
+        <p class="group-desc">包含公用邮箱与私有邮箱的基本发送、查询和删除示例。</p>
+
+        <details class="code-card" id="mail-case-1">
+          <summary>案例1：公用邮箱1</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-mail-case-1">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-mail-case-1" rows="23" readonly spellcheck="false" wrap="off">#include&lt;HRTOS.H&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0				//数据显示
+sbit	HRT_K=P3^2;					//键盘
+void main()
+{
+	u8 i;
+	i=os_news_send1(1,15); 			//发送数据
+	if(!i)				   			//正确发送
+	{
+		i=os_news_query1(1);	  	//读取数据
+		HRTOS_LED=i;			  	//发光LED显示数据，判断功能的正确性
+	}
+	else{}							//异常处理
+	i=os_news_delete1(1);			//清除邮箱数据
+	while(HRT_K);
+	if(!i)				   			//正确发送
+	{
+		i=os_news_query1(1);	  	//读取数据
+		HRTOS_LED=i;			  	//发光LED显示数据，判断功能的正确性
+	}
+	else{}							//异常处理
+	while(1);
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="mail-case-2">
+          <summary>案例2：公用邮箱2</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-mail-case-2">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-mail-case-2" rows="23" readonly spellcheck="false" wrap="off">#include&lt;HRTOS.H&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0				//数据显示
+sbit	HRT_K=P3^2;					//键盘
+void main()
+{
+	u16 i;
+	i=os_news_send2(1,15); 			//发送数据
+	if(!i)				   			//正确发送
+	{
+		i=os_news_query2(1);	  	//读取数据
+		HRTOS_LED=i;			  	//发光LED显示数据，判断功能的正确性
+	}
+	else{}							//异常处理
+	i=os_news_delete2(1);			//清除邮箱数据
+	while(HRT_K);
+	if(!i)				   			//正确发送
+	{
+		i=os_news_query2(1);	  	//读取数据
+		HRTOS_LED=i;			  	//发光LED显示数据，判断功能的正确性
+	}
+	else{}							//异常处理
+	while(1);
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="mail-case-3">
+          <summary>案例3：私有邮箱</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-mail-case-3">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-mail-case-3" rows="23" readonly spellcheck="false" wrap="off">#include&lt;HRTOS.H&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0				//数据显示
+sbit	HRT_K=P3^2;					//键盘
+void main()
+{
+	u8 i;
+	i=os_news_send(1,15); 			//发送数据
+	if(!i)				   			//正确发送
+	{
+		i=os_news_query(1);	  	//读取数据
+		HRTOS_LED=i;			  	//发光LED显示数据，判断功能的正确性
+	}
+	else{}							//异常处理
+	i=os_news_delete(1);			//清除邮箱数据
+	while(HRT_K);
+	if(!i)				   			//正确发送
+	{
+		i=os_news_query(1);	  	//读取数据
+		HRTOS_LED=i;			  	//发光LED显示数据，判断功能的正确性
+	}
+	else{}							//异常处理
+	while(1);
+}</textarea>
+          </div>
+        </details>
+      </section>
+
+      <section class="example-group" id="priority-section">
+        <div class="group-title">
+          <span class="group-index">2</span>
+          <h3>优先级类</h3>
+        </div>
+        <p class="group-desc">展示优先级查询与动态修改的典型调用方式。</p>
+
+        <details class="code-card" id="priority-case-1">
+          <summary>案例1：优先级查询</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-priority-case-1">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-priority-case-1" rows="18" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+
+void task()
+{
+	char i;
+	 while(1)
+	{
+		i=os_priority_query(12);
+		HRTOS_LED=i; ;
+	}
+}
+void os_slab_ov(){}
+void hrtos_main()
+{
+	os_task(task,12,6,2);
+	while(1);
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="priority-case-2">
+          <summary>案例2：优先级修改</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-priority-case-2">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-priority-case-2" rows="40" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+sbit HRTOS_K=P3^2;
+sbit HRTOS_K1=P3^3;
+sbit HRTOS_K2=P3^4;
+char i1;
+void task1()
+{
+	while(1)
+	{
+		  HRTOS_LED=2;
+	}
+}
+void task2()
+{
+	while(1)
+	{
+		HRTOS_LED=4;
+	}
+}
+void task()
+{
+	 while(1)
+	{
+		i1=os_priority_query(16);			//读取任务的优先级
+		HRTOS_LED=i1;					//LED显示判断
+		while(HRTOS_K);					//等待按键
+		EA=0;	
+		i1=os_priority_modify(16,2);		//优先级修改
+		HRTOS_LED=i1;
+		while(HRTOS_K1);				//等待按键
+		i1=os_priority_query(i1);			//读取任务的优先级
+		HRTOS_LED=i1;
+							//LED显示判断
+		EA=1;
+		while(1)
+		{
+		P0=0X1;
+		}
+	}
+}
+void os_slab_ov(){}						//溢出处理
+void hrtos_main()
+{									   
+	os_task(task,16,8,2);			   //注册任务
+	os_task(task1,2,2,2);			   //注册任务
+	os_task(task2,3,2,2);			   //注册任务
+	while(1);
+}</textarea>
+          </div>
+        </details>
+      </section>
+
+      <section class="example-group" id="task-section">
+        <div class="group-title">
+          <span class="group-index">3</span>
+          <h3>任务类</h3>
+        </div>
+        <p class="group-desc">包括任务删除、同步、退出、指定运行和状态控制等示例。</p>
+
+        <details class="code-card" id="task-case-1">
+          <summary>案例1：任务删除</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-task-case-1">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-task-case-1" rows="40" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+sbit HRTOS_K=P3^2;
+sbit HRTOS_K1=P3^3;
+sbit HRTOS_K2=P3^4;
+extern char os_task_sp(u8 id);
+extern unsigned char xdata OS_MEMORY[4];
+void os_slab_ov(){}
+void task1()
+{
+	while(1);
+}
+void task2()
+{
+	while(1)P0=0;
+}
+void task3()
+{
+	while(1);
+}
+void task5()
+{
+	while(1);
+}
+
+void task4()
+{
+	u8 i;
+	EA=0;
+	i=os_task_sp(1);
+	HRTOS_LED=i;
+	while(HRTOS_K);
+	os_task_delete(1);
+	os_task(task1,16,8,1);
+	os_task(task5,5,2,2);
+	i=os_task_sp(16);
+	HRTOS_LED=i;
+	while(1);
+}
+
+void hrtos_main()
+{
+	EA=0;
+	os_task(task2,1,1,1);
+	os_task(task4,3,2,2);
+	os_task(task3,17,8,2);
+	os_task_hang(17);
+	os_task_hang(16);
+	EA=1;
+	while(1);
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="task-case-2">
+          <summary>案例2：同步</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-task-case-2">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-task-case-2" rows="30" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+sbit HRTOS_K=P3^2;
+sbit HRTOS_K1=P3^3;
+sbit HRTOS_K2=P3^4;
+void os_slab_ov(){}
+void task2()
+{
+	while(HRTOS_K);
+	os_semaphore(2);
+	while(1)
+	{
+		HRTOS_LED=1;
+	}
+}
+void task3()
+{
+	while(HRTOS_K1);
+	os_semaphore(2);
+	while(1)
+	{
+		HRTOS_LED=2;
+	}
+}
+void task4()
+{
+	os_semaphore_control(2,3);
+	while(HRTOS_K2);
+	os_semaphore(2);
+	while(1)
+	{
+		HRTOS_LED=4;
+	}
+}
+
+void hrtos_main()
+{
+	os_task(task4,4,2,2);
+	os_task(task2,2,2,2);
+	os_task(task3,3,2,2);
+	while(1);
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="task-case-3">
+          <summary>案例3：推出任务</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-task-case-3">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-task-case-3" rows="30" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;hrtos_NEIBU.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+sbit HRTOS_K=P3^2;
+void os_slab_ov(){}
+void task2()
+{
+	while(1)
+	{
+		HRTOS_LED=1;
+	}
+}
+void task3()
+{
+	while(1)
+	{
+		HRTOS_LED=2;
+	}
+}
+void task4()
+{
+	while(1)
+	{
+		HRTOS_LED=4;
+	}
+}
+
+void hrtos_main()
+{
+	EA=0;
+	os_task(task2,2,2,0);
+	os_task(task3,3,2,0);
+	os_task(task4,4,2,0);
+	EA=1;
+	os_task_exit();
+	EA=0;
+	while(1);
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="task-case-4">
+          <summary>案例4：指定任务运行</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-task-case-4">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-task-case-4" rows="30" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+sbit HRTOS_K=P3^2;
+void os_slab_ov(){}
+void task1()
+{
+	while(1)
+	{
+		HRTOS_LED=15;
+		while(!HRTOS_K)
+		{
+			os_task_function(3);
+			break;
+		}
+	}
+}
+void task2()
+{
+	while(1)
+	{
+		HRTOS_LED=2;
+	}
+}
+void task3()
+{
+	while(1)
+	{
+		HRTOS_LED=1;
+	}
+}
+
+void hrtos_main()
+{
+	os_task(task1,1,8,2);
+	os_task(task2,2,5,2);
+	os_task(task3,3,2,2);
+	while(1);
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="task-case-5">
+          <summary>案例5：指定任务运行</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-task-case-5">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-task-case-5" rows="44" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+sbit HRTOS_K=P3^2;
+sbit HRTOS_K1=P3^3;
+sbit HRTOS_K2=P3^4;
+sbit HRTOS_K3=P3^5;
+sbit HRTOS_K4=P3^6;
+void os_slab_ov(){}
+void task2()
+{
+	u8 i;
+	i=os_task_state(1);//0删除 1	运行 2就绪 3	挂起 4	超时
+	HRTOS_LED=i;
+	while(1)
+	{
+		EA=0;
+		while(HRTOS_K1);
+		
+		os_task_hang(1);//挂起
+		i=os_task_state(1);//0删除 1运行 2就绪 3挂起 4超时
+		HRTOS_LED=i;
+		EA=1;
+	}
+}
+void task3()
+{
+	u8 i;
+	i=os_task_state(3);//0删除 1运行 2就绪 3挂起 4超时
+	HRTOS_LED=i;
+	EA=0;
+	while(HRTOS_K);
+	EA=1;
+	while(HRTOS_K3);
+	os_task_delete(1);
+	while(1);
+}
+void task4()
+{
+	u8 i;
+	i=os_task_state(1);//0删除 1运行 2就绪 3挂起 4超时
+	HRTOS_LED=i;
+	while(1)
+	{
+		EA=0;
+		while(HRTOS_K2);
+		os_task_ready(1);
+		i=os_task_state(1);//0删除 1运行 2就绪 3挂起 4超时
+		HRTOS_LED=i;
+		while(HRTOS_K4);
+		EA=1;
+	}
+}
+
+void hrtos_main()
+{
+	os_task(task2,2,2,2);
+	os_task(task3,1,2,2);
+	os_task(task4,4,2,2);
+	while(1);
+}</textarea>
+          </div>
+        </details>
+      </section>
+
+      <section class="example-group" id="time-section">
+        <div class="group-title">
+          <span class="group-index">4</span>
+          <h3>时间类</h3>
+        </div>
+        <p class="group-desc">包括 wait、wait1、wait2 和 nop 延迟的示范代码。</p>
+
+        <details class="code-card" id="time-case-1">
+          <summary>案例1：延时wait</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-time-case-1">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-time-case-1" rows="55" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+sbit HRTOS_K=P3^2;
+sbit HRTOS_K1=P3^3;
+void os_slab_ov(){}
+void task1()
+{
+	os_wait(K_IVL,2);//等待一个切换
+	while(1)
+	{
+		HRTOS_LED=254;
+	}
+}
+void task2()
+{
+	os_wait(K_SIG,1);//等待一个信号
+	while(1)
+	{
+		HRTOS_LED=253;
+	}
+}
+void task3()
+{
+	os_wait(K_SIG|K_TMO,1);//等待一个信号或者一个超时
+	while(1)
+	{
+		HRTOS_LED=251;
+	}
+}
+void task4()
+{
+	os_wait((K_SIG&amp;K_TMO),1);//等待信号和超时
+	while(1)
+	{
+		HRTOS_LED=247;
+	}
+}
+void task5()
+{
+	os_wait((K_SIG&amp;K_IVL),1);//等待一个信号和切换
+	while(1)
+	{
+		HRTOS_LED=239;
+	}
+}
+void task6()
+{
+	os_wait((K_SIG|K_IVL),1);//等待一个信号或者一个切换
+	while(1)
+	{
+		HRTOS_LED=223;
+	}
+}
+void task7()
+{
+	while(HRTOS_K);
+	os_wait(K_TMO,1);//等待超时
+	os_event_out(2);//向任务2发送一个信号
+	os_event_out(4);
+	os_event_out(5);
+	while(1)
+	{
+		HRTOS_LED=191;
+	}
+}
+
+void hrtos_main()	   //16136
+{
+	EA=0;
+	os_task(task1,1,2,2);
+	os_task(task2,2,2,2);
+	os_task(task3,3,2,2);
+	os_task(task4,4,2,2);
+	os_task(task5,5,2,2);
+	os_task(task6,6,2,2);
+	os_task(task7,7,2,2);
+	os_timer_length(20,65532);
+	EA=1;
+	while(1);
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="time-case-2">
+          <summary>案例2：延时wait1</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-time-case-2">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-time-case-2" rows="24" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+sbit HRTOS_K=P3^2;
+void os_slab_ov(){}
+void task2()
+{
+	os_wait1(100);//
+	while(1)
+	{
+		HRTOS_LED=0;
+	}
+}
+void task3()
+{
+	while(1)
+	{
+		HRTOS_LED=254;
+	}
+}
+void task4()
+{
+	while(1)
+	{
+		HRTOS_LED=253;
+	}
+}
+
+void hrtos_main()
+{
+	os_task(task2,2,2,2);
+	os_task(task3,3,2,2);
+	os_task(task4,4,2,2);
+	while(1);
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="time-case-3">
+          <summary>案例3：延时wait2</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-time-case-3">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-time-case-3" rows="16" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+void main()
+{
+	HRTOS_LED=0;
+	while(1)
+	{
+		TR0=1;
+		os_wait2(1000);
+		HRTOS_LED++;
+	}
+	
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="time-case-4">
+          <summary>案例4：延迟一个nop</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-time-case-4">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-time-case-4" rows="18" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+void main()
+{
+	u16 i;
+	HRTOS_LED=0;
+	while(1)
+	{
+		i=65500;
+		while(i--)
+		{
+			os_nop();//延时1个NOP
+		}
+		HRTOS_LED++;
+	}
+}</textarea>
+          </div>
+        </details>
+      </section>
+
+      <section class="example-group" id="lock-section">
+        <div class="group-title">
+          <span class="group-index">5</span>
+          <h3>进程锁类</h3>
+        </div>
+        <p class="group-desc">演示任务间争用同一把锁时的获取与释放流程。</p>
+
+        <details class="code-card" id="lock-case-1">
+          <summary>案例1：进程锁</summary>
+          <div class="code-card-body">
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-lock-case-1">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-lock-case-1" rows="38" readonly spellcheck="false" wrap="off">#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+sbit HRTOS_K=P3^2;
+sbit HRTOS_K1=P3^3;
+void os_slab_ov(){}//内存溢出处理函数
+void task2()
+{
+	os_priority_modify(2,2);//将任务2，即本任务的优先级修改为2
+	os_lock(1);//取得锁1
+	while(HRTOS_K)
+	{
+		HRTOS_LED=1;
+	}
+	os_lock_release(1);//释放锁1
+	while(1)
+	{
+		HRTOS_LED=1;
+	}
+}							
+void task3()
+{
+	os_lock(1);//试图取得锁1
+	while(HRTOS_K1)
+	{
+		HRTOS_LED=2;
+	}
+	os_lock_release(1);//释放锁1
+	while(1)
+	{
+		HRTOS_LED=2;
+	}
+}
+void task4()
+{
+	os_lock(1);//
+	while(1)
+	{
+		HRTOS_LED=4;
+	}
+}
+
+void hrtos_main()
+{
+	EA=0;
+	os_task(task2,2,6,2);
+	os_task(task3,3,6,2);
+	os_task(task4,4,6,2);
+	os_lock_init();//锁的初始化
+	EA=1;
+	while(1);
+}</textarea>
+          </div>
+        </details>
+      </section>
+
+      <section class="example-group" id="kernel-section">
+        <div class="group-title">
+          <span class="group-index">6</span>
+          <h3>内核测试类</h3>
+        </div>
+        <p class="group-desc">这一组包含 HRT 主函数、自建调度策略以及 TASK 模拟用户程序。</p>
+
+        <details class="code-card" id="kernel-case-1">
+          <summary>HRT主函数</summary>
+          <div class="code-card-body">
+            <p class="kernel-label">HRT主函数：</p>
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-kernel-case-1">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-kernel-case-1" rows="12" readonly spellcheck="false" wrap="off">#include&lt;myos.h&gt;
+#include&lt;reg52.h&gt;
+void my_hrtos()
+{
+	u8 i;
+	ET0=1;
+	if(1)i=10;
+	ET0=0;
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="kernel-case-2">
+          <summary>MyOS自建调度策略</summary>
+          <div class="code-card-body">
+            <p class="kernel-label">MyOS自建调度策略：</p>
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-kernel-case-2">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-kernel-case-2" rows="30" readonly spellcheck="false" wrap="off">#include&lt;myos.h&gt;
+#include&lt;reg52.h&gt;
+u16 my_inter[10];//中断地址
+void os_slab_ov(){}
+volatile void my_os()
+{
+	U8 i;
+	i=os_inter(); //中断号
+	if(i==1)//t0	内核
+	{		
+		TF0=0;
+		TH0=0;
+		TL0=0;
+		i=os_task_id();//运行编号
+		os_task_protect(i);//保护现在的任务
+		i=os_select(i);//选择下一个运行的任务
+		os_task_release(i);//释放下一个任务
+	}
+	else   //中断
+	{
+		if(i)//如果不是INT0中断则减一，因为定时器T0中断为1
+		{i--;}
+		os_operate(my_inter[i]);
+	}
+}
+void hrtos_main()
+{
+	EA=0;
+	os_task(my_os,15,9,0);//将MyOS注册到HRTOS的中断服务函数处
+	os_task(my_main,1,1,2);//启动MyOS的初始化函数
+	EA=1;
+	while(1);
+}</textarea>
+          </div>
+        </details>
+
+        <details class="code-card" id="kernel-case-3">
+          <summary>TASK模拟用户程序</summary>
+          <div class="code-card-body">
+            <p class="kernel-label">TASK模拟用户程序：</p>
+            <div class="code-actions">
+              <button class="copy-btn" type="button" data-copy-target="code-kernel-case-3">复制代码</button>
+            </div>
+            <textarea class="code-area" id="code-kernel-case-3" rows="22" readonly spellcheck="false" wrap="off">#include&lt;myos.h&gt;
+#include&lt;reg52.h&gt;
+void my_task(u16 addr,u8 id)   //id:0-13任务；14-24对应中断偏移地址，例如14对应外部中断0,15对应定时器0。但是定时器0被系统使用，故15为非法编号。
+{
+	if(id&gt;24)//错误
+	{}
+	else 
+	{
+		if(id&lt;14)//任务
+		{
+			id+=2;
+			os_task(addr,id,2,2);//默认嵌套层数2
+		}
+		else if(id!=15)//中断
+		{
+			id-=14;
+			if(id)
+				id--;
+			my_inter[id]=addr;
+		}
+	}
+}</textarea>
+          </div>
+        </details>
+      </section>
+    </section>
+  </div>
+</main>
+
+<div class="footer">
+ 版权所有 © 2017 - 2026 HRTOS · 作者：谭舒
+</div>
+
+<script>
+(function () {
+  const copyButtons = document.querySelectorAll(".copy-btn");
+  const codeCards = document.querySelectorAll(".code-card");
+  const toggleButtons = document.querySelectorAll("[data-toggle]");
+
+  async function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const helper = document.createElement("textarea");
+    helper.value = text;
+    helper.setAttribute("readonly", "");
+    helper.style.position = "absolute";
+    helper.style.left = "-9999px";
+    document.body.appendChild(helper);
+    helper.select();
+    document.execCommand("copy");
+    document.body.removeChild(helper);
+  }
+
+  copyButtons.forEach((button) => {
+    button.addEventListener("click", async function () {
+      const target = document.getElementById(this.dataset.copyTarget);
+      if (!target) return;
+
+      const originalText = this.textContent;
+
+      try {
+        await copyText(target.value);
+        this.textContent = "复制成功";
+        this.classList.add("is-copied");
+      } catch (error) {
+        this.textContent = "复制失败";
+      }
+
+      window.setTimeout(() => {
+        this.textContent = originalText;
+        this.classList.remove("is-copied");
+      }, 1600);
+    });
+  });
+
+  toggleButtons.forEach((button) => {
+    button.addEventListener("click", function () {
+      const shouldOpen = this.dataset.toggle === "expand-all";
+      codeCards.forEach((card) => {
+        card.open = shouldOpen;
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

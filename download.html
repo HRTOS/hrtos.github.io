@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>HRTOS 下载页面</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* 全局样式 */
+body {
+  margin:0;
+  font-family: "PingFang SC", "Microsoft YaHei", Helvetica, Arial, sans-serif;
+  background:#0f172a;
+  color:#e5e7eb;
+}
+
+/* 顶部表头 */
+.header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px 30px;
+  background:#1e293b;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);
+}
+.header a {
+  color:#60a5fa;
+  font-size:20px;
+  font-weight:bold;
+  text-decoration:none;
+}
+.header .title {
+  color:#facc15;
+  font-size:18px;
+  font-weight:500;
+}
+
+/* 主容器 */
+.container {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:calc(100vh - 80px); /* 减去表头和页脚高度 */
+}
+
+/* 中间内容框 */
+.content-box {
+  background:#1e293b;
+  padding:50px 60px;
+  border-radius:12px;
+  text-align:center;
+  box-shadow:0 8px 24px rgba(0,0,0,0.6);
+  min-width:300px;
+}
+
+/* 系统名称和版本 */
+h1 {
+  font-size:32px;
+  color:#60a5fa;
+  margin-bottom:10px;
+}
+p.version-main {
+  font-size:18px;
+  color:#facc15;
+  margin-bottom:30px;
+}
+
+/* 下载按钮 */
+a.download-btn {
+  display:inline-block;
+  padding:14px 28px;
+  font-size:18px;
+  font-weight:600;
+  color:#fff;
+  background:#3b82f6;
+  border-radius:8px;
+  text-decoration:none;
+  transition: all 0.3s ease;
+}
+a.download-btn:hover {
+  background:#60a5fa;
+  transform: translateY(-2px);
+  box-shadow:0 6px 12px rgba(0,0,0,0.4);
+}
+
+/* 页脚 */
+.footer{
+  padding:15px 0;
+  font-size:13px;
+  color:#9ca3af;
+  text-align:center;
+  background:#1e293b;
+}
+</style>
+</head>
+<body>
+
+<!-- 顶部表头 -->
+<div class="header">
+  <a href="http://hrtos.com" target="_blank">HRTOS</a>
+  <span class="title">HRTOS 系统下载</span>
+</div>
+
+<!-- 主内容 -->
+<div class="container">
+  <div class="content-box">
+    <h1>HRTOS</h1>
+    <p class="version-main">版本 V3.20</p>
+    <a class="download-btn" href="HRTOS_V3.20.zip" download>立即下载</a>
+  </div>
+</div>
+
+<!-- 页脚 -->
+<div class="footer">版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</div>
+
+</body>
+</html>

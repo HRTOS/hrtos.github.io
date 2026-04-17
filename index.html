@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>HRTOS - 高可靠嵌入式实时操作系统</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+  margin:0;
+  font-family:"Segoe UI", Arial, "Microsoft YaHei", sans-serif;
+  background:#0a0f1f;
+  color:#e5e7eb;
+  scroll-behavior: smooth;
+  text-align:center;
+  overflow-x:hidden;
+}
+a{text-decoration:none;}
+h1,h2,h3,p,pre,table,th,td{margin:0; text-align:center;}
+
+/* 顶栏 */
+.nav{
+  position:fixed; top:0; left:0; right:0;
+  display:flex; justify-content:space-between; align-items:center;
+  padding:15px 40px;
+  background:rgba(15,23,42,0.85);
+  border-bottom:1px solid #1f2937;
+  z-index:1000;
+  backdrop-filter:blur(5px);
+  transition:0.3s;
+}
+.nav.transparent{background:rgba(15,23,42,0.4);}
+.nav a{color:#9ca3af;margin-left:20px;font-weight:500;transition:0.3s;}
+.nav a:hover{color:#60a5fa;}
+.nav .logo{font-weight:bold;font-size:20px;color:#60a5fa;}
+
+/* HERO */
+.hero{
+  height:100vh;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  position:relative; overflow:hidden;
+}
+.hero h1{
+  font-size:80px;
+  background:linear-gradient(90deg,#60a5fa,#a78bfa,#22d3ee);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  margin:0; animation: gradientMove 6s linear infinite;
+}
+.hero p{font-size:22px;color:#cbd5e1;margin:15px 0 25px;}
+a.btn{
+  display:inline-block; padding:12px 24px;
+  border-radius:8px; font-weight:500;
+  transition:0.3s;
+}
+a.btn:hover{background:#6366f1;}
+
+/* 粒子光晕 */
+.hero canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;}
+
+/* HERO 动画 */
+@keyframes gradientMove{
+  0%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+  100%{background-position:0% 50%;}
+}
+/* ===== 按钮 ===== */
+.btn{
+  display:inline-block;
+  padding:12px 26px;
+  border-radius:10px;
+  font-weight:500;
+  margin:6px;
+  transition:0.3s;
+  position:relative;
+  z-index:2;
+}
+
+.btn.primary{
+  background:linear-gradient(90deg,#4f46e5,#6366f1);
+  color:#fff;
+  box-shadow:0 10px 30px rgba(79,70,229,0.4);
+}
+
+.btn.secondary{
+  border:1px solid #374151;
+  color:#cbd5e1;
+}
+
+.btn:hover{
+  transform:translateY(-2px);
+}
+/* 模块区 */
+.section{padding:60px 20px; position:relative;}
+.panel{
+  max-width:1200px; margin:auto;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:20px;
+}
+
+.card{
+  background:#0f172a; border-radius:14px; padding:24px;
+  border:1px solid #1f2937; transition:0.5s;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
+  opacity:0; transform:translateY(30px);
+}
+.card h3{margin-bottom:12px;color:#60a5fa;}
+.card p{line-height:1.6;color:#cbd5e1;}
+.card.show{opacity:1; transform:translateY(0);}
+
+/* 表格 */
+table{width:100%; border-collapse:collapse; margin-top:20px; background:#0f172a;}
+th, td{padding:12px; border:1px solid #1f2937;}
+th{background:#1e293b;color:#60a5fa;font-weight:600;}
+td{color:#e5e7eb;}
+tbody tr:nth-child(even){background:#151d2b;}
+tbody tr:hover{background:#1f2937;}
+
+/* 代码块 */
+pre{background:#1e293b;color:#60a5fa;padding:16px;border-radius:10px;overflow-x:auto;font-size:14px; max-height:400px; text-align:left;}
+
+/* 代码高亮 */
+pre.code{
+  background:linear-gradient(145deg,#0f172a,#020617);
+  color:#e5e7eb;
+  padding:20px;
+  border-radius:16px;
+  overflow-x:auto;
+  font-family:'Fira Code', Consolas, monospace;
+  font-size:13px;
+  line-height:1.7;
+
+  border:1px solid rgba(255,255,255,0.05);
+  box-shadow:0 10px 30px rgba(0,0,0,0.4);
+
+  position:relative;
+}
+
+/* 顶部“编辑器栏”效果 */
+pre.code::before{
+  content:"";
+  position:absolute;
+  top:10px;
+  left:12px;
+  width:10px;
+  height:10px;
+  background:#ef4444;
+  border-radius:50%;
+  box-shadow:
+    18px 0 0 #facc15,
+    36px 0 0 #22c55e;
+}
+pre.code .keyword{color:#60a5fa; font-weight:600;}
+pre.code .macro{color:#facc15; font-weight:600;}
+pre.code .number{color:#22d3ee;}
+pre.code .comment{color:#9ca3af; font-style:italic;}
+pre.code .function{color:#a78bfa;}
+pre.code .type{color:#f472b6; font-weight:500;}
+
+/* 底部 */
+.footer{ text-align:center; padding:30px 20px; background:#0f172a; border-top:1px solid #1f2937; color:#9ca3af; font-size:14px;}
+
+/* 响应式 */
+@media(max-width:992px){.panel{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.panel{grid-template-columns:1fr;}.hero h1{font-size:50px;}.hero p{font-size:18px;}}
+/* HERO 按钮 */
+.hero a.btn{
+  display:inline-block;
+  padding:12px 24px;
+  background:#4f46e5;
+  color:white;
+  border-radius:8px;
+  font-weight:500;
+  transition:0.3s;
+  position: relative; /* 让 z-index 生效 */
+  z-index: 2;         /* 保证按钮在 canvas 之上 */
+}
+.hero a.btn:hover{
+  background:#6366f1;
+}
+.cta h2{
+  margin-bottom:20px;
+  font-size:28px;
+}
+
+.cta .btn{
+  margin-top:10px;
+}
+/* ===== 手机端专用修复（只影响小屏）===== */
+@media(max-width:640px){
+
+  /* 顶栏防挤爆 */
+  .nav{
+    padding:10px 12px;
+    flex-wrap:wrap;
+  }
+  .nav div:last-child{
+    width:100%;
+    margin-top:8px;
+  }
+  .nav a{
+    display:inline-block;
+    margin:5px 8px;
+    font-size:14px;
+  }
+
+  /* HERO缩放 */
+  .hero h1{
+    font-size:42px;
+  }
+  .hero p{
+    font-size:16px;
+  }
+
+  /* 按钮优化 */
+  .btn{
+    padding:10px 18px;
+    font-size:14px;
+  }
+
+  /* 卡片更紧凑 */
+  .card{
+    padding:18px;
+  }
+
+  /* 表格防溢出 */
+  #memory table{
+    display:block;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+
+  /* 代码块优化 */
+  pre{
+    font-size:12px;
+  }
+
+  /* CTA优化 */
+  .cta h2{
+    font-size:22px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- 顶栏 -->
+<div class="nav" id="navbar">
+  <div class="logo"><a href="https://hrtos.com">HRTOS</a></div>
+  <div>
+    <a href="index.html">首页</a>
+    <a href="docs.html">系统文档</a>
+    <a href="manual.html">应用示例</a>
+    <a href="download.html">系统下载</a>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>HRTOS</h1>
+  <p>高可靠嵌入式实时操作系统</p>
+  <a class="btn" href="docs.html">进入系统文档</a>
+  <canvas id="particles"></canvas>
+</div>
+
+<!-- 模块区 -->
+<div class="section" id="modules">
+  <div class="panel">
+    <div class="card"><h3>系统定位</h3><p>独立内核、接口层和应用层结构，每个进程堆栈空间独立，可直接运行在裸机上。</p></div>
+    <div class="card"><h3>发展历程</h3><p>HRTOS更名于2017年11月17日，源自“Hard real-time operating systems”。</p></div>
+    <div class="card"><h3>核心完成状态</h3><p>系统开发完毕，支持自写内核、多任务调度、中断优先级管理等功能。</p></div>
+    <div class="card"><h3>任务调度</h3><p>基于优先级抢占，支持时间片轮转、动态优先级调整、任务创建与删除。</p></div>
+    <div class="card"><h3>中断与安全性</h3><p>集中管理最多32个中断源，提高可控性和堆栈安全性，支持优先级继承防止反转。</p></div>
+    <div class="card"><h3>内存与资源管理</h3><p>内存池机制，动态申请和释放内存，保证系统稳定运行，支持多任务安全访问。</p></div>
+  </div>
+</div>
+
+<!-- 内存分配表 -->
+<div class="section" id="memory">
+  <div class="panel">
+    <div class="card" style="grid-column:1/-1">
+      <h3>片内随机存储器分配表</h3>
+      <table>
+        <thead><tr><th>地址</th><th>功能</th><th>描述</th></tr></thead>
+        <tbody>
+          <tr><td>0~31</td><td>四个工作组</td><td>由状态寄存器（PSW）决定当前使用哪组工作寄存器</td></tr>
+          <tr><td>32~33</td><td>位数据</td><td>系统定义位变量所在地址区域</td></tr>
+          <tr><td>34~38</td><td>系统堆栈</td><td>HRTOS 内核堆栈</td></tr>
+          <tr><td>39~42</td><td>中断堆栈</td><td>中断服务程序所用堆栈</td></tr>
+          <tr><td>43~106</td><td>程序堆栈区</td><td>用户程序堆栈区域</td></tr>
+          <tr><td>107~123</td><td>程序数据区</td><td>用户自定义</td></tr>
+          <tr><td>124~127</td><td>系统数据区</td><td>系统变量</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 代码示例 -->
+<div class="section" id="code">
+  <div class="panel">
+    <div class="card" style="grid-column:1/-1">
+      <h3>迷你版（代码示例）</h3>
+      <pre class="code">
+#include&lt;myos.h&gt;
+#include&lt;reg52.h&gt;
+
+u16 my_inter[10]; // 中断地址
+
+void os_slab_ov(){}
+
+volatile void my_os()
+{
+    U8 i;
+    i = os_inter(); // 中断号
+    if(i==1) // t0 内核
+    {		
+        TF0=0;
+        TH0=0;
+        TL0=0;
+        i=os_task_id(); // 运行编号
+        os_task_protect(i); // 保护现在的任务
+        i=os_select(i); // 选择下一个运行的任务
+        os_task_release(i); // 释放下一个任务
+    }
+    else
+    {
+        if(i){i--;} // 如果不是INT0中断则减一
+        os_operate(my_inter[i]);
+    }
+}
+
+void hrtos_main()
+{
+    EA=0;
+    os_task(my_os,15,9,0); // 将 MyOS 注册到 HRTOS 中断服务函数
+    os_task(my_main,1,1,2); // 启动 MyOS 初始化函数
+    EA=1;
+    while(1);
+}
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- 代码示例 -->
+<div class="section" id="code">
+  <div class="panel">
+    <div class="card" style="grid-column:1/-1">
+      <h3>任务创建与删除（代码示例）</h3>
+      <pre class="code">
+#include&lt;hrtos.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+sbit HRTOS_K=P3^2;
+sbit HRTOS_K1=P3^3;
+sbit HRTOS_K2=P3^4;
+extern char os_task_sp(u8 id);
+extern unsigned char xdata OS_MEMORY[4];
+void os_slab_ov(){}
+void task1()
+{
+	while(1);
+}
+void task2()
+{
+	while(1)P0=0;
+}
+void task3()
+{
+	while(1);
+}
+void task5()
+{
+	while(1);
+}
+
+void task4()
+{
+	u8 i;
+	EA=0;
+	i=os_task_sp(1);
+	HRTOS_LED=i;
+	while(HRTOS_K);
+	os_task_delete(1);
+	os_task(task1,16,8,1);
+	os_task(task5,5,2,2);
+	i=os_task_sp(16);
+	HRTOS_LED=i;
+	while(1);
+}
+
+void hrtos_main()
+{
+	EA=0;
+	os_task(task2,1,1,1);
+	os_task(task4,3,2,2);
+	os_task(task3,17,8,2);
+	os_task_hang(17);
+	os_task_hang(16);
+	EA=1;
+	while(1);
+}
+
+      </pre>
+    </div>
+  </div>
+</div>
+
+<!-- 代码示例 -->
+<div class="section" id="code">
+  <div class="panel">
+    <div class="card" style="grid-column:1/-1">
+      <h3>中断嵌套（代码示例）</h3>
+      <pre class="code">
+#include&lt;MYOS.h&gt;
+#include&lt;reg52.h&gt;
+#define HRTOS_LED P0
+sbit k=P3^7;
+void task1()
+{
+	while(1)
+	{
+		HRTOS_LED=0;
+		my_hrtos();	 //中断陷入接口
+	}
+}
+void task2()
+{
+	while(1)
+	{
+		HRTOS_LED=1;
+		my_hrtos();
+	}
+}
+void task3()
+{
+	while(1)
+	{
+		HRTOS_LED=3;
+		my_hrtos();
+	}
+}
+void task4()
+{
+	while(1)
+	{
+		HRTOS_LED=7;
+		my_hrtos();
+	}
+}
+void task5()
+{
+	while(1)
+	{
+		HRTOS_LED=15;
+		my_hrtos();
+	}
+}
+void task0()
+{
+	while(1)
+	{
+		HRTOS_LED=255;
+		my_hrtos();
+	}
+}
+void task01()
+{
+	HRTOS_LED=0;
+	while(k);
+	os_interrupt_exit();	
+}
+void task02()
+{
+	HRTOS_LED=18;
+	while(k);
+	os_interrupt_exit();
+}
+
+
+void my_main()
+{
+	EA=0;
+	EX0=1;
+	EX1=1;
+	IT0=1;
+	IT1=1;
+	my_task(task1,0);//注册函数task1,到0号槽
+	my_task(task2,1);
+	my_task(task3,2);
+	my_task(task4,3);
+	my_task(task5,4);
+	my_task(task0,5);
+	my_task(task01,14);
+	my_task(task02,16);
+	os_scheduling(0);//0：选择MyOS的切换方式，默认 1：HRTOS的切换方式
+	EA=1;
+	while(1);
+}
+
+
+      </pre>
+    </div>
+  </div>
+</div>
+
+
+<div style="width:60px;height:2px;background:#374151;margin:40px auto;"></div>
+
+<div style="text-align:center; margin:30px 0 10px;">
+  <p style="color:#cbd5e1; font-size:18px;">
+    HRTOS 已具备完整实时调度能力，可直接应用于嵌入式项目开发
+  </p>
+  <p style="color:#9ca3af; font-size:14px; margin-top:8px;">
+    支持快速部署，轻量高效，稳定可靠
+  </p>
+</div>
+
+<!-- CTA -->
+ 
+<div class="section cta">
+  <!--<h2>开始使用</h2>-->
+  <a class="btn primary" href="manual.html">应用示例</a>
+  <a class="btn secondary" href="download.html">下载系统</a>
+</div>
+<!-- 底部 -->
+<div class="footer">
+版权所有 © 2017 - 2026 HRTOS · 作者：谭舒
+</div>
+
+<script>
+// 粒子效果
+const canvas=document.getElementById('particles');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+let particles=[];
+for(let i=0;i<150;i++){
+  particles.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*2+1, dx:(Math.random()-0.5)*0.7, dy:(Math.random()-0.5)*0.7, hue:Math.random()*360});
+}
+let mouse={x:null,y:null};
+canvas.addEventListener('mousemove', e=>{ mouse.x=e.x; mouse.y=e.y; });
+canvas.addEventListener('mouseleave', e=>{ mouse.x=null; mouse.y=null; });
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.x+=p.dx; p.y+=p.dy;
+    if(p.x<0||p.x>canvas.width)p.dx*=-1;
+    if(p.y<0||p.y>canvas.height)p.dy*=-1;
+    if(mouse.x && mouse.y){
+      let dx=mouse.x-p.x, dy=mouse.y-p.y, dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<120){ p.x-=dx/35; p.y-=dy/35; }
+    }
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`hsl(${p.hue},70%,60%)`;
+    ctx.fill();
+  });
+  requestAnimationFrame(animate);
+}
+animate();
+
+// 卡片淡入
+const cards=document.querySelectorAll('.card');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{ if(entry.isIntersecting) entry.target.classList.add('show'); });
+},{threshold:0.2});
+cards.forEach(card=>observer.observe(card));
+
+// 顶栏滚动透明
+window.addEventListener('scroll',()=>{
+  const nav=document.getElementById('navbar');
+  if(window.scrollY>50) nav.classList.add('transparent');
+  else nav.classList.remove('transparent');
+});
+window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+</script>
+
+</body>
+</html>
