@@ -15,7 +15,8 @@ body{
   overflow-x:hidden;
 }
 a{text-decoration:none;}
-h1,h2,h3,p,pre,table,th,td{margin:0; text-align:center;}
+h1,h2,h3,p{margin:0; text-align:center;}
+pre,table,th,td{margin:0; text-align:left;}
 
 /* 顶栏 */
 .nav{
@@ -106,7 +107,7 @@ a.btn:hover{background:#6366f1;}
 .card.show{opacity:1; transform:translateY(0);}
 
 /* 表格 */
-table{width:100%; border-collapse:collapse; margin-top:20px; background:#0f172a;}
+table{width:100%; border-collapse:collapse; margin-top:20px; background:#0f172a;table-layout:fixed;}
 th, td{padding:12px; border:1px solid #1f2937;}
 th{background:#1e293b;color:#60a5fa;font-weight:600;}
 td{color:#e5e7eb;}
