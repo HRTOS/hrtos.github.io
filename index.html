@@ -372,11 +372,8 @@ pre.code:hover::after{
       <h3>迷你版（代码示例）</h3>
       <pre class="code">#include&lt;myos.h&gt;
 #include&lt;reg52.h&gt;
-
 u16 my_inter[10]; // 中断地址
-
 void os_slab_ov(){}
-
 volatile void my_os()
 {
     U8 i;
@@ -397,7 +394,6 @@ volatile void my_os()
         os_operate(my_inter[i]);
     }
 }
-
 void hrtos_main()
 {
     EA=0;
@@ -441,7 +437,6 @@ void task5()
 {
 	while(1);
 }
-
 void task4()
 {
 	u8 i;
@@ -456,7 +451,6 @@ void task4()
 	HRTOS_LED=i;
 	while(1);
 }
-
 void hrtos_main()
 {
 	EA=0;
@@ -468,7 +462,6 @@ void hrtos_main()
 	EA=1;
 	while(1);
 }
-
       </pre>
     </div>
   </div>
@@ -543,8 +536,6 @@ void task02()
 	while(k);
 	os_interrupt_exit();
 }
-
-
 void my_main()
 {
 	EA=0;
@@ -564,8 +555,6 @@ void my_main()
 	EA=1;
 	while(1);
 }
-
-
       </pre>
     </div>
   </div>
