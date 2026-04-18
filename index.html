@@ -393,21 +393,21 @@ volatile void my_os()
         TH0=0;
         TL0=0;
         i=os_task_id(); // 运行编号
-        os_task_protect(i); // 保护现在的任务
-        i=os_select(i); // 选择下一个运行的任务
-        os_task_release(i); // 释放下一个任务
+        os_task_protect(i); // 保护任务
+        i=os_select(i); // 指定任务
+        os_task_release(i); // 运行任务
     }
     else
     {
-        if(i){i--;} // 如果不是INT0中断则减一
+        if(i){i--;} // 不是INT0减一
         os_operate(my_inter[i]);
     }
 }
 void hrtos_main()
 {
     EA=0;
-    os_task(my_os,15,9,0); // 将 MyOS 注册到 HRTOS 中断服务函数
-    os_task(my_main,1,1,2); // 启动 MyOS 初始化函数
+    os_task(my_os,15,9,0); 
+    os_task(my_main,1,1,2); 
     EA=1;
     while(1);
 }
@@ -490,7 +490,7 @@ void task1()
 	while(1)
 	{
 		HRTOS_LED=0;
-		my_hrtos();	 //中断陷入接口
+		my_hrtos();	
 	}
 }
 void task2()
@@ -552,7 +552,7 @@ void my_main()
 	EX1=1;
 	IT0=1;
 	IT1=1;
-	my_task(task1,0);//注册函数task1,到0号槽
+	my_task(task1,0);//启动进程
 	my_task(task2,1);
 	my_task(task3,2);
 	my_task(task4,3);
@@ -560,7 +560,7 @@ void my_main()
 	my_task(task0,5);
 	my_task(task01,14);
 	my_task(task02,16);
-	os_scheduling(0);//0：选择MyOS的切换方式，默认 1：HRTOS的切换方式
+	os_scheduling(0);//手动调度
 	EA=1;
 	while(1);
 }
