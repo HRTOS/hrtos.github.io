@@ -220,12 +220,13 @@ pre.code .type{color:#f472b6; font-weight:500;}
     padding:18px;
   }
 
-  /* 表格防溢出 */
-  #memory table{
-    display:block;
-    overflow-x:auto;
-    white-space:nowrap;
-  }
+/* 表格防溢出（修正版） */
+#memory .card{
+  overflow-x:auto;
+}
+#memory table{
+  min-width:600px;
+}
 
   /* 代码块优化 */
   pre{
