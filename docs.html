@@ -95,6 +95,44 @@ html{
   box-sizing:border-box;
   z-index:999;
 }
+  /* ===== 手机端适配 ===== */
+@media (max-width: 768px){
+
+  /* 目录改为顶部 */
+  .sidebar{
+    position:static !important;
+    width:100% !important;
+    height:auto !important;
+    border-right:none;
+    border-bottom:1px solid #1f2937;
+    margin-bottom:10px;
+  }
+
+  /* 目录横向排列（更像导航） */
+  .sidebar a{
+    display:inline-block;
+    margin:4px;
+    font-size:13px;
+    padding:6px 8px;
+  }
+
+  /* 主体取消左边距 */
+  main{
+    margin-left:0 !important;
+    padding-top:120px; /* 给header+目录留空间 */
+  }
+
+  /* header稍微紧凑一点 */
+  header{
+    flex-wrap:wrap;
+  }
+
+  header span.right-title{
+    width:100%;
+    text-align:center;
+    margin-top:5px;
+  }
+}
 </style>
 </head>
 <body>
@@ -102,6 +140,7 @@ html{
 <header>
   <a class="left-link" href="https://hrtos.com" target="_blank">HRTOS</a>
   <span class="right-title">HRTOS API 手册</span>
+</header>  
   <div class="sidebar">
   <h3>目录</h3>
   <a href="#home">系统概览</a>
@@ -116,7 +155,6 @@ html{
   <a href="#mail">9. 邮箱管理</a>
   <a href="#myos">10. MyOS</a>
 </div>
-</header>
 
 <main>
 <!-- 首页 -->
