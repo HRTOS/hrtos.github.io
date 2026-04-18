@@ -245,6 +245,69 @@ pre.code .type{color:#f472b6; font-weight:500;}
 	table{
   max-width:100%;
 }
+/* ===== GitHub 风格滚动渐隐（最终稳定版）===== */
+
+/* 只作用于这两个区域 */
+#memory .card,
+pre.code{
+  position:relative;
+  overflow-x:auto;
+}
+
+/* 顶部 subtle 分割线 */
+#memory .card::before,
+pre.code::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:1px;
+  background:linear-gradient(to right, transparent, #374151, transparent);
+  opacity:0.5;
+  pointer-events:none;
+}
+
+/* 左右渐隐 */
+#memory .card::after,
+pre.code::after{
+  content:"";
+  position:absolute;
+  top:0;
+  right:0;
+  width:40px;
+  height:100%;
+  background:linear-gradient(to left, rgba(2,6,23,0.9), transparent);
+  opacity:0;
+  transition:opacity 0.2s;
+  pointer-events:none;
+}
+
+#memory .card::before,
+pre.code::before{
+  z-index:2;
+}
+
+/* 左渐隐（额外一层） */
+.scroll-left::after{
+  left:0;
+  right:auto;
+  background:linear-gradient(to right, rgba(2,6,23,0.9), transparent);
+}
+
+/* hover 才显示 */
+#memory .card:hover::after,
+pre.code:hover::after{
+  opacity:1;
+}
+
+/* 手机端常显 */
+@media(max-width:640px){
+  #memory .card::after,
+  pre.code::after{
+    opacity:1;
+  }
+}
 </style>
 </head>
 <body>
@@ -579,6 +642,32 @@ window.addEventListener('scroll',()=>{
   else nav.classList.remove('transparent');
 });
 window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+// ===== 滚动渐隐控制（核心逻辑）=====
+function updateFade(el){
+  const scrollLeft = el.scrollLeft;
+  const maxScroll = el.scrollWidth - el.clientWidth;
+
+  // 左边
+  if(scrollLeft <= 5){
+    el.classList.remove('scroll-left');
+  }else{
+    el.classList.add('scroll-left');
+  }
+
+  // 右边
+  if(scrollLeft >= maxScroll - 5){
+    el.style.setProperty('--fade-right', 0);
+    el.style.setProperty('--fade-left', 1);
+  }else{
+    el.style.setProperty('--fade-right', 1);
+  }
+}
+
+// 初始化绑定
+document.querySelectorAll('#memory .card, pre.code').forEach(el=>{
+  el.addEventListener('scroll', ()=>updateFade(el));
+  updateFade(el);
+});
 </script>
 
 </body>
