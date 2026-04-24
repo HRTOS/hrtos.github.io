@@ -3,36 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <title>任务调度原理 | RTOS 调度机制详解</title>
-<meta name="description" content="详解 RTOS 任务调度原理，包括优先级调度、时间片轮转和抢占式调度机制，帮助理解实时操作系统核心运行方式。">
+<meta name="description" content="详解 RTOS 任务调度原理，包括优先级调度、时间片轮转和抢占机制，帮助理解实时系统核心运行方式。">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{margin:0;font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#0a0f1f;color:#e5e7eb;}
+.nav{position:fixed;top:0;left:0;right:0;padding:15px 40px;background:#0f172a;border-bottom:1px solid #1f2937;}
+.nav a{color:#60a5fa;text-decoration:none;font-weight:bold;}
+.container{max-width:900px;margin:100px auto;padding:20px;}
+h1{font-size:42px;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+h2{color:#60a5fa;margin-top:30px;}
+.card{background:#0f172a;padding:20px;border-radius:12px;border:1px solid #1f2937;margin-top:20px;line-height:1.7;}
+</style>
 </head>
+
 <body>
+
+<div class="nav"><a href="index.html">HRTOS</a></div>
+
+<div class="container">
 
 <h1>RTOS 任务调度原理</h1>
 
+<div class="card">
 <h2>什么是任务调度</h2>
 <p>
-任务调度是 RTOS 的核心功能，用于决定在某一时刻由哪个任务占用 CPU 执行。
+任务调度是 RTOS 的核心，用于决定<strong>哪个任务在何时运行</strong>。
 </p>
+</div>
 
-<h2>常见调度方式</h2>
-<ul>
-<li>优先级调度：优先级高的任务先执行</li>
-<li>时间片轮转：同优先级任务轮流执行</li>
-<li>抢占式调度：高优先级任务可打断低优先级任务</li>
-</ul>
+<div class="card">
+<h2>调度方式</h2>
+<p>
+✔ 优先级调度：优先执行高优先级任务<br>
+✔ 时间片轮转：同优先级轮流执行<br>
+✔ 抢占式调度：高优先级可打断低优先级
+</p>
+</div>
 
+<div class="card">
 <h2>调度流程</h2>
 <p>
-RTOS 内核通过调度器不断选择当前最合适的任务执行，
-当发生中断或任务状态变化时，重新调度。
+系统根据任务状态（就绪、运行、阻塞）选择最优任务执行，
+当发生中断或状态变化时触发重新调度。
 </p>
+</div>
 
+<div class="card">
+<h2>调度的重要性</h2>
+<p>
+调度算法直接影响系统实时性、响应速度和资源利用率，
+是 RTOS 最核心的设计部分。
+</p>
+</div>
+
+<div class="card">
 <h2>HRTOS 调度特点</h2>
 <p>
-HRTOS 采用优先级抢占调度机制，并支持动态优先级调整，
-在保证实时性的同时提高系统灵活性。
+采用优先级抢占机制，支持动态调整，提高灵活性与实时性能。
 </p>
+</div>
 
+</div>
 </body>
 </html>
