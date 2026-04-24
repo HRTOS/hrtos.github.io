@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>中断机制解析 | RTOS 中断原理详解</title>
+<meta name="description" content="详细解析 RTOS 中断机制，包括中断响应、嵌套中断和优先级管理，帮助理解嵌入式系统的实时处理能力。">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<h1>RTOS 中断机制解析</h1>
+
+<h2>什么是中断</h2>
+<p>
+中断是一种打断当前程序执行的机制，用于快速响应外部或内部事件。
+</p>
+
+<h2>中断的作用</h2>
+<ul>
+<li>提高系统响应速度</li>
+<li>实现实时控制</li>
+<li>减少CPU空转</li>
+</ul>
+
+<h2>中断处理流程</h2>
+<p>
+当中断发生时，CPU 会暂停当前任务，
+跳转到中断服务程序（ISR）执行处理逻辑，
+处理完成后返回原任务。
+</p>
+
+<h2>HRTOS 中断特点</h2>
+<p>
+HRTOS 支持多中断源统一管理，并优化中断堆栈，
+提高系统稳定性与实时性。
+</p>
+
+</body>
+</html>
