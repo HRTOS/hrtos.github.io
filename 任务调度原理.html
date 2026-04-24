@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>任务调度原理 | RTOS 调度机制详解</title>
+<meta name="description" content="详解 RTOS 任务调度原理，包括优先级调度、时间片轮转和抢占式调度机制，帮助理解实时操作系统核心运行方式。">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<h1>RTOS 任务调度原理</h1>
+
+<h2>什么是任务调度</h2>
+<p>
+任务调度是 RTOS 的核心功能，用于决定在某一时刻由哪个任务占用 CPU 执行。
+</p>
+
+<h2>常见调度方式</h2>
+<ul>
+<li>优先级调度：优先级高的任务先执行</li>
+<li>时间片轮转：同优先级任务轮流执行</li>
+<li>抢占式调度：高优先级任务可打断低优先级任务</li>
+</ul>
+
+<h2>调度流程</h2>
+<p>
+RTOS 内核通过调度器不断选择当前最合适的任务执行，
+当发生中断或任务状态变化时，重新调度。
+</p>
+
+<h2>HRTOS 调度特点</h2>
+<p>
+HRTOS 采用优先级抢占调度机制，并支持动态优先级调整，
+在保证实时性的同时提高系统灵活性。
+</p>
+
+</body>
+</html>
