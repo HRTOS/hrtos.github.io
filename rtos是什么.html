@@ -3,37 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <title>RTOS 是什么 | 实时操作系统原理详解</title>
-<meta name="description" content="RTOS（实时操作系统）是一种用于嵌入式系统的操作系统，支持多任务调度、中断响应和时间确定性，广泛应用于单片机与工业控制领域。">
+<meta name="description" content="RTOS（实时操作系统）详解，包含定义、特点、应用场景及核心机制，帮助理解嵌入式系统中的实时调度与中断处理。">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{margin:0;font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#0a0f1f;color:#e5e7eb;}
+.nav{position:fixed;top:0;left:0;right:0;padding:15px 40px;background:#0f172a;border-bottom:1px solid #1f2937;}
+.nav a{color:#60a5fa;text-decoration:none;font-weight:bold;}
+.container{max-width:900px;margin:100px auto;padding:20px;}
+h1{font-size:42px;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+h2{color:#60a5fa;margin-top:30px;}
+.card{background:#0f172a;padding:20px;border-radius:12px;border:1px solid #1f2937;margin-top:20px;line-height:1.7;}
+</style>
 </head>
+
 <body>
+
+<div class="nav"><a href="index.html">HRTOS</a></div>
+
+<div class="container">
 
 <h1>RTOS 是什么</h1>
 
-<h2>RTOS 的定义</h2>
+<div class="card">
+<h2>RTOS 定义</h2>
 <p>
-RTOS（Real-Time Operating System，实时操作系统）是一种专门为嵌入式系统设计的操作系统，
-其核心目标是在严格时间约束下完成任务处理。
+RTOS（Real-Time Operating System，实时操作系统）是一种用于嵌入式系统的操作系统，
+其核心目标是在<strong>严格时间约束</strong>下完成任务调度与执行。
 </p>
+</div>
 
-<h2>RTOS 的核心特点</h2>
-<ul>
-<li>确定性：任务在规定时间内完成</li>
-<li>多任务调度：支持多个任务同时运行</li>
-<li>中断响应快：适合实时控制</li>
-<li>资源占用小：适用于单片机</li>
-</ul>
-
-<h2>RTOS 的应用场景</h2>
+<div class="card">
+<h2>核心特点</h2>
 <p>
-RTOS 广泛应用于工业控制、汽车电子、智能家居、医疗设备等领域。
+✔ 确定性：任务执行时间可预测<br>
+✔ 多任务：多个任务并发运行<br>
+✔ 快速响应：中断处理效率高<br>
+✔ 资源占用低：适合单片机系统
 </p>
+</div>
 
+<div class="card">
+<h2>与普通操作系统区别</h2>
+<p>
+普通操作系统（如 Windows）追求吞吐量和用户体验，  
+而 RTOS 更关注<strong>响应时间和稳定性</strong>。
+</p>
+</div>
+
+<div class="card">
+<h2>应用场景</h2>
+<p>
+工业控制、汽车电子、智能家居、无人机、医疗设备等需要实时响应的系统。
+</p>
+</div>
+
+<div class="card">
 <h2>HRTOS 简介</h2>
 <p>
 HRTOS 是一个轻量级实时操作系统，支持多任务调度、中断管理与内存控制，
-适合嵌入式开发学习与项目实践。
+适用于嵌入式开发学习与项目实践。
 </p>
+</div>
 
+</div>
 </body>
 </html>
