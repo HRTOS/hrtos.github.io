@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>信号量与互斥锁详解 | RTOS 任务同步机制</title>
+<meta name="description" content="RTOS 信号量与互斥锁详解，包括同步原理、互斥机制与优先级继承，解决多任务竞争问题。">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{margin:0;font-family:"Segoe UI";background:#0a0f1f;color:#e5e7eb;}
+.nav{position:fixed;top:0;left:0;right:0;padding:15px 40px;background:#0f172a;}
+.nav a{color:#60a5fa;text-decoration:none;font-weight:bold;}
+.container{max-width:900px;margin:100px auto;padding:20px;}
+h1{font-size:42px;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+h2{color:#60a5fa;margin-top:30px;}
+.card{background:#0f172a;padding:20px;border-radius:12px;border:1px solid #1f2937;margin-top:20px;}
+pre{background:#020617;padding:15px;border-radius:10px;color:#22d3ee;}
+</style>
+</head>
+
+<body>
+<div class="nav"><a href="index.html">HRTOS</a></div>
+<div class="container">
+
+<h1>信号量与互斥锁</h1>
+
+<div class="card">
+<h2>1. 为什么需要同步机制</h2>
+<p>
+多个任务共享资源时，如果不控制，会导致数据错误或系统异常。
+</p>
+</div>
+
+<div class="card">
+<h2>2. 信号量（Semaphore）</h2>
+<p>
+信号量用于任务间同步：
+</p>
+
+<pre>
+任务A发送信号
+↓
+任务B接收信号
+↓
+开始执行
+</pre>
+
+<p>
+✔ 可用于任务通信<br>
+✔ 可用于资源计数
+</p>
+</div>
+
+<div class="card">
+<h2>3. 互斥锁（Mutex）</h2>
+<p>
+用于保护共享资源：
+</p>
+
+<pre>
+任务A获取锁
+↓
+访问资源
+↓
+释放锁
+</pre>
+
+<p>
+✔ 防止同时访问<br>
+✔ 保证数据安全
+</p>
+</div>
+
+<div class="card">
+<h2>4. 优先级继承</h2>
+<p>
+解决优先级反转问题：
+</p>
+
+<p>
+👉 低优先级持锁<br>
+👉 高优先级等待<br>
+👉 提升低优先级执行
+</p>
+</div>
+
+<div class="card">
+<h2>5. HRTOS 实现</h2>
+<p>
+✔ 信号量同步机制<br>
+✔ 锁管理<br>
+✔ 支持优先级继承
+</p>
+</div>
+
+<div class="card">
+<h2>6. 总结</h2>
+<p>
+👉 信号量：用于同步  
+👉 互斥锁：用于保护资源
+</p>
+</div>
+
+</div>
+</body>
+</html>
