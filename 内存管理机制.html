@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>RTOS 内存管理机制详解 | 内存池与动态分配原理</title>
+<meta name="description" content="详解 RTOS 内存管理机制，包括内存池、动态分配、碎片问题与嵌入式优化方案，帮助理解系统稳定运行的关键。">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{margin:0;font-family:"Segoe UI","Microsoft YaHei";background:#0a0f1f;color:#e5e7eb;}
+.nav{position:fixed;top:0;left:0;right:0;padding:15px 40px;background:#0f172a;}
+.nav a{color:#60a5fa;text-decoration:none;font-weight:bold;}
+.container{max-width:900px;margin:100px auto;padding:20px;}
+h1{font-size:42px;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+h2{color:#60a5fa;margin-top:30px;}
+.card{background:#0f172a;padding:20px;border-radius:12px;border:1px solid #1f2937;margin-top:20px;line-height:1.7;}
+pre{background:#020617;padding:15px;border-radius:10px;color:#22d3ee;}
+</style>
+</head>
+
+<body>
+<div class="nav"><a href="index.html">HRTOS</a></div>
+<div class="container">
+
+<h1>RTOS 内存管理机制</h1>
+
+<div class="card">
+<h2>1. 为什么需要内存管理</h2>
+<p>
+嵌入式系统资源有限，内存通常只有几 KB 或几十 KB，
+如何高效、安全地分配和释放内存，是系统稳定运行的关键。
+</p>
+</div>
+
+<div class="card">
+<h2>2. 两种基本方式</h2>
+<p>
+✔ 静态分配：编译时确定，安全但不灵活<br>
+✔ 动态分配：运行时申请，灵活但有风险
+</p>
+</div>
+
+<div class="card">
+<h2>3. 内存池机制（核心）</h2>
+<p>
+RTOS 常用“内存池”管理内存：
+</p>
+
+<pre>
+初始化一块内存
+↓
+按固定大小切分
+↓
+任务申请/释放
+</pre>
+
+<p>
+优点：
+</p>
+
+<p>
+✔ 分配速度快<br>
+✔ 避免碎片<br>
+✔ 可控性强
+</p>
+</div>
+
+<div class="card">
+<h2>4. 内存碎片问题</h2>
+<p>
+动态分配可能产生碎片：
+</p>
+
+<p>
+👉 小块内存零散分布<br>
+👉 无法分配大块空间
+</p>
+
+<p>
+解决方案：
+</p>
+
+<p>
+✔ 使用内存池<br>
+✔ 固定块大小<br>
+✔ 避免频繁申请释放
+</p>
+</div>
+
+<div class="card">
+<h2>5. HRTOS 内存特点</h2>
+<p>
+✔ 内存池管理<br>
+✔ 动态分配支持<br>
+✔ 多任务安全访问<br>
+✔ 高稳定性设计
+</p>
+</div>
+
+<div class="card">
+<h2>6. 总结</h2>
+<p>
+RTOS 内存管理的核心目标是：
+</p>
+<p>
+👉 高效 + 可控 + 无碎片
+</p>
+</div>
+
+</div>
+</body>
+</html>
