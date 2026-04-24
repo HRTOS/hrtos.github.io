@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>RTOS 时间管理与定时器机制详解</title>
+<meta name="description" content="详解 RTOS 时间管理机制，包括系统节拍、定时器与延时原理，是实时操作系统调度的重要基础。">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{margin:0;font-family:"Segoe UI";background:#0a0f1f;color:#e5e7eb;}
+.nav{position:fixed;top:0;left:0;right:0;padding:15px 40px;background:#0f172a;}
+.nav a{color:#60a5fa;text-decoration:none;font-weight:bold;}
+.container{max-width:900px;margin:100px auto;padding:20px;}
+h1{font-size:42px;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+h2{color:#60a5fa;margin-top:30px;}
+.card{background:#0f172a;padding:20px;border-radius:12px;border:1px solid #1f2937;margin-top:20px;}
+pre{background:#020617;padding:15px;border-radius:10px;color:#22d3ee;}
+</style>
+</head>
+
+<body>
+<div class="nav"><a href="index.html">HRTOS</a></div>
+<div class="container">
+
+<h1>RTOS 时间管理与定时器机制</h1>
+
+<div class="card">
+<h2>1. 什么是系统时间</h2>
+<p>
+RTOS 通过“系统节拍（Tick）”来管理时间，
+通常由定时器周期性产生中断。
+</p>
+</div>
+
+<div class="card">
+<h2>2. Tick机制</h2>
+
+<pre>
+定时器中断
+↓
+系统时间+1
+↓
+检查任务状态
+↓
+触发调度
+</pre>
+
+<p>
+Tick 是 RTOS 的时间基础。
+</p>
+</div>
+
+<div class="card">
+<h2>3. 延时实现原理</h2>
+
+<p>
+任务延时本质是：
+</p>
+
+<pre>
+记录当前时间
+↓
+进入阻塞状态
+↓
+时间到 → 恢复任务
+</pre>
+
+</div>
+
+<div class="card">
+<h2>4. 软件定时器</h2>
+<p>
+RTOS 提供软件定时器：
+</p>
+
+<p>
+✔ 周期执行<br>
+✔ 单次触发<br>
+✔ 低资源占用
+</p>
+</div>
+
+<div class="card">
+<h2>5. HRTOS 特点</h2>
+<p>
+✔ 高精度定时<br>
+✔ 低延迟响应<br>
+✔ 与调度器深度结合
+</p>
+</div>
+
+<div class="card">
+<h2>6. 总结</h2>
+<p>
+时间机制是调度的基础：
+</p>
+<p>
+👉 没有时间，就没有 RTOS
+</p>
+</div>
+
+</div>
+</body>
+</html>
