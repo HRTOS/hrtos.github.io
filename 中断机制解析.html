@@ -3,37 +3,65 @@
 <head>
 <meta charset="UTF-8">
 <title>中断机制解析 | RTOS 中断原理详解</title>
-<meta name="description" content="详细解析 RTOS 中断机制，包括中断响应、嵌套中断和优先级管理，帮助理解嵌入式系统的实时处理能力。">
+<meta name="description" content="RTOS 中断机制详解，包含中断响应流程、嵌套机制与优先级管理，帮助理解嵌入式系统实时处理能力。">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{margin:0;font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#0a0f1f;color:#e5e7eb;}
+.nav{position:fixed;top:0;left:0;right:0;padding:15px 40px;background:#0f172a;border-bottom:1px solid #1f2937;}
+.nav a{color:#60a5fa;text-decoration:none;font-weight:bold;}
+.container{max-width:900px;margin:100px auto;padding:20px;}
+h1{font-size:42px;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+h2{color:#60a5fa;margin-top:30px;}
+.card{background:#0f172a;padding:20px;border-radius:12px;border:1px solid #1f2937;margin-top:20px;line-height:1.7;}
+</style>
 </head>
+
 <body>
+
+<div class="nav"><a href="index.html">HRTOS</a></div>
+
+<div class="container">
 
 <h1>RTOS 中断机制解析</h1>
 
+<div class="card">
 <h2>什么是中断</h2>
 <p>
-中断是一种打断当前程序执行的机制，用于快速响应外部或内部事件。
+中断是一种打断当前任务执行的机制，用于快速响应外部事件。
 </p>
+</div>
 
+<div class="card">
 <h2>中断的作用</h2>
-<ul>
-<li>提高系统响应速度</li>
-<li>实现实时控制</li>
-<li>减少CPU空转</li>
-</ul>
+<p>
+✔ 提高响应速度<br>
+✔ 实现实时控制<br>
+✔ 降低CPU空转
+</p>
+</div>
 
+<div class="card">
 <h2>中断处理流程</h2>
 <p>
-当中断发生时，CPU 会暂停当前任务，
-跳转到中断服务程序（ISR）执行处理逻辑，
-处理完成后返回原任务。
+中断发生 → 保存现场 → 执行中断服务程序（ISR） → 恢复现场 → 返回任务。
 </p>
+</div>
 
-<h2>HRTOS 中断特点</h2>
+<div class="card">
+<h2>嵌套中断</h2>
 <p>
-HRTOS 支持多中断源统一管理，并优化中断堆栈，
-提高系统稳定性与实时性。
+高优先级中断可以打断低优先级中断，提高系统响应能力。
 </p>
+</div>
 
+<div class="card">
+<h2>HRTOS 优化</h2>
+<p>
+支持多中断源统一管理，并优化堆栈使用，提高系统稳定性与实时性。
+</p>
+</div>
+
+</div>
 </body>
 </html>
