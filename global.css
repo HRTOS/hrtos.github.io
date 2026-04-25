@@ -1,3 +1,9 @@
+
+/* =========================
+   HRTOS NAV CLEAN FINAL VERSION
+   唯一稳定版本（不要再叠加补丁）
+========================= */
+
 .nav{
   position:fixed;
   top:0;
@@ -15,128 +21,34 @@
   border-bottom:1px solid #1f2937;
   backdrop-filter:blur(5px);
   z-index:1000;
-}
 
-.nav .logo a{
-  font-weight:bold;
-  color:#60a5fa;
-  font-size:20px;
-}
-.download-btn {
-  display: inline-block;
-  white-space: nowrap;
-  flex-shrink: 0;
-  word-break: keep-all;
-  font-size: 14px;
-  padding: 10px 16px;
-}
-/* =========================
-   HRTOS NAV FINAL STABLE FIX
-   不改HTML / 不破坏原结构
-========================= */
-
-/* 核心：防止挤压 + 保留一行 */
-.nav{
-  flex-wrap: nowrap;
-}
-
-/* logo 永远固定 */
-.nav .logo{
-  flex-shrink: 0;
-}
-
-/* 链接统一规范 */
-.nav a{
-  color:#9ca3af;
-  margin-left:12px;   /* 🔥 从20改为12（关键修复） */
-  text-decoration:none;
-  white-space: nowrap;
-}
-
-/* hover不变 */
-.nav a:hover{
-  color:#60a5fa;
-}
-
-/* 下载按钮优先级最高 */
-.download-btn{
-  display: inline-block;
-  white-space: nowrap;
-  flex-shrink: 0;
-  word-break: keep-all;
-}
-
-/* 防止整体被压爆 */
-.nav > *{
-  min-width: 0;
-}
-
-/* =========================
-   手机端优化（真正关键）
-========================= */
-@media (max-width: 768px){
-
-  .nav{
-    padding: 0 10px;
-  }
-
-  /* 手机减少间距是核心，否则一定挤爆 */
-  .nav a{
-    margin-left: 8px;
-    font-size: 13px;
-  }
-
-  .nav .logo a{
-    font-size: 18px;
-  }
-
-  .download-btn{
-    padding: 6px 10px;
-    font-size: 13px;
-  }
-}
-
-/* =========================
-   HRTOS NAV ULTRA STABLE FIX
-   不改HTML / 不破坏原结构
-========================= */
-
-/* 主容器：锁死一行结构 */
-.nav{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
   flex-wrap:nowrap;
-  padding:0 20px;
 }
 
-/* 左侧 logo 永远不动 */
+/* logo */
 .nav .logo{
-  flex:0 0 auto;
-}
-
-/* 右侧所有内容统一管理 */
-.nav a{
-  color:#9ca3af;
-  text-decoration:none;
-  white-space:nowrap;
-  margin-left:10px; /* 再收紧一点更稳 */
   flex-shrink:0;
 }
 
-/* hover */
-.nav a:hover{
-  color:#60a5fa;
-}
-
-/* logo 样式 */
 .nav .logo a{
   font-weight:bold;
   color:#60a5fa;
   font-size:20px;
 }
 
-/* 下载按钮最高优先级 */
+/* links */
+.nav a{
+  color:#9ca3af;
+  margin-left:10px;
+  text-decoration:none;
+  white-space:nowrap;
+}
+
+.nav a:hover{
+  color:#60a5fa;
+}
+
+/* button */
 .download-btn{
   display:inline-block;
   white-space:nowrap;
@@ -145,29 +57,24 @@
   font-size:14px;
 }
 
-/* 防止整体被压缩导致错位 */
-.nav *{
-  min-width:0;
-}
-
-/* =========================
-   手机端（关键优化）
-========================= */
-@media (max-width: 768px){
+/* mobile */
+@media (max-width:768px){
 
   .nav{
-    flex-wrap: wrap; /* 🔥 关键：允许换行 */
-    height:auto;
-    padding:10px;
-    gap:8px;
+    padding:0 10px;
   }
 
   .nav a{
-    margin-left:10px;
+    margin-left:8px;
     font-size:13px;
   }
 
+  .nav .logo a{
+    font-size:18px;
+  }
+
   .download-btn{
-    margin-left:auto; /* 推到右侧 */
+    padding:6px 10px;
+    font-size:13px;
   }
 }
