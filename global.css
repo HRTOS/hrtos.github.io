@@ -61,7 +61,10 @@
 @media (max-width:768px){
 
   .nav{
-    padding:0 10px;
+    flex-wrap: wrap; /* 🔥 关键：允许换行 */
+    height:auto;
+    padding:10px;
+    gap:8px;
   }
 
   .nav a{
