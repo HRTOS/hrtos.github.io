@@ -1,12 +1,28 @@
-(function () {
-  const headerHTML = `
-  <header class="hrt-header">
-    <a class="left-link" href="https://hrtos.com" target="_blank">HRTOS</a>
-    <span class="right-title">HRTOS 实时操作系统</span>
-  </header>
-  `;
+document.addEventListener("DOMContentLoaded", function () {
+  const el = document.getElementById("site-header");
 
-  document.addEventListener("DOMContentLoaded", function () {
-    document.body.insertAdjacentHTML("afterbegin", headerHTML);
-  });
-})();
+  el.innerHTML = `
+    <header style="
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      background:#1e293b;
+      padding:10px 20px;
+      z-index:1000;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      box-shadow:0 2px 4px rgba(0,0,0,0.5);
+    ">
+      <a href="https://hrtos.com" target="_blank"
+         style="font-size:20px;color:#60a5fa;text-decoration:none;font-weight:bold;">
+         HRTOS
+      </a>
+
+      <span style="font-size:18px;color:#fbbf24;font-weight:bold;">
+        HRTOS API 手册
+      </span>
+    </header>
+  `;
+});
