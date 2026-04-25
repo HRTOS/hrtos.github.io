@@ -1,14 +1,10 @@
-document.addEventListener("DOMContentLoaded", () => {
-  fetch("/components/header.html") // 你的header路径
+document.addEventListener("DOMContentLoaded", function () {
+  fetch("./components/header.html")  
     .then(res => res.text())
-    .then(data => {
-      const container = document.createElement("div");
-      container.innerHTML = data;
-
-      // 插入到页面最前面
-      document.body.prepend(container);
-
-      
+    .then(html => {
+      document.body.insertAdjacentHTML("afterbegin", html);
     })
-    .catch(err => console.error("加载header失败:", err));
+    .catch(err => {
+      console.error("加载失败:", err);
+    });
 });
