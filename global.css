@@ -66,18 +66,19 @@
     padding:10px;
     gap:8px;
   }
-
   .nav a{
-    margin-left:8px;
+    margin-left:10px;
     font-size:13px;
   }
+
+  .download-btn{
+    margin-left:auto; /* 推到右侧 */
+  }
+  
 
   .nav .logo a{
     font-size:18px;
   }
 
-  .download-btn{
-    padding:6px 10px;
-    font-size:13px;
-  }
+  
 }
