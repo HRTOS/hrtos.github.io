@@ -65,6 +65,7 @@
     height:auto;
     padding:10px;
     gap:8px;
+     justify-content:flex-start;
   }
   .nav a{
     margin-left:10px;
@@ -81,4 +82,12 @@
   }
 
   
+}
+@media (min-width: 769px){
+  .nav a,
+  .download-btn,
+  .nav .logo a {
+    white-space: nowrap;
+    word-break: keep-all;
+  }
 }
