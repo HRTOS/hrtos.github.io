@@ -32,7 +32,7 @@ header span.right-title {
 
 /* 主体内容 */
 main {
-  padding:120px 20px 20px;
+  padding:100px 20px 20px;
   max-width:900px;
   margin:auto;
 }
@@ -441,14 +441,31 @@ main.page-layout {
     width:100%;
   }
 }
+.nav{
+  position:fixed; top:0; left:0; right:0;
+  display:flex; justify-content:space-between; align-items:center;
+  padding:15px 40px;
+  background:rgba(15,23,42,0.85);
+  border-bottom:1px solid #1f2937;
+  z-index:1000;
+  backdrop-filter:blur(5px);
+}
+.nav a{color:#9ca3af;margin-left:20px;font-weight:500;}
+.nav a:hover{color:#60a5fa;}
+.nav .logo{font-weight:bold;font-size:20px;color:#60a5fa;}
 </style>
 </head>
 <body>
 
-<header>
-  <a class="left-link" href="https://hrtos.com" target="_blank">HRTOS</a>
-  <span class="right-title">HRTOS 应用示例</span>
-</header>
+<div class="nav" id="navbar">
+  <div class="logo"><a href="index.html">HRTOS</a></div>
+  <div>
+    <a href="index.html">首页</a>
+    <a href="docs.html">系统文档</a>
+    <a href="manual.html">应用示例</a>
+    <a href="download.html">系统下载</a>
+  </div>
+</div>
 
 <main class="page-layout">
   <aside class="doc-toc">
