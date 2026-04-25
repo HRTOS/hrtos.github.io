@@ -1,41 +1,30 @@
-// HRTOS 全站统一 Header 加载器
+document.addEventListener("DOMContentLoaded", () => {
+  const header = document.createElement("header");
 
-(function () {
-  const container = document.getElementById('site-header');
+  header.style.cssText = `
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    background:#1e293b;
+    padding:10px 20px;
+    z-index:1000;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 2px 4px rgba(0,0,0,0.5);
+  `;
 
-  if (!container) {
-    console.warn('[HRTOS] 未找到 #site-header 容器');
-    return;
-  }
+  header.innerHTML = `
+    <a href="https://hrtos.com" target="_blank"
+       style="font-size:20px;color:#60a5fa;text-decoration:none;font-weight:bold;">
+       HRTOS
+    </a>
 
-  fetch('components/header.html')
-    .then(res => {
-      if (!res.ok) {
-        throw new Error('Header HTML 加载失败');
-      }
-      return res.text();
-    })
-    .then(html => {
-      container.innerHTML = html;
-    })
-    .catch(err => {
-      console.error('[HRTOS] header 加载失败:', err);
+    <span style="font-size:18px;color:#fbbf24;font-weight:bold;">
+      HRTOS API 手册
+    </span>
+  `;
 
-      // 兜底方案（避免页面空白）
-      container.innerHTML = `
-        <header style="
-          position:fixed;
-          top:0;
-          left:0;
-          right:0;
-          background:#1e293b;
-          padding:10px 20px;
-          color:#fbbf24;
-          z-index:1000;
-        ">
-          HRTOS（加载失败）
-        </header>
-      `;
-    });
-
-})();
+  document.body.prepend(header);
+});
