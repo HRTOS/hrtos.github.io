@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  fetch("./components/header.html")  
+  fetch("https://hrtos.com/components/header.html")  
     .then(res => res.text())
     .then(html => {
       document.body.insertAdjacentHTML("afterbegin", html);
