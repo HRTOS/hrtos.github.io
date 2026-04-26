@@ -91,3 +91,13 @@
     word-break: keep-all;
   }
 }
+.nav .back{
+  background:#1e293b;
+  padding:6px 10px;
+  border-radius:6px;
+  color:#38bdf8;
+}
+
+.nav .back:hover{
+  background:#334155;
+}
