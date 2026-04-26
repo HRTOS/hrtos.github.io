@@ -1,312 +1,388 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>HRTOS 系统文档 | 内核设计与任务调度</title>
-<meta name="description" content="HRTOS 系统文档，详细介绍内核结构、任务调度机制、中断管理与内存分配方案，适用于嵌入式开发者深入学习与使用实时操作系统。">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {
-  margin:0;
-  font-family:"Segoe UI","Microsoft YaHei",Arial,sans-serif;
-  background:#0f172a; color:#e5e7eb;
-}
-header {
-  position:fixed; top:0; left:0; right:0;
-  background:#1e293b; padding:10px 20px; z-index:1000;
-  display:flex; justify-content:space-between; align-items:center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-}
-header a.left-link {
-  font-size:20px; color:#60a5fa; text-decoration:none; font-weight:bold;
-}
-header span.right-title {
-  font-size:18px; color:#fbbf24;
-  font-weight:bold;
-}
-main { padding:100px 20px 20px; max-width:1200px; margin:auto; }
-h2{ font-size:22px; margin:20px 0 10px; color:#a78bfa; border-bottom:1px solid #374151; padding-bottom:5px; }
-h3{ font-size:18px; margin:15px 0 5px; color:#fbbf24; }
-p.intro{ background:#1e293b; padding:15px; border-left:5px solid #60a5fa; line-height:1.6; color:#e5e7eb; }
-ul{ list-style:none; padding:0; margin:10px 0; }
-ul li{ margin:5px 0; }
-ul li a{
-  color:#60a5fa; text-decoration:none; padding:5px 10px; display:inline-block;
-  border-radius:4px; transition:0.2s; font-weight:500;
-}
-ul li a:hover{
-  background:#3b82f6; color:#fff;
-}
-table{ width:100%; border-collapse:collapse; margin-bottom:20px; font-size:14px; }
-th, td{ border:1px solid #1f2937; padding:10px; text-align:left; }
-th{ background:#1e293b; color:#60a5fa; }
-td{ background:#1c2536; color:#e5e7eb; }
-.footer{ text-align:center; padding:20px; background:#1e293b; color:#9ca3af; font-size:14px; border-top:1px solid #1f2937; }
-/* 左侧目录栏 */
-.sidebar{
-  position:fixed;
-  top:60px; /* header高度 */
-  left:0;
-  width:220px;
-  bottom:0;
-  background:#020617;
-  padding:20px 10px;
-  overflow-y:auto;
-  border-right:1px solid #1f2937;
-}
-
-.sidebar h3{
-  color:#a78bfa;
-  margin-bottom:10px;
-}
-
-.sidebar a{
-  display:block;
-  color:#60a5fa;
-  text-decoration:none;
-  padding:6px 10px;
-  border-radius:6px;
-  font-size:14px;
-  margin-bottom:4px;
-  transition:0.2s;
-}
-
-.sidebar a:hover{
-  background:#3b82f6;
-  color:#fff;
-}
-
-/* 主体右移 */
-main{
-  margin-left:240px;
-}
-html{
-  scroll-behavior:smooth;
-}
-.sidebar{
-  position:fixed !important;
-  top:60px !important;
-  left:0 !important;
-  width:220px !important;
-  height:calc(100vh - 60px) !important;
-  background:#020617;
-  padding:20px 10px;
-  overflow-y:auto;
-  border-right:1px solid #1f2937;
-  box-sizing:border-box;
-  z-index:999;
-}
-  /* ===== 手机端适配 ===== */
-@media (max-width: 768px){
-
-  /* 目录改为顶部 */
-  .sidebar{
-    position:static !important;
-    width:100% !important;
-    height:auto !important;
-    border-right:none;
-    border-bottom:1px solid #1f2937;
-    margin-bottom:10px;
-  }
-
-  /* 目录横向排列（更像导航） */
-  .sidebar a{
-    display:inline-block;
-    margin:4px;
-    font-size:13px;
-    padding:6px 8px;
-  }
-
-  /* 主体取消左边距 */
-  main{
-    margin-left:0 !important;
-    padding-top:120px; /* 给header+目录留空间 */
-  }
-
-  /* header稍微紧凑一点 */
-  header{
-    flex-wrap:wrap;
-  }
-
-  header span.right-title{
-    width:100%;
-    text-align:center;
-    margin-top:5px;
-  }
-}
-</style>
-<link rel="stylesheet" href="https://hrtos.com/global.css">
-</head>
-<body>
-
-<script src="https://hrtos.com/header.js"></script>
-  <div class="sidebar">
-  <h3>目录</h3>
-  <a href="#home">系统概览</a>
-  <a href="#tasks">1. 任务管理</a>
-  <a href="#priority">2. 优先级管理</a>
-  <a href="#kernel">3. 内核相关</a>
-  <a href="#sync">4. 任务同步</a>
-  <a href="#lock">5. 锁管理</a>
-  <a href="#time">6. 时间管理</a>
-  <a href="#signal">7. 信号管理</a>
-  <a href="#interrupt">8. 中断</a>
-  <a href="#mail">9. 邮箱管理</a>
-  <a href="#myos">10. MyOS</a>
-</div>
-
-<main>
- <h1 style="text-align:center;margin-top:100px;font-size:32px;">
-HRTOS 系统文档
-</h1>
-<!-- 首页 -->
-<section id="home">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HRTOS 系统文档首页</title>
+  
  
-  <h2>系统概览</h2>
-  <p class="intro">
-    HRTOS 是一个基于优先级抢占调度的实时操作系统，支持多任务运行，
-同优先级任务采用时间片轮转机制。
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: rgba(15, 23, 42, 0.72);
+      --surface-strong: #13203a;
+      --surface-hover: #16325f;
+      --border: rgba(148, 163, 184, 0.18);
+      --border-strong: rgba(56, 189, 248, 0.45);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #2563eb;
+      --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
+      --shadow-hover: 0 26px 56px rgba(37, 99, 235, 0.24);
+      --radius: 8px;
+      color-scheme: dark;
+    }
 
-系统提供完整的内核能力，包括中断管理、任务同步、定时器管理、
-进程通信、文件管理、互斥机制以及内存管理等模块。
+    * {
+      box-sizing: border-box;
+    }
 
-在实时性与可靠性方面，HRTOS 支持互斥体优先级继承机制，
-有效避免优先级反转问题；同时对中断处理进行了优化设计，
-将处理器支持的 32 个中断源进行集中管理，显著提升中断可控性，
-并保障任务堆栈安全，同时减少对有限硬件堆栈空间的占用。
+    html {
+      scroll-behavior: smooth;
+    }
 
-系统支持动态优先级调整，任务可灵活进行创建、挂起、就绪与删除，
-并通过内存池机制实现高效的动态内存分配。
-  </p>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.7;
+      position: relative;
+      overflow-x: hidden;
+    }
 
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+      background-size: 28px 28px;
+      opacity: 0.16;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.65), transparent 90%);
+    }
 
-</section>
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
 
-<!-- 任务管理 -->
-<section id="tasks">
-<h2>1. 任务管理</h2>
-<table>
-<tr>
-<th>函数名</th><th>功能</th><th>输入</th><th>返回</th><th>嵌套层</th><th>识别号</th>
-</tr>
-<tr><td>os_task_ready(unsigned char id)</td><td>挂起→就绪</td><td>任务编号</td><td>-1/0</td><td>0</td><td>B007</td></tr>
-<tr><td>os_task_hang(unsigned char id)</td><td>就绪→挂起</td><td>任务编号</td><td>-1/0</td><td>0</td><td>B002</td></tr>
-<tr><td>os_task_function(unsigned char id)</td><td>指定下次运行任务</td><td>任务编号</td><td>-1/0</td><td>0</td><td>B005</td></tr>
-<tr><td>os_task_delete(unsigned char id)</td><td>删除任务</td><td>任务编号</td><td>-1/0</td><td>0</td><td>B104</td></tr>
-<tr><td>os_task_exit()</td><td>退出当前任务</td><td>无</td><td>无</td><td>0</td><td>B003</td></tr>
-<tr><td>os_task_state(unsigned char id)</td><td>查询任务状态</td><td>任务编号</td><td>0~4/-1</td><td>0</td><td>B101</td></tr>
-</table>
-</section>
+    .page {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 104px 0 56px;
+      display: grid;
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
 
-<!-- 优先级 -->
-<section id="priority">
-<h2>2. 优先级管理</h2>
-<table>
-<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th><th>嵌套层</th></tr>
-<tr><td>os_priority_query(unsigned char id)</td><td>查询任务优先级</td><td>任务编号</td><td>0-8/-1</td><td>0</td></tr>
-<tr><td>os_priority_modify(unsigned char id,unsigned char pr)</td><td>修改优先级</td><td>任务编号,目标优先级</td><td>-1/0/编号</td><td>0</td></tr>
-</table>
-</section>
+    .hero {
+      display: grid;
+      gap: 24px;
+      padding: 0 0 12px;
+    }
 
-<!-- 内核相关 -->
-<section id="kernel">
-<h2>3. 内核相关</h2>
-<table>
-<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th><th>嵌套层</th></tr>
-<tr><td>os_rtos(unsigned char id)</td><td>选择任务模式</td><td>0/1</td><td>0/-1</td><td>0</td></tr>
-<tr><td>os_scheduling(unsigned char id)</td><td>选择调度器</td><td>0/1</td><td>0/-1</td><td>0</td></tr>
-<tr><td>os_task(unsigned int addr,unsigned char id,unsigned char pr,unsigned char sd)</td><td>注册任务</td><td>任务地址,编号,优先级,嵌套层</td><td>0/-1</td><td>0</td></tr>
-<tr><td>os_interrupt_exit()</td><td>中断退出</td><td>无</td><td>无</td><td>0</td></tr>
-<tr><td>os_dispatch_id(U8 INTERRUPT_ID)</td><td>选择调度器中断源</td><td>0~31</td><td>0/-1</td><td>0</td></tr>
-</table>
-</section>
+    .hero-label {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.55);
+      color: #bae6fd;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
 
-<!-- 任务同步 -->
-<section id="sync">
-<h2>4. 任务同步</h2>
-<table>
-<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
-<tr><td>os_semaphore(u8 id)</td><td>同步调用</td><td>0~15</td><td>0/-1</td></tr>
-<tr><td>os_semaphore_control(u8 id,u8 x)</td><td>同步控制</td><td>0~15,x</td><td>0/-1</td></tr>
-</table>
-</section>
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2.3rem, 5vw, 4.25rem);
+      line-height: 1.08;
+      font-weight: 700;
+    }
 
-<!-- 锁 -->
-<section id="lock">
-<h2>5. 锁</h2>
-<table>
-<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
-<tr><td>os_lock_init()</td><td>初始化锁</td><td>无</td><td>无</td></tr>
-<tr><td>os_lock(unsigned char i)</td><td>取得锁</td><td>0~7</td><td>0/-1</td></tr>
-<tr><td>os_lock_release(unsigned char id)</td><td>释放锁</td><td>0~7</td><td>0/-1</td></tr>
-</table>
-</section>
+    .hero p {
+      margin: 0;
+      max-width: 860px;
+      font-size: 1.05rem;
+      color: var(--muted);
+    }
 
-<!-- 时间 -->
-<section id="time">
-<h2>6. 时间</h2>
-<table>
-<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
-<tr><td>os_nop()</td><td>短延时</td><td>无</td><td>无</td></tr>
-<tr><td>os_timer_length(unsigned char j,unsigned int i)</td><td>定时器管理</td><td>片数,大小</td><td>0/-1</td></tr>
-<tr><td>os_wait(u8 i,u8 j)</td><td>系统延时</td><td>类型,次数</td><td>0/-1</td></tr>
-<tr><td>os_wait1(u8 i)</td><td>系统延时子集</td><td>片数</td><td>无</td></tr>
-<tr><td>os_wait2(u16 j)</td><td>延时</td><td>时钟数</td><td>无</td></tr>
-</table>
-</section>
+    .section {
+      display: grid;
+      gap: 22px;
+    }
 
-<!-- 信号 -->
-<section id="signal">
-<h2>7. 信号</h2>
-<table>
-<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
-<tr><td>os_event_out(u8 id)</td><td>发送信号</td><td>0~15</td><td>0/-1</td></tr>
-<tr><td>os_event_xy(u8 id)</td><td>查询信号</td><td>0~15</td><td>0/1/-1</td></tr>
-<tr><td>os_event_del(u8 id)</td><td>删除信号</td><td>0~15</td><td>0/-1</td></tr>
-</table>
-</section>
+    .section-header {
+      display: grid;
+      gap: 8px;
+    }
 
-<!-- 中断 -->
-<section id="interrupt">
-<h2>8. 中断</h2>
-<table>
-<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
-<tr><td>os_inter()</td><td>中断编号查询</td><td>无</td><td>编号</td></tr>
-</table>
-</section>
+    .section-header h2 {
+      margin: 0;
+      font-size: clamp(1.45rem, 3vw, 2rem);
+      line-height: 1.2;
+      font-weight: 700;
+    }
 
-<!-- 邮箱 -->
-<section id="mail">
-<h2>9. 邮箱</h2>
-<table>
-<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
-<tr><td>os_news_send(id,oo)</td><td>私有邮箱发送</td><td>0~15,内容</td><td>0/-1</td></tr>
-<tr><td>os_news_send1(id,oo)</td><td>单字节公共邮箱发送</td><td>0~7,内容</td><td>0/-1</td></tr>
-<tr><td>os_news_send2(id,oo)</td><td>双字节公共邮箱发送</td><td>0~7,内容</td><td>0/-1</td></tr>
-<tr><td>os_news_query(id)</td><td>私有邮箱查询</td><td>0~15</td><td>0/-1</td></tr>
-<tr><td>os_news_delete(id)</td><td>私有邮箱清除</td><td>0~15</td><td>0/-1</td></tr>
-</table>
-</section>
+    .section-header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
 
-<!-- MyOS -->
-<section id="myos">
-<h2>10. MyOS</h2>
-<table>
-<tr><th>函数名</th><th>功能</th><th>输入</th><th>返回</th></tr>
-<tr><td>os_operate(u16 addr)</td><td>运行指定函数</td><td>地址</td><td>无</td></tr>
-<tr><td>os_task_id()</td><td>查询当前任务编号</td><td>无</td><td>编号</td></tr>
-<tr><td>os_task_service(u8 id)</td><td>记录下一个运行任务</td><td>任务编号</td><td>无</td></tr>
-<tr><td>os_task_release(u8 id)</td><td>运行任务</td><td>任务编号</td><td>无</td></tr>
-<tr><td>os_task_protect(u8 id)</td><td>保护之前运行任务</td><td>任务编号</td><td>无</td></tr>
-<tr><td>os_select(u8 id)</td><td>选择下一个任务</td><td>当前任务编号</td><td>下一任务编号</td></tr>
-<tr><td>os_inter_sp()</td><td>查询中断堆栈地址</td><td>无</td><td>堆栈地址</td></tr>
-</table>
-</section>
+    .docs-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
 
-<div class="footer">
-版权所有 © 2017 - 2026 HRTOS · 作者：谭舒
-</div>
+    .doc-card {
+      display: grid;
+      gap: 10px;
+      min-height: 166px;
+      padding: 24px 22px;
+      background:
+        linear-gradient(180deg, rgba(30, 41, 59, 0.78), rgba(15, 23, 42, 0.92));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transition:
+        transform 0.22s ease,
+        border-color 0.22s ease,
+        background 0.22s ease,
+        box-shadow 0.22s ease;
+    }
 
-</main>
+    .doc-card:hover,
+    .doc-card:focus-visible {
+      transform: translateY(-8px);
+      border-color: var(--border-strong);
+      background:
+        linear-gradient(180deg, rgba(30, 64, 175, 0.34), rgba(15, 23, 42, 0.96));
+      box-shadow: var(--shadow-hover);
+      outline: none;
+    }
+
+    .doc-card h3 {
+      margin: 0;
+      font-size: 1.16rem;
+      line-height: 1.3;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .doc-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .doc-link {
+      margin-top: auto;
+      color: #7dd3fc;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .myos {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(220px, 0.7fr);
+      gap: 28px;
+      align-items: center;
+      padding: 28px;
+      border: 1px solid rgba(56, 189, 248, 0.18);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(19, 32, 58, 0.9));
+      box-shadow: var(--shadow);
+    }
+
+    .myos h2 {
+      margin: 0 0 12px;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      line-height: 1.2;
+      font-weight: 700;
+    }
+
+    .myos p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .myos-action {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .cta-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 22px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #eff6ff;
+      font-size: 0.98rem;
+      font-weight: 700;
+      box-shadow: 0 14px 32px rgba(37, 99, 235, 0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .cta-button:hover,
+    .cta-button:focus-visible {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 36px rgba(37, 99, 235, 0.34);
+      filter: brightness(1.04);
+      outline: none;
+    }
+
+    .site-footer {
+      padding: 6px 0 0;
+      border-top: 1px solid rgba(148, 163, 184, 0.14);
+      color: #8ea3be;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    @media (max-width: 980px) {
+      .docs-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .myos {
+        grid-template-columns: 1fr;
+      }
+
+      .myos-action {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100% - 28px, 1180px);
+        padding-top: 88px;
+        gap: 48px;
+      }
+
+      .docs-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .doc-card {
+        min-height: 148px;
+        padding: 20px 18px;
+      }
+
+      .myos {
+        padding: 22px 18px;
+      }
+
+      .hero p,
+      .myos p,
+      .section-header p,
+      .doc-card p {
+        font-size: 0.96rem;
+      }
+
+      .site-footer {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://hrtos.com/global.css">
+</head>
+<body data-header="docs">
+   
+  <main class="page">
+    <section class="hero" aria-labelledby="page-title">
+      <span class="hero-label">系统文档首页</span>
+      <h1 id="page-title">HRTOS 实时操作系统文档入口</h1>
+      <p>
+        HRTOS 是面向高可靠嵌入式控制场景构建的实时操作系统，强调确定性响应、可预测调度与清晰的模块边界。本文档首页用于展示系统整体结构，帮助开发者从任务运行、时间驱动、同步协作、并发保护到通信链路等关键层面建立统一认知，并进一步了解扩展能力与示例工程的组织方式，为后续查阅各专题页面提供明确导航。
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="core-modules-title">
+      <div class="section-header">
+        <h2 id="core-modules-title">核心模块</h2>
+        <p>从任务、时间、同步与通信等基础能力切入，快速了解 HRTOS 的核心系统结构。</p>
+      </div>
+      <div class="docs-grid">
+        <a class="doc-card" href="docs/task/index.html">
+          <h3>任务管理</h3>
+          <p>描述任务的创建、状态切换与生命周期组织方式，是理解系统运行模型的基础入口。</p>
+          <span class="doc-link">进入文档</span>
+        </a>
+        <a class="doc-card" href="docs/scheduler/index.html">
+          <h3>调度管理</h3>
+          <p>说明优先级分配原则与调度关系，用于建立任务响应顺序与执行确定性的整体认知。</p>
+          <span class="doc-link">进入文档</span>
+        </a>
+        <a class="doc-card" href="docs/time/index.html">
+          <h3>时间管理</h3>
+          <p>展示系统时基、延时控制与定时驱动相关结构，支撑周期任务与事件节奏管理。</p>
+          <span class="doc-link">进入文档</span>
+        </a>
+        <a class="doc-card" href="docs/memory/index.html">
+          <h3>内存管理</h3>
+          <p>管理系统中动态与静态内存的分配与回收，保障任务运行期间的数据存储与访问安全。</p>
+          <span class="doc-link">进入文档</span>
+        </a>
+        <a class="doc-card" href="docs/creation/index.html">
+          <h3>任务创建</h3>
+          <p>创建并初始化任务控制块与运行环境，用于注册执行单元并纳入系统调度管理。</p>
+          <span class="doc-link">进入文档</span>
+        </a>
+        <a class="doc-card" href="docs/icp/index.html">
+          <h3>通信机制</h3>
+          <p>整理任务间消息传递与数据交换路径，支撑模块解耦与运行阶段的协同通信能力。</p>
+          <span class="doc-link">进入文档</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="myos" aria-labelledby="myos-title">
+      <div>
+        <h2 id="myos-title">MyOS 自调度示例</h2>
+        <p>
+          MyOS 示例页面聚焦自调度流程展示，通过精简场景串联任务创建、运行切换与协同关系，帮助读者以更直观的方式理解内核运行节奏与模块配合。
+        </p>
+      </div>
+      <div class="myos-action">
+        <a class="cta-button" href="docs/myos/index.html">查看示例文档</a>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="extensions-title">
+      <div class="section-header">
+        <h2 id="extensions-title">技术扩展</h2>
+        <p>补充系统运行所依赖的底层支撑能力，覆盖空间规划、资源组织与外部事件响应。</p>
+      </div>
+      <div class="docs-grid">
+        <a class="doc-card" href="docs/AdvancedTopics/stack.html">
+          <h3>堆栈管理</h3>
+          <p>聚焦运行栈空间规划与任务栈组织方式，为系统稳定执行提供基础支撑结构。</p>
+          <span class="doc-link">进入文档</span>
+        </a>
+        <a class="doc-card" href="docs/AdvancedTopics/memory.html">
+          <h3>内存管理</h3>
+          <p>介绍系统资源分配与内存组织策略，帮助理解不同模块对空间使用的协作关系。</p>
+          <span class="doc-link">进入文档</span>
+        </a>
+        <a class="doc-card" href="docs/AdvancedTopics/interrupt.html">
+          <h3>中断系统</h3>
+          <p>说明外设事件与异常响应的处理路径，是建立实时响应机制认知的重要组成部分。</p>
+          <span class="doc-link">进入文档</span>
+        </a>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+    </footer>
+  </main>
+  <script src="https://hrtos.com/header.js"></script>
 </body>
 </html>
