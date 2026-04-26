@@ -33,42 +33,42 @@
 
   <!-- SEO文章页 -->
   <url>
-    <loc>https://hrtos.com/doc/rtos是什么.html</loc>
+    <loc>https://hrtos.com/guide/rtos是什么.html</loc>
     <lastmod>2026-04-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://hrtos.com/doc/任务调度原理.html</loc>
+    <loc>https://hrtos.com/guide/任务调度原理.html</loc>
     <lastmod>2026-04-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://hrtos.com/中断机制解析.html</loc>
+    <loc>https://hrtos.com/guide/中断机制解析.html</loc>
     <lastmod>2026-04-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://hrtos.com/doc/内存管理机制.html</loc>
+    <loc>https://hrtos.com/guide/内存管理机制.html</loc>
     <lastmod>2026-04-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://hrtos.com/doc/信号量互斥锁.html</loc>
+    <loc>https://hrtos.com/guide/信号量互斥锁.html</loc>
     <lastmod>2026-04-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://hrtos.com/doc/时间与定时器.html</loc>
+    <loc>https://hrtos.com/guide/时间与定时器.html</loc>
     <lastmod>2026-04-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
