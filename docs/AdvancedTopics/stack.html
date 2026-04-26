@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>堆栈管理 | HRTOS 内核机制解析</title>
+
+<meta name="description" content="深入解析 HRTOS 堆栈管理机制，包括任务栈组织、SP切换与上下文保护方式，是理解实时操作系统任务运行基础的重要组成部分。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+/* 页脚 */
+.footer{
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>堆栈管理（Stack Management）</h1>
+  <div class="meta">所属模块：内核机制 | 类型：运行基础结构</div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>概述</h2>
+    <p>
+      堆栈管理是实时操作系统中最基础的运行支撑机制之一，
+      用于维护任务执行过程中的函数调用关系、局部变量以及中断现场。
+    </p>
+
+    <p>
+      在 HRTOS 中，每个任务拥有独立的栈空间，
+      系统通过保存与恢复栈指针（SP）实现任务之间的切换，
+      从而保证多个任务能够在同一处理器上安全交替执行。
+    </p>
+  </div>
+
+  <!-- 栈的作用 -->
+  <div class="section">
+    <h2>栈的作用</h2>
+
+    <p>堆栈主要承担以下职责：</p>
+
+    <ul>
+      <li>保存函数调用返回地址</li>
+      <li>存储局部变量与临时数据</li>
+      <li>记录中断发生时的执行现场</li>
+      <li>支撑任务切换时的上下文恢复</li>
+    </ul>
+
+  </div>
+
+  <!-- HRTOS实现机制 -->
+  <div class="section">
+    <h2>HRTOS 中的栈管理机制</h2>
+
+    <p>
+      HRTOS 通过为每个任务维护独立的栈指针，实现轻量级的上下文切换。
+      在任务切换过程中，当前任务的栈指针会被保存，
+      下一个任务的栈指针被恢复，从而继续执行。
+    </p>
+
+    <div class="code">
+OS_JINCHENG_SP[id] = os_sp;   // 保存当前任务栈
+SP = OS_JINCHENG_SP[id];     // 恢复目标任务栈
+    </div>
+
+  </div>
+
+  <!-- 工作流程 -->
+  <div class="section">
+    <h2>任务切换中的栈流程</h2>
+
+    <p>任务切换过程中，堆栈的处理流程如下：</p>
+
+    <ol>
+      <li>当前任务执行中断或主动切换</li>
+      <li>保存当前任务 SP（栈指针）</li>
+      <li>选择下一个可运行任务</li>
+      <li>恢复目标任务的 SP</li>
+      <li>继续执行目标任务</li>
+    </ol>
+
+  </div>
+
+  <!-- 设计特点 -->
+  <div class="section">
+    <h2>设计特点</h2>
+
+    <ul>
+      <li>✔ 每个任务独立栈，互不干扰</li>
+      <li>✔ 切换开销低，仅操作SP寄存器</li>
+      <li>✔ 适用于资源受限的嵌入式系统</li>
+      <li>✔ 结构简单，易于理解与扩展</li>
+    </ul>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      栈空间过小可能导致溢出，影响系统稳定性；建议根据任务复杂度合理分配栈大小。
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

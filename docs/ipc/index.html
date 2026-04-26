@@ -1,0 +1,220 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>通信机制 | HRTOS 系统文档</title>
+<meta name="description" content="HRTOS 通信机制模块说明，涵盖信号量、事件、互斥锁与邮箱通信，实现任务间同步与数据交换。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#f8fafc;
+  line-height:1.6;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:28px;
+  margin-bottom:10px;
+}
+
+.meta{
+  color:#64748b;
+  font-size:14px;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:20px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+  text-align:left;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  color:#2563eb;
+  margin-top:5px;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <h1>通信机制</h1>
+  <div class="meta">模块分类：系统核心 / 更新时间：2026-04-26</div>
+
+  <!-- 模块概述 -->
+  <div class="section">
+    <h2>模块概述</h2>
+    <p>
+      通信机制是 HRTOS 中实现任务间协作与数据交换的核心模块，
+      提供信号量、事件、互斥锁以及邮箱等多种轻量级通信方式。
+    </p>
+
+    <p>
+      该模块在保证系统低资源占用的同时，
+      实现高效的同步控制与任务间通信，适用于嵌入式实时系统。
+    </p>
+  </div>
+
+  <!-- 核心功能 -->
+  <div class="section">
+    <h2>核心功能</h2>
+    <ul>
+      <li>信号量（同步控制 / 资源管理）</li>
+      <li>事件标志（轻量触发机制）</li>
+      <li>互斥锁（临界区保护 / 优先级继承）</li>
+      <li>邮箱通信（任务间数据交换）</li>
+    </ul>
+  </div>
+
+  <!-- API 列表 -->
+  <div class="section">
+    <h2>相关 API</h2>
+
+    <table class="table">
+      <tr>
+        <th>类别</th>
+        <th>函数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>信号量</td>
+        <td>os_sem_init / os_sem_take / os_sem_give</td>
+        <td>资源计数与任务同步</td>
+      </tr>
+
+      <tr>
+        <td>事件</td>
+        <td>os_event_set / os_event_get / os_event_clear</td>
+        <td>事件触发与状态检测</td>
+      </tr>
+
+      <tr>
+        <td>互斥锁</td>
+        <td>os_mutex_init / os_mutex_lock / os_mutex_unlock</td>
+        <td>临界区保护与优先级继承</td>
+      </tr>
+
+      <tr>
+        <td>邮箱</td>
+        <td>os_mail_send / os_mail_recv / os_mail_clear</td>
+        <td>任务间数据通信</td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 示例代码 -->
+  <div class="section">
+    <h2>示例代码</h2>
+
+    <div class="code">
+void task1()
+{
+    while(1)
+    {
+        // 等待信号量
+        os_sem_take(0);
+
+        // 临界区
+        os_mutex_lock(0);
+
+        // 处理数据
+        os_mail_send(0, 123);
+
+        os_mutex_unlock(0);
+
+        // 释放信号量
+        os_sem_give(0);
+    }
+}
+    </div>
+  </div>
+
+  <!-- 扩展阅读 -->
+  <div class="section">
+    <h2>扩展阅读</h2>
+
+    <div class="link-box">
+      <a href="../scheduler/index.html">调度管理</a>
+      <a href="../task/index.html">任务管理</a>
+      <a href="../time/index.html">时间管理</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

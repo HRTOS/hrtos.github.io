@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>中断系统 | HRTOS 内核机制解析</title>
+
+<meta name="description" content="解析 HRTOS 中断系统实现机制，包括中断触发、任务切换与调度响应流程，是理解实时操作系统实时性的关键基础。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+/* 页脚 */
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>中断系统（Interrupt System）</h1>
+  <div class="meta">所属模块：内核机制 | 类型：实时响应</div>
+
+  <!-- 概述 -->
+  <div class="section">
+    <h2>概述</h2>
+    <p>
+      中断系统是实时操作系统实现快速响应的核心机制，
+      用于在外部事件或定时触发时打断当前任务执行，
+      并转入特定处理流程。
+    </p>
+
+    <p>
+      在 HRTOS 中，中断不仅用于处理外设事件，
+      同时也是任务调度的重要触发方式，
+      尤其是基于定时器的时间片调度。
+    </p>
+  </div>
+
+  <!-- 中断作用 -->
+  <div class="section">
+    <h2>中断的作用</h2>
+
+    <ul>
+      <li>✔ 响应外设事件（如IO、通信）</li>
+      <li>✔ 驱动任务调度（定时器中断）</li>
+      <li>✔ 实现时间片切换</li>
+      <li>✔ 保证系统实时性</li>
+    </ul>
+
+  </div>
+
+  <!-- HRTOS实现 -->
+  <div class="section">
+    <h2>HRTOS 中断处理机制</h2>
+
+    <p>
+      HRTOS 通过统一的中断入口函数对不同中断进行分发，
+      并在定时器中断中执行任务切换逻辑。
+    </p>
+
+    <div class="code">
+i = os_inter(); // 获取中断号
+
+if(i == 1) // 定时器中断（调度核心）
+{
+    TF0 = 0;
+    TH0 = 0;
+    TL0 = 0;
+
+    i = os_task_id();
+    os_task_protect(i);
+
+    i = os_select(i);
+    os_task_release(i);
+}
+else
+{
+    if(i) i--;
+    os_operate(my_inter[i]);
+}
+    </div>
+
+  </div>
+
+  <!-- 工作流程 -->
+  <div class="section">
+    <h2>中断触发与调度流程</h2>
+
+    <ol>
+      <li>定时器或外设触发中断</li>
+      <li>进入统一中断入口</li>
+      <li>判断中断类型</li>
+      <li>若为定时器 → 执行任务切换</li>
+      <li>若为外设 → 调用对应处理函数</li>
+    </ol>
+
+  </div>
+
+  <!-- 与调度关系 -->
+  <div class="section">
+    <h2>与任务调度的关系</h2>
+
+    <p>
+      中断系统与任务调度紧密耦合，
+      调度器通常由定时器中断驱动，
+      从而实现周期性任务切换。
+    </p>
+
+    <p>
+      这种设计保证了系统能够在固定时间片内切换任务，
+      同时兼顾实时性与执行效率。
+    </p>
+
+  </div>
+
+  <!-- 设计特点 -->
+  <div class="section">
+    <h2>设计特点</h2>
+
+    <ul>
+      <li>✔ 中断统一入口，结构清晰</li>
+      <li>✔ 调度逻辑集中在定时器中断</li>
+      <li>✔ 支持多中断源扩展</li>
+      <li>✔ 响应速度快，适合实时系统</li>
+    </ul>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      中断处理应尽量简短，避免在中断中执行耗时操作，以免影响系统实时性与调度效率。
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

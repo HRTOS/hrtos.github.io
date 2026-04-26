@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>HRTOS 技术扩展 | 内核机制与系统设计解析</title>
+
+<meta name="description" content="HRTOS 技术扩展文档，深入解析堆栈管理、内存管理与中断系统等核心机制，帮助理解实时操作系统内核设计与运行原理。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#0f172a;
+  color:#e2e8f0;
+}
+
+.container{
+  max-width:1100px;
+  margin:80px auto 40px;
+  padding:20px;
+}
+
+/* 标题区 */
+.hero{
+  margin-bottom:40px;
+}
+
+.hero h1{
+  font-size:32px;
+  margin-bottom:10px;
+}
+
+.hero p{
+  color:#94a3b8;
+  line-height:1.6;
+  max-width:700px;
+}
+
+/* 卡片布局 */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(280px,1fr));
+  gap:20px;
+}
+
+/* 卡片样式 */
+.doc-card{
+  display:block;
+  background:#111827;
+  padding:20px;
+  border-radius:10px;
+  text-decoration:none;
+  color:#e2e8f0;
+  border:1px solid #1e293b;
+  transition:0.2s;
+}
+
+.doc-card:hover{
+  border-color:#38bdf8;
+  transform:translateY(-3px);
+}
+
+.doc-card h3{
+  margin-top:0;
+  color:#38bdf8;
+}
+
+.doc-card p{
+  font-size:14px;
+  color:#94a3b8;
+  line-height:1.6;
+}
+
+.doc-link{
+  display:inline-block;
+  margin-top:10px;
+  color:#38bdf8;
+  font-size:13px;
+}
+
+/* 页脚 */
+.footer{
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+
+</head>
+
+<body data-header="docs">
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <div class="hero">
+    <h1>技术扩展 / Advanced Topics</h1>
+    <p>
+      本模块围绕 HRTOS 内核关键机制展开，重点分析堆栈组织、内存管理与中断响应流程，
+      帮助开发者从实现角度理解实时操作系统的运行逻辑与资源调度方式。
+    </p>
+  </div>
+
+  <!-- 卡片 -->
+  <div class="grid">
+
+    <a class="doc-card" href="docs/AdvancedTopics/stack.html"> 
+      <h3>堆栈管理</h3>
+      <p>聚焦运行栈空间规划与任务栈组织方式，为系统稳定执行提供基础支撑结构。</p>
+      <span class="doc-link">进入文档 →</span>
+    </a>
+
+    <a class="doc-card" href="docs/AdvancedTopics/memory.html">
+      <h3>内存管理</h3>
+      <p>介绍系统资源分配与内存组织策略，帮助理解不同模块对空间使用的协作关系。</p>
+      <span class="doc-link">进入文档 →</span>
+    </a>
+
+    <a class="doc-card" href="docs/AdvancedTopics/interrupt.html">
+      <h3>中断系统</h3>
+      <p>说明外设事件与异常响应的处理路径，是建立实时响应机制认知的重要组成部分。</p>
+      <span class="doc-link">进入文档 →</span>
+    </a>
+
+  </div>
+
+</div>
+
+<div class="footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>内存管理 | HRTOS 内核机制解析</title>
+
+<meta name="description" content="解析 HRTOS 内存管理机制，包括任务数据存储、资源分配策略与空间使用方式，帮助理解嵌入式系统中内存组织与调度协作关系。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+/* 👇 别忘了页脚CSS */
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div>
+
+  <!-- 标题 -->
+  <h1>内存管理（Memory Management）</h1>
+  <div class="meta">所属模块：内核机制 | 类型：资源管理</div>
+
+  <!-- 概述 -->
+  <div class="section">
+    <h2>概述</h2>
+    <p>
+      内存管理是实时操作系统中用于组织与分配运行资源的重要机制，
+      负责协调任务执行过程中对数据空间的使用与访问。
+    </p>
+
+    <p>
+      在 HRTOS 中，内存管理采用轻量级设计，
+      主要通过静态分配与结构化数组实现资源管理，
+      以降低运行开销并提高系统稳定性。
+    </p>
+  </div>
+
+  <!-- 设计思路 -->
+  <div class="section">
+    <h2>设计思路</h2>
+
+    <p>
+      HRTOS 并未采用复杂的动态内存分配算法，
+      而是通过预先分配的数据结构来管理系统资源，
+      从而避免碎片化问题并提升实时性。
+    </p>
+
+    <ul>
+      <li>✔ 静态分配为主，减少运行时开销</li>
+      <li>✔ 使用数组管理任务相关数据</li>
+      <li>✔ 避免频繁申请/释放内存带来的不确定性</li>
+    </ul>
+
+  </div>
+
+  <!-- 核心数据结构 -->
+  <div class="section">
+    <h2>核心数据结构</h2>
+
+    <p>
+      系统通过多个全局数组维护任务状态与运行数据，
+      这些结构共同构成内存管理的基础。
+    </p>
+
+    <div class="code">
+OS_JINCHENG_SP[]   // 各任务栈指针存储
+OS_WAIT_DI[]       // 任务延时计数
+OS_PEOCESS_OK[]    // 任务就绪状态标志
+    </div>
+
+    <p>
+      每个数组对应不同类型的系统资源，
+      在任务调度与执行过程中被统一管理。
+    </p>
+
+  </div>
+
+  <!-- 工作机制 -->
+  <div class="section">
+    <h2>工作机制</h2>
+
+    <p>内存管理在系统中的典型工作流程如下：</p>
+
+    <ol>
+      <li>系统初始化时分配各类全局资源</li>
+      <li>任务创建时分配对应的数据存储区域</li>
+      <li>任务运行过程中访问自身数据</li>
+      <li>调度器根据状态更新资源内容</li>
+    </ol>
+
+  </div>
+
+  <!-- 与调度关系 -->
+  <div class="section">
+    <h2>与任务调度的关系</h2>
+
+    <p>
+      内存管理与任务调度密切相关，
+      调度器通过访问任务状态数组判断任务是否可运行，
+      并结合延时计数与资源状态实现调度决策。
+    </p>
+
+  </div>
+
+  <!-- 设计特点 -->
+  <div class="section">
+    <h2>设计特点</h2>
+
+    <ul>
+      <li>✔ 结构简单，易于实现</li>
+      <li>✔ 无动态分配，实时性更强</li>
+      <li>✔ 适合资源受限的嵌入式系统</li>
+      <li>✔ 与调度系统紧密耦合</li>
+    </ul>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      静态内存分配虽然稳定，但灵活性较低，设计时需合理规划资源规模，避免空间浪费或不足。
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

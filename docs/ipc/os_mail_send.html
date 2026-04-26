@@ -1,0 +1,263 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_mail_send | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_mail_send，用于向指定邮箱发送数据，支持私有邮箱、公共邮箱及16位扩展邮箱通信。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_mail_send</h1>
+  <div class="meta">所属模块：通信机制 | 类型：邮箱发送函数</div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+    <p>
+      os_mail_send 用于向指定邮箱写入数据，
+      支持私有邮箱（8bit）、公共邮箱（8bit）以及扩展邮箱（16bit）。
+    </p>
+
+    <p>
+      该接口为非阻塞发送，适用于任务间轻量级数据通信。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+    <div class="code">
+char os_mail_send(u8 id, u16 data);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>id</td>
+        <td>邮箱ID（自动区分私有 / 公共 / 扩展邮箱）</td>
+      </tr>
+
+      <tr>
+        <td>data</td>
+        <td>发送的数据（16位）</td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+    <p>
+      0 表示成功，-1 表示邮箱ID非法。
+    </p>
+  </div>
+
+  <!-- 源码 -->
+  <div class="section">
+    <h2>源码实现</h2>
+
+    <div class="code">
+char os_mail_send(u8 id, u16 data)
+{
+    if(id &lt; OS_INFORMATION_PRIVATE)
+    {
+        OS_INFORMATION[id] = (u8)data;
+        return 0;
+    }
+
+    id -= OS_INFORMATION_PRIVATE;
+
+    if(id &lt; OS_INFORMATION_PUBLIC)
+    {
+        OS_INFORMATION_COMMON[id] = (u8)data;
+        return 0;
+    }
+
+    id -= OS_INFORMATION_PUBLIC;
+
+    if(id &lt; OS_INFORMATION_PUBLIC2)
+    {
+        OS_INFORMATION_COMMON2[id] = data;
+        return 0;
+    }
+
+    return -1;
+}
+    </div>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void task_sender()
+{
+    while(1)
+    {
+        os_mail_send(0, 123);
+    }
+}
+
+void task_receiver()
+{
+    int data;
+
+    while(1)
+    {
+        data = os_mail_recv(0);
+
+        if(data != 0)
+        {
+            // 处理数据
+            os_mail_clear(0);
+        }
+    }
+}
+    </div>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      邮箱为单值结构，新数据会覆盖旧数据，如需队列请自行扩展实现。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="os_mail_recv.html">读取消息</a>
+      <a href="os_mail_clear.html">清除邮箱</a>
+      <a href="../scheduler/os_switch.html">任务调度核心</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

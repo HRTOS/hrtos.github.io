@@ -1,0 +1,257 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_rtos | HRTOS API 文档</title>
+<meta name="description" content="HRTOS 核心函数 os_rtos 详解，用于开启或关闭RTOS调度模式，包含时间补偿机制与运行模式切换原理，是系统控制关键接口。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{font-size:26px;}
+
+.meta{color:#64748b;margin-bottom:20px;}
+
+.section{margin-top:30px;}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;  /* ⭐关键 */
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_rtos</h1>
+  <div class="meta">所属模块：调度管理 | 类型：系统控制函数</div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+    <p>
+      os_rtos 是 HRTOS 中用于控制系统运行模式的核心函数，
+      可在“普通模式（非RTOS）”与“实时调度模式（RTOS）”之间进行切换。
+    </p>
+
+    <p>
+      在普通模式下，系统按照单线程或简单循环方式运行；
+      在 RTOS 模式下，调度器接管 CPU，通过任务切换实现多任务并发执行。
+      该函数同时内置时间补偿机制，用于保证模式切换过程中系统时间的连续性与准确性。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+    <div class="code">
+char os_rtos(unsigned char id);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>id</td>
+        <td>
+          0：关闭RTOS（进入普通模式）<br>
+          1：开启RTOS（进入实时调度模式）
+        </td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+    <p>
+      0 表示切换成功，-1 表示当前状态与目标状态不匹配（例如重复开启或关闭）。
+    </p>
+  </div>
+
+  <!-- 核心机制 -->
+  <div class="section">
+    <h2>核心机制解析</h2>
+
+    <p><b>1. 状态判断机制</b></p>
+    <p>
+      函数首先判断当前 RTOS 状态，仅在状态变化时才执行切换，
+      避免重复操作带来的系统不一致问题。
+    </p>
+
+    <p><b>2. 时间片备份机制</b></p>
+    <p>
+      在关闭 RTOS 时，系统会保存当前时间片（OS_TIME_ONCE），
+      用于后续恢复，确保时间连续。
+    </p>
+
+    <p><b>3. 时间补偿机制（核心）</b></p>
+    <p>
+      在重新开启 RTOS 时，系统会通过以下方式修正时间偏移：
+    </p>
+
+    <div class="code">
+OS_TIME_XY += (OS_TIME_ONCE_BF - OS_TIME_ONCE);
+OS_TIME_ONCE = OS_TIME_ONCE_BF;
+    </div>
+
+    <p>
+      该机制可以有效避免模式切换导致的时间跳变问题，
+      保证定时器、延时任务等逻辑正常运行。
+    </p>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void main()
+{
+    // 启动RTOS调度
+    os_rtos(1);
+
+    while(1)
+    {
+        // 系统运行
+    }
+}
+    </div>
+  </div>
+
+  <!-- 使用场景 -->
+  <div class="section">
+    <h2>典型使用场景</h2>
+
+    <ul>
+      <li>系统初始化阶段开启 RTOS</li>
+      <li>调试阶段临时关闭调度器</li>
+      <li>低功耗模式下暂停任务调度</li>
+    </ul>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      不建议频繁切换 RTOS 模式，否则可能导致系统时间误差累积。
+    </div>
+
+    <div class="note">
+      在关闭 RTOS 时，所有任务调度将暂停，需确保系统仍可正常运行。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="./os_switch.html">os_switch（任务切换）</a>
+      <a href="./os_scheduling.html">os_scheduling（调度策略）</a>
+      <a href="../scheduler/index.html">调度管理模块</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>
