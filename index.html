@@ -367,22 +367,77 @@ pre.code::-webkit-scrollbar{
 </div>
 
 <!-- 内存分配表 -->
+<!-- 内存分配表（高级科技表格版） -->
 <div class="section" id="memory">
   <div class="panel">
     <div class="card" style="grid-column:1/-1">
-      <h3>片内随机存储器分配表</h3>
-      <table>
-        <thead><tr><th>地址</th><th>功能</th><th>描述</th></tr></thead>
-        <tbody>
-          <tr><td>0~31</td><td>四个工作组</td><td>由状态寄存器（PSW）决定当前使用哪组工作寄存器</td></tr>
-          <tr><td>32~33</td><td>位数据</td><td>系统定义位变量所在地址区域</td></tr>
-          <tr><td>34~38</td><td>系统堆栈</td><td>HRTOS 内核堆栈</td></tr>
-          <tr><td>39~42</td><td>中断堆栈</td><td>中断服务程序所用堆栈</td></tr>
-          <tr><td>43~106</td><td>程序堆栈区</td><td>用户程序堆栈区域</td></tr>
-          <tr><td>107~123</td><td>程序数据区</td><td>用户自定义</td></tr>
-          <tr><td>124~127</td><td>系统数据区</td><td>系统变量</td></tr>
-        </tbody>
-      </table>
+      <h3>片内存储器分配结构</h3>
+
+      <div style="overflow-x:auto; margin-top:20px;">
+        <table style="
+          width:100%;
+          border-collapse:collapse;
+          min-width:700px;
+          background:#0f172a;
+          border-radius:12px;
+          overflow:hidden;
+        ">
+
+          <thead>
+            <tr>
+              <th>地址区间</th>
+              <th>功能模块</th>
+              <th>系统说明</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>0 ~ 31</td>
+              <td>工作寄存器组</td>
+              <td>四组寄存器空间，由 PSW 切换当前运行组</td>
+            </tr>
+
+            <tr>
+              <td>32 ~ 33</td>
+              <td>位寻址区</td>
+              <td>系统位变量存储区域，用于状态与标志控制</td>
+            </tr>
+
+            <tr>
+              <td>34 ~ 38</td>
+              <td>内核堆栈</td>
+              <td>系统核心运行栈，用于调度与内核执行</td>
+            </tr>
+
+            <tr>
+              <td>39 ~ 42</td>
+              <td>中断堆栈</td>
+              <td>独立中断栈空间，保证中断上下文隔离</td>
+            </tr>
+
+            <tr>
+              <td>43 ~ 106</td>
+              <td>任务堆栈区</td>
+              <td>多任务运行栈空间，用于上下文切换保存</td>
+            </tr>
+
+            <tr>
+              <td>107 ~ 123</td>
+              <td>用户数据区</td>
+              <td>应用层数据存储空间，可自由扩展</td>
+            </tr>
+
+            <tr>
+              <td>124 ~ 127</td>
+              <td>系统保留区</td>
+              <td>内核关键变量与系统控制信息</td>
+            </tr>
+          </tbody>
+
+        </table>
+      </div>
+
     </div>
   </div>
 </div>
