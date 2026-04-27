@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>RTOS 学习路线 | HRTOS</title>
+<meta name="description" content="RTOS 实时操作系统完整学习路径，涵盖调度、中断、内存、同步与定时器机制。">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{margin:0;background:#0a0f1f;color:#e5e7eb;font-family:"Segoe UI","Microsoft YaHei",sans-serif;}
+
+.hero{text-align:center;padding:120px 20px 60px;}
+.hero h1{font-size:48px;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero p{margin-top:20px;color:#9ca3af;}
+
+.container{max-width:1100px;margin:auto;padding:20px;}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:20px;
+  margin-top:40px;
+}
+
+.card{
+  background:#0f172a;
+  padding:20px;
+  border-radius:12px;
+  border:1px solid #1f2937;
+}
+
+.card h3{color:#60a5fa;}
+.card p{color:#9ca3af;font-size:14px;line-height:1.6;}
+
+.btn{
+  display:inline-block;
+  margin-top:10px;
+  color:#60a5fa;
+  text-decoration:none;
+}
+
+.footer{
+  text-align:center;
+  padding:30px;
+  margin-top:60px;
+  border-top:1px solid #1f2937;
+  color:#6b7280;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<div id="header"></div>
+
+<section class="hero">
+  <h1>RTOS 学习路线</h1>
+  <p>系统掌握实时操作系统核心原理</p>
+</section>
+
+<div class="container">
+  <div class="grid" id="card-container"></div>
+</div>
+
+<div class="footer">
+版权所有 © 2017 - 2026 HRTOS · 作者：谭舒
+</div>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<script>
+// ===== 可扩展数据源（核心）=====
+const pages = [
+  {
+    title: "RTOS 是什么（入门必读）",
+    desc: "RTOS完整入门指南，建立嵌入式系统认知体系。",
+    url: "https://hrtos.com/guide/rtos是什么.html"
+  },
+  {
+    title: "任务调度原理（核心机制）",
+    desc: "解析优先级抢占与调度算法。",
+    url: "https://hrtos.com/guide/任务调度原理.html"
+  },
+  {
+    title: "中断机制解析（实时核心）",
+    desc: "理解中断响应与上下文切换。",
+    url: "https://hrtos.com/guide/中断机制解析.html"
+  },
+  {
+    title: "内存管理机制（稳定基础）",
+    desc: "掌握内存池与碎片控制。",
+    url: "https://hrtos.com/guide/内存管理机制.html"
+  },
+  {
+    title: "信号量与互斥锁（并发控制）",
+    desc: "解决同步与资源竞争问题。",
+    url: "https://hrtos.com/guide/信号量互斥锁.html"
+  },
+  {
+    title: "时间与定时器（调度基础）",
+    desc: "理解Tick与定时任务机制。",
+    url: "https://hrtos.com/guide/时间与定时器.html"
+  }
+];
+
+// ===== 渲染函数 =====
+const container = document.getElementById("card-container");
+
+pages.forEach(p => {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  card.innerHTML = `
+    <h3>${p.title}</h3>
+    <p>${p.desc}</p>
+    <a href="${p.url}" class="btn">阅读详解 →</a>
+  `;
+
+  container.appendChild(card);
+});
+</script>
+
+</body>
+</html>
