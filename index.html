@@ -285,10 +285,11 @@ pre.code{
   overflow:auto;
 }
 pre.code{
-  overflow-x:auto;
+  max-width:100%;
+overflow-x:auto;
   overflow-y:auto;
   max-height:400px;
-
+white-space:pre; /* PC保持原样 */
   /* 隐藏滚动条 - 通用 */
   scrollbar-width: none;        /* Firefox */
   -ms-overflow-style: none;     /* IE/旧Edge */
@@ -298,7 +299,12 @@ pre.code{
 pre.code::-webkit-scrollbar{
   display: none;
 }
-
+@media (max-width:640px){
+  pre.code{
+    white-space:pre-wrap;   /* ✅ 手机自动换行 */
+    word-break:break-word;  /* 防止超长字符串撑爆 */
+  }
+}
 </style>
 </head>
 <body>
