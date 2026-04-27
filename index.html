@@ -276,7 +276,28 @@ pre.code .type{color:#f472b6; font-weight:500;}
 	table{
   max-width:100%;
 }
+.card{
+  overflow:visible;
+}
 
+pre.code{
+  max-height:400px;
+  overflow:auto;
+}
+pre.code{
+  overflow-x:auto;
+  overflow-y:auto;
+  max-height:400px;
+
+  /* 隐藏滚动条 - 通用 */
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE/旧Edge */
+}
+
+/* Chrome / Safari / Edge */
+pre.code::-webkit-scrollbar{
+  display: none;
+}
 
 </style>
 </head>
