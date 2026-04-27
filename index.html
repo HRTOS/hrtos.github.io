@@ -98,10 +98,17 @@ a.btn:hover{background:#6366f1;}
 }
 
 .card{
-  background:#0f172a; border-radius:14px; padding:24px;
-  border:1px solid #1f2937; transition:0.5s;
+  background:#0f172a;
+  border-radius:14px;
+  padding:24px;
+  border:1px solid #1f2937;
+  transition:0.5s;
   box-shadow:0 5px 15px rgba(0,0,0,0.3);
-  opacity:0; transform:translateY(30px);
+
+  opacity:0;
+  transform:translateY(30px);
+
+  overflow:hidden; /* ✅ 保留这个 */
 }
 .card h3{margin-bottom:12px;color:#60a5fa;}
 .card p{
@@ -129,38 +136,51 @@ pre.code{
   color:#e5e7eb;
   padding:20px;
   border-radius:16px;
-  overflow-x:auto;
-  font-family:'Fira Code', Consolas, monospace;
+
+  font-family:'Fira Code', Consolas, 'Courier New', monospace;
   font-size:13px;
   line-height:1.7;
 
   border:1px solid rgba(255,255,255,0.05);
   box-shadow:0 10px 30px rgba(0,0,0,0.4);
 
+  /* ✅ 核心：横向滚动 */
+  overflow-x:auto;
+  overflow-y:hidden;
+  max-width:100%;
+  white-space:pre;
+
   position:relative;
 }
+
 pre.code{
-  white-space: pre;
-  overflow-x: auto;
-  max-width: 100%;
+  position:relative;
+  overflow-x:auto;
+  white-space:pre;
 }
 
-.card{
-  overflow: visible;
-}
-/* 顶部“编辑器栏”效果 */
+/* 左侧渐隐 */
 pre.code::before{
   content:"";
   position:absolute;
-  top:10px;
-  left:12px;
-  width:10px;
-  height:10px;
-  background:#ef4444;
-  border-radius:50%;
-  box-shadow:
-    18px 0 0 #facc15,
-    36px 0 0 #22c55e;
+  top:0;
+  left:0;
+  width:40px;
+  height:100%;
+  pointer-events:none;
+  background:linear-gradient(to right, rgba(2,6,23,1), transparent);
+}
+
+/* 右侧渐隐 */
+pre.code::after{
+  content:"";
+  position:absolute;
+  top:0;
+  right:0;
+  width:60px;
+  height:100%;
+  pointer-events:none;
+  background:linear-gradient(to left, rgba(2,6,23,1), transparent);
 }
 pre.code .keyword{color:#60a5fa; font-weight:600;}
 pre.code .macro{color:#facc15; font-weight:600;}
@@ -236,9 +256,7 @@ pre.code .type{color:#f472b6; font-weight:500;}
   }
 
 /* 表格防溢出（修正版） */
-#memory .card{
-  overflow-x:auto;
-}
+
 #memory .card{
   width:100%;
   overflow-x:auto;
@@ -261,69 +279,8 @@ pre.code .type{color:#f472b6; font-weight:500;}
 	table{
   max-width:100%;
 }
-/* ===== GitHub 风格滚动渐隐（最终稳定版）===== */
 
-/* 只作用于这两个区域 */
-#memory .card,
-pre.code{
-  position:relative;
-  overflow-x:auto;
-}
 
-/* 顶部 subtle 分割线 */
-#memory .card::before,
-pre.code::before{
-  content:"";
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
-  height:1px;
-  background:linear-gradient(to right, transparent, #374151, transparent);
-  opacity:0.5;
-  pointer-events:none;
-}
-
-/* 左右渐隐 */
-#memory .card::after,
-pre.code::after{
-  content:"";
-  position:absolute;
-  top:0;
-  right:0;
-  width:40px;
-  height:100%;
-  background:linear-gradient(to left, rgba(2,6,23,0.9), transparent);
-  opacity:0;
-  transition:opacity 0.2s;
-  pointer-events:none;
-}
-
-#memory .card::before,
-pre.code::before{
-  z-index:2;
-}
-
-/* 左渐隐（额外一层） */
-.scroll-left::after{
-  left:0;
-  right:auto;
-  background:linear-gradient(to right, rgba(2,6,23,0.9), transparent);
-}
-
-/* hover 才显示 */
-#memory .card:hover::after,
-pre.code:hover::after{
-  opacity:1;
-}
-
-/* 手机端常显 */
-@media(max-width:640px){
-  #memory .card::after,
-  pre.code::after{
-    opacity:1;
-  }
-}
 </style>
 </head>
 <body>
@@ -482,197 +439,237 @@ RTOS 核心知识体系
   </div>
 </div>
 <!-- 代码示例 -->
-<div class="section" id="code">
+<div class="section" id="code0">
   <div class="panel">
     <div class="card" style="grid-column:1/-1">
-      <h3>迷你版（代码示例）</h3>
-      <pre class="code">#include&lt;myos.h&gt;
-#include&lt;reg52.h&gt;
-u16 my_inter[10]; // 中断地址
-void os_slab_ov(){}
-volatile void my_os()
+      <h3>任务调度核心（Preemptive Scheduler）</h3>
+      <pre class="code">
+<span class="comment">// ===============================</span>
+<span class="comment">// RTOS 核心调度器（优先级抢占）</span>
+<span class="comment">// ===============================</span>
+
+typedef struct
 {
-    U8 i;
-    i = os_inter(); // 中断号
-    if(i==1) // t0 内核
-    {		
-        TF0=0;
-        TH0=0;
-        TL0=0;
-        i=os_task_id(); // 运行编号
-        os_task_protect(i); // 保护任务
-        i=os_select(i); // 指定任务
-        os_task_release(i); // 运行任务
+    uint8_t  priority;     <span class="comment">// 优先级（0最高）</span>
+    uint8_t  state;        <span class="comment">// 任务状态</span>
+    uint16_t *sp;          <span class="comment">// 栈指针</span>
+} os_tcb_t;
+
+extern os_tcb_t os_task_table[MAX_TASK];
+extern uint8_t  current_task;
+extern uint8_t  ready_bitmap;
+
+<span class="comment">// 查找最高优先级就绪任务（位图优化）</span>
+static uint8_t os_find_highest_ready(void)
+{
+    uint8_t i;
+
+    for(i = 0; i &lt; MAX_TASK; i++)
+    {
+        if(ready_bitmap &amp; (1 &lt;&lt; i))
+        {
+            return i;
+        }
+    }
+
+    return IDLE_TASK;
+}
+
+<span class="comment">// 核心调度入口</span>
+void os_schedule(void)
+{
+    uint8_t next;
+
+    DISABLE_INT();
+
+    <span class="comment">// 获取最高优先级任务</span>
+    next = os_find_highest_ready();
+
+    <span class="comment">// 判断是否需要切换</span>
+    if(next != current_task)
+    {
+        <span class="comment">// 保存当前任务上下文</span>
+        os_save_context(current_task);
+
+        <span class="comment">// 更新当前任务</span>
+        current_task = next;
+
+        <span class="comment">// 恢复目标任务上下文</span>
+        os_restore_context(current_task);
+    }
+
+    ENABLE_INT();
+}
+
+<span class="comment">// 调度触发（用于中断或系统调用）</span>
+void os_schedule_request(void)
+{
+    if(!in_interrupt)
+    {
+        os_schedule();
     }
     else
     {
-        if(i){i--;} // 不是INT0减一
-        os_operate(my_inter[i]);
+        <span class="comment">// 延迟到中断退出再调度</span>
+        need_schedule = 1;
     }
 }
-void hrtos_main()
-{
-    EA=0;
-    os_task(my_os,15,9,0); 
-    os_task(my_main,1,1,2); 
-    EA=1;
-    while(1);
-}
-      </pre>
+</pre>
     </div>
   </div>
 </div>
 
 <!-- 代码示例 -->
-<div class="section" id="code">
+<div class="section" id="code1">
   <div class="panel">
     <div class="card" style="grid-column:1/-1">
-      <h3>任务创建与删除（代码示例）</h3>
-      <pre class="code">#include&lt;hrtos.h&gt;
-#include&lt;reg52.h&gt;
-#define HRTOS_LED P0
-sbit HRTOS_K=P3^2;
-sbit HRTOS_K1=P3^3;
-sbit HRTOS_K2=P3^4;
-extern char os_task_sp(u8 id);
-extern unsigned char xdata OS_MEMORY[4];
-void os_slab_ov(){}
-void task1()
+  <h3>任务生命周期管理（Task Lifecycle）</h3>
+
+<pre class="code">
+#include &lt;hrtos.h&gt;
+#include &lt;reg52.h&gt;
+
+/* ===== 任务控制块示意 ===== */
+typedef struct {
+    void (*entry)(void);
+    u8 priority;
+    u8 state;
+    u16 *sp;
+} os_tcb_t;
+
+/* ===== 任务函数 ===== */
+void task_led()
 {
-	while(1);
+    while(1)
+    {
+        P0 ^= 0xFF;
+        os_delay(10);
+    }
 }
-void task2()
+
+void task_monitor()
 {
-	while(1)P0=0;
+    while(1)
+    {
+        /* 系统状态监控 */
+        if(os_task_state(1) == OS_BLOCKED)
+        {
+            os_task_ready(1);
+        }
+        os_delay(5);
+    }
 }
-void task3()
-{
-	while(1);
-}
-void task5()
-{
-	while(1);
-}
-void task4()
-{
-	u8 i;
-	EA=0;
-	i=os_task_sp(1);
-	HRTOS_LED=i;
-	while(HRTOS_K);
-	os_task_delete(1);
-	os_task(task1,16,8,1);
-	os_task(task5,5,2,2);
-	i=os_task_sp(16);
-	HRTOS_LED=i;
-	while(1);
-}
+
+/* ===== 初始化入口 ===== */
 void hrtos_main()
 {
-	EA=0;
-	os_task(task2,1,1,1);
-	os_task(task4,3,2,2);
-	os_task(task3,17,8,2);
-	os_task_hang(17);
-	os_task_hang(16);
-	EA=1;
-	while(1);
+    EA = 0;
+
+    /* 创建任务（入口 + 优先级 + 栈大小 + ID） */
+    os_task(task_led,     1,  8, 1);
+    os_task(task_monitor, 2,  6, 2);
+
+    /* 挂起低优先级任务 */
+    os_task_hang(2);
+
+    EA = 1;
+
+    while(1)
+    {
+        /* 主循环空转，调度由内核控制 */
+    }
 }
-      </pre>
-    </div>
+</pre>
+
+</div>
   </div>
 </div>
 
 <!-- 代码示例 -->
-<div class="section" id="code">
+<div class="section" id="code2">
   <div class="panel">
     <div class="card" style="grid-column:1/-1">
-      <h3>中断嵌套（代码示例）</h3>
-      <pre class="code">#include&lt;MYOS.h&gt;
-#include&lt;reg52.h&gt;
-#define HRTOS_LED P0
-sbit k=P3^7;
-void task1()
+  <h3>中断调度与上下文切换（Interrupt Scheduling）</h3>
+
+<pre class="code">
+#include &lt;hrtos.h&gt;
+#include &lt;reg52.h&gt;
+
+/* ===== 当前运行任务ID ===== */
+volatile u8 current_task = 0;
+
+/* ===== 保存上下文 ===== */
+void os_save_context()
 {
-	while(1)
-	{
-		HRTOS_LED=0;
-		my_hrtos();	
-	}
+    OS_SP[current_task] = SP;   // 保存栈指针
 }
-void task2()
+
+/* ===== 恢复上下文 ===== */
+void os_restore_context(u8 next)
 {
-	while(1)
-	{
-		HRTOS_LED=1;
-		my_hrtos();
-	}
+    SP = OS_SP[next];           // 恢复目标任务栈
+    current_task = next;
 }
-void task3()
+
+/* ===== 调度器核心 ===== */
+u8 os_schedule()
 {
-	while(1)
-	{
-		HRTOS_LED=3;
-		my_hrtos();
-	}
+    u8 next = current_task;
+
+    /* 简化优先级选择 */
+    next = os_select(next);
+
+    return next;
 }
-void task4()
+
+/* ===== 中断入口 ===== */
+void os_interrupt_entry()
 {
-	while(1)
-	{
-		HRTOS_LED=7;
-		my_hrtos();
-	}
+    u8 next;
+
+    os_save_context();          // 保存当前任务
+
+    next = os_schedule();       // 选择下一个任务
+
+    if(next != current_task)
+    {
+        os_restore_context(next);  // 切换任务
+    }
 }
-void task5()
+
+/* ===== 定时器中断（调度触发） ===== */
+void timer0_isr() interrupt 1
 {
-	while(1)
-	{
-		HRTOS_LED=15;
-		my_hrtos();
-	}
+    TF0 = 0;
+
+    os_interrupt_entry();       // 进入内核调度
 }
-void task0()
+
+/* ===== 外部中断示例 ===== */
+void ext0_isr() interrupt 0
 {
-	while(1)
-	{
-		HRTOS_LED=255;
-		my_hrtos();
-	}
+    /* 处理外设事件 */
+    os_interrupt_entry();       // 可触发任务切换
 }
-void task01()
+
+/* ===== 系统启动 ===== */
+void hrtos_main()
 {
-	HRTOS_LED=0;
-	while(k);
-	os_interrupt_exit();	
+    EA = 0;
+
+    os_task(task1, 1, 8, 1);
+    os_task(task2, 2, 8, 2);
+
+    EA = 1;
+
+    while(1)
+    {
+        /* 空循环，调度由中断驱动 */
+    }
 }
-void task02()
-{
-	HRTOS_LED=18;
-	while(k);
-	os_interrupt_exit();
-}
-void my_main()
-{
-	EA=0;
-	EX0=1;
-	EX1=1;
-	IT0=1;
-	IT1=1;
-	my_task(task1,0);//启动进程
-	my_task(task2,1);
-	my_task(task3,2);
-	my_task(task4,3);
-	my_task(task5,4);
-	my_task(task0,5);
-	my_task(task01,14);
-	my_task(task02,16);
-	os_scheduling(0);//手动调度
-	EA=1;
-	while(1);
-}
-      </pre>
-    </div>
+</pre>
+
+</div>
   </div>
 </div>
 
@@ -747,30 +744,18 @@ window.addEventListener('scroll',()=>{
 });
 window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
 // ===== 滚动渐隐控制（核心逻辑）=====
-function updateFade(el){
-  const scrollLeft = el.scrollLeft;
-  const maxScroll = el.scrollWidth - el.clientWidth;
+// ===== 渐隐控制（最终版）=====
+document.querySelectorAll('pre.code').forEach(el => {
+  const update = () => {
+    if (el.scrollLeft > 5) {
+      el.classList.add('scroll-left');
+    } else {
+      el.classList.remove('scroll-left');
+    }
+  };
 
-  // 左边
-  if(scrollLeft <= 5){
-    el.classList.remove('scroll-left');
-  }else{
-    el.classList.add('scroll-left');
-  }
-
-  // 右边
-  if(scrollLeft >= maxScroll - 5){
-    el.style.setProperty('--fade-right', 0);
-    el.style.setProperty('--fade-left', 1);
-  }else{
-    el.style.setProperty('--fade-right', 1);
-  }
-}
-
-// 初始化绑定
-document.querySelectorAll('#memory .card, pre.code').forEach(el=>{
-  el.addEventListener('scroll', ()=>updateFade(el));
-  updateFade(el);
+  el.addEventListener('scroll', update);
+  update();
 });
 </script>
 
