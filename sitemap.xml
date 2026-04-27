@@ -1,59 +1,273 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://hrtos.com/</loc></url>
-<url><loc>https://hrtos.com/components/header_home.html</loc></url>
-<url><loc>https://hrtos.com/components/header.html</loc></url>
-<url><loc>https://hrtos.com/guide/任务调度原理.html</loc></url>
-<url><loc>https://hrtos.com/guide/中断机制解析.html</loc></url>
-<url><loc>https://hrtos.com/guide/</loc></url>
-<url><loc>https://hrtos.com/guide/内存管理机制.html</loc></url>
-<url><loc>https://hrtos.com/guide/信号量互斥锁.html</loc></url>
-<url><loc>https://hrtos.com/guide/rtos是什么.html</loc></url>
-<url><loc>https://hrtos.com/guide/时间与定时器.html</loc></url>
-<url><loc>https://hrtos.com/download.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_mutex_lock.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_sem_init.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_mail_recv.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_sem_give.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_mail_clear.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_mail_send.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_event_clear.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_event_get.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_sem_take.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_mutex_unlock.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_mutex_init.html</loc></url>
-<url><loc>https://hrtos.com/docs/ipc/os_event_set.html</loc></url>
-<url><loc>https://hrtos.com/docs/scheduler/os_dispatch_id.html</loc></url>
-<url><loc>https://hrtos.com/docs/scheduler/</loc></url>
-<url><loc>https://hrtos.com/docs/scheduler/os_switch.html</loc></url>
-<url><loc>https://hrtos.com/docs/scheduler/os_scheduling.html</loc></url>
-<url><loc>https://hrtos.com/docs/scheduler/os_rtos.html</loc></url>
-<url><loc>https://hrtos.com/docs/task/os_task_hang.html</loc></url>
-<url><loc>https://hrtos.com/docs/task/</loc></url>
-<url><loc>https://hrtos.com/docs/task/os_task_ready.html</loc></url>
-<url><loc>https://hrtos.com/docs/task/os_task_function.html</loc></url>
-<url><loc>https://hrtos.com/docs/task/os_task_state.html</loc></url>
-<url><loc>https://hrtos.com/docs/task/os_task_exit.html</loc></url>
-<url><loc>https://hrtos.com/docs/task/os_task_delete.html</loc></url>
-<url><loc>https://hrtos.com/docs/creation/</loc></url>
-<url><loc>https://hrtos.com/docs/myos/</loc></url>
-<url><loc>https://hrtos.com/docs/memory/os_xdata_data.html</loc></url>
-<url><loc>https://hrtos.com/docs/memory/os_data_xdata.html</loc></url>
-<url><loc>https://hrtos.com/docs/memory/</loc></url>
-<url><loc>https://hrtos.com/docs/memory/os_task_stack.html</loc></url>
-<url><loc>https://hrtos.com/docs/memory/os_memset.html</loc></url>
-<url><loc>https://hrtos.com/docs/time/os_delay.html</loc></url>
-<url><loc>https://hrtos.com/docs/time/</loc></url>
-<url><loc>https://hrtos.com/docs/time/os_wait_signal.html</loc></url>
-<url><loc>https://hrtos.com/docs/time/os_timer_length.html</loc></url>
-<url><loc>https://hrtos.com/docs/time/os_wait_event.html</loc></url>
-<url><loc>https://hrtos.com/docs/time/os_wait1.html</loc></url>
-<url><loc>https://hrtos.com/docs/time/os_wait2.html</loc></url>
-<url><loc>https://hrtos.com/docs/AdvancedTopics/interrupt.html</loc></url>
-<url><loc>https://hrtos.com/docs/AdvancedTopics/memory.html</loc></url>
-<url><loc>https://hrtos.com/docs/AdvancedTopics/stack.html</loc></url>
-<url><loc>https://hrtos.com/docs/AdvancedTopics/</loc></url>
-<url><loc>https://hrtos.com/manual.html</loc></url>
-<url><loc>https://hrtos.com/docs.html</loc></url>
+<url>
+  <loc>https://hrtos.com/</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>1.0</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/guide/任务调度原理.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/guide/中断机制解析.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/guide/</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/guide/内存管理机制.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/guide/信号量互斥锁.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/guide/rtos是什么.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/guide/时间与定时器.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/download.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.7</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_mutex_lock.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_sem_init.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_mail_recv.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_sem_give.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_mail_clear.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_mail_send.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_event_clear.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_event_get.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_sem_take.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_mutex_unlock.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_mutex_init.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/ipc/os_event_set.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/scheduler/os_dispatch_id.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/scheduler/</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/scheduler/os_switch.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/scheduler/os_scheduling.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/scheduler/os_rtos.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/task/os_task_hang.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/task/</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/task/os_task_ready.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/task/os_task_function.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/task/os_task_state.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/task/os_task_exit.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/task/os_task_delete.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/creation/</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/myos/</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/memory/os_xdata_data.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/memory/os_data_xdata.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/memory/</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/memory/os_task_stack.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/memory/os_memset.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/time/os_delay.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/time/</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/time/os_wait_signal.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/time/os_timer_length.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/time/os_wait_event.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/time/os_wait1.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/time/os_wait2.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/AdvancedTopics/interrupt.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/AdvancedTopics/memory.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/AdvancedTopics/stack.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs/AdvancedTopics/</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/manual.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.7</priority>
+</url>
+<url>
+  <loc>https://hrtos.com/docs.html</loc>
+  <lastmod>2026-04-27</lastmod>
+  <priority>0.7</priority>
+</url>
 </urlset>
