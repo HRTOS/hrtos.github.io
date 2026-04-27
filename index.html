@@ -104,7 +104,12 @@ a.btn:hover{background:#6366f1;}
   opacity:0; transform:translateY(30px);
 }
 .card h3{margin-bottom:12px;color:#60a5fa;}
-.card p{line-height:1.6;color:#cbd5e1;}
+.card p{
+  line-height:1.7;
+  color:#cbd5e1;
+  min-height:48px;
+  margin:6px 0;
+}
 .card.show{opacity:1; transform:translateY(0);}
 
 /* 表格 */
@@ -345,12 +350,53 @@ pre.code:hover::after{
 <!-- 模块区 -->
 <div class="section" id="modules">
   <div class="panel">
-    <div class="card"><h3>系统定位</h3><p>独立内核、接口层和应用层结构，每个进程堆栈空间独立，可直接运行在裸机上。</p></div>
-    <div class="card"><h3>发展历程</h3><p>HRTOS更名于2017年11月17日，源自“Hard real-time operating systems”。</p></div>
-    <div class="card"><h3>核心完成状态</h3><p>系统开发完毕，支持自写内核、多任务调度、中断优先级管理等功能。</p></div>
-    <div class="card"><h3>任务调度</h3><p>基于优先级抢占，支持时间片轮转、动态优先级调整、任务创建与删除。</p></div>
-    <div class="card"><h3>中断与安全性</h3><p>集中管理最多32个中断源，提高可控性和堆栈安全性，支持优先级继承防止反转。</p></div>
-    <div class="card"><h3>内存与资源管理</h3><p>内存池机制，动态申请和释放内存，保证系统稳定运行，支持多任务安全访问。</p></div>
+    <div class="card">
+  <h3>轻量级内核</h3>
+  <p>
+  内核结构精简，无需复杂运行环境，可直接部署在裸机平台，
+  在资源受限的嵌入式设备中依然保持高效稳定运行。
+  </p>
+</div>
+
+<div class="card">
+  <h3>高实时调度</h3>
+  <p>
+  采用优先级抢占调度机制，结合时间片策略，
+  确保关键任务能够在严格的时间约束内被优先执行。
+  </p>
+</div>
+
+<div class="card">
+  <h3>多任务并发</h3>
+  <p>
+  支持多个任务同时运行，每个任务拥有独立栈空间，
+  通过上下文切换实现安全、稳定的并发执行能力。
+  </p>
+</div>
+
+<div class="card">
+  <h3>中断统一管理</h3>
+  <p>
+  对中断资源进行集中调度与管理，
+  提高系统响应效率，同时增强中断处理的可控性与安全性。
+  </p>
+</div>
+
+<div class="card">
+  <h3>稳定内存模型</h3>
+  <p>
+  结合内存池与静态分配策略，
+  有效避免内存碎片问题，提升系统长期运行的稳定性与可靠性。
+  </p>
+</div>
+
+<div class="card">
+  <h3>可扩展架构</h3>
+  <p>
+  采用模块化设计思想，功能结构清晰，
+  方便根据不同项目需求进行扩展与裁剪，适配多种嵌入式场景。
+  </p>
+</div>
   </div>
 </div>
 
