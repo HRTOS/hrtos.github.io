@@ -5,11 +5,10 @@
 <title>RTOS 时间管理与定时器机制详解</title>
 <meta name="description" content="详解 RTOS 时间管理机制，包括系统节拍、定时器与延时原理，是实时操作系统调度的重要基础。">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<link rel="stylesheet" href="https://hrtos.com/global.css">
 <style>
 body{margin:0;font-family:"Segoe UI";background:#0a0f1f;color:#e5e7eb;}
-.nav{position:fixed;top:0;left:0;right:0;padding:15px 40px;background:#0f172a;}
-.nav a{color:#60a5fa;text-decoration:none;font-weight:bold;}
+
 .container{max-width:900px;margin:100px auto;padding:20px;}
 h1{font-size:42px;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 h2{color:#60a5fa;margin-top:30px;}
@@ -64,7 +63,7 @@ pre{background:#020617;padding:15px;border-radius:10px;color:#22d3ee;}
 </head>
 
 <body>
-<div class="nav"><a href="https://hrtos.com">HRTOS</a></div>
+<div id="header"></div>
 <div class="container">
 
 <h1>RTOS 时间管理与定时器机制</h1>
@@ -225,5 +224,6 @@ HRTOS 采用低开销 Tick + 高精度定时器结合方式，兼顾实时性和
 <div class="footer">
 版权所有 © 2017 - 2026 HRTOS · 作者：谭舒
 </div>
+  <script src="https://hrtos.com/header.js"></script>
 </body>
 </html>
