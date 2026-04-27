@@ -97,6 +97,7 @@ body{
 
 <body data-header="docs">
 
+<!-- 头部 -->
 <script src="https://hrtos.com/header.js"></script>
 
 <div class="container">
@@ -110,34 +111,52 @@ body{
     </p>
   </div>
 
-  <!-- 卡片 -->
-  <div class="grid">
-
-    <a class="doc-card" href="stack.html"> 
-      <h3>堆栈管理</h3>
-      <p>聚焦运行栈空间规划与任务栈组织方式，为系统稳定执行提供基础支撑结构。</p>
-      <span class="doc-link">进入文档 →</span>
-    </a>
-
-    <a class="doc-card" href="memory.html">
-      <h3>内存管理</h3>
-      <p>介绍系统资源分配与内存组织策略，帮助理解不同模块对空间使用的协作关系。</p>
-      <span class="doc-link">进入文档 →</span>
-    </a>
-
-    <a class="doc-card" href="interrupt.html">
-      <h3>中断系统</h3>
-      <p>说明外设事件与异常响应的处理路径，是建立实时响应机制认知的重要组成部分。</p>
-      <span class="doc-link">进入文档 →</span>
-    </a>
-
-  </div>
+  <!-- 卡片容器（JS生成） -->
+  <div class="grid" id="doc-container"></div>
 
 </div>
 
 <div class="footer">
 <p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
 </div>
+
+<!-- JS 自动生成卡片 -->
+<script>
+const docs = [
+  {
+    title: "堆栈管理",
+    desc: "聚焦运行栈空间规划与任务栈组织方式，为系统稳定执行提供基础支撑结构。",
+    url: "stack.html"
+  },
+  {
+    title: "内存管理",
+    desc: "介绍系统资源分配与内存组织策略，帮助理解不同模块对空间使用的协作关系。",
+    url: "memory.html"
+  },
+  {
+    title: "中断系统",
+    desc: "说明外设事件与异常响应的处理路径，是建立实时响应机制认知的重要组成部分。",
+    url: "interrupt.html"
+  }
+];
+
+// 渲染卡片
+const container = document.getElementById("doc-container");
+
+docs.forEach(item => {
+  const el = document.createElement("a");
+  el.className = "doc-card";
+  el.href = item.url;
+
+  el.innerHTML = `
+    <h3>${item.title}</h3>
+    <p>${item.desc}</p>
+    <span class="doc-link">进入文档 →</span>
+  `;
+
+  container.appendChild(el);
+});
+</script>
 
 </body>
 </html>
