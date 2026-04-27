@@ -301,8 +301,9 @@ pre.code::-webkit-scrollbar{
 }
 @media (max-width:640px){
   pre.code{
-    white-space:pre-wrap;   /* ✅ 手机自动换行 */
-    word-break:break-word;  /* 防止超长字符串撑爆 */
+    white-space: pre-wrap !important;
+    word-break: break-word;
+    overflow-x: hidden;
   }
 }
 </style>
