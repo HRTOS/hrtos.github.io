@@ -6,23 +6,59 @@ on:
       - main
 
 permissions:
-  contents: write   # ⭐关键修复
+  contents: write
 
 jobs:
-  build:
+  sitemap:
+    # 防止自己提交再次触发无限循环
+    if: github.actor != 'github-actions[bot]'
+
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Generate sitemap
+      - name: Generate sitemap.xml
         run: |
           echo '<?xml version="1.0" encoding="UTF-8"?>' > sitemap.xml
           echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' >> sitemap.xml
 
-          for file in $(find . -name "*.html"); do
-            path=$(echo $file | sed 's|^\./||' | sed 's|index.html||')
-            echo "<url><loc>https://hrtos.com/$path</loc></url>" >> sitemap.xml
+          # 遍历 HTML 文件（排除无用目录）
+          find . -name "*.html" \
+            ! -path "./.git/*" \
+            ! -path "./components/*" \
+          | while read file; do
+
+            path=$(echo "$file" | sed 's|^\./||')
+
+            # index.html 转目录
+            if [[ "$path" == */index.html ]]; then
+              path=$(echo "$path" | sed 's|index.html||')
+            fi
+
+            # 首页特殊处理
+            if [[ "$path" == "index.html" || "$path" == "" ]]; then
+              url="https://hrtos.com/"
+              priority="1.0"
+            else
+              url="https://hrtos.com/$path"
+
+              # 权重分级（核心优化）
+              if [[ "$path" == guide/* || "$path" == docs/* ]]; then
+                priority="0.9"
+              elif [[ "$path" == */ ]]; then
+                priority="0.8"
+              else
+                priority="0.7"
+              fi
+            fi
+
+            echo "<url>" >> sitemap.xml
+            echo "  <loc>$url</loc>" >> sitemap.xml
+            echo "  <lastmod>$(date +%F)</lastmod>" >> sitemap.xml
+            echo "  <priority>$priority</priority>" >> sitemap.xml
+            echo "</url>" >> sitemap.xml
+
           done
 
           echo '</urlset>' >> sitemap.xml
@@ -32,5 +68,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add sitemap.xml
-          git commit -m "update sitemap" || exit 0
+          git commit -m "update sitemap" || echo "No changes"
           git push
