@@ -328,40 +328,108 @@ pre.code::-webkit-scrollbar{
 </div>
 
 <!-- 模块区 -->
-<div class="section" id="modules">
+<div class="section">
+  <h2 style="
+    text-align:center;
+    font-size:30px;
+    margin-bottom:10px;
+    background:linear-gradient(90deg,#60a5fa,#a78bfa);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+  ">
+  RTOS 系统架构入口
+  </h2>
+
+  <p style="
+    text-align:center;
+    color:#9ca3af;
+    margin-bottom:40px;
+    font-size:15px;
+  ">
+  理解实时操作系统的定义、分类与应用场景及特点与典型应用分析等。
+  </p>
+
   <div class="panel">
 
-<div class="card">
-  <h3>轻量级内核</h3>
-  <p>极简内核设计，可裸机运行，占用极低资源，适用于嵌入式受限平台。</p>
-</div>
+    <!-- Fundamentals -->
+    <div class="card">
+      <h3>
+        <a href="/rtos/fundamentals/" style="color:#60a5fa;">
+        RTOS基础
+        </a>
+      </h3>
+      <p>理解实时操作系统的定义、分类与应用场景及其基本特点分析。</p>
+      <a href="/rtos/fundamentals/" class="btn secondary">
+        基础知识 →
+      </a>
+    </div>
 
-<div class="card">
-  <h3>高实时调度</h3>
-  <p>优先级抢占调度，微秒级响应，保证关键任务确定性执行与实时性。</p>
-</div>
+    <!-- Kernel -->
+    <div class="card">
+      <h3>
+        <a href="/rtos/kernel/" style="color:#60a5fa;">
+        内核机制
+        </a>
+      </h3>
+      <p>调度器、中断、任务系统等核心机制解析与实现原理分析说明。</p>
+      <a href="/rtos/kernel/" class="btn secondary">
+        内核调度 →
+      </a>
+    </div>
 
-<div class="card">
-  <h3>多任务并发</h3>
-  <p>支持多任务独立运行与上下文切换，运行稳定，具备良好的并发能力。</p>
-</div>
+    <!-- System -->
+    <div class="card">
+      <h3>
+        <a href="/rtos/system/" style="color:#60a5fa;">
+        系统资源
+        </a>
+      </h3>
+      <p>信号量、互斥锁、事件与内存管理机制及其实现原理分析。</p>
+      <a href="/rtos/system/" class="btn secondary">
+        资源管理 →
+      </a>
+    </div>
 
-<div class="card">
-  <h3>中断统一管理</h3>
-  <p>统一中断入口调度，可在中断中触发任务切换，提高实时响应效率。</p>
-</div>
+    <!-- Practice -->
+    <div class="card">
+      <h3>
+        <a href="/rtos/practice/" style="color:#60a5fa;">
+        工程实践
+        </a>
+      </h3>
+      <p>从裸机到RTOS迁移与实际项目应用及开发流程实践分析。</p>
+      <a href="/rtos/practice/" class="btn secondary">
+        实战案例 →
+      </a>
+    </div>
 
-<div class="card">
-  <h3>稳定内存模型</h3>
-  <p>采用静态分配与内存池机制，避免碎片化，保证长期运行稳定可靠。</p>
-</div>
+    <!-- HRTOS -->
+    <div class="card">
+      <h3>
+        <a href="/rtos/hrtos/" style="color:#60a5fa;">
+        HRTOS架构
+        </a>
+      </h3>
+      <p>HRTOS设计理念与系统实现模型解析及核心机制架构说明。</p>
+      <a href="/rtos/hrtos/" class="btn secondary">
+        系统架构 →
+      </a>
+    </div>
 
-<div class="card">
-  <h3>可扩展架构</h3>
-  <p>模块化设计，各模块解耦，可裁剪扩展，便于移植与二次开发。</p>
-</div>
+    <!-- Hub -->
+    <div class="card">
+      <h3>
+        <a href="/rtos/" style="color:#60a5fa;">
+        RTOS知识体系
+        </a>
+      </h3>
+      <p>从基础到内核的完整RTOS知识结构体系与核心原理全景解析说明。</p>
+      <a href="/rtos/" class="btn secondary">
+        知识图谱 →
+      </a>
+    </div>
 
-</div>
+  </div>
 </div>
 
 <!-- 内存分配表 -->
