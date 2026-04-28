@@ -304,6 +304,23 @@ pre.code::-webkit-scrollbar{
     overflow-x: hidden;
   }
 }
+	.memory-card{
+  width:100%;
+  box-sizing:border-box;
+}
+
+.table-scroll{
+  width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  border-radius:12px;
+}
+
+.memory-table{
+  min-width:700px;
+  width:max-content;
+  border-collapse:collapse;
+}
 </style>
 </head>
 <body>
@@ -436,18 +453,12 @@ pre.code::-webkit-scrollbar{
 <!-- 内存分配表（高级科技表格版） -->
 <div class="section" id="memory">
   <div class="panel">
-    <div class="card" style="grid-column:1/-1">
+    <div class="card memory-card">
+      
       <h3>片内存储器分配结构</h3>
 
-      <div style="overflow-x:auto; margin-top:20px;">
-        <table style="
-          width:100%;
-          border-collapse:collapse;
-          min-width:700px;
-          background:#0f172a;
-          border-radius:12px;
-          overflow:hidden;
-        ">
+      <div class="table-scroll">
+        <table class="memory-table">
 
           <thead>
             <tr>
@@ -463,37 +474,31 @@ pre.code::-webkit-scrollbar{
               <td>工作寄存器组</td>
               <td>四组寄存器空间，由 PSW 切换当前运行组</td>
             </tr>
-
             <tr>
               <td>32 ~ 33</td>
               <td>位寻址区</td>
               <td>系统位变量存储区域，用于状态与标志控制</td>
             </tr>
-
             <tr>
               <td>34 ~ 38</td>
               <td>内核堆栈</td>
               <td>系统核心运行栈，用于调度与内核执行</td>
             </tr>
-
             <tr>
               <td>39 ~ 42</td>
               <td>中断堆栈</td>
               <td>独立中断栈空间，保证中断上下文隔离</td>
             </tr>
-
             <tr>
               <td>43 ~ 106</td>
               <td>任务堆栈区</td>
               <td>多任务运行栈空间，用于上下文切换保存</td>
             </tr>
-
             <tr>
               <td>107 ~ 123</td>
               <td>用户数据区</td>
               <td>应用层数据存储空间，可自由扩展</td>
             </tr>
-
             <tr>
               <td>124 ~ 127</td>
               <td>系统保留区</td>
