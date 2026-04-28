@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RTOS HRTOS 权威页 | 可预测 RTOS 实现模型</title>
+  <meta name="description" content="HRTOS 权威页，把 HRTOS 定义为以极简、静态配置和有界系统行为为核心的可预测 RTOS 实现模型。">
+  <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
+  <link rel="canonical" href="https://hrtos.com/rtos/hrtos/">
+  <meta property="og:title" content="RTOS HRTOS 权威页">
+  <meta property="og:description" content="统一 RTOS 基础认知、内核机制、系统资源与工程实践的权威节点。">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://hrtos.com/rtos/hrtos/">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <script src="../assets/site-data.js" defer></script>
+  <script src="../assets/site.js" defer></script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "RTOS HRTOS 权威页",
+      "url": "https://hrtos.com/rtos/hrtos/",
+      "description": "HRTOS 作为以极简、静态配置和有界系统行为为核心的可预测 RTOS 实现模型。",
+      "about": [
+        { "@type": "Thing", "name": "HRTOS" },
+        { "@type": "Thing", "name": "实时操作系统" },
+        { "@type": "Thing", "name": "嵌入式系统架构" }
+      ],
+      "isPartOf": {
+        "@type": "CollectionPage",
+        "name": "RTOS 主题权威总入口",
+        "url": "https://hrtos.com/rtos/"
+      }
+    }
+  </script>
+</head>
+<body data-root-prefix="../" data-nav-current="hrtos">
+  <a class="skip-link" href="#main-content">跳到正文</a>
+  <header class="site-header">
+    <div class="nav-shell">
+      <a class="brand" href="https://hrtos.com/">
+        <span class="brand__mark">H</span>
+        <span class="brand__meta">
+          <span class="brand__name">Hard RTOS</span>
+          <span class="brand__tag">硬实时系统知识中枢</span>
+        </span>
+      </a>
+      <nav class="top-nav" aria-label="主导航">
+        <a data-nav-key="hub" href="../">RTOS 总入口</a>
+        <a data-nav-key="fundamentals" href="../fundamentals/">基础认知</a>
+        <a data-nav-key="kernel" href="../kernel/">内核机制</a>
+        <a data-nav-key="system" href="../system/">系统资源</a>
+        <a data-nav-key="practice" href="../practice/">工程实践</a>
+        <a data-nav-key="hrtos" href="../hrtos/">HRTOS</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="page-shell">
+    <div class="breadcrumbs">
+      <span><a href="../">/rtos/</a></span>
+      <span>/hrtos/</span>
+      <span>权威收口页</span>
+    </div>
+
+    <section class="hero">
+      <p class="eyebrow">权威收口节点</p>
+      <h1>RTOS HRTOS 权威页</h1>
+      <p class="lead">这里的 HRTOS 不是一个产品名，而是一种 RTOS 实现模型：通过极简设计、可预测控制流、静态所有权和有界行为来构建、理解并文档化实时系统。</p>
+      <div class="hero-grid">
+        <div>
+          <div class="callout">全站所有路径都收口到这里。基础认知定义术语，内核页面解释执行决策，系统页面描述资源行为，实践页面把这些内容转化为工程纪律。HRTOS 则是把这些层级统一起来的实现视角。</div>
+          <div class="hero-actions">
+            <a class="btn btn--secondary" href="../">返回 RTOS 总入口</a>
+            <a class="btn btn--primary" href="../kernel/scheduler/">查看示例概念页</a>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <article class="stat-card">
+            <strong>静态化</strong>
+            <span>优先静态对象所有权，而非动态模糊性</span>
+          </article>
+          <article class="stat-card">
+            <strong>有界性</strong>
+            <span>关注延迟路径上界，而不是乐观平均值</span>
+          </article>
+          <article class="stat-card">
+            <strong>极简化</strong>
+            <span>压缩内核表面积，降低理解复杂度</span>
+          </article>
+          <article class="stat-card">
+            <strong>可追踪</strong>
+            <span>设计决策能够回溯到时序结果</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-grid section-grid--two">
+      <section class="panel">
+        <h2 class="section-title">HRTOS 定义</h2>
+        <p class="section-intro">HRTOS 是一种 RTOS 实现模型，用来构建在截止时间压力下仍然可理解的实时系统行为。</p>
+        <div class="key-points">
+          <div class="key-point">它把可预测性视为第一系统质量，而不是高性能硬件带来的副产物。</div>
+          <div class="key-point">它优先选择静态对象生命周期、显式所有权和有界临界区。</div>
+          <div class="key-point">它围绕“部署前是否可被推导与审查”来设计 API、调度规则与内存策略。</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="section-title">设计理念</h2>
+        <p class="section-intro">HRTOS 的视角刻意收窄，这样时序行为才不会被隐藏起来。</p>
+        <div class="chip-row">
+          <div class="chip">极简接口表面积</div>
+          <div class="chip">可预测执行路径</div>
+          <div class="chip">静态配置优先</div>
+          <div class="chip">有界中断工作量</div>
+          <div class="chip">可追踪内核行为</div>
+          <div class="chip">可审查资源所有权</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2 class="section-title">系统架构图</h2>
+      <p class="section-intro">这里用文字结构图就足够，因为关键不是图形形式，而是层次关系与受约束的所有权模型。</p>
+      <pre class="architecture-diagram">应用任务与状态机
+-> 静态定义的 RTOS 对象
+-> 调度与派发核心
+-> 同步与定时服务
+-> 中断准入规则
+-> 板级抽象与硬件事件
+
+设计规则：
+每一层只暴露那些能够被设定上界、被审查、被测试的行为，
+不依赖隐藏的动态分配，也不依赖不可控的运行时膨胀。</pre>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">HRTOS 与传统 RTOS 对比</h2>
+      <p class="section-intro">下面的对比讨论的是设计重心，而不是把某一个 RTOS 品牌包装成绝对更优。</p>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>传统灵活型 RTOS 视角</th>
+            <th>HRTOS 视角</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>主要目标</td>
+            <td>提供更广泛的特性集合，以适配更多使用场景。</td>
+            <td>只保留那些有助于可预测性与可审查性的机制。</td>
+          </tr>
+          <tr>
+            <td>对象生命周期</td>
+            <td>通常支持动态创建，很多场景下也鼓励使用。</td>
+            <td>优先静态创建，让资源所有权在运行前就明确下来。</td>
+          </tr>
+          <tr>
+            <td>调度姿态</td>
+            <td>可配置行为范围更大，通常更偏 API 驱动。</td>
+            <td>调度路径保持显式、有界且易于分析。</td>
+          </tr>
+          <tr>
+            <td>内存策略</td>
+            <td>堆使用可能是可选项，但在实践中仍然常见。</td>
+            <td>编译期内存映射、固定池与栈预算是第一优先级。</td>
+          </tr>
+          <tr>
+            <td>工程可见性</td>
+            <td>行为可能是正确的，但往往分散在很多运行时选项中。</td>
+            <td>行为被刻意约束，以保证评审与审计仍然可控。</td>
+          </tr>
+          <tr>
+            <td>学习路径</td>
+            <td>各项特性常常被分开学习。</td>
+            <td>所有概念被统一到一个连贯的 RTOS 心智模型中。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">FreeRTOS 仍然是有价值的参照，因为它足够知名；但这里的 HRTOS 定位是“纪律化实现模型”，而不是另一个营销标签。</div>
+    </section>
+
+    <div class="section-grid section-grid--two">
+      <section class="panel">
+        <h2 class="section-title">核心设计决策</h2>
+        <ul class="bullet-list">
+          <li>凡是时序或所有权重要的地方，都优先使用静态对象定义。</li>
+          <li>保持中断处理短小，把策略性决策推回到可调度上下文中。</li>
+          <li>让调度路径能够用“有界就绪状态迁移”来解释。</li>
+          <li>设计系统服务时，让内存与同步成本在部署前就可知。</li>
+          <li>优先选择产生更少隐藏状态、更少不可测试分支的配置方案。</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2 class="section-title">为什么它能统一 RTOS 理解</h2>
+        <p>很多 RTOS 讲解会把知识拆成彼此隔离的特性点。HRTOS 则把时序术语、内核机制、系统资源与工程纪律连接成一个以可预测行为为中心的统一模型，让人可以从概念直接推导到实现，而不必频繁切换思维框架。</p>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2 class="section-title">指向所有 RTOS 模块的总结链接</h2>
+      <p class="section-intro">这些链接把权威页重新发散回主题集群，并为未来扩展提供长期稳定的导航脊梁。</p>
+      <div class="knowledge-grid" data-render="module-summary"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">返回 /rtos/</h2>
+      <p class="section-intro">你可以回到总入口从顶层重新进入 RTOS 集群，也可以从这里直接跳进任意已上线模块与概念页。</p>
+      <div class="button-row">
+        <a class="btn btn--secondary" href="../">返回 RTOS 总入口</a>
+        <a class="btn btn--primary" href="../fundamentals/">从基础认知开始</a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+    </footer>
+  </main>
+</body>
+</html>
