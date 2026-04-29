@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MYOS / HRTOS 轻量级实时操作系统内核解析</title>
+  <title>MYOS / HRTOS 项目实战与内核实现</title>
   <meta name="description" content="MYOS / HRTOS 轻量级实时操作系统内核解析，面向嵌入式系统与资源受限场景，讲解 RTOS 任务调度、interrupt 中断驱动、stack protection 栈保护与 task scheduling 实现方式。">
   <meta name="keywords" content="MYOS, HRTOS, RTOS, task scheduling, embedded system">
   <meta name="robots" content="index,follow,max-image-preview:large">
@@ -617,64 +617,78 @@
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="https://hrtos.com/docs.html" aria-label="跳转到 HRTOS 文档首页">
-        <span class="brand-mark">M</span>
-        <span>MYOS / HRTOS Docs</span>
+        <span class="brand-mark">H</span>
+        <span>MYOS Kernel Lab</span>
       </a>
       <nav class="topnav" aria-label="顶部导航">
-        <a href="#design">设计理念</a>
-        <a href="#mechanism">实现机制</a>
-        <a href="#code">代码展示</a>
-        <a href="#flow">运行流程</a>
-        <a href="#scenarios">应用场景</a>
-      </nav>
+  <a href="#overview">项目概览</a>
+  <a href="#design">设计思路</a>
+  <a href="#functions">核心实现</a>
+  <a href="#code">源码模块</a>
+  <a href="#flow">运行流程</a>
+  <a href="#scenarios">实验项目</a>
+</nav>
     </div>
   </header>
 
   <main id="main-content" class="page">
     <header id="overview" class="hero">
-      <span class="eyebrow">Embedded RTOS · Scheduler · Interrupt</span>
-      <h1>MYOS / HRTOS 轻量级实时操作系统内核解析</h1>
-      <p class="hero-lead">
-        MYOS 是一个面向资源受限嵌入式系统的轻量级 RTOS 内核方案，它把任务调度、interrupt 中断驱动、stack protection 栈保护和裸机可控性压缩到一条非常短的执行链里，让 8051 与 STM32 这类平台也能拥有清晰、可解释、可手工掌控的 scheduler。
+  <span class="eyebrow">个人项目 · 轻量级实时操作系统</span>
+
+  <h1>MYOS / HRTOS 项目实战与内核实现</h1>
+
+  <p class="hero-lead">
+    MYOS 是一个面向 8051 与 STM32 小型嵌入式系统的轻量级实时操作系统实验项目。
+    这个项目主要关注任务调度、中断驱动、任务栈切换与最小化内核实现，
+    目标不是做功能最全的 RTOS，而是构建一个结构透明、执行路径清晰、便于理解和修改的小型内核。
+  </p>
+
+  <p style="margin-top:14px;color:#94a3b8;font-size:14px;">
+    最近更新：2026-04-29 · 当前状态：持续实验中
+  </p>
+
+  <div class="hero-grid">
+    <section class="hero-card">
+      <h2>项目目标</h2>
+      <p>
+        在资源受限 MCU 上实现最小化任务调度能力，
+        验证多任务切换、中断统一入口和独立任务栈管理。
       </p>
 
-      <div class="hero-grid">
-        <section class="hero-card" aria-labelledby="hero-what">
-          <h2 id="hero-what">它解决什么问题</h2>
-          <p>
-            对很多小型 embedded system 来说，真正困难的不是“能不能跑任务”，而是“能不能在几十字节到几百字节级别的资源里，把任务切换和中断响应控制得足够透明”。MYOS 用极简数据结构和显式上下文切换路径，解决了裸机系统里多任务组织、周期性调度和中断入口统一管理的问题。
-          </p>
-          <div class="hero-stats">
-            <div class="stat">
-              <strong>轻量级内核</strong>
-              <span>少依赖、短调用链，适合从寄存器层直接理解。</span>
-            </div>
-            <div class="stat">
-              <strong>Timer0 驱动</strong>
-              <span>让调度时机由定时中断触发，而不是主循环猜测。</span>
-            </div>
-            <div class="stat">
-              <strong>轮询式 scheduler</strong>
-              <span>靠循环扫描与就绪位判断挑选下一个任务。</span>
-            </div>
-            <div class="stat">
-              <strong>任务栈隔离</strong>
-              <span>用任务专属 SP 快照实现最小成本的上下文恢复。</span>
-            </div>
-          </div>
-        </section>
+      <div class="hero-stats">
+        <div class="stat">
+          <strong>目标平台</strong>
+          <span>8051 / STM32</span>
+        </div>
 
-        <section class="hero-card" aria-labelledby="hero-capabilities">
-          <h2 id="hero-capabilities">核心能力</h2>
-          <ul class="capability-list">
-            <li><span class="check">✓</span><span>任务调度：在可运行任务之间做快速轮询切换</span></li>
-            <li><span class="check">✓</span><span>中断驱动：把 Timer0 变成系统节拍入口</span></li>
-            <li><span class="check">✓</span><span>栈保护：为每个任务保存独立 SP 快照</span></li>
-            <li><span class="check">✓</span><span>轻量级内核：适合 8051、STM32 裸机与教学环境</span></li>
-          </ul>
-        </section>
+        <div class="stat">
+          <strong>调度方式</strong>
+          <span>Timer0 + 轮询调度</span>
+        </div>
+
+        <div class="stat">
+          <strong>任务切换</strong>
+          <span>SP 快照恢复</span>
+        </div>
+
+        <div class="stat">
+          <strong>项目定位</strong>
+          <span>学习 / 实验 / 裸机实践</span>
+        </div>
       </div>
-    </header>
+    </section>
+
+    <section class="hero-card">
+      <h2>当前内容</h2>
+      <ul class="capability-list">
+        <li><span class="check">✓</span><span>任务调度器实现分析</span></li>
+        <li><span class="check">✓</span><span>中断系统与分发机制</span></li>
+        <li><span class="check">✓</span><span>任务栈切换实验</span></li>
+        <li><span class="check">✓</span><span>源码结构整理与模块拆解</span></li>
+      </ul>
+    </section>
+  </div>
+</header>
 
     <div class="layout">
       <aside class="toc" aria-label="章节目录">
@@ -727,10 +741,16 @@
             </article>
           </div>
 
-          <div class="summary-strip">
-            <strong>一句话总结：</strong>
-            MYOS 不是试图替代大型 RTOS，而是把 scheduler 的核心骨架裸露出来，让开发者理解“是谁触发调度、状态保存到哪里、下一个任务如何被选出来、CPU 又是怎样回到那个任务里”的完整闭环。
-          </div>
+         <article class="mini-card" style="margin-top:18px;">
+  <h3>项目背景</h3>
+  <p>
+    这个项目最初用于小型控制系统实验，目标不是实现完整 RTOS 功能集合，
+    而是在资源有限平台上验证任务调度、中断驱动和任务栈切换机制。
+  </p>
+  <p style="margin-top:10px;">
+    当前重点仍然是内核结构整理与实验验证，因此部分模块仍在持续调整中。
+  </p>
+</article>
         </section>
 
         <section id="mechanism" class="doc-card" aria-labelledby="mechanism-title">
@@ -1021,62 +1041,50 @@ volatile void my_os(void)
         </section>
 
         <section id="scenarios" class="doc-card" aria-labelledby="scenarios-title">
-          <div class="section-head">
-            <div>
-              <div class="kicker">Use Cases</div>
-              <h2 id="scenarios-title">应用场景</h2>
-            </div>
-            <p>这个内核不追求“大而全”，它适合那些更看重透明度、确定性和教学价值的系统。</p>
-          </div>
+  <div class="section-head">
+    <div>
+      <div class="kicker">Project Experiments</div>
+      <h2 id="scenarios-title">实验项目</h2>
+    </div>
+    <p>当前已完成或正在验证的实验方向。</p>
+  </div>
 
-          <div class="scenario-list">
-            <article class="scenario">
-              <h3>8051 单片机系统</h3>
-              <p>在 RAM、栈空间和 CPU 性能都非常紧张的场景里，MYOS 这种轻量级 RTOS 能以最小代价提供任务轮转和定时驱动，尤其适合键控、显示、采样等小规模并发控制。</p>
-            </article>
-            <article class="scenario">
-              <h3>STM32 裸机系统</h3>
-              <p>对于不想立刻引入完整操作系统、但又希望摆脱纯 super loop 的项目，MYOS 的 scheduler 思路非常适合作为过渡层，让任务组织更清晰，同时保持对 interrupt 和时序的直接掌控。</p>
-            </article>
-            <article class="scenario">
-              <h3>教学 RTOS 学习</h3>
-              <p>如果目标是理解任务调度、中断驱动、现场保存与恢复，而不是马上接入大而复杂的内核 API，那么 MYOS 这种代码尺度正好足以让学习者读完后真正明白一个 RTOS 的骨架。</p>
-            </article>
-            <article class="scenario">
-              <h3>工业控制小系统</h3>
-              <p>在一些逻辑固定、任务数量有限、可靠性要求高但功能边界明确的工业控制小系统里，MYOS 的可审计性和可裁剪性比功能堆叠更有价值。</p>
-            </article>
-          </div>
-        </section>
+  <div class="scenario-list">
+    <article class="scenario">
+      <h3>多任务 LED 控制实验</h3>
+      <p>
+        通过多个任务分别控制 LED 闪烁、按键扫描和计时逻辑，
+        验证 MYOS 的基本调度能力。
+      </p>
+    </article>
 
-        <section id="seo" class="doc-card" aria-labelledby="seo-title">
-          <div class="section-head">
-            <div>
-              <div class="kicker">SEO Notes</div>
-              <h2 id="seo-title">SEO 优化说明</h2>
-            </div>
-            <p>让这页文档既适合人阅读，也更容易被 Google / Bing 理解。</p>
-          </div>
+    <article class="scenario">
+      <h3>任务栈切换验证</h3>
+      <p>
+        记录不同任务切换前后的 SP 保存与恢复状态，
+        验证任务上下文恢复逻辑是否稳定。
+      </p>
+    </article>
 
-          <div class="three-col">
-            <article class="mini-card">
-              <h3>语义化结构</h3>
-              <p>页面使用 <code>header</code>、<code>main</code>、<code>section</code>、<code>article</code>、<code>nav</code> 和唯一 <code>H1</code> 组织内容，帮助搜索引擎准确识别这是篇技术文档，而不是随意堆叠的代码页。</p>
-            </article>
-            <article class="mini-card">
-              <h3>关键词自然分布</h3>
-              <p>正文自然覆盖 RTOS、scheduler、interrupt、embedded system、task scheduling 等关键词，并把它们放在标题、摘要、机制解释和应用场景中，而不是生硬重复。</p>
-            </article>
-            <article class="mini-card">
-              <h3>提升停留时间</h3>
-              <p>页面加入 Hero 摘要、TOC、函数卡片、模块化代码展示和流程图，阅读路径清晰，能让读者从概念一直读到机制，再读到代码与场景，提升停留时间与理解深度。</p>
-            </article>
-          </div>
+    <article class="scenario">
+      <h3>Timer0 调度测试</h3>
+      <p>
+        使用 Timer0 作为系统节拍源，
+        验证中断驱动调度在固定 Tick 下的任务轮转行为。
+      </p>
+    </article>
 
-          <div class="seo-note">
-            这页单文件 HTML 还包含结构化数据、Open Graph 与适合技术检索的标题描述，因此既能作为本地技术文档直接打开，也能作为公开说明页发布到站点中。
-          </div>
-        </section>
+    <article class="scenario">
+      <h3>STM32 移植预研</h3>
+      <p>
+        正在评估将当前调度结构迁移到 Cortex-M 平台，
+        研究 PendSV 或 SysTick 替代方案。
+      </p>
+    </article>
+  </div>
+</section>
+
+        
       </div>
     </div>
   </main>
