@@ -1,164 +1,208 @@
-/**
- * HRTOS Docs Auto Renderer (Final Production Version)
- * 适配当前目录结构：api / learn / modules / architecture / system / examples
- */
+/* =========================
+   工具函数（路径标准化）
+========================= */
 
-function pathMatch(type) {
-  const path = location.pathname;
+const BASE = "/docs/";
 
-  if (path.includes("/docs/api/")) return "api";
-  if (path.includes("/docs/learn/")) return "learn";
-  if (path.includes("/docs/modules/")) return "modules";
-  if (path.includes("/docs/architecture/")) return "architecture";
-  if (path.includes("/docs/system/")) return "system";
-  if (path.includes("/docs/examples/")) return "examples";
-
-  return "root";
+function join(path) {
+  if (!path) return "#";
+  if (path.startsWith("http")) return path;
+  return BASE + path.replace(/^\/+/, "");
 }
 
-/**
- * =========================
- * 全局结构定义（唯一数据源）
- * =========================
- */
-const CONFIG = {
-  api: {
+/* =========================
+   卡片模型
+========================= */
+
+function card(title, desc, link) {
+  return {
+    title,
+    desc,
+    link: join(link)
+  };
+}
+
+/* =========================
+   模块工厂
+========================= */
+
+function createModule({ label, title, intro, breadcrumb, sections, featured = [] }) {
+  return {
+    breadcrumb: buildBreadcrumb(breadcrumb),
+    label,
+    title,
+    intro,
+    sections,
+    featured
+  };
+}
+
+/* =========================
+   breadcrumb 自动生成（关键升级）
+========================= */
+
+function buildBreadcrumb(current) {
+  return [
+    ["Home", "/"],
+    ["Docs", BASE],
+    [current, null]
+  ];
+}
+
+/* =========================
+   全局数据（已优化路径）
+========================= */
+
+const data = {
+  modules: createModule({
+    label: "Modules Center",
+    title: "核心模块文档",
+    intro: "任务、调度、内存、通信四大核心模块。",
+    breadcrumb: "Modules",
+
+    sections: [
+      card("任务管理", "任务生命周期与状态模型", "modules/task/"),
+      card("时间管理", "系统时基与定时器", "modules/time/"),
+      card("内存管理", "动态与静态内存管理", "modules/memory/"),
+      card("通信机制", "IPC消息与同步机制", "modules/ipc/")
+    ],
+
+    featured: [
+      card("任务堆栈模型", "Stack 管理机制", "modules/task/stack-management.html")
+    ]
+  }),
+
+  api: createModule({
     label: "API Reference",
     title: "API 接口文档",
-    intro: "HRTOS 内核 API 接口集合，包括任务、调度、通信与时间系统接口。",
-    sections: [
-      ["Task API", "任务管理接口", "/docs/api/task/"],
-      ["Scheduler API", "调度系统接口", "/docs/api/scheduler/"],
-      ["IPC API", "进程通信接口", "/docs/api/ipc/"],
-      ["Memory API", "内存管理接口", "/docs/api/memory/"],
-      ["Time API", "时间系统接口", "/docs/api/time/"]
-    ]
-  },
+    intro: "RTOS 内核接口完整参考。",
+    breadcrumb: "API",
 
-  learn: {
-    label: "RTOS Learning",
+    sections: [
+      card("Task API", "任务接口集合", "api/task/"),
+      card("Scheduler API", "调度接口", "api/scheduler/"),
+      card("IPC API", "通信接口", "api/ipc/"),
+      card("Memory API", "内存接口", "api/memory/"),
+      card("Time API", "时间接口", "api/time/")
+    ]
+  }),
+
+  learn: createModule({
+    label: "Learning Path",
     title: "RTOS 学习体系",
-    intro: "从基础概念到实时系统设计，构建完整 RTOS 知识路径。",
-    sections: [
-      ["RTOS是什么", "操作系统基本概念", "/docs/learn/what-is-rtos.html"],
-      ["实时系统原理", "实时性与调度模型", "/docs/learn/real-time-systems.html"],
-      ["调度基础", "任务调度机制入门", "/docs/learn/scheduling-basics.html"],
-      ["中断基础", "中断系统工作原理", "/docs/learn/interrupt-basics.html"],
-      ["IPC基础", "任务通信机制", "/docs/learn/ipc-basics.html"]
-    ]
-  },
+    intro: "从基础到系统级理解 RTOS。",
+    breadcrumb: "Learn",
 
-  modules: {
-    label: "Core Modules",
-    title: "核心模块体系",
-    intro: "HRTOS 核心功能模块：任务、调度、内存、通信与时间系统。",
     sections: [
-      ["Task", "任务生命周期管理", "/docs/modules/task/"],
-      ["Scheduler", "实时调度机制", "/docs/modules/scheduler/"],
-      ["IPC", "任务通信机制", "/docs/modules/ipc/"],
-      ["Memory", "内存管理系统", "/docs/modules/memory/"],
-      ["Time", "系统时间与定时器", "/docs/modules/time/"]
+      card("RTOS是什么", "基础概念", "learn/what-is-rtos.html"),
+      card("实时系统", "实时性原理", "learn/real-time-systems.html"),
+      card("调度基础", "Scheduling基础", "learn/scheduling-basics.html"),
+      card("上下文切换", "Context Switch", "learn/context-switch-basics.html"),
+      card("抢占模型", "Preemptive vs Cooperative", "learn/preemptive-vs-cooperative.html"),
+      card("RTOS vs Linux", "系统对比", "learn/rtos-vs-linux.html"),
+      card("中断基础", "Interrupt机制", "learn/interrupt-basics.html"),
+      card("IPC基础", "通信机制", "learn/ipc-basics.html")
     ]
-  },
+  }),
 
-  architecture: {
-    label: "System Architecture",
-    title: "系统架构设计",
-    intro: "HRTOS 内核架构、调度模型与系统运行机制。",
+  architecture: createModule({
+    label: "Architecture",
+    title: "系统架构",
+    intro: "内核与系统结构设计。",
+    breadcrumb: "Architecture",
+
     sections: [
-      ["Kernel", "内核结构与运行模型", "/docs/architecture/kernel/"],
-      ["Scheduler Model", "调度架构模型", "/docs/architecture/scheduler/"],
-      ["Interrupt Model", "中断系统架构", "/docs/architecture/interrupt/"],
-      ["Memory Model", "内存体系结构", "/docs/architecture/memory/"],
-      ["IPC Model", "通信机制架构", "/docs/architecture/ipc/"]
+      card("Kernel", "内核结构", "architecture/kernel/"),
+      card("Interrupt", "中断模型", "architecture/interrupt/"),
+      card("Scheduler", "调度模型", "architecture/scheduler/"),
+      card("Memory", "内存模型", "architecture/memory/"),
+      card("IPC", "通信架构", "architecture/ipc/")
     ]
-  },
+  }),
 
-  system: {
+  system: createModule({
     label: "System Flow",
     title: "系统执行流程",
-    intro: "HRTOS 核心运行流程：上下文切换、中断与调度执行链路。",
-    sections: [
-      ["Context Switch", "任务切换流程", "/docs/system/context-switch-flow.html"],
-      ["Interrupt Flow", "中断处理流程", "/docs/system/interrupt-flow.html"],
-      ["Scheduling Flow", "调度执行流程", "/docs/system/scheduling-flow.html"]
-    ]
-  },
+    intro: "内核运行全过程。",
+    breadcrumb: "System",
 
-  examples: {
+    sections: [
+      card("调度流程", "Scheduling Flow", "system/scheduling-flow.html"),
+      card("中断流程", "Interrupt Flow", "system/interrupt-flow.html"),
+      card("上下文切换", "Context Switch Flow", "system/context-switch-flow.html")
+    ]
+  }),
+
+  examples: createModule({
     label: "Examples",
     title: "工程示例",
-    intro: "HRTOS 实战示例与系统应用案例。",
+    intro: "实战级系统案例。",
+    breadcrumb: "Examples",
+
     sections: [
-      ["MyOS Demo", "简化操作系统示例", "/docs/examples/myos/"],
-      ["Practice Lab", "工程实践案例", "/docs/examples/practice/"],
-      ["Priority Inversion", "优先级反转示例", "/docs/examples/practice/priority-inversion/"]
+      card("MyOS", "简化OS实现", "examples/myos/"),
+      card("Practice", "工程实践", "examples/practice/"),
+      card("Priority Inversion", "优先级反转", "examples/practice/priority-inversion/")
     ]
-  }
+  })
 };
 
-/**
- * 获取当前模块
- */
+/* =========================
+   路由识别（升级版）
+========================= */
+
 function getType() {
-  return pathMatch(location.pathname);
+  const path = location.pathname;
+
+  const match = path.match(/\/docs\/([^\/]+)\//);
+  if (match) return match[1];
+
+  return null;
 }
 
-/**
- * 卡片渲染
- */
-function renderCards(items) {
-  if (!items || !items.length) {
-    return `<div style="color:#94a3b8;">暂无内容</div>`;
-  }
+/* =========================
+   渲染
+========================= */
+
+function renderCards(items, text) {
+  if (!items?.length) return `<div style="color:#94a3b8;">暂无内容</div>`;
 
   return items.map(i => `
-    <a class="doc-card" href="${i[2]}">
-      <h3>${i[0]}</h3>
-      <p>${i[1]}</p>
-      <span class="doc-link">进入文档 →</span>
+    <a class="doc-card" href="${i.link}">
+      <h3>${i.title}</h3>
+      <p>${i.desc}</p>
+      <span class="doc-link">${text}</span>
     </a>
   `).join("");
 }
 
-/**
- * 面包屑（自动生成）
- */
-function buildBreadcrumb(type) {
-  return `
-    <a href="/docs/">Docs</a> /
-    <a href="/docs/${type}/">${type}</a>
-  `;
-}
-
-/**
- * 主渲染
- */
 function render() {
   const type = getType();
-  const config = CONFIG[type];
+  const config = data[type];
 
   if (!config) return;
 
-  // title
   document.title = `${config.title} | HRTOS`;
 
-  // meta
   const meta = document.getElementById("page-description");
   if (meta) meta.setAttribute("content", config.intro);
 
-  // hero
   document.getElementById("hero-label").textContent = config.label;
   document.getElementById("hero-title").textContent = config.title;
   document.getElementById("hero-intro").textContent = config.intro;
 
-  // breadcrumb
-  const bc = document.getElementById("breadcrumb");
-  if (bc) bc.innerHTML = buildBreadcrumb(type);
+  document.getElementById("breadcrumb").innerHTML =
+    config.breadcrumb.map(([t, l]) =>
+      l ? `<a href="${l}">${t}</a>` : `<span>${t}</span>`
+    ).join(" / ");
 
-  // sections
-  const sec = document.getElementById("section-grid");
-  if (sec) sec.innerHTML = renderCards(config.sections);
+  document.getElementById("section-grid").innerHTML =
+    renderCards(config.sections, "进入文档");
+
+  document.getElementById("featured-grid").innerHTML =
+    config.featured.length
+      ? renderCards(config.featured, "查看专题")
+      : `<div style="color:#94a3b8;">暂无推荐内容</div>`;
 }
 
 document.addEventListener("DOMContentLoaded", render);
