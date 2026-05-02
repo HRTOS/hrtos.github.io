@@ -124,17 +124,22 @@ const data = {
     breadcrumb: "Architecture",
 
     sections: [
-      card("Kernel", "内核结构设计", "architecture/kernel/index.html"),
-      card("Scheduler", "调度模型", "architecture/scheduler/index.html"),
-      card("Interrupt", "中断模型", "architecture/interrupt/index.html"),
-      card("Memory", "内存模型", "architecture/memory/index.html"),
-      card("IPC", "通信架构", "architecture/ipc/index.html")
-    ],
+  card("内核架构", "解析 HRTOS 内核的整体结构、模块分层与系统控制边界，帮助理解内核在实时系统中的核心职责。", "architecture/kernel/index.html"),
 
-    featured: [
-      card("Kernel Flow", "内核执行流", "architecture/kernel/kernel-flow.html"),
-      card("Scheduling Model", "调度系统结构", "architecture/scheduler/scheduling-model.html")
-    ]
+  card("调度器", "学习任务调度机制、优先级管理、抢占规则与执行顺序控制，理解实时系统如何分配 CPU 资源。", "architecture/scheduler/index.html"),
+
+  card("中断架构", "理解中断触发、ISR 执行、优先级响应与任务恢复流程，掌握实时系统事件响应机制。", "architecture/interrupt/index.html"),
+
+  card("内存架构", "分析任务栈、堆空间、内核区与共享资源布局，理解实时系统中的内存组织方式。", "architecture/memory/index.html"),
+
+  card("通信架构", "学习信号量、消息队列、事件组等 IPC 机制在系统中的组织方式与通信执行路径。", "architecture/ipc/index.html")
+],
+
+featured: [
+  card("内核执行流", "追踪调度触发、上下文切换与任务执行过程，理解内核运行的完整执行路径。", "architecture/kernel/kernel-flow.html"),
+
+  card("调度模型", "展示任务选择、优先级调度与运行循环模型，帮助理解实时调度系统的核心结构。", "architecture/scheduler/scheduling-model.html")
+]
   }),
 
   system: createModule({
