@@ -91,26 +91,6 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/guide/时间与定时器.html</loc>
-    <lastmod>2026-05-03</lastmod>
-    <priority>0.60</priority>
-  </url>
-  <url>
-    <loc>https://hrtos.com/download.html</loc>
-    <lastmod>2026-05-03</lastmod>
-    <priority>0.60</priority>
-  </url>
-  <url>
-    <loc>https://hrtos.com/docs/scheduler/</loc>
-    <lastmod>2026-05-03</lastmod>
-    <priority>0.60</priority>
-  </url>
-  <url>
-    <loc>https://hrtos.com/docs/task/os_task_state.html</loc>
-    <lastmod>2026-05-03</lastmod>
-    <priority>0.60</priority>
-  </url>
-  <url>
     <loc>https://hrtos.com/docs/examples/01-task-execution/</loc>
     <lastmod>2026-05-03</lastmod>
     <priority>0.75</priority>
@@ -274,11 +254,6 @@
     <loc>https://hrtos.com/docs/examples/04-time-control/</loc>
     <lastmod>2026-05-03</lastmod>
     <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://hrtos.com/docs/creation/</loc>
-    <lastmod>2026-05-03</lastmod>
-    <priority>0.60</priority>
   </url>
   <url>
     <loc>https://hrtos.com/docs/</loc>
@@ -459,11 +434,6 @@
     <loc>https://hrtos.com/docs/learn/interrupt-basics.html</loc>
     <lastmod>2026-05-03</lastmod>
     <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://hrtos.com/docs/memory/os_data_xdata.html</loc>
-    <lastmod>2026-05-03</lastmod>
-    <priority>0.60</priority>
   </url>
   <url>
     <loc>https://hrtos.com/docs/api/ipc/os_mutex_lock.html</loc>
@@ -779,10 +749,5 @@
     <loc>https://hrtos.com/docs/modules/time/scheduler-tick.html</loc>
     <lastmod>2026-05-03</lastmod>
     <priority>0.88</priority>
-  </url>
-  <url>
-    <loc>https://hrtos.com/doc/rtos是什么.html</loc>
-    <lastmod>2026-05-03</lastmod>
-    <priority>0.60</priority>
   </url>
 </urlset>
