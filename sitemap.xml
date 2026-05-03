@@ -1,165 +1,788 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
   <url>
-    <loc>https://hrtos.com/</loc>
-    <priority>1.0</priority>
+    <loc>https://hrtos.com/why/03-determinism-constraint.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
   </url>
-
-  <url>
-    <loc>https://hrtos.com/docs/</loc>
-    <priority>0.95</priority>
-  </url>
-
-  <url>
-    <loc>https://hrtos.com/download/</loc>
-    <priority>0.95</priority>
-  </url>
-
-  <url>
-    <loc>https://hrtos.com/system-view/</loc>
-    <priority>0.95</priority>
-  </url>
-
   <url>
     <loc>https://hrtos.com/why/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/why/01-real-time-problem.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/why/02-why-general-os-fails.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/why/summary.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/why/04-rtos-vs-gpos.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/system-view/01-execution-flow.html</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.95</priority>
   </url>
-
   <url>
-    <loc>https://hrtos.com/docs/api/</loc>
-    <priority>0.90</priority>
+    <loc>https://hrtos.com/system-view/03-interrupt-flow.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.95</priority>
   </url>
-
   <url>
-    <loc>https://hrtos.com/docs/architecture/</loc>
-    <priority>0.90</priority>
+    <loc>https://hrtos.com/system-view/system-diagram.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.95</priority>
   </url>
-
+  <url>
+    <loc>https://hrtos.com/system-view/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/system-view/04-scheduler-cycle.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/system-view/07-deterministic-chain.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/system-view/02-task-lifecycle.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/system-view/summary.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/system-view/06-time-system.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/system-view/05-memory-view.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/download/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/guide/时间与定时器.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/download.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/scheduler/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/task/os_task_state.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/01-task-execution/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/01-task-execution/priority-inheritance.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/01-task-execution/create-task.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/01-task-execution/task-state.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/01-task-execution/context-switch.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/07-kernel-behavior/full-schedule-flow.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/07-kernel-behavior/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/07-kernel-behavior/real-system-run.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/07-kernel-behavior/priority-inversion.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
   <url>
     <loc>https://hrtos.com/docs/examples/</loc>
-    <priority>0.90</priority>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
   </url>
-
   <url>
-    <loc>https://hrtos.com/docs/learn/</loc>
-    <priority>0.90</priority>
+    <loc>https://hrtos.com/docs/examples/03-communication-model/semaphore.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
   </url>
-
   <url>
-    <loc>https://hrtos.com/docs/modules/</loc>
+    <loc>https://hrtos.com/docs/examples/03-communication-model/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/03-communication-model/mailbox.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/03-communication-model/mutex.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/03-communication-model/message-queue.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/06-interrupt-driven/latency-test.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/06-interrupt-driven/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/06-interrupt-driven/nested-interrupt.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/06-interrupt-driven/interrupt-entry.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/myos/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/05-system-resource/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/05-system-resource/fragmentation.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/05-system-resource/stack-overflow.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/05-system-resource/allocation.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/02-scheduling-engine/rr-demo.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/02-scheduling-engine/real-time-demo.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/02-scheduling-engine/starvation-demo.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/02-scheduling-engine/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/02-scheduling-engine/priority-demo.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/04-time-control/delay-vs-wait.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/04-time-control/timer-demo.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/04-time-control/tick-system.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/examples/04-time-control/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/creation/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/ipc/</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.90</priority>
   </url>
-
+  <url>
+    <loc>https://hrtos.com/docs/architecture/ipc/communication-flow.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/ipc/ipc-model.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/scheduler/priority-model.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/scheduler/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/scheduler/scheduling-model.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/scheduler/scheduling-theory.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/kernel/system-boundary.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/kernel/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/kernel/kernel-structure.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/kernel/kernel-flow.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/kernel/kernel-overview.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/interrupt/interrupt-latency.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/interrupt/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/interrupt/interrupt-flow.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/interrupt/interrupt-model.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/memory/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/memory/memory-model.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/memory/resource-contention.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/architecture/memory/memory-layout.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.90</priority>
+  </url>
   <url>
     <loc>https://hrtos.com/docs/system/</loc>
-    <priority>0.90</priority>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
   </url>
-
   <url>
-    <loc>https://hrtos.com/docs/api/ipc/</loc>
+    <loc>https://hrtos.com/docs/system/scheduling-flow.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/system/context-switch-flow.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/system/interrupt-flow.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/learn/real-time-systems.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/learn/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/learn/ipc-basics.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/learn/context-switch-basics.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/learn/scheduling-basics.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/learn/what-is-rtos.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/learn/rtos-vs-linux.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/learn/preemptive-vs-cooperative.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/learn/faq.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/learn/interrupt-basics.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/memory/os_data_xdata.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_mutex_lock.html</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/api/memory/</loc>
+    <loc>https://hrtos.com/docs/api/ipc/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_sem_init.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_mail_recv.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_sem_give.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_mail_clear.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_mail_send.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_event_clear.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_event_get.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_sem_take.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_mutex_unlock.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_mutex_init.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/ipc/os_event_set.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/scheduler/os_dispatch_id.html</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://hrtos.com/docs/api/scheduler/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/scheduler/os_switch.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/task/os_task_hang.html</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://hrtos.com/docs/api/task/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/task/os_task_ready.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/task/os_task_function.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/task/os_task_state.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/task/os_task_exit.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/task/os_task_delete.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/task/os_task.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/memory/os_xdata_data.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/memory/os_data_xdata.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/memory/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/memory/os_task_stack.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/memory/os_memset.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/api/time/os_delay.html</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://hrtos.com/docs/api/time/</loc>
-    <priority>0.85</priority>
-  </url>
-
-  <url>
-    <loc>https://hrtos.com/docs/architecture/kernel/</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/architecture/scheduler/</loc>
+    <loc>https://hrtos.com/docs/api/time/os_wait_signal.html</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/architecture/interrupt/</loc>
+    <loc>https://hrtos.com/docs/api/time/os_timer_length.html</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/architecture/memory/</loc>
+    <loc>https://hrtos.com/docs/api/time/os_wait_event.html</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/architecture/ipc/</loc>
-    <priority>0.85</priority>
-  </url>
-
-  <url>
-    <loc>https://hrtos.com/docs/modules/task/</loc>
+    <loc>https://hrtos.com/docs/api/time/os_wait1.html</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/modules/time/</loc>
+    <loc>https://hrtos.com/docs/api/time/os_wait2.html</loc>
+    <lastmod>2026-05-03</lastmod>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/modules/memory/</loc>
-    <priority>0.85</priority>
+    <loc>https://hrtos.com/docs/modules/ipc/semaphore.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
   </url>
   <url>
     <loc>https://hrtos.com/docs/modules/ipc/</loc>
-    <priority>0.85</priority>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/ipc/event.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/ipc/mailbox.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/ipc/mutex.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/ipc/message-queue.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/scheduler/real-time-scheduling.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
   </url>
   <url>
     <loc>https://hrtos.com/docs/modules/scheduler/</loc>
-    <priority>0.85</priority>
-  </url>
-
-  <url>
-    <loc>https://hrtos.com/docs/examples/01-task-execution/</loc>
-    <priority>0.80</priority>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/examples/02-scheduling-engine/</loc>
-    <priority>0.80</priority>
+    <loc>https://hrtos.com/docs/modules/scheduler/round-robin.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/examples/03-communication-model/</loc>
-    <priority>0.80</priority>
+    <loc>https://hrtos.com/docs/modules/scheduler/priority-scheduling.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/examples/04-time-control/</loc>
-    <priority>0.80</priority>
+    <loc>https://hrtos.com/docs/modules/task/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/examples/05-system-resource/</loc>
-    <priority>0.80</priority>
+    <loc>https://hrtos.com/docs/modules/task/priority.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/examples/06-interrupt-driven/</loc>
-    <priority>0.80</priority>
+    <loc>https://hrtos.com/docs/modules/task/state-model.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/docs/examples/07-kernel-behavior/</loc>
-    <priority>0.80</priority>
-  </url>
-
-  <url>
-    <loc>https://hrtos.com/system-view/system-diagram.html</loc>
-    <priority>0.75</priority>
+    <loc>https://hrtos.com/docs/modules/task/lifecycle.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
   </url>
   <url>
-    <loc>https://hrtos.com/system-view/summary.html</loc>
-    <priority>0.75</priority>
+    <loc>https://hrtos.com/docs/modules/task/context-switch.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
   </url>
-
   <url>
-    <loc>https://hrtos.com/why/summary.html</loc>
-    <priority>0.75</priority>
+    <loc>https://hrtos.com/docs/modules/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
   </url>
-
+  <url>
+    <loc>https://hrtos.com/docs/modules/memory/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/memory/fragmentation.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/memory/stack-management.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/memory/memory-protection.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/memory/allocation.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/time/delay.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/time/tick-system.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/time/</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/time/timer.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/docs/modules/time/scheduler-tick.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://hrtos.com/doc/rtos是什么.html</loc>
+    <lastmod>2026-05-03</lastmod>
+    <priority>0.60</priority>
+  </url>
 </urlset>
