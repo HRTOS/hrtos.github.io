@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>实时系统基础 | HRTOS 学习模块</title>
+<meta name="description" content="深入理解实时系统（Real-Time Systems）的本质，包括时间约束模型、系统分类、调度约束与HRTOS设计逻辑。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+}
+
+a{color:inherit;text-decoration:none;}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:40px;
+}
+
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
+}
+
+.breadcrumb a{color:#7dd3fc;}
+
+.hero{
+  display:grid;
+  gap:16px;
+}
+
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.22);
+  color:#bae6fd;
+  font-size:14px;
+}
+
+.hero h1{
+  margin:0;
+  font-size:42px;
+}
+
+.hero p{
+  margin:0;
+  max-width:900px;
+  color:var(--muted);
+}
+
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.tag{
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:13px;
+  color:#bae6fd;
+  background:rgba(15,23,42,.4);
+}
+
+.section{
+  display:grid;
+  gap:12px;
+}
+
+.section h2{
+  margin:0;
+  font-size:22px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+}
+
+.block{
+  padding:22px;
+  border-radius:10px;
+  border:1px solid rgba(56,189,248,.18);
+  background:rgba(15,23,42,.6);
+  font-family:Consolas, monospace;
+  color:#7dd3fc;
+  font-size:14px;
+  line-height:1.8;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+}
+
+.card{
+  padding:22px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+}
+
+.card h3{
+  margin:0 0 10px;
+  font-size:18px;
+}
+
+.card p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:14px;
+}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/learn/index.html">学习模块</a> /
+    <span>实时系统基础</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS 学习模块</span>
+
+    <h1>实时系统基础（Real-Time Systems）</h1>
+
+    <p>
+      实时系统不是“更快的计算系统”，而是一类被时间约束严格定义的计算模型。
+      它的核心目标不是提升性能上限，而是控制系统行为的时间不确定性，使其收敛为可证明的时间边界。
+      在HRTOS体系中，实时系统是整个调度、任务、中断与IPC设计的基础前提。
+    </p>
+
+    <div class="meta">
+      <span class="tag">Time Constraint Model</span>
+      <span class="tag">Deterministic Execution</span>
+      <span class="tag">System Foundation</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>一、实时系统的本质定义</h2>
+
+    <p>
+      实时系统（Real-Time System）的本质不是“计算必须快速完成”，而是“计算必须在可验证的时间窗口内完成”。
+      这意味着系统正确性的定义被扩展为双重约束：逻辑正确性 + 时间正确性。
+    </p>
+
+    <div class="block">
+Correctness = Logical Correctness + Temporal Correctness
+
+Temporal Constraint:
+Execution Time ≤ Deadline
+
+If violated → system-level failure (not application failure)
+    </div>
+
+    <p>
+      在实时系统中，“超时的正确结果”在工程意义上等同于错误结果。
+      这是实时系统与通用计算系统最根本的边界。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>二、时间约束是系统核心资源</h2>
+
+    <p>
+      在传统系统中，CPU是核心资源；但在实时系统中，真正的核心资源是“时间窗口”。
+      每一个任务都必须被映射为一个时间约束问题。
+    </p>
+
+    <div class="block">
+Task Model:
+
+Task = (Start Time, Execution Time, Deadline)
+
+Constraint:
+Start + Execution ≤ Deadline
+    </div>
+
+    <p>
+      因此，实时系统设计本质上不是“任务执行设计”，而是“时间约束分配问题”。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>三、实时系统分类的本质区别</h2>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>硬实时系统（Hard RT）</h3>
+        <p>
+          时间约束是绝对约束，一旦违反即系统失败。
+          常见于控制系统、航空航天、工业安全场景。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>软实时系统（Soft RT）</h3>
+        <p>
+          允许偶发延迟，但系统性能随延迟下降。
+          常见于多媒体、网络通信等场景。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>固实时系统（Firm RT）</h3>
+        <p>
+          超时结果直接失效，但不一定导致系统崩溃。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>非实时系统</h3>
+        <p>
+          不具备时间约束模型，以吞吐量与公平性为核心目标。
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>四、实时性的核心评价指标</h2>
+
+    <p>
+      实时系统的评价不以平均性能为标准，而以最坏情况行为为标准（Worst Case Analysis）。
+    </p>
+
+    <div class="block">
+关键指标：
+
+1. Worst Case Execution Time (WCET)
+2. Worst Case Response Time (WCRT)
+3. Interrupt Latency Bound
+4. Scheduling Determinism
+    </div>
+
+    <p>
+      其中最关键的是“最坏情况可控性”，而不是“平均性能最优”。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>五、实时系统的运行本质</h2>
+
+    <p>
+      实时系统并不是一个单一组件，而是一个由任务调度、中断机制、资源分配共同组成的时间约束执行网络。
+    </p>
+
+    <div class="block">
+System Execution Model:
+
+Interrupt → Scheduler → Task Execution → Context Switch → Deadline Check → Repeat
+    </div>
+
+    <p>
+      该模型的核心约束是：任何路径都必须在时间上界内完成。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>六、实时系统与HRTOS的关系</h2>
+
+    <p>
+      HRTOS的设计目标不是“提供操作系统功能”，而是“构建一个时间确定性执行框架”。
+      实时系统是这个框架成立的前提条件。
+    </p>
+
+    <p>
+      在HRTOS中，所有模块（调度、任务、IPC、中断）都围绕一个核心原则展开：
+      不允许时间不确定性扩散。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>七、总结：实时系统的抽象模型</h2>
+
+    <div class="block">
+RTOS System Definition:
+
+System = (Tasks, Scheduler, Interrupts, Constraints)
+
+Subject to:
+
+∀ task: Finish Time ≤ Deadline
+∀ interrupt: Latency ≤ Upper Bound
+∀ schedule: Deterministic Behavior
+    </div>
+
+    <p>
+      实时系统的本质不是“系统类型”，而是一种将计算问题转化为时间约束问题的建模方法。
+      它定义了现代控制系统与工业系统的基础运行逻辑。
+    </p>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. 实时系统基础理论与时间约束模型。
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

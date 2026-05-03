@@ -1,0 +1,225 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>任务创建 | HRTOS 系统文档</title>
+<meta name="description" content="HRTOS 任务创建模块说明，涵盖任务创建接口、内存分配机制与系统启动流程，是实时操作系统初始化与任务运行的基础。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#f8fafc;
+  line-height:1.6;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:28px;
+  margin-bottom:10px;
+}
+
+.meta{
+  color:#64748b;
+  font-size:14px;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:20px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+  text-align:left;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  color:#2563eb;
+  margin-top:5px;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <h1>任务创建</h1>
+  <div class="meta">模块分类：系统核心 / 更新时间：2026-04-26</div>
+
+  <!-- 模块概述 -->
+  <div class="section">
+    <h2>模块概述</h2>
+    <p>
+      任务创建是 HRTOS 系统启动与运行的基础模块，负责为任务分配内存、
+      初始化栈结构并注册到调度系统中。
+    </p>
+
+    <p>
+      该模块内部集成了内存位图分配算法与栈构建机制，
+      能够在资源受限的环境下高效管理任务运行空间。
+    </p>
+  </div>
+
+  <!-- 核心功能 -->
+  <div class="section">
+    <h2>核心功能</h2>
+    <ul>
+      <li>任务创建与注册</li>
+      <li>内存块分配（位图算法）</li>
+      <li>任务栈初始化</li>
+      <li>系统启动初始化</li>
+    </ul>
+  </div>
+
+  <!-- API 列表 -->
+  <div class="section">
+    <h2>相关 API</h2>
+
+    <table class="table">
+      <tr>
+        <th>函数名</th>
+        <th>说明</th>
+       
+      </tr>
+
+      <tr>
+        <td>os_task</td>
+        <td>创建任务</td>
+        
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 示例代码 -->
+  <div class="section">
+    <h2>示例代码</h2>
+
+    <div class="code">
+void main()
+{
+    // 创建一个任务
+    os_task(task1, 0, 1, 2);
+
+    while(1)
+    {
+    }
+}
+    </div>
+  </div>
+
+  <!-- 系统启动流程 -->
+  <div class="section">
+    <h2>系统启动流程</h2>
+
+    <div class="code">
+volatile void main()
+{
+    unsigned char i;
+
+    // 内存初始化
+    for(i = 0; i < 0x80; i++)
+    {
+        *((unsigned char*)i) = 0;
+    }
+
+    os_memset(&OS_YUNXING_BIANHAO, 0, 0x0140);
+
+    // 创建初始任务
+    os_task(hrtos_main, 0, 0, 1);
+
+    // 启动定时器与中断
+    TR0 = 1;
+    EA = 1;
+
+    // 进入任务
+    hrtos_main();
+
+    while(1);
+}
+    </div>
+
+  </div>
+
+  <!-- 扩展阅读 -->
+  <div class="section">
+    <h2>扩展阅读</h2>
+
+    <div class="link-box">
+      <a href="../scheduler/index.html">调度管理机制</a>
+      <a href="../memory/index.html">内存管理模块</a>
+      <a href="../task/index.html">任务管理模块</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

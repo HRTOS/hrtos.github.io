@@ -27,43 +27,91 @@ jobs:
 
             path=$(echo "$file" | sed 's|^\./||')
 
-            # 统一 index 处理（目录化）
+            # index 处理
             if [[ "$path" == */index.html ]]; then
               path=$(echo "$path" | sed 's|index.html||')
             fi
 
+            # =========================
             # 首页
+            # =========================
             if [[ "$path" == "index.html" || "$path" == "" ]]; then
               url="https://hrtos.com/"
               priority="1.0"
 
-            # 核心入口页（权重最高文档结构）
-            elif [[ "$path" == "docs/" || "$path" == "guide/" ]]; then
+            # =========================
+            # System View（最高权重核心）
+            # =========================
+            elif [[ "$path" == system-view/* ]]; then
               url="https://hrtos.com/$path"
               priority="0.95"
 
-            # 二级分类目录
-            elif [[ "$path" == docs/*/ || "$path" == guide/*/ ]]; then
+            # =========================
+            # Docs 核心入口
+            # =========================
+            elif [[ "$path" == docs/index.html || "$path" == docs/ ]]; then
+              url="https://hrtos.com/docs/"
+              priority="0.95"
+
+            # =========================
+            # Architecture（核心知识层）
+            # =========================
+            elif [[ "$path" == docs/architecture/* ]]; then
+              url="https://hrtos.com/$path"
+              priority="0.90"
+
+            # =========================
+            # Modules（API核心）
+            # =========================
+            elif [[ "$path" == docs/modules/* ]]; then
+              url="https://hrtos.com/$path"
+              priority="0.88"
+
+            # =========================
+            # API 层
+            # =========================
+            elif [[ "$path" == docs/api/* ]]; then
               url="https://hrtos.com/$path"
               priority="0.85"
 
-            # docs / guide 单页内容
-            elif [[ "$path" == docs/* || "$path" == guide/* ]]; then
+            # =========================
+            # Learn（知识解释层）
+            # =========================
+            elif [[ "$path" == docs/learn/* ]]; then
+              url="https://hrtos.com/$path"
+              priority="0.80"
+
+            # =========================
+            # Examples（示例）
+            # =========================
+            elif [[ "$path" == docs/examples/* ]]; then
               url="https://hrtos.com/$path"
               priority="0.75"
 
-            # 其他页面
+            # =========================
+            # Why（理论层）
+            # =========================
+            elif [[ "$path" == why/* ]]; then
+              url="https://hrtos.com/$path"
+              priority="0.80"
+
+            # =========================
+            # System View 其他页
+            # =========================
+            elif [[ "$path" == system-view/* ]]; then
+              url="https://hrtos.com/$path"
+              priority="0.90"
+
+            # =========================
+            # download / misc
+            # =========================
             else
               url="https://hrtos.com/$path"
-              priority="0.6"
+              priority="0.60"
             fi
 
-            # 防止双斜杠
-            url=$(echo "$url" | sed 's|//|/|g' | sed 's|:/|://|')
-
-            # git lastmod（真实更新时间）
+            # lastmod
             lastmod=$(git log -1 --format="%ad" --date=short -- "$file" 2>/dev/null)
-
             if [[ -z "$lastmod" ]]; then
               lastmod=$(date +%F)
             fi

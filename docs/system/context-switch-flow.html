@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>上下文切换流程（Context Switch Flow） | HRTOS Documentation</title>
+<meta name="description" content="HRTOS上下文切换流程说明，包括任务切换触发条件、寄存器保存与恢复、调度器执行路径与中断切换机制。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --surface-hover:rgba(30,41,59,.92);
+  --border:rgba(148,163,184,.18);
+  --border-strong:rgba(56,189,248,.38);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
+  overflow-x:hidden;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
+  background-size:28px 28px;
+  opacity:.14;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  position:relative;
+  z-index:1;
+}
+
+/* breadcrumb */
+.breadcrumb{
+  margin-bottom:28px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.breadcrumb a:hover{
+  color:var(--accent);
+}
+
+/* hero */
+.hero{
+  margin-bottom:56px;
+}
+
+.hero-label{
+  display:inline-block;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.24);
+  color:#bae6fd;
+  font-size:.9rem;
+  margin-bottom:18px;
+}
+
+.hero h1{
+  margin:0 0 16px;
+  font-size:clamp(2.3rem,5vw,4rem);
+  line-height:1.08;
+  font-weight:700;
+}
+
+.hero p{
+  margin:0;
+  max-width:760px;
+  color:var(--muted);
+  font-size:1rem;
+}
+
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:18px;
+}
+
+.tag{
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:rgba(15,23,42,.45);
+  color:#bae6fd;
+  font-size:.84rem;
+}
+
+/* layout */
+.layout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 280px;
+  gap:28px;
+  align-items:start;
+}
+
+.content{
+  display:grid;
+  gap:22px;
+}
+
+.section{
+  display:grid;
+  gap:12px;
+  padding:24px 22px;
+  background:linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+
+.section h2{
+  margin:0;
+  font-size:1.35rem;
+  line-height:1.3;
+  border-left:3px solid var(--accent);
+  padding-left:12px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+  font-size:0.96rem;
+}
+
+.note{
+  padding:14px 16px;
+  border-left:3px solid var(--accent);
+  border-radius:8px;
+  background:rgba(15,23,42,.6);
+  color:var(--muted);
+  font-size:0.94rem;
+}
+
+.code{
+  background:#020617;
+  border:1px solid rgba(56,189,248,.14);
+  border-radius:8px;
+  padding:16px;
+  overflow-x:auto;
+  font-family:Consolas,monospace;
+  font-size:0.92rem;
+  color:#7dd3fc;
+  line-height:1.65;
+}
+
+/* sidebar */
+.sidebar{
+  display:grid;
+  gap:16px;
+}
+
+.box{
+  padding:18px 16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:rgba(30,41,59,.56);
+}
+
+.box h3{
+  margin:0 0 12px;
+  font-size:1rem;
+}
+
+.box a{
+  display:block;
+  color:#7dd3fc;
+  font-size:0.92rem;
+  margin-bottom:8px;
+}
+
+.box a:hover{
+  color:var(--accent);
+}
+
+/* footer */
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:0.9rem;
+}
+
+@media(max-width:980px){
+  .layout{grid-template-columns:1fr;}
+}
+
+@media(max-width:640px){
+  .page{
+    width:min(100% - 24px,1180px);
+    padding-top:84px;
+  }
+
+  .section{
+    padding:20px 18px;
+  }
+
+  .hero p,
+  .section p{
+    font-size:0.95rem;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">Docs</a> /
+    <a href="/docs/system/index.html">System</a> /
+    <span>Context Switch Flow</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS Documentation</span>
+
+    <h1>上下文切换流程（Context Switch Flow）</h1>
+
+    <p>
+      上下文切换是RTOS在多任务环境中保存与恢复任务执行状态的核心机制，
+      决定系统多任务并发能力与实时响应性能。
+    </p>
+
+    <div class="meta">
+      <span class="tag">System</span>
+      <span class="tag">Context Switch</span>
+      <span class="tag">Kernel Core</span>
+    </div>
+  </section>
+
+  <div class="layout">
+
+    <div class="content">
+
+      <section class="section" id="overview">
+        <h2>概述</h2>
+        <p>
+          上下文切换指CPU从一个任务切换到另一个任务时，
+          保存当前任务寄存器状态并恢复目标任务状态的过程。
+        </p>
+      </section>
+
+      <section class="section" id="mechanism">
+        <h2>工作原理</h2>
+        <p>
+          当发生调度事件（如时间片结束、任务阻塞或高优先级任务就绪）时，
+          内核触发上下文切换流程。
+        </p>
+
+        <div class="note">
+          切换开销直接影响系统实时性，因此必须尽可能优化保存与恢复路径。
+        </div>
+      </section>
+
+      <section class="section" id="interface">
+        <h2>关键接口 / 结构</h2>
+
+        <div class="code">
+os_schedule()
+os_context_switch()
+
+struct context {
+    uint32_t sp;
+    uint32_t pc;
+    uint32_t regs[16];
+};
+
+struct task_control_block {
+    struct context ctx;
+};
+        </div>
+      </section>
+
+      <section class="section" id="flow">
+        <h2>运行流程</h2>
+        <p>
+          触发调度 → 保存当前任务上下文 →
+          选择下一个任务 → 恢复目标任务上下文 →
+          返回用户态继续执行。
+        </p>
+      </section>
+
+      <section class="section" id="extension">
+        <h2>扩展说明</h2>
+        <p>
+          HRTOS支持硬件中断触发切换与软件调度切换两种模式，
+          并针对不同架构优化寄存器保存策略。
+        </p>
+      </section>
+
+    </div>
+
+    <aside class="sidebar">
+
+      <div class="box">
+        <h3>目录导航</h3>
+        <a href="#overview">概述</a>
+        <a href="#mechanism">工作原理</a>
+        <a href="#interface">关键接口</a>
+        <a href="#flow">运行流程</a>
+      </div>
+
+      <div class="box">
+        <h3>相关页面</h3>
+        <a href="/docs/modules/task/context-switch.html">任务上下文切换</a>
+        <a href="/docs/modules/scheduler/index.html">调度器</a>
+      </div>
+
+      <div class="box">
+        <h3>所属模块</h3>
+        <a href="/docs/system/index.html">System</a>
+      </div>
+
+      <div class="box">
+        <h3>学习路径</h3>
+        <a href="/docs/system/index.html">System → 内核执行路径</a>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

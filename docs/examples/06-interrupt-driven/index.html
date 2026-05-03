@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>中断驱动系统 | HRTOS 实验系统</title>
+<meta name="description" content="中断驱动系统实验：涵盖中断进入、嵌套中断与延迟分析，理解RTOS中断响应与实时性机制。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:12px;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+/* breadcrumb */
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+/* hero */
+.hero{
+  margin-bottom:54px;
+}
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+  line-height:1.1;
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+/* section */
+.section{
+  margin-bottom:54px;
+}
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{
+  margin:0 0 20px;
+  color:var(--muted);
+}
+
+/* grid */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+
+.card{
+  display:block;
+  padding:22px;
+  background:linear-gradient(180deg,rgba(30,41,59,.85),rgba(15,23,42,.95));
+  border:1px solid var(--border);
+  border-radius:12px;
+  box-shadow:0 20px 48px rgba(2,6,23,.34);
+  transition:.25s ease;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  border-color:rgba(56,189,248,.4);
+}
+
+.card h3{
+  margin:0 0 8px;
+  font-size:1.08rem;
+  color:#f8fafc;
+}
+
+.card p{
+  margin:0;
+  font-size:.95rem;
+  color:var(--muted);
+}
+
+.card span{
+  display:inline-block;
+  margin-top:12px;
+  color:#7dd3fc;
+  font-size:.9rem;
+  font-weight:600;
+}
+
+/* model */
+.model-box{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+  margin-top:12px;
+}
+
+/* footer */
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+
+@media(max-width:900px){
+  .grid{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+
+<body data-header="docs">
+<script src="/header.js" defer></script>
+
+<main class="page">
+
+  <!-- 面包屑 -->
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">Docs</a> /
+    <a href="/docs/examples/index.html">Examples</a> /
+    <span>Interrupt Driven</span>
+  </nav>
+
+  <!-- 标题 -->
+  <section class="hero">
+    <span class="hero-tag">Interrupt System</span>
+
+    <h1>中断驱动系统</h1>
+
+    <p>
+      中断驱动系统用于描述RTOS中断响应机制，包括中断进入流程、
+      嵌套中断控制与中断延迟分析，是实时系统响应能力的核心组成部分。
+    </p>
+  </section>
+
+  <!-- 模型定义 -->
+  <section class="section">
+    <h2>中断模型定义</h2>
+    <div class="model-box">
+      Interrupt Model = Interrupt Entry + Nested Control + Latency Handling + Context Save/Restore
+    </div>
+  </section>
+
+  <!-- 核心实验 -->
+  <section class="section">
+    <h2>核心实验</h2>
+    <p>以下实验用于验证中断触发与任务调度之间的响应关系。</p>
+
+    <div class="grid">
+
+      <a class="card" href="interrupt-entry.html">
+        <h3>中断进入流程</h3>
+        <p>分析中断触发与上下文保存过程。</p>
+        <span>进入实验 →</span>
+      </a>
+
+      <a class="card" href="nested-interrupt.html">
+        <h3>嵌套中断</h3>
+        <p>观察中断优先级嵌套与抢占机制。</p>
+        <span>进入实验 →</span>
+      </a>
+
+      <a class="card" href="latency-test.html">
+        <h3>中断延迟测试</h3>
+        <p>测量系统响应时间与实时性能。</p>
+        <span>进入实验 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- 关联 -->
+  <section class="section">
+    <h2>关联系统</h2>
+
+    <div class="grid">
+
+      <a class="card" href="/docs/examples/01-task-execution/index.html">
+        <h3>任务执行模型</h3>
+        <p>中断触发任务切换的执行路径。</p>
+        <span>查看 →</span>
+      </a>
+
+      <a class="card" href="/docs/examples/02-scheduling-engine/index.html">
+        <h3>调度引擎</h3>
+        <p>中断与调度器之间的联动机制。</p>
+        <span>查看 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS · Interrupt Driven System
+  </footer>
+
+</main>
+
+</body>
+</html>

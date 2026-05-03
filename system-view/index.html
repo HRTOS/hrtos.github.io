@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>System View | HRTOS</title>
+<meta name="description" content="HRTOS System View：系统运行模型、任务、中断、调度、时间与内存结构的统一运行图谱">
+
+<meta name="page-role" content="system-index">
+<meta name="semantic-node" content="system-view-index">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#0b0f14;
+  color:#e8eef5;
+}
+
+.nav{
+  display:flex;
+  justify-content:space-between;
+  padding:14px 24px;
+  border-bottom:1px solid #1e2a3a;
+}
+
+.nav a{
+  color:#9fb0c3;
+  text-decoration:none;
+  margin-left:12px;
+  font-size:14px;
+}
+
+.container{
+  max-width:920px;
+  margin:0 auto;
+  padding:60px 24px;
+}
+
+h1{
+  font-size:38px;
+  margin-bottom:10px;
+}
+
+.sub{
+  color:#9fb0c3;
+  margin-bottom:40px;
+}
+
+.card{
+  background:#111823;
+  border:1px solid #1e2a3a;
+  border-radius:14px;
+  padding:20px;
+  margin-bottom:16px;
+}
+
+.card a{
+  color:#cfe3ff;
+  text-decoration:none;
+  font-weight:600;
+}
+
+.card a:hover{
+  color:#ffffff;
+}
+
+.section-title{
+  font-size:18px;
+  color:#cfe3ff;
+  margin-bottom:12px;
+}
+
+.meta{
+  color:#9fb0c3;
+  font-size:14px;
+}
+
+/* 新增：体系级强调块 */
+.highlight{
+  border-left:3px solid #4da3ff;
+  padding-left:12px;
+  margin-top:10px;
+  color:#9fb0c3;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/docs/index.html">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>System View</h1>
+  <div class="sub">
+    HRTOS 系统运行模型：任务 / 中断 / 调度 / 时间 / 内存 的统一执行结构
+  </div>
+
+  <!-- 核心模型 -->
+  <div class="card">
+    <div class="section-title">核心运行模型</div>
+
+    <p><a href="/system-view/01-execution-flow.html">01 Execution Flow</a></p>
+    <div class="meta">任务从触发 → 执行 → 结束的完整路径</div>
+
+    <p><a href="/system-view/02-task-lifecycle.html">02 Task Lifecycle</a></p>
+    <div class="meta">任务状态机（Ready / Running / Blocked）</div>
+
+    <p><a href="/system-view/03-interrupt-flow.html">03 Interrupt Flow</a></p>
+    <div class="meta">中断如何改变执行流结构</div>
+
+    <p><a href="/system-view/04-scheduler-cycle.html">04 Scheduler Cycle</a></p>
+    <div class="meta">调度器的周期性决策机制</div>
+
+    <p><a href="/system-view/05-memory-view.html">05 Memory View</a></p>
+    <div class="meta">内存行为对时间确定性的影响</div>
+
+    <p><a href="/system-view/06-time-system.html">06 Time System</a></p>
+    <div class="meta">时间作为系统约束变量（tick / latency / deadline）</div>
+
+    <p><a href="/system-view/07-deterministic-chain.html">07 Deterministic Chain</a></p>
+    <div class="meta">从中断到任务完成的确定性链路</div>
+
+  </div>
+
+  <!-- 结构图 -->
+  <div class="card">
+    <div class="section-title">系统结构图与总结</div>
+
+    <p><a href="/system-view/system-diagram.html">System Diagram</a></p>
+    <div class="meta">系统运行结构总览</div>
+
+    <p><a href="/system-view/summary.html">Summary</a></p>
+    <div class="meta">System View 语义总结</div>
+
+    <div class="highlight">
+      System View = Execution + Time + Determinism + Scheduling + Memory
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

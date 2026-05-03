@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>系统边界（System Boundary）| HRTOS Kernel</title>
+<meta name="description" content="定义HRTOS内核与外部世界的边界模型：调度域、时间域、资源域与不确定性隔离">
+
+<meta name="page-role" content="architecture">
+<meta name="semantic-node" content="system-boundary">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-boundary {
+  border-left: 3px solid #f59e0b;
+}
+
+.card-warning {
+  border-left: 3px solid #ef4444;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html">System</a>
+    <a href="/docs/index.html" style="color:#cfe3ff;">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+<h1>系统边界（System Boundary）</h1>
+<div class="sub">
+Kernel 的本质不是执行控制器，而是“可证明系统的边界生成器”
+</div>
+
+<!-- core definition -->
+<div class="card card-core">
+<h2>1. 核心定义</h2>
+
+<p>
+系统边界（System Boundary）定义的是：内核系统与外部世界之间的可计算分割条件。
+</p>
+
+<p>
+形式化表达为：
+</p>
+
+<p>
+System = Kernel + Boundary + Environment
+</p>
+
+<p>
+其中：
+<b>Boundary 决定 Kernel 是否“可成立”</b>
+</p>
+
+<div class="en">
+System boundary defines the computable separation between kernel and environment, determining system validity.
+</div>
+</div>
+
+<!-- mathematical model -->
+<div class="card card-boundary">
+<h2>2. 边界的数学抽象</h2>
+
+<p>
+系统边界可以抽象为约束集合：
+</p>
+
+<p>
+B = {Tb, Rb, Ib}
+</p>
+
+<p>
+Tb = 时间约束边界（Timing Bound）<br/>
+Rb = 资源约束边界（Resource Bound）<br/>
+Ib = 不确定性边界（Uncertainty Bound）
+</p>
+
+<p>
+系统成立条件：
+</p>
+
+<p>
+∀ event ∈ System → event ∈ B
+</p>
+
+<p>
+👉 超出 B 的行为 = 非RTOS行为
+</p>
+</div>
+
+<!-- kernel role -->
+<div class="card card-core">
+<h2>3. Kernel 的真实角色</h2>
+
+<p>
+传统 OS：
+</p>
+
+<p>
+Kernel = 调度 + 管理 + 抽象
+</p>
+
+<p>
+HRTOS：
+</p>
+
+<p>
+Kernel = Boundary Enforcement Engine（边界执行器）
+</p>
+
+<p>
+它的任务不是“运行系统”，而是：
+</p>
+
+<p>
+👉 防止系统行为突破可分析空间
+</p>
+</div>
+
+<!-- scheduling domain -->
+<div class="card card-boundary">
+<h2>4. 调度域 = 时间边界投影</h2>
+
+<p>
+Scheduling Domain 是时间边界在 CPU 上的投影：
+</p>
+
+<p>
+SD ⊆ Time × Tasks
+</p>
+
+<p>
+调度器只能在 SD 内做决策：
+</p>
+
+<p>
+✔ 不允许未知执行路径<br/>
+✔ 不允许时间不可界定行为
+</p>
+
+<p>
+否则：
+</p>
+
+<p>
+❌ Determinism collapse（确定性崩塌）
+</p>
+</div>
+
+<!-- irreversibility -->
+<div class="card card-boundary">
+<h2>5. 不可逆性（Irreversibility）</h2>
+
+<p>
+系统边界具有一个关键特性：
+</p>
+
+<p>
+👉 一旦突破，无法恢复可证明性
+</p>
+
+<p>
+例如：
+</p>
+
+<p>
+• 动态内存导致时间漂移<br/>
+• cache miss 引入非确定路径<br/>
+• 中断嵌套破坏执行序列
+</p>
+
+<p>
+这些不是 bug，而是：
+<b>边界不可逆破坏</b>
+</p>
+</div>
+
+<!-- isolation -->
+<div class="card card-boundary">
+<h2>6. 隔离机制 = 边界实现方式</h2>
+
+<p>
+系统边界通过以下机制实现：
+</p>
+
+<p>
+• Time isolation（时间隔离）<br/>
+• Memory isolation（内存隔离）<br/>
+• Interrupt gating（中断门控）<br/>
+• Priority ceiling（优先级封顶）
+</p>
+
+<p>
+目标不是“安全”，而是：
+<b>控制系统可分析空间</b>
+</p>
+</div>
+
+<!-- failure -->
+<div class="card card-warning">
+<h2>7. 边界破坏 = RTOS → GPOS 退化</h2>
+
+<p>
+当边界失效时：
+</p>
+
+<p>
+• WCET 不再成立<br/>
+• 调度理论失效<br/>
+• 延迟无法界定<br/>
+• 系统变为“概率系统”
+</p>
+
+<p>
+本质变化：
+</p>
+
+<p>
+RTOS → GPOS = 从确定性系统 → 非确定性系统
+</p>
+</div>
+
+<!-- system meaning -->
+<div class="card card-core">
+<h2>8. 系统级意义</h2>
+
+<p>
+系统边界决定：
+</p>
+
+<p>
+✔ 系统是否可证明  
+✔ 系统是否属于 RTOS  
+✔ 系统是否可做 worst-case analysis
+</p>
+
+<p>
+没有边界 → 没有 RTOS
+</p>
+</div>
+
+<!-- meta -->
+<div class="card card-meta">
+<h2>语义总结</h2>
+
+<p>
+系统边界不是结构设计，而是：
+<b>RTOS 是否作为数学系统成立的必要条件</b>
+</p>
+
+<div class="en">
+System boundary is not architecture, but the necessary condition for RTOS to exist as a provable system.
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

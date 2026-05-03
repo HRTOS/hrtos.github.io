@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>完整调度流程 | HRTOS 内核行为</title>
+<meta name="description" content="完整调度流程实验：解析HRTOS内核从中断触发到任务切换的完整调度路径与执行链路。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+/* breadcrumb */
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+
+/* hero */
+.hero{
+  margin-bottom:54px;
+}
+
+.hero h1{
+  margin:0 0 12px;
+  font-size:2.4rem;
+}
+
+.hero p{
+  color:var(--muted);
+}
+
+/* section */
+.section{ margin-bottom:54px; }
+.section h2{ font-size:1.4rem; margin-bottom:10px; }
+.section p{ color:var(--muted); }
+
+/* block */
+.block{
+  padding:18px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+}
+
+/* flow */
+.flow{ display:grid; gap:14px; }
+
+.step{
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{ margin:0 0 6px; }
+
+/* code */
+.code-box{
+  position:relative;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  padding:18px;
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+/* footer */
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<!-- breadcrumb（严格 index 规则） -->
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">示例系统</a> /
+  <a href="/docs/examples/07-kernel-behavior/index.html">内核行为</a> /
+  <span>完整调度流程</span>
+</nav>
+
+<!-- hero -->
+<section class="hero">
+  <h1>完整调度流程（Full Schedule Flow）</h1>
+  <p>
+    本页面描述HRTOS内核从中断触发到任务切换的完整调度链路，
+    覆盖中断入口、调度决策、上下文切换与任务恢复全过程。
+  </p>
+</section>
+
+<!-- definition -->
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="block">
+    Full Schedule Flow = 中断触发 → 调度判断 → 任务选择 → 上下文切换 → 任务恢复
+  </div>
+</section>
+
+<!-- flow -->
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>1. 中断触发</h3>
+      <p>系统Tick或外部中断进入内核态。</p>
+    </div>
+
+    <div class="step">
+      <h3>2. 保存上下文</h3>
+      <p>当前任务寄存器与栈状态被保存。</p>
+    </div>
+
+    <div class="step">
+      <h3>3. 调度判断</h3>
+      <p>调度器评估Ready队列优先级。</p>
+    </div>
+
+    <div class="step">
+      <h3>4. 任务切换</h3>
+      <p>选择最高优先级任务执行。</p>
+    </div>
+
+    <div class="step">
+      <h3>5. 恢复执行</h3>
+      <p>恢复目标任务上下文并跳转执行。</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- code -->
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">复制</button>
+    <pre><code>
+#include "HRTOS.h"
+
+void schedule_flow_demo(void)
+{
+    os_tick_disable();
+
+    os_save_context();
+
+    if(os_scheduler_run() == SWITCH)
+    {
+        os_context_switch();
+    }
+
+    os_restore_context();
+
+    os_tick_enable();
+}
+    </code></pre>
+  </div>
+</section>
+
+<!-- related (LOCKED STRUCTURE) -->
+<section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>任务执行模型</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">任务执行模型</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度系统</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">调度系统</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断机制</h3>
+      <p><a href="/docs/system/interrupt-flow/index.html">中断机制</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务生命周期</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">任务生命周期</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Kernel Behavior Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
+
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(()=>btn.innerText=old,1000);
+});
+</script>
+
+</body>
+</html>

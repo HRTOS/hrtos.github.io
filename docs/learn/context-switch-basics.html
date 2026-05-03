@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>上下文切换基础 | HRTOS 学习模块</title>
+<meta name="description" content="HRTOS 上下文切换基础知识，解释任务切换时寄存器保存与恢复机制，以及实时系统中的切换开销与影响。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:40px;
+}
+
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.hero{
+  display:grid;
+  gap:16px;
+}
+
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.22);
+  color:#bae6fd;
+  font-size:14px;
+}
+
+.hero h1{
+  margin:0;
+  font-size:42px;
+}
+
+.hero p{
+  margin:0;
+  max-width:860px;
+  color:var(--muted);
+}
+
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.tag{
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:13px;
+  color:#bae6fd;
+  background:rgba(15,23,42,.4);
+}
+
+.section{
+  display:grid;
+  gap:12px;
+}
+
+.section h2{
+  margin:0;
+  font-size:22px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+}
+
+.block{
+  padding:22px;
+  border-radius:10px;
+  border:1px solid rgba(56,189,248,.18);
+  background:rgba(15,23,42,.6);
+  font-family:Consolas, monospace;
+  color:#7dd3fc;
+  font-size:14px;
+  line-height:1.8;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+}
+
+.card{
+  padding:22px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+}
+
+.card h3{
+  margin:0 0 10px;
+  font-size:18px;
+}
+
+.card p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:14px;
+}
+
+@media(max-width:900px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/learn/index.html">学习模块</a> /
+    <span>上下文切换基础</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS 学习模块</span>
+
+    <h1>上下文切换基础（Context Switch Basics）</h1>
+
+    <p>
+      上下文切换（Context Switch）是实时操作系统中最底层、也是最关键的执行机制之一。
+      它决定了系统能否在多任务并发环境中维持“时间确定性”，并直接影响RTOS的实时性能边界。
+    </p>
+
+    <div class="meta">
+      <span class="tag">Task Switching</span>
+      <span class="tag">Kernel Core</span>
+      <span class="tag">Deterministic Execution</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>一、什么是上下文切换</h2>
+
+    <p>
+      上下文切换是指CPU从一个任务切换到另一个任务执行时，
+      将当前任务的运行状态完整保存，并恢复目标任务运行状态的过程。
+      所谓“上下文”，本质上是任务执行现场的完整快照。
+    </p>
+
+    <p>
+      在RTOS中，每一个任务都被视为一个独立的执行流，它拥有自己的寄存器状态、栈空间以及执行指针。
+      当系统发生切换时，这些状态必须被严格保存，否则任务将无法从正确位置继续执行。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>二、为什么需要上下文切换</h2>
+
+    <p>
+      单核CPU在同一时刻只能执行一个任务，但实际系统往往需要多个任务“并发运行”。
+      这种并发并不是物理同时执行，而是通过快速切换实现的“时间片交错执行”。
+    </p>
+
+    <p>
+      上下文切换的本质作用是：在多个任务之间复用同一颗CPU，同时保证每个任务的执行连续性。
+      如果没有上下文切换，多任务系统将无法成立。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>三、上下文包含哪些内容</h2>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>通用寄存器</h3>
+        <p>保存运算临时数据，是任务执行的核心状态载体。</p>
+      </div>
+
+      <div class="card">
+        <h3>程序计数器（PC）</h3>
+        <p>记录下一条执行指令地址，决定任务从哪里继续运行。</p>
+      </div>
+
+      <div class="card">
+        <h3>栈指针（SP）</h3>
+        <p>指向当前任务栈空间，是函数调用链的基础。</p>
+      </div>
+
+      <div class="card">
+        <h3>状态寄存器（PSR）</h3>
+        <p>记录中断状态、条件标志与执行模式。</p>
+      </div>
+
+    </div>
+
+    <p>
+      在更复杂的处理器（如ARM Cortex-M/F系列）中，还可能包含FPU寄存器、SIMD寄存器等扩展上下文。
+      是否保存这些内容，取决于系统是否启用对应硬件单元。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>四、上下文切换完整流程</h2>
+
+    <div class="block">
+[ CONTEXT SWITCH FLOW ]
+
+1. 进入中断或调度点
+2. 保存当前任务CPU寄存器
+3. 保存程序计数器PC
+4. 保存栈指针SP
+5. 保存任务控制块TCB状态
+6. 调度器选择下一个任务
+7. 恢复目标任务SP
+8. 恢复PC与寄存器
+9. 返回执行目标任务
+    </div>
+
+    <p>
+      这个过程在RTOS中必须严格可控，因为每一步都会引入延迟。
+      对实时系统而言，切换过程本身也是“时间开销的一部分”。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>五、上下文切换的触发方式</h2>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>时间片到期</h3>
+        <p>系统定时器触发调度，是最常见的切换来源。</p>
+      </div>
+
+      <div class="card">
+        <h3>高优先级任务唤醒</h3>
+        <p>更高优先级任务就绪时立即抢占当前任务。</p>
+      </div>
+
+      <div class="card">
+        <h3>阻塞与等待</h3>
+        <p>任务进入等待状态（如信号量、队列）。</p>
+      </div>
+
+      <div class="card">
+        <h3>中断触发调度</h3>
+        <p>外设中断可能导致任务优先级变化。</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>六、上下文切换的代价</h2>
+
+    <p>
+      上下文切换并不是“免费操作”，它本身会消耗CPU周期。
+      在实时系统中，这个开销通常包括寄存器保存、内存访问以及缓存失效。
+    </p>
+
+    <div class="block">
+典型开销组成：
+
+- 寄存器保存/恢复
+- 栈切换访问
+- TCB读写
+- Cache miss（缓存失效）
+- Pipeline flush（流水线刷新）
+    </div>
+
+    <p>
+      切换频率越高，系统有效执行时间越少，因此RTOS设计中必须控制任务粒度与调度频率。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>七、实时系统中的关键影响</h2>
+
+    <p>
+      上下文切换对RTOS的最大影响不是性能，而是“确定性破坏风险”。
+      如果切换时间不可预测，就会导致整个实时模型失效。
+    </p>
+
+    <p>
+      因此RTOS设计要求：
+      上下文切换必须具有上界（Worst Case Bound），并且在任何情况下都不能超出该范围。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>八、优化策略</h2>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>减少切换频率</h3>
+        <p>通过任务合并与合理优先级设计降低调度次数。</p>
+      </div>
+
+      <div class="card">
+        <h3>最小上下文保存</h3>
+        <p>只保存必要寄存器，避免无意义开销。</p>
+      </div>
+
+      <div class="card">
+        <h3>惰性FPU保存</h3>
+        <p>仅在任务使用FPU时才保存扩展寄存器。</p>
+      </div>
+
+      <div class="card">
+        <h3>快速中断路径</h3>
+        <p>优化ISR路径减少调度延迟。</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>九、本质总结</h2>
+
+    <p>
+      上下文切换的本质不是“任务切换”，而是“执行现场的时间迁移”。
+      RTOS通过严格控制这个过程，使系统在多任务环境中仍然保持时间可预测性。
+    </p>
+
+    <div class="block">
+Context Switch = State Save + Scheduler Decision + State Restore
+
+核心目标：
+- 不丢状态
+- 不破坏时间模型
+- 可预测开销
+    </div>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. 上下文切换机制与实时系统执行模型基础。
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

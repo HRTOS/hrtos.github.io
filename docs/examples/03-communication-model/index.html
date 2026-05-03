@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>通信模型 | HRTOS 实验系统</title>
+<meta name="description" content="通信模型实验：涵盖邮箱、消息队列、互斥锁与信号量机制，理解RTOS任务间通信与同步方式。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:12px;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+/* breadcrumb */
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+/* hero */
+.hero{
+  margin-bottom:54px;
+}
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+  line-height:1.1;
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+/* section */
+.section{
+  margin-bottom:54px;
+}
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{
+  margin:0 0 20px;
+  color:var(--muted);
+}
+
+/* grid */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+
+.card{
+  display:block;
+  padding:22px;
+  background:linear-gradient(180deg,rgba(30,41,59,.85),rgba(15,23,42,.95));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  transition:.25s ease;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  border-color:rgba(56,189,248,.4);
+}
+
+.card h3{
+  margin:0 0 8px;
+  font-size:1.08rem;
+  color:#f8fafc;
+}
+
+.card p{
+  margin:0;
+  font-size:.95rem;
+  color:var(--muted);
+}
+
+.card span{
+  display:inline-block;
+  margin-top:12px;
+  color:#7dd3fc;
+  font-size:.9rem;
+  font-weight:600;
+}
+
+/* model block */
+.model-box{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+  margin-top:12px;
+}
+
+/* footer */
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+
+@media(max-width:900px){
+  .grid{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+
+<body data-header="docs">
+<script src="/header.js" defer></script>
+
+<main class="page">
+
+  <!-- 面包屑 -->
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">Docs</a> /
+    <a href="/docs/examples/index.html">Examples</a> /
+    <span>Communication Model</span>
+  </nav>
+
+  <!-- 标题区 -->
+  <section class="hero">
+    <span class="hero-tag">IPC Model</span>
+
+    <h1>通信模型</h1>
+
+    <p>
+      通信模型描述RTOS中任务之间的数据交换与同步机制，
+      包括邮箱、消息队列、互斥锁与信号量等核心通信方式。
+    </p>
+  </section>
+
+  <!-- 模型说明 -->
+  <section class="section">
+    <h2>通信模型定义</h2>
+    <div class="model-box">
+      Communication Model = Mailbox + Message Queue + Mutex + Semaphore + Synchronization
+    </div>
+  </section>
+
+  <!-- 核心实验 -->
+  <section class="section">
+    <h2>核心实验</h2>
+    <p>以下实验用于验证任务间通信与同步机制的运行行为。</p>
+
+    <div class="grid">
+
+      <a class="card" href="mailbox.html">
+        <h3>邮箱机制</h3>
+        <p>任务间单数据交换机制分析。</p>
+        <span>进入实验 →</span>
+      </a>
+
+      <a class="card" href="message-queue.html">
+        <h3>消息队列</h3>
+        <p>多数据缓冲与异步通信机制。</p>
+        <span>进入实验 →</span>
+      </a>
+
+      <a class="card" href="mutex.html">
+        <h3>互斥锁</h3>
+        <p>保护共享资源的访问控制机制。</p>
+        <span>进入实验 →</span>
+      </a>
+
+      <a class="card" href="semaphore.html">
+        <h3>信号量</h3>
+        <p>任务同步与资源计数控制机制。</p>
+        <span>进入实验 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- 关联 -->
+  <section class="section">
+    <h2>关联系统</h2>
+
+    <div class="grid">
+
+      <a class="card" href="/docs/examples/01-task-execution/index.html">
+        <h3>任务执行模型</h3>
+        <p>通信与任务调度的关系。</p>
+        <span>查看 →</span>
+      </a>
+
+      <a class="card" href="/docs/examples/07-kernel-behavior/index.html">
+        <h3>内核行为系统</h3>
+        <p>通信机制在内核中的执行路径。</p>
+        <span>查看 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS · Communication Model
+  </footer>
+
+</main>
+
+</body>
+</html>

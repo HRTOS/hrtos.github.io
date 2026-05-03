@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>时间片轮转演示 | HRTOS 实验系统</title>
+<meta name="description" content="时间片轮转实验：演示HRTOS中Round Robin调度机制、时间片切换与公平任务执行模型。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:12px;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+.hero{ margin-bottom:54px; }
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+  line-height:1.1;
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+.section{ margin-bottom:54px; }
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{
+  margin:0 0 20px;
+  color:var(--muted);
+}
+
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+}
+
+.flow{
+  display:grid;
+  gap:14px;
+}
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{
+  margin:0 0 8px;
+  font-size:1.05rem;
+  color:#f8fafc;
+}
+
+.step p{
+  margin:0;
+  color:var(--muted);
+}
+
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.copy-btn:hover{
+  color:#fff;
+  border-color:#38bdf8;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a> /
+  <span>RR Demo</span>
+</nav>
+
+<section class="hero">
+  <span class="hero-tag">Round Robin Core</span>
+  <h1>时间片轮转演示（RR Demo）</h1>
+  <p>
+    RR Demo 用于展示HRTOS中的Round Robin调度策略，
+    通过固定时间片在多个同优先级任务之间进行公平切换。
+  </p>
+</section>
+
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="block">
+    Round Robin = 固定时间片 + 时间片耗尽切换 + 同优先级公平调度
+  </div>
+</section>
+
+<section class="section">
+  <h2>调度行为</h2>
+  <p>时间片轮转通常包含以下行为：</p>
+
+  <div class="flow">
+    <div class="step">
+      <h3>任务进入队列</h3>
+      <p>多个同优先级任务进入Ready队列。</p>
+    </div>
+
+    <div class="step">
+      <h3>分配时间片</h3>
+      <p>调度器为当前任务分配固定执行时间。</p>
+    </div>
+
+    <div class="step">
+      <h3>时间片耗尽</h3>
+      <p>触发Tick中断并切换下一个任务。</p>
+    </div>
+
+    <div class="step">
+      <h3>循环执行</h3>
+      <p>任务按照队列顺序持续轮转执行。</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="flow">
+    <div class="step">
+      <h3>1. 创建任务</h3>
+      <p>初始化多个相同优先级任务。</p>
+    </div>
+
+    <div class="step">
+      <h3>2. 启动调度器</h3>
+      <p>进入Round Robin调度模式。</p>
+    </div>
+
+    <div class="step">
+      <h3>3. Tick触发切换</h3>
+      <p>时间片结束后切换任务。</p>
+    </div>
+
+    <div class="step">
+      <h3>4. 持续轮转</h3>
+      <p>系统持续执行公平调度。</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">Copy</button>
+<pre><code>
+// 在这里填入 RR Demo 示例代码
+// 例如：round robin / tick / timeslice / scheduler
+</code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    时间片轮转机制可以提升任务执行公平性，
+    适用于同等级任务共享CPU资源的场景。
+  </p>
+</section>
+
+<section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>任务执行模型</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度系统</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断机制</h3>
+      <p><a href="/docs/system/interrupt-flow/index.html">Interrupt Flow</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务生命周期</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · RR Demo Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const box = btn.closest(".code-box");
+  if (!box) return;
+
+  const code = box.querySelector("code");
+  if (!code) return;
+
+  const text = code.innerText;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const old = btn.innerText;
+    btn.innerText = "已复制";
+
+    setTimeout(() => {
+      btn.innerText = old;
+    }, 1000);
+  });
+});
+</script>
+
+</body>
+</html>

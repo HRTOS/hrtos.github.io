@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>中断基础 | HRTOS 学习模块</title>
+<meta name="description" content="HRTOS 中断基础知识，解释中断机制、触发流程、中断上下文保存与恢复，以及中断对实时系统的影响。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:40px;
+}
+
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.hero{
+  display:grid;
+  gap:16px;
+}
+
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.22);
+  color:#bae6fd;
+  font-size:14px;
+}
+
+.hero h1{
+  margin:0;
+  font-size:42px;
+}
+
+.hero p{
+  margin:0;
+  max-width:860px;
+  color:var(--muted);
+}
+
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.tag{
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:13px;
+  color:#bae6fd;
+  background:rgba(15,23,42,.4);
+}
+
+.section{
+  display:grid;
+  gap:12px;
+}
+
+.section h2{
+  margin:0;
+  font-size:22px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+}
+
+.block{
+  padding:22px;
+  border-radius:10px;
+  border:1px solid rgba(56,189,248,.18);
+  background:rgba(15,23,42,.6);
+  font-family:Consolas, monospace;
+  color:#7dd3fc;
+  font-size:14px;
+  line-height:1.8;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+}
+
+.card{
+  padding:22px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+}
+
+.card h3{
+  margin:0 0 10px;
+  font-size:18px;
+}
+
+.card p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:14px;
+}
+
+@media(max-width:900px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/learn/index.html">学习模块</a> /
+    <span>中断基础</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS 学习模块</span>
+
+    <h1>中断基础（Interrupt Basics）</h1>
+
+    <p>
+      中断机制是实时操作系统（RTOS）中最底层、同时也是最具决定性的执行机制之一。
+      它不是单纯的“事件通知方式”，而是整个系统时间模型的入口点。
+      在RTOS中，所有实时行为的发生，本质上都可以追溯到中断触发与中断响应链路。
+    </p>
+
+    <div class="meta">
+      <span class="tag">Interrupt System</span>
+      <span class="tag">Real-Time Core</span>
+      <span class="tag">Deterministic Response</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>一、中断的本质定义</h2>
+
+    <p>
+      中断（Interrupt）是一种打断CPU当前执行流的机制，使处理器从正在执行的任务中脱离，
+      转而执行一个被预定义的“紧急处理路径”（ISR，Interrupt Service Routine）。
+    </p>
+
+    <p>
+      但从系统角度看，中断的意义远不止“打断执行”。
+      它的本质是：将异步事件转换为可执行的同步控制路径，从而让系统具备响应外部世界的能力。
+    </p>
+
+    <p>
+      如果没有中断，CPU只能通过轮询方式检测事件，这会导致资源浪费与响应延迟不可控。
+      中断机制的出现，使“事件驱动系统”成为可能。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>二、中断在RTOS中的角色</h2>
+
+    <p>
+      在RTOS中，中断不只是硬件机制，而是整个系统调度体系的触发源。
+      可以说，中断是“调度的上游输入系统”。
+    </p>
+
+    <div class="card">
+      RTOS调度并不是主动运行的，而是被事件驱动的：<br><br>
+      中断 → 唤醒任务 → 修改就绪队列 → 触发调度器 → 发生上下文切换
+    </div>
+
+    <p>
+      因此，中断的设计质量直接决定系统的实时性上限。
+      如果中断路径不可控，整个RTOS的确定性模型将失效。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>三、中断执行完整流程</h2>
+
+    <div class="block">
+[ INTERRUPT EXECUTION MODEL ]
+
+1. 外部/内部事件发生（Timer / Peripheral / Software）
+2. 中断控制器检测到中断请求
+3. CPU暂停当前任务执行
+4. 保存关键上下文（PC / SP / 寄存器）
+5. 跳转至中断向量表
+6. 执行ISR（中断服务程序）
+7. 清除中断标志位
+8. 恢复上下文
+9. 返回被打断任务或触发调度
+    </div>
+
+    <p>
+      需要注意的是，在RTOS中，第8步之后并不一定立即返回原任务，
+      可能会触发调度器，从而切换到更高优先级任务执行。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>四、中断的核心组成结构</h2>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>中断源（Interrupt Source）</h3>
+        <p>
+          产生中断信号的实体，包括外设、定时器、DMA或软件触发事件。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>中断控制器（NVIC / PIC）</h3>
+        <p>
+          负责中断优先级管理、屏蔽控制与中断分发，是中断系统的调度核心。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>中断向量表</h3>
+        <p>
+          将中断号映射到ISR入口地址，实现快速跳转执行。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>ISR（服务程序）</h3>
+        <p>
+          实际处理中断事件的代码路径，要求执行时间极短且确定。
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>五、中断上下文与保存机制</h2>
+
+    <p>
+      当中断发生时，CPU必须保存当前执行状态，这个状态被称为“上下文（Context）”。
+      如果不保存上下文，任务将无法恢复到原始执行位置。
+    </p>
+
+    <div class="block">
+必须保存的关键状态：
+
+- 程序计数器（PC）
+- 栈指针（SP）
+- 通用寄存器
+- 状态寄存器（PSR）
+- 可选：FPU / SIMD寄存器
+    </div>
+
+    <p>
+      在RTOS设计中，上下文保存必须满足两个条件：
+      完整性与可预测性。任何不可控的额外保存都会破坏实时性边界。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>六、中断与调度的关系</h2>
+
+    <p>
+      中断并不会直接“运行任务”，但它可能改变任务执行顺序。
+      当中断唤醒更高优先级任务时，系统必须立即进行调度决策。
+    </p>
+
+    <div class="card">
+      中断 → 修改任务状态 → 更新就绪队列 → 触发调度器 → 可能发生上下文切换
+    </div>
+
+    <p>
+      因此，中断路径与调度器之间存在紧密耦合关系。
+      在设计RTOS时，这条链路必须被严格优化，否则系统延迟不可控。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>七、中断嵌套与优先级机制</h2>
+
+    <p>
+      现代RTOS支持中断嵌套，即高优先级中断可以打断低优先级中断执行。
+      这使系统具备更强的实时响应能力，但也引入复杂性。
+    </p>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>优先级机制</h3>
+        <p>中断按照优先级排序，高优先级可抢占低优先级。</p>
+      </div>
+
+      <div class="card">
+        <h3>嵌套执行</h3>
+        <p>允许多个中断层级叠加执行，但必须控制最大深度。</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>八、中断对实时性的影响</h2>
+
+    <p>
+      中断延迟（Interrupt Latency）是RTOS最重要的性能指标之一。
+      它定义了从事件发生到ISR开始执行之间的时间差。
+    </p>
+
+    <p>
+      同时，中断嵌套过深会导致系统不可预测性增加，
+      从而破坏实时系统的“最坏情况时间上界”模型。
+    </p>
+
+    <div class="block">
+实时系统核心约束：
+
+Interrupt Latency ≤ Upper Bound
+ISR Execution Time ≤ Deterministic Limit
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>九、本质总结</h2>
+
+    <p>
+      中断的本质不是“响应事件”，而是“建立时间驱动系统的入口机制”。
+      它连接了外部世界与RTOS内部调度逻辑，是整个实时系统的起点。
+    </p>
+
+    <div class="block">
+Interrupt = Event → System State Change → Scheduling Trigger
+
+核心价值：
+- 让系统具备异步能力
+- 控制时间进入路径
+- 构建实时性基础
+    </div>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. 中断机制与实时系统时间模型基础。
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

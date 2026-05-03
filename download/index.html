@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>HRTOS Download Center | RTOS Kernel & Embedded System</title>
+
+<meta name="description" content="Download HRTOS Hard Real-Time Operating System (RTOS), including kernel release packages, embedded system examples, and development resources.">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root {
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --accent2:#2563eb;
+  --border:rgba(148,163,184,.18);
+  --radius:10px;
+  --shadow:0 20px 50px rgba(2,6,23,.35);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+}
+
+.page{
+  width:min(1100px,calc(100% - 40px));
+  margin:0 auto;
+  padding:100px 0 60px;
+  display:grid;
+  gap:50px;
+}
+
+/* hero */
+.hero{
+  display:grid;
+  gap:14px;
+}
+
+.badge{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border:1px solid rgba(56,189,248,.25);
+  border-radius:999px;
+  color:#bae6fd;
+  font-size:.9rem;
+}
+
+.hero h1{
+  margin:0;
+  font-size:clamp(2.2rem,4vw,3.5rem);
+}
+
+.hero p{
+  margin:0;
+  color:var(--muted);
+  max-width:800px;
+}
+
+/* grid */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
+}
+
+.card{
+  padding:22px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:linear-gradient(180deg,rgba(30,41,59,.75),rgba(15,23,42,.95));
+  box-shadow:var(--shadow);
+  transition:.25s ease;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  border-color:rgba(56,189,248,.45);
+}
+
+.card h3{
+  margin:0 0 10px;
+  font-size:1.1rem;
+}
+
+.card p{
+  margin:0;
+  color:var(--muted);
+  font-size:.95rem;
+}
+
+/* download box */
+.download-box{
+  grid-column:span 3;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:28px;
+  border-radius:var(--radius);
+  border:1px solid rgba(56,189,248,.2);
+  background:linear-gradient(135deg,rgba(30,41,59,.9),rgba(15,23,42,.95));
+  box-shadow:var(--shadow);
+}
+
+.version{
+  display:grid;
+  gap:6px;
+}
+
+.version strong{
+  font-size:1.4rem;
+  color:#7dd3fc;
+}
+
+.version span{
+  color:var(--muted);
+}
+
+/* button */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:12px 22px;
+  border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:white;
+  font-weight:600;
+  text-decoration:none;
+  transition:.2s ease;
+}
+
+.btn:hover{
+  transform:translateY(-3px);
+  filter:brightness(1.05);
+}
+
+/* footer */
+.footer{
+  text-align:center;
+  color:#8ea3be;
+  font-size:.9rem;
+  padding-top:10px;
+  border-top:1px solid rgba(148,163,184,.15);
+}
+
+@media(max-width:900px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  .download-box{
+    flex-direction:column;
+    gap:16px;
+    align-items:flex-start;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <!-- HERO -->
+  <section class="hero">
+    <span class="badge">HRTOS Download Center</span>
+    <h1>HRTOS 系统下载中心</h1>
+    <p>
+      提供 HRTOS 内核发行版本、嵌入式示例工程与开发资源包。
+      用于任务调度、中断系统与实时应用开发实践。
+    </p>
+  </section>
+
+  <!-- download main -->
+  <section class="grid">
+
+    <div class="download-box">
+      <div class="version">
+        <strong>HRTOS V3.20</strong>
+        <span>Stable Release · Kernel + Examples Package</span>
+      </div>
+      <a class="btn" href="HRTOS_V3.20.zip" download>
+        立即下载
+      </a>
+    </div>
+
+    <div class="card">
+      <h3>内核版本说明</h3>
+      <p>包含任务调度、时间管理、中断处理与基础 IPC 模块。</p>
+    </div>
+
+    <div class="card">
+      <h3>示例工程</h3>
+      <p>提供 MyOS 与调度实践案例，用于理解系统运行逻辑。</p>
+    </div>
+
+    <div class="card">
+      <h3>开发支持</h3>
+      <p>适用于嵌入式平台移植与实时系统开发测试环境。</p>
+    </div>
+
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS · Embedded Real-Time Operating System
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

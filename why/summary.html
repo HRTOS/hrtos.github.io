@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>WHY Summary | HRTOS</title>
+<meta name="description" content="HRTOS WHY层总结：实时系统的本质、通用操作系统的局限以及确定性约束">
+
+<meta name="page-role" content="why-summary">
+<meta name="semantic-node" content="why-summary">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html" style="color:#cfe3ff;">Why</a>
+    <a href="/system-view/index.html">系统</a>
+    <a href="/docs/index.html">文档</a>
+  </div>
+</div>
+
+<div class="container">
+
+<h1>WHY Summary</h1>
+<div class="sub">HRTOS 为什么存在：系统成立的约束条件</div>
+
+<!-- core definition -->
+<div class="card card-core">
+<h2>核心定义</h2>
+
+<p>
+HRTOS 的存在，不是因为“需要更快的操作系统”，而是因为传统系统无法提供<strong>时间确定性保证</strong>。
+</p>
+
+<p>
+在实时系统中，“正确性”被重新定义为：
+</p>
+
+<p>
+<strong>Correctness = Functional Result + Temporal Constraint</strong>
+</p>
+
+<p>
+即：结果正确但超时 ≠ 正确执行。
+</p>
+
+<div class="en">
+HRTOS exists because correctness includes timing constraints, not just functional results.
+</div>
+</div>
+
+<!-- WHY structure -->
+<div class="card">
+<h2>WHY层因果结构（Causal Model）</h2>
+
+<p>① 实时问题本质：时间是系统正确性的一部分</p>
+<p>② GPOS局限：调度与延迟不可预测</p>
+<p>③ 系统冲突：公平性 vs 确定性</p>
+<p>④ 结论：必须引入时间约束作为系统第一原则</p>
+
+<br>
+
+<p>
+👉 这不是“设计选择”，而是“系统必要性推导结果”
+</p>
+</div>
+
+<!-- failure logic -->
+<div class="card">
+<h2>GPOS失效的本质原因</h2>
+
+<p>
+通用操作系统的结构性问题不是性能不足，而是：
+</p>
+
+<p>
+• 调度模型是统计优化（statistical scheduling）  
+• 延迟行为是非上界约束（non-bounded latency）  
+• 内核路径存在不可控竞争（contention unpredictability）  
+</p>
+
+<p>
+因此无法对“最坏情况时间”进行建模。
+</p>
+</div>
+
+<!-- determinism -->
+<div class="card">
+<h2>确定性约束的引入原因</h2>
+
+<p>
+实时系统的关键不是“更快执行”，而是：
+</p>
+
+<p>
+👉 <strong>所有执行路径必须可被时间建模</strong>
+</p>
+
+<p>
+如果一个系统无法建立时间模型，则无法用于控制系统（工业 / 汽车 / 航空）。
+</p>
+</div>
+
+<!-- meta -->
+<div class="card card-meta">
+<h2>语义总结</h2>
+
+<p>
+WHY层的本质，是建立一个前提：
+</p>
+
+<p>
+👉 “计算系统的正确性必须包含时间维度”
+</p>
+
+<p>
+它不是解释系统，而是在定义系统成立的数学边界。
+</p>
+
+<div class="en">
+The WHY layer defines the fundamental constraint that correctness must include the time dimension.
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

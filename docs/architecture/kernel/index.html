@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>内核架构 Kernel | HRTOS 架构模块</title>
+<meta name="description" content="HRTOS 内核架构模块，定义执行控制层、调度域与系统边界，是实时系统确定性运行的核心控制中心。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:40px;
+}
+
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.hero{
+  display:grid;
+  gap:16px;
+}
+
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.22);
+  color:#bae6fd;
+  font-size:14px;
+}
+
+.hero h1{
+  margin:0;
+  font-size:42px;
+}
+
+.hero p{
+  margin:0;
+  max-width:860px;
+  color:var(--muted);
+}
+
+/* ===== META（升级为“系统语义标签”） ===== */
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.tag{
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:13px;
+  color:#bae6fd;
+  background:rgba(15,23,42,.4);
+}
+
+/* ===== SECTION ===== */
+.section{
+  display:grid;
+  gap:12px;
+}
+
+.section h2{
+  margin:0;
+  font-size:22px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+}
+
+/* ===== GRID ===== */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:20px;
+}
+
+.card{
+  display:grid;
+  gap:12px;
+  padding:24px 22px;
+  min-height:180px;
+  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  transition:.22s ease;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  border-color:rgba(56,189,248,.38);
+}
+
+.card h3{
+  margin:0;
+  font-size:18px;
+}
+
+.card p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.card span{
+  margin-top:auto;
+  color:#7dd3fc;
+  font-weight:600;
+  font-size:14px;
+}
+
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:14px;
+}
+
+@media(max-width:900px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/architecture/index.html">系统架构</a> /
+    <span>内核架构</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS Execution Core</span>
+
+    <h1>内核架构（Kernel）</h1>
+
+    <p>
+      内核是HRTOS的执行控制中心，不只是任务管理单元，
+      而是调度域、时间约束与系统边界的统一控制层，
+      用于保证系统行为的可预测性与确定性。
+    </p>
+
+    <!-- 🔥 升级点：从“页面数量”→“系统能力模型” -->
+    <div class="meta">
+      <span class="tag">Execution Control Layer</span>
+      <span class="tag">Scheduling Domain</span>
+      <span class="tag">Interrupt Orchestration</span>
+      <span class="tag">Deterministic Boundary</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>模块概述</h2>
+    <p>
+      Kernel模块定义系统运行的控制逻辑，它不只是执行调度器，
+      而是协调任务、时间、中断与资源之间关系的核心系统层。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>核心结构</h2>
+
+    <div class="grid">
+
+      <a class="card" href="kernel-overview.html">
+        <h3>内核总览</h3>
+        <p>定义内核在系统中的控制边界与职责模型。</p>
+        <span>进入 →</span>
+      </a>
+
+      <a class="card" href="kernel-structure.html">
+        <h3>内核结构</h3>
+        <p>解析调度器、中断与任务管理的内部组织关系。</p>
+        <span>进入 →</span>
+      </a>
+
+      <a class="card" href="kernel-flow.html">
+        <h3>内核执行流程</h3>
+        <p>描述从中断触发到任务切换的完整执行链。</p>
+        <span>进入 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>系统关系</h2>
+    <p>
+      Interrupt → Kernel Control → Scheduler Decision → Task Execution → Resource Access → Re-entry
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>语义定位</h2>
+    <p>
+      Kernel不是执行器，而是系统确定性的“控制边界维护器”。
+      它的作用是限制不确定性扩散，而不是增加功能复杂度。
+    </p>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. Deterministic Kernel Architecture.
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

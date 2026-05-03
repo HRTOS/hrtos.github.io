@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>IPC基础 | HRTOS 学习模块</title>
+<meta name="description" content="HRTOS IPC基础知识，介绍进程间通信机制，包括消息队列、信号量、共享内存与管道模型。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:40px;
+}
+
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.hero{
+  display:grid;
+  gap:16px;
+}
+
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.22);
+  color:#bae6fd;
+  font-size:14px;
+}
+
+.hero h1{
+  margin:0;
+  font-size:42px;
+}
+
+.hero p{
+  margin:0;
+  max-width:860px;
+  color:var(--muted);
+}
+
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.tag{
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:13px;
+  color:#bae6fd;
+  background:rgba(15,23,42,.4);
+}
+
+.section{
+  display:grid;
+  gap:12px;
+}
+
+.section h2{
+  margin:0;
+  font-size:22px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+}
+
+.block{
+  padding:22px;
+  border-radius:10px;
+  border:1px solid rgba(56,189,248,.18);
+  background:rgba(15,23,42,.6);
+  font-family:Consolas, monospace;
+  color:#7dd3fc;
+  font-size:14px;
+  line-height:1.8;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+}
+
+.card{
+  padding:22px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+}
+
+.card h3{
+  margin:0 0 10px;
+  font-size:18px;
+}
+
+.card p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:14px;
+}
+
+@media(max-width:900px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/learn/index.html">学习模块</a> /
+    <span>IPC基础</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS 学习模块</span>
+
+    <h1>IPC基础（Inter-Process Communication Basics）</h1>
+
+    <p>
+      IPC（进程间通信）不仅是数据传输机制，它本质上是实时系统内部“任务协同结构”的基础骨架。
+      在RTOS中，IPC决定了任务之间如何共享信息、如何同步执行，以及如何在竞争环境中维持系统确定性。
+    </p>
+
+    <div class="meta">
+      <span class="tag">IPC Mechanism</span>
+      <span class="tag">RTOS Communication</span>
+      <span class="tag">Task Synchronization</span>
+    </div>
+  </section>
+
+  <!-- 本质定义 -->
+  <section class="section">
+    <h2>一、IPC的系统级本质</h2>
+
+    <p>
+      IPC并不是“通信工具集合”，而是操作系统内核提供的一组用于控制并发行为的机制集合。
+      它的核心目标不是“传递数据”，而是“协调状态”。
+    </p>
+
+    <p>
+      在多任务系统中，每一个任务都运行在独立的执行上下文中，它们之间默认是隔离的。
+      IPC的存在，使这种隔离状态可以在受控条件下被打破，从而形成协作系统。
+    </p>
+
+    <div class="block">
+IPC本质 = Task Isolation + Controlled Interaction
+
+不是数据共享，而是状态协调
+不是通信机制，而是并发控制结构
+    </div>
+  </section>
+
+  <!-- 为什么需要IPC -->
+  <section class="section">
+    <h2>二、为什么RTOS必须依赖IPC</h2>
+
+    <p>
+      在单任务系统中，程序执行是线性的，不需要协调机制。
+      但在RTOS中，多个任务同时存在，并且可能在任意时间被调度执行。
+    </p>
+
+    <p>
+      如果没有IPC，系统将出现三个核心问题：
+    </p>
+
+    <div class="block">
+1. 数据竞争（Race Condition）
+2. 状态不一致（Inconsistent State）
+3. 执行顺序不可控（Non-deterministic Flow）
+    </div>
+
+    <p>
+      因此IPC不是“扩展功能”，而是“并发系统存在的前提条件”。
+    </p>
+  </section>
+
+  <!-- IPC模型 -->
+  <section class="section">
+    <h2>三、IPC的系统模型结构</h2>
+
+    <p>
+      在RTOS内部，IPC可以抽象为四种基本结构，每一种对应不同的系统语义层。
+    </p>
+
+    <div class="block">
+Task A  --->  Message Queue  --->  Task B   (数据流模型)
+
+Task A  --->  Semaphore      --->  Resource (控制流模型)
+
+Task A  <-->  Shared Memory   <-->  Task B   (状态共享模型)
+
+Task A  --->  Pipe/Channel    --->  Task B   (连续流模型)
+    </div>
+
+    <p>
+      这些模型的本质区别不在实现方式，而在“系统语义层级”不同。
+    </p>
+  </section>
+
+  <!-- 消息队列 -->
+  <section class="section">
+    <h2>四、消息队列：解耦的任务通信结构</h2>
+
+    <p>
+      消息队列是最典型的“异步解耦通信机制”。
+      它通过内核缓冲区实现发送与接收任务的时间解耦。
+    </p>
+
+    <p>
+      关键特性不是“传输数据”，而是：
+    </p>
+
+    <div class="block">
+发送任务与接收任务在时间上完全独立
+系统通过队列缓冲实现执行节奏解耦
+    </div>
+
+    <p>
+      在实时系统中，消息队列的设计重点是：
+      队列长度、阻塞策略与丢弃策略，而不是数据结构本身。
+    </p>
+  </section>
+
+  <!-- 信号量 -->
+  <section class="section">
+    <h2>五、信号量：资源访问的逻辑控制器</h2>
+
+    <p>
+      信号量本质上不是通信机制，而是“资源访问控制模型”。
+      它解决的问题不是数据传递，而是“谁可以访问资源”。
+    </p>
+
+    <p>
+      在RTOS中，信号量主要用于：
+    </p>
+
+    <div class="block">
+- 互斥访问（Mutex）
+- 任务同步（Synchronization）
+- 事件触发（Event Notification）
+    </div>
+
+    <p>
+      信号量的关键设计问题是优先级反转（Priority Inversion），
+      这直接影响系统实时性。
+    </p>
+  </section>
+
+  <!-- 共享内存 -->
+  <section class="section">
+    <h2>六、共享内存：最高性能但最低安全抽象</h2>
+
+    <p>
+      共享内存是性能最高的IPC方式，但也是风险最大的方式。
+      因为它完全绕过了内核的保护机制。
+    </p>
+
+    <p>
+      其本质是：
+    </p>
+
+    <div class="block">
+多个任务直接访问同一物理内存区域
+系统不负责一致性，开发者必须自行保证
+    </div>
+
+    <p>
+      在RTOS设计中，共享内存通常必须配合：
+      信号量 / 互斥锁 / 临界区保护使用。
+    </p>
+  </section>
+
+  <!-- 管道 -->
+  <section class="section">
+    <h2>七、管道与流式通信模型</h2>
+
+    <p>
+      管道（Pipe）本质是“有序字节流抽象”，适用于连续数据传输场景。
+    </p>
+
+    <p>
+      它与消息队列的区别在于：
+    </p>
+
+    <div class="block">
+消息队列：结构化数据（Message-based）
+管道通信：连续数据流（Stream-based）
+    </div>
+
+    <p>
+      在实时系统中，管道更适用于传感器数据、音视频流等连续输入输出场景。
+    </p>
+  </section>
+
+  <!-- 实时影响 -->
+  <section class="section">
+    <h2>八、IPC对实时性的影响</h2>
+
+    <p>
+      IPC机制本身不会提升系统实时性，但会直接决定系统延迟结构。
+    </p>
+
+    <p>
+      影响主要体现在三个方面：
+    </p>
+
+    <div class="block">
+1. 阻塞行为（Blocking Behavior）
+2. 内核切换频率（Context Switch Overhead）
+3. 资源竞争程度（Contention Level）
+    </div>
+
+    <p>
+      一个设计不合理的IPC系统，甚至可以完全破坏RTOS的确定性。
+    </p>
+  </section>
+
+  <!-- 结论 -->
+  <section class="section">
+    <h2>九、总结：IPC的本质抽象</h2>
+
+    <div class="block">
+IPC = System Coordination Layer
+
+核心不是通信，而是控制并发行为的结构层
+    </div>
+
+    <p>
+      在RTOS体系中，IPC不是“辅助模块”，而是系统结构的一部分。
+      它决定了任务如何协作、如何同步，以及系统是否具备可预测性。
+    </p>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. 面向嵌入式实时系统的IPC基础学习模块。
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

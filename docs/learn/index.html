@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>学习图谱 | HRTOS 知识系统</title>
+<meta name="description" content="HRTOS学习图谱：RTOS概念到内核架构的完整知识结构。" />
+
+<style>
+:root{
+  --bg:#0b1220;
+  --card:#111c2e;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+}
+
+/* ================= BASE ================= */
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, "PingFang SC";
+  background:var(--bg);
+  color:var(--text);
+}
+
+a{
+  color:var(--accent);
+  text-decoration:none;
+}
+a:hover{opacity:.85;}
+
+/* ================= NAV ================= */
+.navbar{
+  position:sticky;
+  top:0;
+  z-index:10;
+  display:flex;
+  justify-content:space-between;
+  padding:14px 22px;
+  background:rgba(11,18,32,.9);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(10px);
+}
+
+.navbar .logo{
+  font-weight:700;
+  color:#7dd3fc;
+}
+
+.navbar a{
+  margin-left:14px;
+  color:var(--muted);
+}
+
+/* ================= LAYOUT ================= */
+.page{
+  width:min(1200px, calc(100% - 32px));
+  margin:0 auto;
+  padding:40px 0 60px;
+}
+
+h1{
+  font-size:40px;
+  margin:0 0 10px;
+}
+
+p{
+  color:var(--muted);
+  line-height:1.7;
+}
+
+/* ================= GRAPH ================= */
+.graph{
+  margin-top:20px;
+  height:820px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* ================= GRID ================= */
+.grid{
+  margin-top:30px;
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:18px;
+}
+
+/* 防止错位关键 */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:16px;
+  min-width:0;
+  overflow:hidden;
+}
+
+.card h3{
+  margin:0 0 10px;
+  font-size:16px;
+}
+
+.card a{
+  display:block;
+  padding:4px 0;
+  font-size:14px;
+  color:#7dd3fc;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* ================= FOOTER ================= */
+footer{
+  margin-top:40px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  padding-top:20px;
+  border-top:1px solid var(--border);
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width:768px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<div class="navbar">
+  <div class="logo">HRTOS Learn</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/docs/index.html">文档</a>
+    <a href="/system-view/index.html">系统视图</a>
+    <a href="/docs/architecture/index.html">架构</a>
+    <a href="/docs/learn/index.html">学习图谱</a>
+  </div>
+</div>
+
+<div class="page">
+
+<h1>HRTOS 学习图谱</h1>
+<p>知识结构导航：从基础概念到HRTOS系统化认知路径</p>
+
+<!-- ================= GRAPH (简化稳定版) ================= -->
+<!-- ================= GRAPH（简化稳定版）================= -->
+<div class="graph">
+
+<svg viewBox="0 0 1000 900" width="100%" height="900">
+
+<style>
+.node-box{
+  fill:#1e293b;
+  stroke:rgba(56,189,248,.35);
+  stroke-width:1.2;
+  rx:10;
+}
+
+.node-text{
+  fill:#bae6fd;
+  font-size:13px;
+  font-family: ui-sans-serif, system-ui, "PingFang SC", sans-serif;
+  text-anchor:middle;
+  dominant-baseline:middle;
+  font-weight:600;
+}
+
+line{
+  stroke:rgba(56,189,248,.20);
+  stroke-width:1.2;
+}
+</style>
+
+<!-- ================= LINKS ================= -->
+
+<!-- ROOT -->
+<line x1="500" y1="110" x2="150" y2="260"/>
+<line x1="500" y1="110" x2="350" y2="260"/>
+<line x1="500" y1="110" x2="650" y2="260"/>
+<line x1="500" y1="110" x2="850" y2="260"/>
+
+<!-- L1 -> L2 -->
+<line x1="150" y1="260" x2="150" y2="460"/>
+<line x1="350" y1="260" x2="350" y2="460"/>
+<line x1="650" y1="260" x2="650" y2="460"/>
+<line x1="850" y1="260" x2="850" y2="460"/>
+
+<!-- L2 -> L3 -->
+<line x1="350" y1="460" x2="350" y2="680"/>
+<line x1="500" y1="460" x2="500" y2="680"/>
+<line x1="650" y1="460" x2="650" y2="680"/>
+
+<!-- ================= NODES ================= -->
+
+<!-- ROOT -->
+<a href="what-is-rtos.html">
+<g>
+  <rect x="455" y="85" width="90" height="40" class="node-box"/>
+  <text x="500" y="105" class="node-text">RTOS核心</text>
+</g>
+</a>
+
+<!-- L1 -->
+<a href="real-time-systems.html">
+<g>
+  <rect x="110" y="240" width="90" height="40" class="node-box"/>
+  <text x="155" y="260" class="node-text">实时系统</text>
+</g>
+</a>
+
+<a href="scheduling-basics.html">
+<g>
+  <rect x="310" y="240" width="90" height="40" class="node-box"/>
+  <text x="355" y="260" class="node-text">调度机制</text>
+</g>
+</a>
+
+<a href="interrupt-basics.html">
+<g>
+  <rect x="610" y="240" width="90" height="40" class="node-box"/>
+  <text x="655" y="260" class="node-text">中断系统</text>
+</g>
+</a>
+
+<a href="ipc-basics.html">
+<g>
+  <rect x="810" y="240" width="90" height="40" class="node-box"/>
+  <text x="855" y="260" class="node-text">IPC通信</text>
+</g>
+</a>
+
+<!-- L2 -->
+<a href="context-switch-basics.html">
+<g>
+  <rect x="290" y="440" width="110" height="40" class="node-box"/>
+  <text x="345" y="460" class="node-text">上下文切换</text>
+</g>
+</a>
+
+<a href="preemptive-vs-cooperative.html">
+<g>
+  <rect x="460" y="440" width="90" height="40" class="node-box"/>
+  <text x="505" y="460" class="node-text">调度模型</text>
+</g>
+</a>
+
+<a href="/docs/architecture/index.html">
+<g>
+  <rect x="610" y="440" width="90" height="40" class="node-box"/>
+  <text x="655" y="460" class="node-text">架构层</text>
+</g>
+</a>
+
+<!-- L3 -->
+<a href="/docs/architecture/kernel/index.html">
+<g>
+  <rect x="310" y="660" width="70" height="40" class="node-box"/>
+  <text x="345" y="680" class="node-text">内核</text>
+</g>
+</a>
+
+<a href="/docs/architecture/scheduler/index.html">
+<g>
+  <rect x="465" y="660" width="70" height="40" class="node-box"/>
+  <text x="500" y="680" class="node-text">调度器</text>
+</g>
+</a>
+
+<a href="/docs/architecture/memory/index.html">
+<g>
+  <rect x="620" y="660" width="70" height="40" class="node-box"/>
+  <text x="655" y="680" class="node-text">内存</text>
+</g>
+</a>
+
+</svg>
+
+</div>
+
+<!-- ================= CARDS ================= -->
+<div class="grid">
+
+<div class="card">
+<h3>学习入门</h3>
+<a href="what-is-rtos.html">RTOS是什么</a>
+<a href="real-time-systems.html">实时系统</a>
+<a href="scheduling-basics.html">调度基础</a>
+<a href="context-switch-basics.html">上下文切换</a>
+<a href="interrupt-basics.html">中断系统</a>
+<a href="ipc-basics.html">进程通信</a>
+<a href="rtos-vs-linux.html">RTOS vs Linux</a>
+<a href="faq.html">常见问题</a>
+</div>
+
+<div class="card">
+<h3>系统架构</h3>
+<a href="/system-view/index.html">系统运行模型</a>
+<a href="/docs/architecture/index.html">架构总览</a>
+<a href="/docs/architecture/kernel/index.html">内核结构</a>
+<a href="/docs/architecture/scheduler/index.html">调度器</a>
+<a href="/docs/architecture/interrupt/index.html">中断模型</a>
+<a href="/docs/architecture/ipc/index.html">通信机制</a>
+<a href="/docs/architecture/memory/index.html">内存布局</a>
+</div>
+
+</div>
+
+<footer>
+© 2017–2026 HRTOS. Real-Time Operating System Knowledge System.
+</footer>
+
+</div>
+
+</body>
+</html>

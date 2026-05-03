@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>05 内存视图 | HRTOS System View</title>
+<meta name="description" content="定义HRTOS中的内存分配、访问与实时约束之间的关系">
+
+<meta name="page-role" content="system-view">
+<meta name="semantic-node" content="memory-view">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-mem {
+  border-left: 3px solid #a855f7;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/docs/index.html">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>5. 内存视图（Memory View）</h1>
+  <div class="sub">
+    内存系统如何成为实时确定性的约束来源
+  </div>
+
+  <!-- core -->
+  <div class="card card-core">
+    <h2>核心定义</h2>
+
+    <p>
+      内存视图描述的是：系统如何在运行过程中管理内存资源，并保证其行为不会破坏时间确定性。
+    </p>
+
+    <p>
+      在 HRTOS 中，内存不再只是“存储空间”，而是参与系统执行时间构成的<strong>时间变量源</strong>。
+    </p>
+
+    <p>
+      任何不可预测的内存行为，都等价于不可预测的执行时间。
+    </p>
+
+    <div class="en">
+      Memory is a timing-critical component that directly affects execution determinism.
+    </div>
+  </div>
+
+  <!-- allocation -->
+  <div class="card card-mem">
+    <h2>1. 内存分配（Allocation Model）</h2>
+
+    <p>
+      动态内存分配（malloc/free）在实时系统中是高风险操作，因为其执行时间不可界定。
+    </p>
+
+    <p>
+      HRTOS 中通常采用：
+    </p>
+
+    <p>
+      • 静态分配（Compile-time allocation）<br>
+      • 内存池（Memory Pool）<br>
+      • 固定块分配（Fixed block allocator）
+    </p>
+
+    <p>
+      核心原则：Allocation time must be bounded.
+    </p>
+  </div>
+
+  <!-- fragmentation -->
+  <div class="card card-mem">
+    <h2>2. 内存碎片（Fragmentation Problem）</h2>
+
+    <p>
+      动态分配会产生内存碎片，导致分配时间逐渐不可预测。
+    </p>
+
+    <p>
+      这会引入“时间漂移效应（Timing Drift）”。
+    </p>
+
+    <p>
+      在 RTOS 中，这是比“空间浪费”更严重的问题。
+    </p>
+  </div>
+
+  <!-- cache -->
+  <div class="card card-mem">
+    <h2>3. Cache 与访问时间不确定性</h2>
+
+    <p>
+      Cache 命中（Hit）与未命中（Miss）会导致访问时间差异数倍变化。
+    </p>
+
+    <p>
+      因此内存访问不再是常量操作，而是随机变量。
+    </p>
+
+    <p>
+      RTOS 必须通过：
+    </p>
+
+    <p>
+      • Cache partitioning<br>
+      • Locking critical memory region<br>
+      • Worst-case analysis
+    </p>
+  </div>
+
+  <!-- isolation -->
+  <div class="card card-mem">
+    <h2>4. 内存隔离（Memory Isolation）</h2>
+
+    <p>
+      多任务系统中，任务之间必须具备严格的内存边界。
+    </p>
+
+    <p>
+      否则会产生：
+    </p>
+
+    <p>
+      • 数据竞争（Data Race）<br>
+      • 时间干扰（Timing Interference）
+    </p>
+
+    <p>
+      在 HRTOS 中，隔离不仅是安全问题，也是实时性问题。
+    </p>
+  </div>
+
+  <!-- timing -->
+  <div class="card card-mem">
+    <h2>5. 内存与时间耦合关系</h2>
+
+    <p>
+      内存系统的不确定性最终会转化为任务执行时间的不确定性。
+    </p>
+
+    <p>
+      因此可以建立核心关系：
+    </p>
+
+    <p>
+      Memory Behavior → Execution Time → System Determinism
+    </p>
+  </div>
+
+  <!-- system meaning -->
+  <div class="card card-meta">
+    <h2>语义总结</h2>
+
+    <p>
+      在实时系统中，内存的本质不是“空间管理”，而是“时间约束管理”。
+    </p>
+
+    <p>
+      它是影响系统确定性的隐性核心变量。
+    </p>
+
+    <div class="en">
+      Memory is not a space resource, but a hidden timing constraint in real-time systems.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

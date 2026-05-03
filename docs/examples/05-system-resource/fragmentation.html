@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>内存碎片化 | HRTOS 系统资源管理</title>
+<meta name="description" content="内存碎片化机制：分析HRTOS中动态内存分配产生的碎片问题及其影响与优化策略。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+
+.breadcrumb a{ color:#7dd3fc; }
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:2.4rem;
+}
+
+.section{
+  margin-bottom:54px;
+}
+
+.flow{
+  display:grid;
+  gap:14px;
+}
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+/* code */
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<!-- 面包屑 -->
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/05-system-resource/index.html">System Resource</a> /
+  <span>Fragmentation</span>
+</nav>
+
+<!-- 标题 -->
+<section class="hero">
+  <h1>内存碎片化（Memory Fragmentation）</h1>
+  <p>描述HRTOS动态内存分配过程中由于分配与释放不均导致的内存碎片问题。</p>
+</section>
+
+<!-- 机制说明 -->
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="step">
+    内存碎片 = 外部碎片 + 内部碎片
+  </div>
+</section>
+
+<!-- 产生过程 -->
+<section class="section">
+  <h2>产生过程</h2>
+
+  <div class="flow">
+    <div class="step">1. 任务动态申请不同大小内存</div>
+    <div class="step">2. 不规则释放形成空洞</div>
+    <div class="step">3. 连续空间被切割</div>
+    <div class="step">4. 大块内存无法满足申请</div>
+  </div>
+</section>
+
+<!-- 代码区（必须） -->
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">复制</button>
+    <pre><code>
+#include <HRTOS.H>
+
+void task_A(void)
+{
+    void* p1 = os_malloc(64);
+    void* p2 = os_malloc(128);
+
+    os_free(p1);   // 释放形成碎片
+    os_free(p2);
+
+    void* p3 = os_malloc(96); // 可能无法连续分配
+}
+
+void system_init(void)
+{
+    os_mem_init();
+    os_task((unsigned int)task_A, 0, 3, 0);
+}
+
+void main(void)
+{
+    system_init();
+
+    os_task_release(0);
+
+    while(1)
+    {
+        os_nop();
+    }
+}
+    </code></pre>
+  </div>
+</section>
+
+<!-- 系统意义 -->
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    内存碎片是嵌入式RTOS长期运行稳定性的关键问题，直接影响系统可用性与实时性。
+  </p>
+</section>
+
+<!-- 固定导航（锁死结构） -->
+<section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>任务执行模型</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度系统</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断机制</h3>
+      <p><a href="/docs/system/interrupt-flow/index.html">Interrupt Flow</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务生命周期</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer style="text-align:center;color:#8ea3be;margin-top:60px;">
+© HRTOS Memory Management Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
+
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(()=>btn.innerText = old, 1000);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>03 中断流模型 | HRTOS System View</title>
+<meta name="description" content="定义HRTOS中中断的触发、响应、嵌套与对执行流的影响机制">
+
+<meta name="page-role" content="system-view">
+<meta name="semantic-node" content="interrupt-flow">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-interrupt {
+  border-left: 3px solid #ef4444;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/docs/index.html">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>3. 中断流模型（Interrupt Flow）</h1>
+  <div class="sub">
+    系统如何被外部事件打断并重新组织执行路径（Execution Recomposition）
+  </div>
+
+  <!-- core -->
+  <div class="card card-core">
+    <h2>核心定义</h2>
+
+    <p>
+      中断流（Interrupt Flow）描述的是：外部或硬件事件如何打断当前执行流，并触发系统重新进入可调度状态。
+    </p>
+
+    <p>
+      在 HRTOS 中，中断不只是“异常响应机制”，而是<strong>时间系统的一部分</strong>，直接参与调度路径构建。
+    </p>
+
+    <p>
+      每一次中断都会改变系统的“时间连续性”，因此必须被纳入确定性分析模型。
+    </p>
+
+    <div class="en">
+      Interrupt flow is not an exception mechanism, but a core component of the system's timing model.
+    </div>
+  </div>
+
+  <!-- trigger -->
+  <div class="card card-interrupt">
+    <h2>1. 中断触发（Interrupt Trigger）</h2>
+
+    <p>
+      中断来源包括：Timer、外设IO、通信接口、错误检测、异常事件等。
+    </p>
+
+    <p>
+      在实时系统中，中断触发必须满足两个条件：
+    </p>
+
+    <p>
+      • 可预测（Predictable）<br>
+      • 可界定上界（Bounded frequency）
+    </p>
+
+    <p>
+      否则系统无法进行 Worst-Case Latency 分析。
+    </p>
+  </div>
+
+  <!-- response -->
+  <div class="card card-interrupt">
+    <h2>2. 中断响应（Interrupt Response）</h2>
+
+    <p>
+      CPU 会立即保存当前执行上下文，并进入 ISR（Interrupt Service Routine）。
+    </p>
+
+    <p>
+      响应延迟由三部分组成：
+    </p>
+
+    <p>
+      • 硬件延迟（IRQ propagation）<br>
+      • 内核屏蔽窗口（Interrupt masking window）<br>
+      • 上下文保存时间（Context save time）
+    </p>
+
+    <p>
+      RTOS设计的关键目标之一，就是最小化并界定该延迟的上界。
+    </p>
+  </div>
+
+  <!-- nesting -->
+  <div class="card card-interrupt">
+    <h2>3. 中断嵌套（Interrupt Nesting）</h2>
+
+    <p>
+      高优先级中断可以抢占低优先级 ISR，从而形成“中断嵌套链”。
+    </p>
+
+    <p>
+      但嵌套深度必须受到严格控制，否则会引入“时间不可终止风险”。
+    </p>
+
+    <p>
+      在 HRTOS 中，中断嵌套必须满足：
+    </p>
+
+    <p>
+      Nesting Depth ≤ Bounded Constant
+    </p>
+
+    <p>
+      否则系统将失去可分析性（Analysability）。
+    </p>
+  </div>
+
+  <!-- scheduling interaction -->
+  <div class="card card-interrupt">
+    <h2>4. 中断与调度的关系</h2>
+
+    <p>
+      中断不仅影响当前任务执行，还可能触发调度器重新选择任务。
+    </p>
+
+    <p>
+      因此可以将中断视为“调度触发器（Scheduling Trigger）”。
+    </p>
+
+    <p>
+      在抢占式RTOS中，中断 = 调度事件源。
+    </p>
+  </div>
+
+  <!-- resume -->
+  <div class="card card-interrupt">
+    <h2>5. 执行恢复（Resume Execution）</h2>
+
+    <p>
+      ISR结束后，系统有两种路径：
+    </p>
+
+    <p>
+      • 返回原任务（Return to previous context）<br>
+      • 触发调度（Invoke scheduler）
+    </p>
+
+    <p>
+      在高优先级事件发生时，通常会直接进入重新调度路径。
+    </p>
+  </div>
+
+  <!-- system meaning -->
+  <div class="card card-meta">
+    <h2>语义总结</h2>
+
+    <p>
+      中断流的本质是：系统执行时间被外部事件切割后重新构建为新的时间序列。
+    </p>
+
+    <p>
+      它决定了RTOS是否能够维持“时间连续性与可预测性”的统一。
+    </p>
+
+    <div class="en">
+      Interrupt flow defines how execution time is segmented and reconstructed under external events, ensuring timing determinism.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>WHY Layer | HRTOS</title>
+<meta name="description" content="HRTOS WHY层：解释实时系统存在的根本原因">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 18px;
+  border-radius: 14px;
+  margin-bottom: 14px;
+}
+
+.card a {
+  color: #cfe3ff;
+  text-decoration: none;
+}
+
+.card a:hover {
+  color: #ffffff;
+}
+
+.section-title {
+  color: #cfe3ff;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.meta {
+  color: #9fb0c3;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html" style="color:#cfe3ff;">Why</a>
+    <a href="/system-view/index.html">系统</a>
+    <a href="/docs/index.html">文档</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>WHY Layer</h1>
+  <div class="sub">
+    HRTOS 存在的根本原因与系统级约束定义
+  </div>
+
+  <div class="card">
+    <div class="section-title">基础链路</div>
+
+    <p><a href="/why/01-real-time-problem.html">01 实时问题的本质</a></p>
+    <div class="meta">时间不是性能指标，而是系统正确性的一部分</div>
+
+    <p><a href="/why/02-why-general-os-fails.html">02 通用操作系统的局限</a></p>
+    <div class="meta">GPOS 无法提供确定性执行保证</div>
+
+    <p><a href="/why/03-determinism-constraint.html">03 确定性约束</a></p>
+    <div class="meta">实时系统的唯一核心标准</div>
+
+    <p><a href="/why/04-rtos-vs-gpos.html">04 RTOS vs GPOS</a></p>
+    <div class="meta">系统设计哲学的分裂点</div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">语义入口</div>
+
+    <p><a href="/why/summary.html">WHY Summary（系统定义）</a></p>
+    <div class="meta">把 WHY 压缩成系统级定义</div>
+  </div>
+
+</div>
+
+</body>
+</html>

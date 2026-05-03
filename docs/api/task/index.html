@@ -1,0 +1,250 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>任务管理 | HRTOS 系统文档</title>
+<meta name="description" content="HRTOS 任务管理模块说明，涵盖任务状态控制、任务挂起、删除与调度控制，是实时操作系统核心组成部分。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#f8fafc;
+  line-height:1.6;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:28px;
+  margin-bottom:10px;
+}
+
+.meta{
+  color:#64748b;
+  font-size:14px;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:20px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+  text-align:left;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  color:#2563eb;
+  margin-top:5px;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <h1>任务管理</h1>
+  <div class="meta">模块分类：系统核心 / 更新时间：2026-04-26</div>
+
+  <!-- 模块概述 -->
+  <div class="section">
+    <h2>模块概述</h2>
+    <p>
+      任务管理是 HRTOS 的核心模块之一，负责任务的状态控制、调度参与以及生命周期管理。
+      系统通过任务状态标志与优先级机制，实现多任务协同运行。
+    </p>
+  </div>
+
+  <!-- 核心功能 -->
+  <div class="section">
+    <h2>核心功能</h2>
+    <ul>
+      <li>任务创建</li>
+      <li>任务状态管理（运行 / 就绪 / 阻塞）</li>
+      <li>任务挂起与恢复</li>
+      <li>任务删除与资源释放</li>
+      <li>任务切换控制</li>
+      <li>调度参与控制</li>
+    </ul>
+  </div>
+
+  <!-- 任务状态定义（加分项） -->
+  <div class="section">
+    <h2>任务状态定义</h2>
+
+    <div class="code">
+#define OS_TASK_NONE     0   // 未创建
+#define OS_TASK_RUNNING  1   // 运行中
+#define OS_TASK_READY    2   // 就绪
+#define OS_TASK_BLOCKED  3   // 阻塞
+#define OS_TASK_PREV     4   // 超时
+    </div>
+
+    <p>
+      系统通过状态码标识任务当前运行状态，是调度器判断任务行为的重要依据。
+    </p>
+  </div>
+
+  <!-- API 列表 -->
+  <div class="section">
+    <h2>相关 API</h2>
+
+    <table class="table">
+      <tr>
+        <th>函数名</th>
+        <th>说明</th>
+        <th>详情</th>
+      </tr>
+
+      <tr>
+        <td>os_task</td>
+        <td>创建任务</td>
+        <td><a href="./os_task.html">查看</a></td>
+      </tr>
+      <tr>
+        <td>os_task_state</td>
+        <td>获取任务状态</td>
+        <td><a href="./os_task_state.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_task_hang</td>
+        <td>挂起任务</td>
+        <td><a href="./os_task_hang.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_task_exit</td>
+        <td>任务主动退出（触发调度）</td>
+        <td><a href="./os_task_exit.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_task_delete</td>
+        <td>删除任务并释放资源</td>
+        <td><a href="./os_task_delete.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_task_function</td>
+        <td>指定下一个执行任务</td>
+        <td><a href="./os_task_function.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_task_ready</td>
+        <td>设置任务为就绪状态</td>
+        <td><a href="./os_task_ready.html">查看</a></td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 示例代码 -->
+  <div class="section">
+    <h2>示例代码</h2>
+
+    <div class="code">
+void main()
+{
+    // 设置任务1为就绪
+    os_task_ready(1);
+
+    // 查询任务状态
+    char state = os_task_state(1);
+
+    if(state == OS_TASK_READY)
+    {
+        // 挂起任务
+        os_task_hang(1);
+    }
+
+    while(1)
+    {
+    }
+}
+    </div>
+  </div>
+
+  <!-- 扩展阅读 -->
+  <div class="section">
+    <h2>扩展阅读</h2>
+
+    <div class="link-box">
+      <a href="../scheduler/index.html">调度管理模块</a>
+      <a href="../time/index.html">时间管理系统</a>
+      <a href="../ipc/index.html">任务同步与通信</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

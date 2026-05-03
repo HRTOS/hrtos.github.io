@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>栈管理（Stack Management） | HRTOS Documentation</title>
+<meta name="description" content="HRTOS栈管理（Stack Management）机制，用于任务栈分配、保护与使用监控，确保实时系统运行的稳定性与可靠性。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: rgba(15, 23, 42, 0.72);
+  --surface-card: rgba(30, 41, 59, 0.72);
+  --surface-hover: rgba(30, 64, 175, 0.18);
+  --border: rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(56, 189, 248, 0.36);
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
+  --radius: 10px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height: 1.75;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.14;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.page {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 96px 0 56px;
+  display: grid;
+  gap: 40px;
+  position: relative;
+  z-index: 1;
+}
+
+/* breadcrumb */
+.breadcrumb {
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.breadcrumb a {
+  color: #7dd3fc;
+}
+
+.breadcrumb a:hover {
+  color: var(--accent);
+}
+
+/* hero */
+.hero {
+  display: grid;
+  gap: 16px;
+}
+
+.hero-label {
+  display: inline-flex;
+  width: fit-content;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(56,189,248,.22);
+  color: #bae6fd;
+  font-size: 0.9rem;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.hero p {
+  margin: 0;
+  max-width: 820px;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: #bae6fd;
+  background: rgba(15,23,42,.42);
+}
+
+/* layout */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 28px;
+  align-items: start;
+}
+
+.content {
+  display: grid;
+  gap: 22px;
+}
+
+.section {
+  display: grid;
+  gap: 12px;
+  padding: 24px 22px;
+  background:
+    linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.section h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.3;
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+}
+
+.section p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.96rem;
+}
+
+/* note */
+.note {
+  padding: 14px 16px;
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: rgba(15,23,42,.6);
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+
+/* code */
+.code {
+  background: #020617;
+  border: 1px solid rgba(56,189,248,.14);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: Consolas, monospace;
+  font-size: 0.92rem;
+  color: #7dd3fc;
+  line-height: 1.65;
+}
+
+/* sidebar */
+.sidebar {
+  display: grid;
+  gap: 16px;
+}
+
+.box {
+  padding: 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(30,41,59,.56);
+}
+
+.box h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+}
+
+.box a {
+  display: block;
+  color: #7dd3fc;
+  font-size: 0.92rem;
+  margin-bottom: 8px;
+}
+
+.box a:hover {
+  color: var(--accent);
+}
+
+/* footer */
+.footer {
+  text-align: center;
+  padding-top: 18px;
+  border-top: 1px solid rgba(148,163,184,.14);
+  color: #8ea3be;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .page {
+    width: min(100% - 24px, 1180px);
+    padding-top: 84px;
+  }
+
+  .section {
+    padding: 20px 18px;
+  }
+
+  .hero p,
+  .section p {
+    font-size: 0.95rem;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">Docs</a> /
+    <a href="/docs/modules/index.html">Modules</a> /
+    <a href="/docs/modules/memory/index.html">Memory</a> /
+    <span>Stack Management</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS Documentation</span>
+
+    <h1>栈管理（Stack Management）</h1>
+
+    <p>
+      栈管理机制用于任务运行时栈空间的分配、监控与保护，
+      是保证任务上下文切换正确性与系统稳定性的关键基础组件。
+    </p>
+
+    <div class="meta">
+      <span class="tag">Memory</span>
+      <span class="tag">Task Runtime</span>
+      <span class="tag">Core Mechanism</span>
+    </div>
+  </section>
+
+  <div class="layout">
+
+    <div class="content">
+
+      <section class="section" id="overview">
+        <h2>概述</h2>
+        <p>
+          栈（Stack）用于保存任务执行过程中的局部变量、函数调用信息与上下文数据。
+          在RTOS中，每个任务通常拥有独立栈空间。
+        </p>
+      </section>
+
+      <section class="section" id="mechanism">
+        <h2>工作原理</h2>
+        <p>
+          系统在任务创建时分配固定栈空间，运行时通过栈指针SP进行压栈与出栈操作。
+          上下文切换时保存/恢复栈状态。
+        </p>
+
+        <div class="note">
+          栈溢出是RTOS中最常见的系统性错误之一，可能导致不可预测行为。
+        </div>
+      </section>
+
+      <section class="section" id="interface">
+        <h2>关键接口 / 结构</h2>
+
+        <div class="code">
+os_stack_create()
+os_stack_check()
+os_stack_get_usage()
+
+struct task_stack {
+    void* base;
+    uint32_t size;
+    uint32_t used;
+};
+        </div>
+      </section>
+
+      <section class="section" id="flow">
+        <h2>运行流程</h2>
+        <p>
+          任务创建时分配栈空间 → 运行时持续压栈/出栈 →
+          系统周期性检查栈水位 → 检测溢出风险并触发保护机制。
+        </p>
+      </section>
+
+      <section class="section" id="extension">
+        <h2>扩展说明</h2>
+        <p>
+          HRTOS通常结合栈水位标记（Watermark）与MPU保护机制，
+          实现栈溢出检测与运行时安全防护。
+        </p>
+      </section>
+
+    </div>
+
+    <aside class="sidebar">
+
+      <div class="box">
+        <h3>目录导航</h3>
+        <a href="#overview">概述</a>
+        <a href="#mechanism">工作原理</a>
+        <a href="#interface">关键接口</a>
+        <a href="#flow">运行流程</a>
+      </div>
+
+      <div class="box">
+        <h3>相关页面</h3>
+        <a href="/docs/modules/memory/allocation.html">内存分配</a>
+        <a href="/docs/modules/task/context-switch.html">上下文切换</a>
+      </div>
+
+      <div class="box">
+        <h3>所属模块</h3>
+        <a href="/docs/modules/memory/index.html">Memory Management</a>
+      </div>
+
+      <div class="box">
+        <h3>学习路径</h3>
+        <a href="/docs/modules/memory/index.html">Memory → Runtime Execution</a>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

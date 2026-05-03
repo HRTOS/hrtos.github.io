@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>中断延迟测试 | HRTOS 实时性分析</title>
+<meta name="description" content="中断延迟测试：分析HRTOS从中断触发到ISR执行之间的时间开销与实时性能评估方法。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+
+.breadcrumb a{ color:#7dd3fc; }
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:2.4rem;
+}
+
+.section{
+  margin-bottom:54px;
+}
+
+.flow{
+  display:grid;
+  gap:14px;
+}
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+/* code */
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<!-- 面包屑 -->
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/06-interrupt-driven/index.html">Interrupt Driven</a> /
+  <span>Latency Test</span>
+</nav>
+
+<!-- 标题 -->
+<section class="hero">
+  <h1>中断延迟测试（Interrupt Latency Test）</h1>
+  <p>用于测量HRTOS从中断触发到进入ISR执行之间的时间延迟，用于评估实时性能。</p>
+</section>
+
+<!-- 定义 -->
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="step">
+    Interrupt Latency = 中断触发 → ISR第一条指令执行
+  </div>
+</section>
+
+<!-- 测试流程 -->
+<section class="section">
+  <h2>测试流程</h2>
+
+  <div class="flow">
+    <div class="step">1. 触发外部中断信号</div>
+    <div class="step">2. CPU响应中断请求</div>
+    <div class="step">3. 记录时间戳T1</div>
+    <div class="step">4. ISR入口执行记录T2</div>
+    <div class="step">5. 计算 T2 - T1</div>
+  </div>
+</section>
+
+<!-- 代码区 -->
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">复制</button>
+    <pre><code>
+#include <HRTOS.H>
+
+volatile unsigned int t1, t2, latency;
+
+/* 外部中断 */
+void ISR_Handler(void)
+{
+    t2 = os_get_tick();   // 进入ISR时间
+    latency = t2 - t1;
+
+    os_news_send1(0, latency);
+}
+
+/* 模拟触发 */
+void trigger_interrupt(void)
+{
+    t1 = os_get_tick();    // 触发前时间
+
+    os_soft_interrupt();   // 软件触发中断
+}
+
+void system_init(void)
+{
+    os_interrupt_init();
+}
+
+void main(void)
+{
+    system_init();
+
+    while(1)
+    {
+        trigger_interrupt();
+        os_wait1(10);
+    }
+}
+    </code></pre>
+  </div>
+</section>
+
+<!-- 系统意义 -->
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    中断延迟是实时系统最关键指标之一，直接决定系统响应能力上限。
+  </p>
+</section>
+
+<!-- 固定导航 -->
+<section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>任务执行模型</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度系统</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断机制</h3>
+      <p><a href="/docs/system/interrupt-flow/index.html">Interrupt Flow</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务生命周期</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer style="text-align:center;color:#8ea3be;margin-top:60px;">
+© HRTOS Interrupt Performance Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
+
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(()=>btn.innerText = old, 1000);
+});
+</script>
+
+</body>
+</html>

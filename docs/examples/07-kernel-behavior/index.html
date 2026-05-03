@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>内核行为系统 | HRTOS 实验系统</title>
+<meta name="description" content="内核行为系统实验：分析调度流程、优先级反转、系统运行轨迹与真实内核执行路径，理解RTOS核心运行机制。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:12px;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+/* breadcrumb */
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+/* hero */
+.hero{
+  margin-bottom:54px;
+}
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+  line-height:1.1;
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+/* section */
+.section{
+  margin-bottom:54px;
+}
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{
+  margin:0 0 20px;
+  color:var(--muted);
+}
+
+/* grid */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+
+.card{
+  display:block;
+  padding:22px;
+  background:linear-gradient(180deg,rgba(30,41,59,.85),rgba(15,23,42,.95));
+  border:1px solid var(--border);
+  border-radius:12px;
+  box-shadow:0 20px 48px rgba(2,6,23,.34);
+  transition:.25s ease;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  border-color:rgba(56,189,248,.4);
+}
+
+.card h3{
+  margin:0 0 8px;
+  font-size:1.08rem;
+  color:#f8fafc;
+}
+
+.card p{
+  margin:0;
+  font-size:.95rem;
+  color:var(--muted);
+}
+
+.card span{
+  display:inline-block;
+  margin-top:12px;
+  color:#7dd3fc;
+  font-size:.9rem;
+  font-weight:600;
+}
+
+/* model */
+.model-box{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+  margin-top:12px;
+}
+
+/* footer */
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+
+@media(max-width:900px){
+  .grid{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+
+<body data-header="docs">
+<script src="/header.js" defer></script>
+
+<main class="page">
+
+  <!-- 面包屑 -->
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">Docs</a> /
+    <a href="/docs/examples/index.html">Examples</a> /
+    <span>Kernel Behavior</span>
+  </nav>
+
+  <!-- 标题 -->
+  <section class="hero">
+    <span class="hero-tag">Kernel Core</span>
+
+    <h1>内核行为系统</h1>
+
+    <p>
+      内核行为系统用于分析RTOS在真实运行过程中的调度轨迹、
+      优先级反转现象以及任务切换的底层执行逻辑，是系统级行为观测核心模块。
+    </p>
+  </section>
+
+  <!-- 模型定义 -->
+  <section class="section">
+    <h2>内核行为模型定义</h2>
+    <div class="model-box">
+      Kernel Behavior Model = Scheduling Flow + Priority Inversion + Context Switch Trace + Runtime Execution Path
+    </div>
+  </section>
+
+  <!-- 核心实验 -->
+  <section class="section">
+    <h2>核心实验</h2>
+    <p>以下实验用于观察内核在复杂系统负载下的真实行为。</p>
+
+    <div class="grid">
+
+      <a class="card" href="full-schedule-flow.html">
+        <h3>完整调度流程</h3>
+        <p>追踪系统从中断到任务切换的完整路径。</p>
+        <span>进入实验 →</span>
+      </a>
+
+      <a class="card" href="priority-inversion.html">
+        <h3>优先级反转</h3>
+        <p>分析锁竞争导致的优先级异常问题。</p>
+        <span>进入实验 →</span>
+      </a>
+
+      <a class="card" href="real-system-run.html">
+        <h3>真实系统运行</h3>
+        <p>模拟完整RTOS运行周期与调度行为。</p>
+        <span>进入实验 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- 关联 -->
+  <section class="section">
+    <h2>关联系统</h2>
+
+    <div class="grid">
+
+      <a class="card" href="/docs/examples/01-task-execution/index.html">
+        <h3>任务执行模型</h3>
+        <p>任务从创建到运行的核心机制。</p>
+        <span>查看 →</span>
+      </a>
+
+      <a class="card" href="/docs/examples/02-scheduling-engine/index.html">
+        <h3>调度引擎</h3>
+        <p>内核行为的调度决策核心。</p>
+        <span>查看 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS · Kernel Behavior System
+  </footer>
+
+</main>
+
+</body>
+</html>

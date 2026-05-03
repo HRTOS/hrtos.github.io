@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>什么是RTOS | HRTOS 学习模块</title>
+<meta name="description" content="系统性解释RTOS（实时操作系统）的本质：时间确定性、调度模型与实时计算系统的核心逻辑。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
+}
+
+a{color:inherit;text-decoration:none;}
+
+.page{
+  width:min(1100px, calc(100% - 40px));
+  margin:0 auto;
+  padding:90px 0 60px;
+  display:grid;
+  gap:42px;
+}
+
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
+}
+
+.breadcrumb a{color:#7dd3fc;}
+
+.hero h1{
+  font-size:44px;
+  margin:0;
+}
+
+.hero p{
+  margin-top:14px;
+  color:var(--muted);
+  max-width:900px;
+}
+
+.tag{
+  display:inline-block;
+  margin-top:18px;
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:13px;
+  color:#bae6fd;
+}
+
+.section{
+  display:grid;
+  gap:14px;
+}
+
+.section h2{
+  font-size:22px;
+  margin:0;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+}
+
+.highlight{
+  padding:20px;
+  border-left:3px solid var(--accent);
+  background:rgba(15,23,42,.6);
+  border-radius:10px;
+  color:#e2e8f0;
+}
+
+.card{
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(255,255,255,0.03);
+}
+
+.card strong{
+  color:#f1f5f9;
+}
+
+.block{
+  padding:18px;
+  border-radius:10px;
+  border:1px solid rgba(56,189,248,.18);
+  background:rgba(15,23,42,.6);
+  font-family:Consolas, monospace;
+  color:#7dd3fc;
+}
+
+.footer{
+  text-align:center;
+  font-size:14px;
+  color:#8ea3be;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:18px;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/learn/index.html">学习模块</a> /
+    <span>什么是RTOS</span>
+  </nav>
+
+  <section class="hero">
+    <h1>什么是RTOS</h1>
+
+    <p>
+      RTOS（Real-Time Operating System，实时操作系统）不是“操作系统的一个分类”，
+      而是一种<strong>以时间为第一约束变量的计算系统模型</strong>。
+      它的核心不是资源管理，而是对“时间不确定性”的系统级消除。
+    </p>
+
+    <span class="tag">Deterministic Execution System</span>
+  </section>
+
+  <section class="section">
+    <h2>一、RTOS的本质：时间优先于计算</h2>
+
+    <div class="highlight">
+      RTOS的本质不是“更快执行任务”，而是“确保任务不会在不可预测的时间点完成”。
+      它把系统正确性的定义从“结果正确”扩展为“结果 + 时间都必须正确”。
+    </div>
+
+    <p>
+      在普通操作系统中，时间是“统计结果”；  
+      在RTOS中，时间是“硬约束变量”。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>二、系统正确性的重新定义</h2>
+
+    <p>RTOS引入了一个关键变化：系统正确性变为双维约束。</p>
+
+    <div class="block">
+Correctness = Functional Correctness + Temporal Correctness
+
+Temporal Constraint:
+Execution Time ≤ Deadline
+
+Violation → System-level Failure
+    </div>
+
+    <p>
+      这意味着：  
+      即使逻辑结果完全正确，只要超时，该结果在系统层面仍然无效。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>三、RTOS不是操作系统，而是约束系统</h2>
+
+    <p>
+      RTOS的设计对象不是“程序执行”，而是“系统行为边界”。
+      它本质上是一个约束求解器，而不是执行管理器。
+    </p>
+
+    <div class="card">
+      <strong>通用OS：</strong>优化平均性能（吞吐量 / 体验 / 公平性）<br><br>
+      <strong>RTOS：</strong>控制最坏情况（Worst Case Bound）
+    </div>
+
+    <p>
+      两者的差异不是“能力强弱”，而是“优化目标方向完全相反”。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>四、RTOS的核心结构模型</h2>
+
+    <div class="block">
+RTOS System Model:
+
+System = (Tasks, Scheduler, Interrupts, Constraints)
+
+Constraints:
+- WCET (Worst Case Execution Time)
+- WCRT (Worst Case Response Time)
+- Interrupt Latency Bound
+- Scheduling Determinism
+    </div>
+
+    <p>
+      RTOS所有设计（调度、中断、IPC）都只是为了满足上述约束集合。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>五、调度器的真实角色</h2>
+
+    <p>
+      RTOS调度器不是“任务排序器”，而是“时间可行性判定器”。
+    </p>
+
+    <div class="highlight">
+      它每一次决策的本质是：
+      在当前系统状态下，哪一个执行路径不会破坏任何时间约束？
+    </div>
+
+    <p>
+      因此，优先级只是表象，时间可行性才是核心决策逻辑。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>六、中断系统：时间模型的入口</h2>
+
+    <p>
+      在RTOS中，中断不是“事件机制”，而是“时间扰动入口”。
+      每一个中断都会改变系统时间模型，因此必须被严格约束。
+    </p>
+
+    <div class="card">
+      中断必须满足三条约束：<br>
+      • 上界延迟（Bounded Latency）<br>
+      • 行为可预测（Deterministic Path）<br>
+      • 不破坏调度一致性
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>七、RTOS的终极目标</h2>
+
+    <div class="highlight">
+      RTOS的最终目标不是“提高性能”，而是让系统行为进入“可证明状态”。
+    </div>
+
+    <p>
+      可证明性意味着：系统的最坏情况可以被提前计算，而不是运行时观察。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>八、结论：RTOS的抽象定义</h2>
+
+    <div class="block">
+RTOS = Constrained Execution System
+
+Subject to:
+
+∀ task → FinishTime ≤ Deadline
+∀ interrupt → Latency ≤ Bound
+∀ schedule → Deterministic
+    </div>
+
+    <p>
+      RTOS不是“软件类型”，而是一种“时间约束计算范式”。
+    </p>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. Real-Time Operating System Definition.
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

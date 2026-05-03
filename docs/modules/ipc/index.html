@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>IPC通信机制 | HRTOS Module Documentation</title>
+<meta name="description" content="HRTOS IPC通信机制模块文档，涵盖事件、信号量、互斥锁、邮箱与消息队列等任务间通信与同步机制。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --surface-hover:rgba(30,41,59,.92);
+  --border:rgba(148,163,184,.18);
+  --border-strong:rgba(56,189,248,.38);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+  overflow-x:hidden;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
+  background-size:28px 28px;
+  opacity:.14;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  position:relative;
+  z-index:1;
+}
+
+/* breadcrumb */
+.breadcrumb{
+  margin-bottom:28px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.breadcrumb a:hover{
+  color:var(--accent);
+}
+
+/* hero */
+.hero{
+  margin-bottom:56px;
+}
+
+.hero-label{
+  display:inline-block;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.24);
+  color:#bae6fd;
+  font-size:.9rem;
+  margin-bottom:18px;
+}
+
+.hero h1{
+  margin:0 0 16px;
+  font-size:clamp(2.3rem,5vw,4rem);
+  line-height:1.08;
+  font-weight:700;
+}
+
+.hero p{
+  margin:0;
+  max-width:760px;
+  color:var(--muted);
+  font-size:1rem;
+}
+
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:18px;
+}
+
+.tag{
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:rgba(15,23,42,.45);
+  color:#bae6fd;
+  font-size:.84rem;
+}
+
+/* section */
+.section{
+  margin-bottom:56px;
+}
+
+.section h2{
+  margin:0 0 12px;
+  font-size:1.5rem;
+  line-height:1.3;
+}
+
+.section p{
+  margin:0 0 22px;
+  color:var(--muted);
+}
+
+/* grid */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+}
+
+/* card */
+.card{
+  display:grid;
+  gap:12px;
+  padding:24px 22px;
+  min-height:180px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(30,41,59,.8),
+      rgba(15,23,42,.92)
+    );
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  transition:.22s ease;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  border-color:var(--border-strong);
+  background:var(--surface-hover);
+}
+
+.card h3{
+  margin:0;
+  font-size:1.12rem;
+  color:#f8fafc;
+}
+
+.card p{
+  margin:0;
+  font-size:.95rem;
+  color:var(--muted);
+}
+
+.card span{
+  margin-top:auto;
+  color:#7dd3fc;
+  font-size:.92rem;
+  font-weight:600;
+}
+
+/* footer */
+.footer{
+  padding-top:24px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+
+@media(max-width:900px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:640px){
+  .page{
+    width:min(100% - 24px,1180px);
+    padding-top:84px;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">Docs</a> /
+    <a href="/docs/modules/index.html">Modules</a> /
+    <span>IPC</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS Module</span>
+
+    <h1>IPC通信机制</h1>
+
+    <p>
+      IPC（Inter-Process Communication）是RTOS中任务间通信与同步的核心机制，
+      用于实现事件触发、资源共享与数据交换，保证系统的实时性与可控性。
+    </p>
+
+    <div class="meta">
+      <span class="tag">5 Topics</span>
+      <span class="tag">Kernel IPC</span>
+      <span class="tag">RTOS Core</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>概述</h2>
+    <p>
+      在HRTOS中，IPC机制用于解决多任务并发下的通信与同步问题。
+      不同机制适用于不同场景，包括状态通知、资源互斥以及数据流传递。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>核心机制</h2>
+    <p>以下为HRTOS中主要的IPC通信与同步机制。</p>
+
+    <div class="grid">
+
+      <a class="card" href="event.html">
+        <h3>事件机制（Event）</h3>
+        <p>
+          基于位标志的状态同步机制，用于任务条件触发与轻量通知。
+        </p>
+        <span>进入详情 →</span>
+      </a>
+
+      <a class="card" href="semaphore.html">
+        <h3>信号量（Semaphore）</h3>
+        <p>
+          基于计数的同步机制，用于任务同步与资源管理。
+        </p>
+        <span>进入详情 →</span>
+      </a>
+
+      <a class="card" href="mutex.html">
+        <h3>互斥锁（Mutex）</h3>
+        <p>
+          用于临界资源保护，支持优先级继承防止优先级反转。
+        </p>
+        <span>进入详情 →</span>
+      </a>
+
+      <a class="card" href="mailbox.html">
+        <h3>邮箱机制（Mailbox）</h3>
+        <p>
+          基于固定缓冲区的轻量消息传递机制，适用于小数据通信。
+        </p>
+        <span>进入详情 →</span>
+      </a>
+
+      <a class="card" href="message-queue.html">
+        <h3>消息队列（Message Queue）</h3>
+        <p>
+          支持结构化数据传递与阻塞机制的标准IPC通信方式。
+        </p>
+        <span>进入详情 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>相关模块</h2>
+
+    <div class="grid">
+
+      <a class="card" href="/docs/modules/task/index.html">
+        <h3>Task Management</h3>
+        <p>
+          任务管理模块与IPC机制紧密协作，实现调度与通信联动。
+        </p>
+        <span>查看模块 →</span>
+      </a>
+
+      <a class="card" href="/docs/system/context-switch-flow.html">
+        <h3>Context Switch</h3>
+        <p>
+          IPC触发任务切换的底层执行流程分析。
+        </p>
+        <span>查看流程 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. Documentation for embedded real-time systems.
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

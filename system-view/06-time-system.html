@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>06 时间系统 | HRTOS System View</title>
+<meta name="description" content="定义HRTOS中的时间模型，包括tick、真实时间、执行时间与系统延迟约束">
+
+<meta name="page-role" content="system-view">
+<meta name="semantic-node" content="time-system">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-time {
+  border-left: 3px solid #f59e0b;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/docs/index.html">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>06 时间系统（Time System）</h1>
+  <div class="sub">
+    HRTOS 中“时间如何成为系统约束变量”
+  </div>
+
+  <!-- core definition -->
+  <div class="card card-core">
+    <h2>核心定义</h2>
+
+    <p>
+      时间系统（Time System）不是一个“计时模块”，而是整个实时操作系统的基础约束框架。
+    </p>
+
+    <p>
+      在 HRTOS 中，所有调度决策、任务切换与中断响应，都必须回到一个问题：<b>时间是否仍然可预测</b>。
+    </p>
+
+    <p>
+      因此时间不是背景变量，而是系统行为的“第一约束维度”。
+    </p>
+
+    <div class="en">
+      Time system is not a timer module, but the fundamental constraint framework of real-time execution.
+    </div>
+  </div>
+
+  <!-- time types -->
+  <div class="card card-time">
+    <h2>1. 三种时间模型（Time Layers）</h2>
+
+    <p><b>① Real Time（物理时间）</b></p>
+    <p>
+      外部世界的时间基准，例如传感器输入、机械运动与现实事件。
+      系统必须“跟随”，而不是“定义”它。
+    </p>
+
+    <p><b>② System Time（系统时间）</b></p>
+    <p>
+      RTOS 内部统一调度基准，由 tick 或高精度定时器驱动。
+      它是系统“内部世界”的时间坐标系。
+    </p>
+
+    <p><b>③ CPU Time（执行时间）</b></p>
+    <p>
+      任务真正占用 CPU 的时间，是调度分析的核心变量。
+      WCET（Worst Case Execution Time）基于此定义。
+    </p>
+  </div>
+
+  <!-- tick model -->
+  <div class="card card-time">
+    <h2>2. Tick 模型与时间粒度</h2>
+
+    <p>
+      Tick 是系统时间离散化的基本单位，它决定调度系统的“时间解析度”。
+    </p>
+
+    <p>
+      ✔ Tick 越小 → 系统越精细（高实时性）  
+      ✔ Tick 越大 → 系统开销更低但延迟更粗糙
+    </p>
+
+    <p>
+      本质上，tick 是“时间离散化误差”的来源，也是系统设计权衡点。
+    </p>
+
+    <div class="en">
+      Tick defines the discretization granularity of time in RTOS scheduling.
+    </div>
+  </div>
+
+  <!-- latency -->
+  <div class="card card-time">
+    <h2>3. 时间延迟结构（Latency Composition）</h2>
+
+    <p>
+      一个实时任务的总延迟不是单点，而是多个阶段叠加：
+    </p>
+
+    <p>
+      <b>Interrupt Latency</b> + <b>Scheduling Delay</b> + <b>Context Switch Cost</b> + <b>Execution Time</b>
+    </p>
+
+    <p>
+      其中任何一个变量的不确定性，都会直接破坏系统的“可预测性边界”。
+    </p>
+
+    <p>
+      因此实时系统设计不是优化平均值，而是约束“最坏路径”。
+    </p>
+  </div>
+
+  <!-- determinism -->
+  <div class="card card-time">
+    <h2>4. 时间与确定性关系</h2>
+
+    <p>
+      在 HRTOS 中，时间不是连续流动的抽象概念，而是一个“离散约束集合”。
+    </p>
+
+    <p>
+      系统正确性定义为：
+    </p>
+
+    <p>
+      ✔ 是否在时间窗口内完成执行  
+      ✔ 是否满足最坏情况边界（WCET + latency bound）
+    </p>
+
+    <p>
+      这意味着：<b>超时 = 错误</b>，而不是性能下降。
+    </p>
+
+    <div class="en">
+      In real-time systems, timeout is not degradation — it is correctness failure.
+    </div>
+  </div>
+
+  <!-- system implication -->
+  <div class="card card-time">
+    <h2>5. 系统级影响</h2>
+
+    <p>
+      时间系统直接约束三大核心模块：
+    </p>
+
+    <p>
+      • Scheduler（调度） → 必须可预测  
+      • Interrupt（中断） → 必须可界定延迟  
+      • Memory（内存） → 必须避免时间抖动
+    </p>
+
+    <p>
+      因此时间系统不是模块，而是“系统一致性框架”。
+    </p>
+  </div>
+
+  <!-- meta -->
+  <div class="card card-meta">
+    <h2>语义总结</h2>
+
+    <p>
+      时间系统的本质，是把物理世界的不确定性，转换为可计算的约束模型。
+    </p>
+
+    <p>
+      它定义了：系统不是在“运行程序”，而是在“维护时间正确性”。
+    </p>
+
+    <div class="en">
+      Time system converts physical uncertainty into computable constraints, defining correctness as temporal consistency.
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

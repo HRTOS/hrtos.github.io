@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>Scheduler | HRTOS Module Documentation</title>
+<meta name="description" content="HRTOS调度器模块文档，涵盖优先级调度、实时调度、时间片轮转等核心调度机制与实时系统执行策略。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --surface-hover:rgba(30,41,59,.92);
+  --border:rgba(148,163,184,.18);
+  --border-strong:rgba(56,189,248,.38);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+  overflow-x:hidden;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
+  background-size:28px 28px;
+  opacity:.14;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  position:relative;
+  z-index:1;
+}
+
+/* breadcrumb */
+.breadcrumb{
+  margin-bottom:28px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.breadcrumb a:hover{
+  color:var(--accent);
+}
+
+/* hero */
+.hero{
+  margin-bottom:56px;
+}
+
+.hero-label{
+  display:inline-block;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.24);
+  color:#bae6fd;
+  font-size:.9rem;
+  margin-bottom:18px;
+}
+
+.hero h1{
+  margin:0 0 16px;
+  font-size:clamp(2.3rem,5vw,4rem);
+  line-height:1.08;
+  font-weight:700;
+}
+
+.hero p{
+  margin:0;
+  max-width:760px;
+  color:var(--muted);
+  font-size:1rem;
+}
+
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:18px;
+}
+
+.tag{
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:rgba(15,23,42,.45);
+  color:#bae6fd;
+  font-size:.84rem;
+}
+
+/* section */
+.section{
+  margin-bottom:56px;
+}
+
+.section h2{
+  margin:0 0 12px;
+  font-size:1.5rem;
+  line-height:1.3;
+}
+
+.section p{
+  margin:0 0 22px;
+  color:var(--muted);
+}
+
+/* grid */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+}
+
+/* card */
+.card{
+  display:grid;
+  gap:12px;
+  padding:24px 22px;
+  min-height:180px;
+  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  transition:.22s ease;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  border-color:var(--border-strong);
+  background:var(--surface-hover);
+}
+
+.card h3{
+  margin:0;
+  font-size:1.12rem;
+  color:#f8fafc;
+}
+
+.card p{
+  margin:0;
+  font-size:.95rem;
+  color:var(--muted);
+  line-height:1.6;
+}
+
+.card span{
+  margin-top:auto;
+  color:#7dd3fc;
+  font-size:.92rem;
+  font-weight:600;
+}
+
+/* footer */
+.footer{
+  padding-top:24px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr;}
+}
+
+@media(max-width:640px){
+  .page{
+    width:min(100% - 24px,1180px);
+    padding-top:84px;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">Docs</a> /
+    <a href="/docs/modules/index.html">Modules</a> /
+    <span>Scheduler</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS Module</span>
+
+    <h1>Scheduler 调度器</h1>
+
+    <p>
+      调度器模块是实时操作系统的核心执行单元，
+      负责管理任务执行顺序、CPU分配策略与实时性保证机制，
+      决定系统整体响应能力与确定性行为。
+    </p>
+
+    <div class="meta">
+      <span class="tag">3 Topics</span>
+      <span class="tag">Kernel Core</span>
+      <span class="tag">RTOS Scheduling</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>概述</h2>
+    <p>
+      Scheduler负责在多个任务之间进行CPU资源分配，
+      在不同调度策略下（优先级、实时、轮转），
+      确保系统满足实时约束与公平性要求。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>核心调度策略</h2>
+    <p>HRTOS提供多种调度模型，用于不同实时场景。</p>
+
+    <div class="grid">
+
+      <a class="card" href="priority-scheduling.html">
+        <h3>优先级调度</h3>
+        <p>
+          基于任务优先级进行抢占式调度，
+          保证高优先级任务即时执行。
+        </p>
+        <span>进入 →</span>
+      </a>
+
+      <a class="card" href="real-time-scheduling.html">
+        <h3>实时调度</h3>
+        <p>
+          基于时间约束（Deadline）的确定性调度模型，
+          保证任务按时完成。
+        </p>
+        <span>进入 →</span>
+      </a>
+
+      <a class="card" href="round-robin.html">
+        <h3>时间片轮转</h3>
+        <p>
+          同优先级任务间的公平调度策略，
+          通过时间片轮转实现均衡执行。
+        </p>
+        <span>进入 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>相关模块</h2>
+
+    <div class="grid">
+
+      <a class="card" href="/docs/modules/task/index.html">
+        <h3>Task Management</h3>
+        <p>任务是调度器的基本执行对象。</p>
+        <span>查看 →</span>
+      </a>
+
+      <a class="card" href="/docs/modules/ipc/index.html">
+        <h3>IPC Communication</h3>
+        <p>调度影响消息传递与任务同步行为。</p>
+        <span>查看 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. Documentation for embedded real-time systems.
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

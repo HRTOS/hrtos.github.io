@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>04 RTOS vs GPOS | HRTOS Why Layer</title>
+<meta name="description" content="对比实时操作系统与通用操作系统的核心差异：确定性 vs 吞吐量">
+
+<meta name="page-role" content="why-layer">
+<meta name="semantic-node" content="rtos-vs-gpos">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-definition {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-rtos {
+  border-left: 3px solid #22c55e;
+}
+
+.card-gpos {
+  border-left: 3px solid #ef4444;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+  opacity: 0.95;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html" style="color:#cfe3ff;">Why</a>
+    <a href="/system-view/index.html">系统</a>
+    <a href="/docs/index.html">文档</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>4. RTOS vs GPOS</h1>
+  <div class="sub">
+    实时系统与通用操作系统的本质分界线
+  </div>
+
+  <!-- definition -->
+  <div class="card card-definition">
+    <h2>核心对比定义</h2>
+    <p>
+      RTOS（Real-Time Operating System）与 GPOS（General-Purpose Operating System）的根本区别，不在实现方式，而在设计目标。
+    </p>
+
+    <p>
+      一个以“时间确定性”为核心，一个以“资源利用率”为核心。
+    </p>
+  </div>
+
+  <!-- RTOS -->
+  <div class="card card-rtos">
+    <h2>RTOS（实时操作系统）</h2>
+
+    <p>
+      核心目标：确定性（Determinism）
+    </p>
+
+    <p>
+      所有设计围绕“任务必须在可预测时间内完成”展开。
+    </p>
+
+    <p>
+      评价标准：最大延迟（Worst-case latency）
+    </p>
+
+    <div class="en">
+      RTOS is designed around determinism and worst-case timing guarantees.
+    </div>
+  </div>
+
+  <!-- GPOS -->
+  <div class="card card-gpos">
+    <h2>GPOS（通用操作系统）</h2>
+
+    <p>
+      核心目标：吞吐量与公平性（Throughput & Fairness）
+    </p>
+
+    <p>
+      任务调度允许动态变化，以提高整体资源利用率。
+    </p>
+
+    <p>
+      评价标准：平均性能（Average performance）
+    </p>
+
+    <div class="en">
+      GPOS is optimized for throughput and fairness, not deterministic timing.
+    </div>
+  </div>
+
+  <!-- contrast -->
+  <div class="card">
+    <h2>结构性冲突</h2>
+
+    <p>
+      RTOS 追求“可预测的最坏情况”，GPOS 追求“整体最优的平均情况”。
+    </p>
+
+    <p>
+      这两种目标在系统设计层面是不可兼容的。
+    </p>
+  </div>
+
+  <!-- meta -->
+  <div class="card card-meta">
+    <h2>语义总结</h2>
+    <p>
+      RTOS 与 GPOS 的差异不是性能差异，而是系统设计哲学的分裂。
+    </p>
+
+    <div class="en">
+      The difference between RTOS and GPOS is not performance, but a divergence in system design philosophy.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

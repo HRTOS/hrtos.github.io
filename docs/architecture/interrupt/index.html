@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>中断架构 | HRTOS 文档中心</title>
+<meta name="description" content="HRTOS 中断架构文档，包括中断流程、中断延迟与中断模型，用于理解实时系统的事件响应机制。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --surface-hover:rgba(30,41,59,.92);
+  --border:rgba(148,163,184,.18);
+  --border-strong:rgba(56,189,248,.38);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+  overflow-x:hidden;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
+  background-size:28px 28px;
+  opacity:.14;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  position:relative;
+  z-index:1;
+}
+
+.breadcrumb{
+  margin-bottom:28px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.hero{
+  margin-bottom:56px;
+}
+
+.hero-label{
+  display:inline-block;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.24);
+  color:#bae6fd;
+  font-size:.9rem;
+  margin-bottom:18px;
+}
+
+.hero h1{
+  margin:0 0 16px;
+  font-size:clamp(2.3rem,5vw,4rem);
+  line-height:1.08;
+  font-weight:700;
+}
+
+.hero p{
+  margin:0;
+  max-width:760px;
+  color:var(--muted);
+  font-size:1rem;
+}
+
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:18px;
+}
+
+.tag{
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:rgba(15,23,42,.45);
+  color:#bae6fd;
+  font-size:.84rem;
+}
+
+.section{
+  margin-bottom:56px;
+}
+
+.section h2{
+  margin:0 0 12px;
+  font-size:1.5rem;
+}
+
+.section p{
+  margin:0 0 22px;
+  color:var(--muted);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+}
+
+.card{
+  display:grid;
+  gap:12px;
+  padding:24px 22px;
+  min-height:180px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(30,41,59,.8),
+      rgba(15,23,42,.92)
+    );
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  transition:.22s ease;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  border-color:var(--border-strong);
+  background:var(--surface-hover);
+}
+
+.card h3{
+  margin:0;
+  font-size:1.12rem;
+  color:#f8fafc;
+}
+
+.card p{
+  margin:0;
+  font-size:.95rem;
+  color:var(--muted);
+}
+
+.card span{
+  margin-top:auto;
+  color:#7dd3fc;
+  font-size:.92rem;
+  font-weight:600;
+}
+
+.footer{
+  padding-top:24px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+
+@media(max-width:900px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/architecture/index.html">系统架构</a> /
+    <span>中断架构</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS 架构模块</span>
+
+    <h1>中断架构（Interrupt Architecture）</h1>
+
+    <p>
+      中断机制是实时操作系统响应外部事件的核心能力，决定系统如何处理中断请求、优先级调度与事件恢复流程。
+    </p>
+
+    <div class="meta">
+      <span class="tag">3 个主题</span>
+      <span class="tag">系统架构</span>
+      <span class="tag">RTOS Core</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>概述</h2>
+    <p>
+      HRTOS 中断架构定义了系统在异步事件发生时的响应模型，包括中断触发、中断处理、中断延迟与整体结构设计。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>核心主题</h2>
+    <p>浏览中断机制的关键结构与运行模型。</p>
+
+    <div class="grid">
+
+      <a class="card" href="interrupt-flow.html">
+        <h3>中断流程</h3>
+        <p>
+          了解中断从触发到ISR执行，再到任务恢复的完整处理路径。
+        </p>
+        <span>查看详情 →</span>
+      </a>
+
+      <a class="card" href="interrupt-latency.html">
+        <h3>中断延迟</h3>
+        <p>
+          分析中断响应时间、延迟来源以及实时性能影响因素。
+        </p>
+        <span>查看详情 →</span>
+      </a>
+
+      <a class="card" href="interrupt-model.html">
+        <h3>中断模型</h3>
+        <p>
+          理解中断源、优先级、ISR 与任务恢复的整体结构模型。
+        </p>
+        <span>查看详情 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>相关主题</h2>
+
+    <div class="grid">
+
+      <a class="card" href="/docs/architecture/scheduler/index.html">
+        <h3>调度器架构</h3>
+        <p>
+          学习任务调度、优先级抢占与运行循环模型。
+        </p>
+        <span>进入模块 →</span>
+      </a>
+
+      <a class="card" href="/system-view/03-interrupt-flow.html">
+        <h3>系统中断流模型</h3>
+        <p>
+          从系统视角理解中断在整体执行路径中的位置。
+        </p>
+        <span>查看模型 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. 面向嵌入式实时系统的技术文档。
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

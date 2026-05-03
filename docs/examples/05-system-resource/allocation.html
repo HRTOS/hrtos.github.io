@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>资源分配机制 | HRTOS 系统资源管理</title>
+<meta name="description" content="资源分配机制：HRTOS系统中任务对CPU资源、内存资源与外设资源的调度与分配模型。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+
+.breadcrumb a{ color:#7dd3fc; }
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:2.4rem;
+}
+
+.section{
+  margin-bottom:54px;
+}
+
+.flow{
+  display:grid;
+  gap:14px;
+}
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+/* 代码区 */
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.copy-btn:hover{
+  color:#fff;
+  border-color:#38bdf8;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<!-- 面包屑 -->
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/05-system-resource/index.html">System Resource</a> /
+  <span>Allocation</span>
+</nav>
+
+<!-- 标题 -->
+<section class="hero">
+  <h1>资源分配机制（Resource Allocation）</h1>
+  <p>描述HRTOS中任务对系统资源的动态分配与竞争管理机制。</p>
+</section>
+
+<!-- 机制说明 -->
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="step">
+    资源分配 = 申请 + 仲裁 + 锁定 + 释放
+  </div>
+</section>
+
+<!-- 分配流程 -->
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="flow">
+    <div class="step">1. 任务发起资源申请</div>
+    <div class="step">2. 内核检查资源状态</div>
+    <div class="step">3. 调度器进行优先级仲裁</div>
+    <div class="step">4. 分配或阻塞任务</div>
+    <div class="step">5. 释放后重新调度</div>
+  </div>
+</section>
+
+<!-- 代码区（必须保留） -->
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">复制</button>
+    <pre><code>
+#include <HRTOS.H>
+
+#define TASK_ID_A 0
+#define TASK_ID_B 1
+
+void task_A(void)
+{
+    os_resource_request(0);   // 请求资源0
+
+    os_news_send1(0, 0xA1);
+
+    os_resource_release(0);   // 释放资源
+}
+
+void task_B(void)
+{
+    os_resource_request(0);   // 竞争同一资源
+
+    os_wait1(5);
+
+    os_resource_release(0);
+}
+
+void system_init(void)
+{
+    os_task((unsigned int)task_A, TASK_ID_A, 3, 0);
+    os_task((unsigned int)task_B, TASK_ID_B, 2, 0);
+
+    os_resource_init(1);
+}
+
+void main(void)
+{
+    system_init();
+
+    os_task_release(TASK_ID_A);
+
+    while(1)
+    {
+        os_nop();
+    }
+}
+    </code></pre>
+  </div>
+</section>
+
+<!-- 系统意义 -->
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    资源分配机制保证多任务环境下资源使用的公平性与实时性，是RTOS稳定性的核心基础。
+  </p>
+</section>
+
+<!-- 固定导航（完全锁死，不允许改结构） -->
+<section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>任务执行模型</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度系统</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断机制</h3>
+      <p><a href="/docs/system/interrupt-flow/index.html">Interrupt Flow</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务生命周期</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer style="text-align:center;color:#8ea3be;margin-top:60px;">
+© HRTOS System Resource Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
+
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(()=>btn.innerText = old, 1000);
+});
+</script>
+
+</body>
+</html>

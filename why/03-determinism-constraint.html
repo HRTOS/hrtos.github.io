@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>03 确定性约束（Determinism Constraint）| HRTOS Why Layer</title>
+<meta name="description" content="定义实时系统的核心约束：确定性（Determinism），以及它如何成为系统设计的第一原则">
+
+<meta name="page-role" content="why-layer">
+<meta name="semantic-node" content="determinism-constraint">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-definition {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-core {
+  border-left: 3px solid #f59e0b;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+  opacity: 0.95;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html" style="color:#cfe3ff;">Why</a>
+    <a href="/system-view/index.html">系统</a>
+    <a href="/docs/index.html">文档</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>3. 确定性约束（Determinism Constraint）</h1>
+  <div class="sub">
+    实时系统的第一原则：所有行为必须可预测
+  </div>
+
+  <!-- definition -->
+  <div class="card card-definition">
+    <h2>核心定义</h2>
+    <p>
+      确定性（Determinism）指系统在给定输入、状态与环境条件完全相同的情况下，
+      必须产生<strong>完全一致的执行行为与时间结果</strong>。
+    </p>
+
+    <p>
+      这里的一致性不仅指计算输出，还包括：
+      调度顺序、中断响应时刻、上下文切换路径与执行延迟。
+    </p>
+
+    <div class="en">
+      Determinism requires identical inputs and states to produce identical execution behavior and timing outcomes.
+    </div>
+  </div>
+
+  <!-- core rule -->
+  <div class="card card-core">
+    <h2>为什么它是“第一约束”</h2>
+    <p>
+      在实时系统中，确定性不是优化目标，而是系统成立的前提条件。
+    </p>
+
+    <p>
+      一旦系统行为无法被预测，即使平均性能再高，也无法用于控制类任务。
+    </p>
+  </div>
+
+  <!-- core behavior -->
+  <div class="card card-core">
+    <h2>确定性约束的实际含义</h2>
+    <p>
+      系统必须满足两个层面的“固定性”：
+    </p>
+
+    <p>
+      • 行为路径固定（Execution Path Determinism）<br>
+      • 时间边界固定（Timing Bound Determinism）
+    </p>
+
+    <p>
+      缺少任意一项，都意味着系统无法进入强实时领域。
+    </p>
+  </div>
+
+  <!-- contrast -->
+  <div class="card">
+    <h2>与非实时系统的本质差异</h2>
+
+    <p>
+      通用系统允许：
+      <br>• 调度顺序变化
+      <br>• 执行路径变化
+      <br>• 延迟波动（jitter）
+    </p>
+
+    <p>
+      实时系统不允许这些“变化”，因为变化本身就是风险来源。
+    </p>
+  </div>
+
+  <!-- deeper view -->
+  <div class="card">
+    <h2>确定性的三个层级</h2>
+
+    <p>
+      1. 逻辑确定性：输出结果固定<br>
+      2. 调度确定性：执行顺序固定<br>
+      3. 时间确定性：执行时间上界固定
+    </p>
+
+    <p>
+      RTOS的目标是同时约束这三者，而不是仅优化其中之一。
+    </p>
+  </div>
+
+  <!-- system implication -->
+  <div class="card">
+    <h2>对系统设计的直接影响</h2>
+
+    <p>
+      为了满足确定性，系统必须牺牲：
+      <br>• 部分吞吐量
+      <br>• 动态优化空间
+      <br>• 某些复杂调度策略
+    </p>
+
+    <p>
+      换取的是：行为可预测性与时间可证明性。
+    </p>
+  </div>
+
+  <!-- meta -->
+  <div class="card card-meta">
+    <h2>语义总结</h2>
+    <p>
+      确定性约束本质上定义了实时系统的边界：
+      系统是否可以被“时间建模”，决定它是否属于RT系统。
+    </p>
+
+    <div class="en">
+      Determinism defines whether a system can be time-modeled, which determines whether it qualifies as a real-time system.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

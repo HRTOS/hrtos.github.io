@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>02 任务生命周期 | HRTOS System View</title>
+<meta name="description" content="定义HRTOS中任务从创建到结束的完整生命周期状态模型">
+
+<meta name="page-role" content="system-view">
+<meta name="semantic-node" content="task-lifecycle">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-state {
+  border-left: 3px solid #22c55e;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/docs/index.html">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>2. 任务生命周期（Task Lifecycle）</h1>
+  <div class="sub">
+    任务在 HRTOS 中的完整状态流转模型（时间 + 调度 + 资源三维视角）
+  </div>
+
+  <!-- core -->
+  <div class="card card-core">
+    <h2>核心定义</h2>
+
+    <p>
+      任务生命周期描述一个任务从“被系统引入”到“彻底退出系统”的完整状态变化过程。
+    </p>
+
+    <p>
+      在 HRTOS 中，生命周期不是简单状态机，而是一个<strong>受时间约束的执行实体模型</strong>：
+      每一次状态切换都对应一次调度决策或系统事件。
+    </p>
+
+    <p>
+      因此，生命周期本质上是：任务在时间轴上的“存在形式变化过程”。
+    </p>
+
+    <div class="en">
+      Task lifecycle is not only a state machine, but a time-constrained execution entity model.
+    </div>
+  </div>
+
+  <!-- expanded model -->
+  <div class="card card-state">
+    <h2>生命周期的系统本质</h2>
+
+    <p>
+      在通用系统中，任务状态用于“管理资源”；
+      在 HRTOS 中，任务状态用于“约束时间行为”。
+    </p>
+
+    <p>
+      状态变化的意义不是“逻辑切换”，而是：
+      <strong>是否进入新的时间约束区间</strong>。
+    </p>
+
+    <p>
+      每一个状态都隐含一个时间语义：
+      是否可调度、是否占用CPU、是否等待事件、是否破坏deadline。
+    </p>
+  </div>
+
+  <!-- state 1 -->
+  <div class="card card-state">
+    <h2>1. 创建（Created）</h2>
+
+    <p>
+      任务被定义并分配控制块（TCB），但尚未参与调度体系。
+    </p>
+
+    <p>
+      此阶段的关键问题不是“是否存在”，而是：
+      <strong>是否进入系统时间模型</strong>。
+    </p>
+  </div>
+
+  <!-- state 2 -->
+  <div class="card card-state">
+    <h2>2. 就绪（Ready）</h2>
+
+    <p>
+      任务已具备执行条件，进入调度候选集合（Ready Queue）。
+    </p>
+
+    <p>
+      此时任务已经“进入时间竞争系统”，但尚未消耗CPU时间。
+    </p>
+
+    <p>
+      Ready状态的核心本质是：
+      <strong>等待时间被分配</strong>。
+    </p>
+  </div>
+
+  <!-- state 3 -->
+  <div class="card card-state">
+    <h2>3. 运行（Running）</h2>
+
+    <p>
+      任务获得CPU执行权，进入真实时间消耗阶段。
+    </p>
+
+    <p>
+      在该阶段，系统必须同时满足：
+      <br>• 可抢占性（Preemptive Control）
+      <br>• WCET约束（Worst-case Execution Time）
+      <br>• 中断响应边界（Interrupt Latency Bound）
+    </p>
+
+    <p>
+      Running状态是唯一“消耗系统时间资源”的状态。
+    </p>
+  </div>
+
+  <!-- state 4 -->
+  <div class="card card-state">
+    <h2>4. 阻塞（Blocked）</h2>
+
+    <p>
+      任务因等待资源或事件而暂停执行。
+    </p>
+
+    <p>
+      阻塞不是“停止”，而是进入“不可调度但保留状态”的时间冻结区间。
+    </p>
+
+    <p>
+      在实时系统中，阻塞时间本身必须可分析，否则会污染整个调度模型。
+    </p>
+  </div>
+
+  <!-- state 5 -->
+  <div class="card card-state">
+    <h2>5. 终止（Terminated）</h2>
+
+    <p>
+      任务生命周期结束，系统释放其所有资源与调度信息。
+    </p>
+
+    <p>
+      关键点不是“结束执行”，而是：
+      <strong>是否完全退出时间模型</strong>。
+    </p>
+  </div>
+
+  <!-- transition model -->
+  <div class="card card-state">
+    <h2>状态转移本质</h2>
+
+    <p>
+      生命周期不是线性过程，而是事件驱动状态机：
+    </p>
+
+    <p>
+      Created → Ready → Running → Blocked → Ready → Running → Terminated
+    </p>
+
+    <p>
+      其中每一次跳转都由：
+      <br>• 中断（Interrupt）
+      <br>• 调度器（Scheduler）
+      <br>• 资源事件（Resource Event）
+      <br>共同驱动。
+    </p>
+
+    <p>
+      本质上，任务生命周期 = “时间驱动的状态图遍历过程”。
+    </p>
+  </div>
+
+  <!-- system meaning -->
+  <div class="card card-core">
+    <h2>系统级意义</h2>
+
+    <p>
+      生命周期模型的意义不在于描述任务，而在于：
+      <strong>让系统可以预测任务行为在时间上的变化轨迹</strong>。
+    </p>
+
+    <p>
+      如果生命周期不可预测，则调度分析（Scheduling Analysis）将失效。
+    </p>
+
+    <div class="en">
+      Lifecycle modeling exists to make task behavior predictable over time.
+    </div>
+  </div>
+
+  <!-- meta -->
+  <div class="card card-meta">
+    <h2>语义总结</h2>
+
+    <p>
+      任务生命周期的本质是：系统如何在时间维度上管理执行实体的存在与消失。
+    </p>
+
+    <p>
+      它不是“状态变化模型”，而是“时间资源分配模型”。
+    </p>
+
+    <div class="en">
+      Task lifecycle is not a state model, but a time-resource allocation model.
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>延时 vs 等待机制 | HRTOS 实验系统</title>
+<meta name="description" content="对比 RTOS 中 delay 延时与 wait 等待机制的本质区别，包括调度行为、CPU释放方式与实时性影响分析。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; text-decoration:none; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+.hero{
+  margin-bottom:54px;
+}
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+}
+
+.hero p{ color:var(--muted); max-width:780px; }
+
+.section{ margin-bottom:54px; }
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{ color:var(--muted); }
+
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+}
+
+.flow{ display:grid; gap:14px; }
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{ margin:0 0 8px; }
+
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.copy-btn:hover{
+  color:#fff;
+  border-color:#38bdf8;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<!-- 面包屑（严格 index.html） -->
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/04-time-control/index.html">Time Control</a> /
+  <span>Delay vs Wait</span>
+</nav>
+
+<!-- 标题 -->
+<section class="hero">
+  <span class="hero-tag">Time Control Core</span>
+  <h1>Delay vs Wait（延时与等待机制对比）</h1>
+  <p>
+    本页面用于对比 RTOS 中 delay（延时阻塞）与 wait（事件等待）两种调度行为的本质差异，
+    包括 CPU 释放方式、调度触发条件与实时性影响。
+  </p>
+</section>
+
+<!-- 定义 -->
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="block">
+    delay = 时间驱动阻塞（time-based blocking）<br/>
+    wait = 事件驱动阻塞（event-based blocking）
+  </div>
+</section>
+
+<!-- 核心区别 -->
+<section class="section">
+  <h2>核心区别</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Delay（延时）</h3>
+      <p>任务主动进入阻塞状态，等待固定时间片结束后恢复执行。</p>
+    </div>
+
+    <div class="step">
+      <h3>Wait（等待）</h3>
+      <p>任务等待某个事件（信号量 / 消息 / 条件）触发后恢复执行。</p>
+    </div>
+
+    <div class="step">
+      <h3>调度触发方式</h3>
+      <p>delay 依赖系统 tick；wait 依赖事件唤醒。</p>
+    </div>
+
+    <div class="step">
+      <h3>实时性影响</h3>
+      <p>wait 通常优于 delay（响应更快、CPU利用率更高）。</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- 执行流程 -->
+<section class="section">
+  <h2>执行行为流程</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Delay 流程</h3>
+      <p>进入阻塞 → 加入时间队列 → Tick递减 → 时间到恢复</p>
+    </div>
+
+    <div class="step">
+      <h3>Wait 流程</h3>
+      <p>进入阻塞 → 加入事件队列 → 事件触发 → 立即唤醒</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- 代码区（必须保留） -->
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">Copy</button>
+<pre><code>
+/* HRTOS Delay vs Wait Demo */
+
+#include &lt;HRTOS_KERNEL.H&gt;
+#include &lt;HRTOS.H&gt;
+
+void task_delay(void)
+{
+    while(1)
+    {
+        os_wait1(10);   // delay行为：时间驱动阻塞
+    }
+}
+
+void task_wait(void)
+{
+    while(1)
+    {
+        os_wait_event(1); // wait行为：事件驱动阻塞
+    }
+}
+
+void main(void)
+{
+    os_scheduling(1);
+
+    os_task((unsigned int)task_delay, 0, 2, 0);
+    os_task((unsigned int)task_wait, 1, 3, 0);
+
+    os_task_release(0);
+
+    while(1)
+    {
+        os_nop();
+    }
+}
+</code></pre>
+  </div>
+</section>
+
+<!-- 系统意义 -->
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    delay 适用于周期性控制任务，而 wait 更适用于事件驱动系统。
+    在 HRTOS 中，wait 被优先优化用于提升实时响应能力。
+  </p>
+</section>
+
+<!-- 相关导航（锁死结构） -->
+<section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>任务执行模型</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度系统</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断机制</h3>
+      <p><a href="/docs/system/interrupt-flow/index.html">Interrupt Flow</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务生命周期</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Time Control Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const box = btn.closest(".code-box");
+  if (!box) return;
+
+  const code = box.querySelector("code");
+  if (!code) return;
+
+  navigator.clipboard.writeText(code.innerText).then(() => {
+    const old = btn.innerText;
+    btn.innerText = "已复制";
+    setTimeout(() => btn.innerText = old, 1000);
+  });
+});
+</script>
+
+</body>
+</html>

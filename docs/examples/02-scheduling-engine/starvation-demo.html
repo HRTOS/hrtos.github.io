@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>饥饿现象演示 | HRTOS 实验系统</title>
+<meta name="description" content="HRTOS 饥饿现象实验：演示低优先级任务因高优先级任务长期占用CPU而无法获得执行机会的问题。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:12px;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+.hero{
+  margin-bottom:54px;
+}
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+  line-height:1.1;
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+.section{
+  margin-bottom:54px;
+}
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{
+  margin:0 0 20px;
+  color:var(--muted);
+}
+
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+}
+
+.flow{
+  display:grid;
+  gap:14px;
+}
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{
+  margin:0 0 8px;
+  font-size:1.05rem;
+  color:#f8fafc;
+}
+
+.step p{
+  margin:0;
+  color:var(--muted);
+}
+
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.copy-btn:hover{
+  color:#fff;
+  border-color:#38bdf8;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a> /
+  <span>Starvation Demo</span>
+</nav>
+
+<section class="hero">
+  <span class="hero-tag">Scheduling Engine</span>
+  <h1>饥饿现象演示（Starvation Demo）</h1>
+  <p>
+    本实验用于演示调度系统中的任务饥饿问题：当高优先级任务持续占用CPU资源时，
+    低优先级任务可能长期无法获得执行机会，从而导致系统响应不公平。
+  </p>
+</section>
+
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="block">
+    Starvation = 高优先级长期运行 + 低优先级持续等待 + CPU资源竞争失衡
+  </div>
+</section>
+
+<section class="section">
+  <h2>触发条件</h2>
+  <p>任务饥饿通常由以下情况导致：</p>
+
+  <div class="flow">
+    <div class="step">
+      <h3>高优先级任务死循环</h3>
+      <p>高优先级任务持续运行且不主动让出CPU。</p>
+    </div>
+
+    <div class="step">
+      <h3>缺少时间片轮转</h3>
+      <p>系统未启用公平调度策略。</p>
+    </div>
+
+    <div class="step">
+      <h3>资源竞争过度</h3>
+      <p>低优先级任务始终无法获取共享资源。</p>
+    </div>
+
+    <div class="step">
+      <h3>调度策略偏置</h3>
+      <p>系统过度偏向实时任务。</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="flow">
+    <div class="step">
+      <h3>1. 创建高低优先级任务</h3>
+      <p>初始化多个竞争任务。</p>
+    </div>
+
+    <div class="step">
+      <h3>2. 高优先级任务持续运行</h3>
+      <p>CPU始终被高优先级任务占用。</p>
+    </div>
+
+    <div class="step">
+      <h3>3. 低优先级任务等待</h3>
+      <p>任务处于Ready但无法调度。</p>
+    </div>
+
+    <div class="step">
+      <h3>4. 统计等待时间</h3>
+      <p>记录任务被延迟的执行周期。</p>
+    </div>
+
+    <div class="step">
+      <h3>5. 验证饥饿结果</h3>
+      <p>观察低优先级任务长期未执行现象。</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">Copy</button>
+    <pre><code>
+// HRTOS Starvation Demo
+#include &lt;HRTOS.H&gt;
+#include &lt;HRTOS_KERNEL.H&gt;
+
+void high_task(void)
+{
+    while(1)
+    {
+        os_nop();
+    }
+}
+
+void low_task(void)
+{
+    while(1)
+    {
+        os_wait1(10);
+    }
+}
+
+void main(void)
+{
+    os_scheduling(1);
+
+    os_task((unsigned int)high_task, 0, 5, 0);
+    os_task((unsigned int)low_task, 1, 1, 0);
+
+    os_task_release(0);
+
+    while(1)
+    {
+        os_nop();
+    }
+}
+    </code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    饥饿问题揭示了实时调度系统中公平性与实时性之间的平衡关系。
+    在HRTOS中，可通过时间片调度、优先级继承和任务让出机制降低饥饿风险。
+  </p>
+</section>
+
+<section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>调度系统模型</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度系统</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断机制</h3>
+      <p><a href="/docs/system/interrupt-flow/index.html">Interrupt Flow</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务生命周期</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Starvation Demo
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const box = btn.closest(".code-box");
+  if (!box) return;
+
+  const code = box.querySelector("code");
+  if (!code) return;
+
+  const text = code.innerText;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const old = btn.innerText;
+    btn.innerText = "已复制";
+
+    setTimeout(() => {
+      btn.innerText = old;
+    }, 1000);
+  });
+});
+</script>
+
+</body>
+</html>

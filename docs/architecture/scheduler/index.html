@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>调度器 Scheduler | HRTOS 架构模块</title>
+<meta name="description" content="HRTOS 调度器架构入口，包含优先级模型、调度模型与调度理论，定义实时系统任务选择与执行机制。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:40px;
+}
+
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.hero{
+  display:grid;
+  gap:16px;
+}
+
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.22);
+  color:#bae6fd;
+  font-size:14px;
+}
+
+.hero h1{
+  margin:0;
+  font-size:42px;
+}
+
+.hero p{
+  margin:0;
+  max-width:860px;
+  color:var(--muted);
+}
+
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.tag{
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:13px;
+  color:#bae6fd;
+  background:rgba(15,23,42,.4);
+}
+
+.section{
+  display:grid;
+  gap:12px;
+}
+
+.section h2{
+  margin:0;
+  font-size:22px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:20px;
+}
+
+.card{
+  display:grid;
+  gap:12px;
+  padding:24px 22px;
+  min-height:180px;
+  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  transition:.22s ease;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  border-color:rgba(56,189,248,.38);
+}
+
+.card h3{
+  margin:0;
+  font-size:18px;
+}
+
+.card p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.card span{
+  margin-top:auto;
+  color:#7dd3fc;
+  font-weight:600;
+  font-size:14px;
+}
+
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:14px;
+}
+
+@media(max-width:900px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/architecture/index.html">系统架构</a> /
+    <span>调度器</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS 架构模块</span>
+
+    <h1>调度器（Scheduler）</h1>
+
+    <p>
+      调度器负责决定系统中哪个任务在何时执行，是实时操作系统中实现确定性行为的核心组件。
+    </p>
+
+    <div class="meta">
+      <span class="tag">3 个核心页面</span>
+      <span class="tag">Priority Model</span>
+      <span class="tag">Scheduling Model</span>
+      <span class="tag">Scheduling Theory</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>模块概述</h2>
+    <p>
+      调度器通过优先级体系、调度策略与可证明模型共同构成系统时间分配机制，
+      是实时系统确定性的核心来源。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>核心模型</h2>
+
+    <div class="grid">
+
+      <a class="card" href="priority-model.html">
+        <h3>优先级模型</h3>
+        <p>定义任务优先级结构、抢占规则与实时任务等级体系。</p>
+        <span>进入 →</span>
+      </a>
+
+      <a class="card" href="scheduling-model.html">
+        <h3>调度模型</h3>
+        <p>定义任务选择机制与调度流程，包括抢占、时间片与实时策略。</p>
+        <span>进入 →</span>
+      </a>
+
+      <a class="card" href="scheduling-theory.html">
+        <h3>调度理论</h3>
+        <p>基于 WCET 与时间约束的可证明调度模型，是RTOS数学基础。</p>
+        <span>进入 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>系统意义</h2>
+    <p>
+      调度器不是“执行选择器”，而是“时间可证明性控制器”，决定系统是否具备实时性成立条件。
+    </p>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. 面向嵌入式实时系统的调度器架构体系。
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

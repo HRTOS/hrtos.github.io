@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>邮箱通信 | HRTOS 实验系统</title>
+<meta name="description" content="HRTOS 邮箱通信实验：演示任务间通过邮箱进行消息发送与接收的通信机制。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:12px;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+.hero{ margin-bottom:54px; }
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+  line-height:1.1;
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+.section{ margin-bottom:54px; }
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{
+  margin:0 0 20px;
+  color:var(--muted);
+}
+
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+}
+
+.flow{
+  display:grid;
+  gap:14px;
+}
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{
+  margin:0 0 8px;
+  font-size:1.05rem;
+  color:#f8fafc;
+}
+
+.step p{
+  margin:0;
+  color:var(--muted);
+}
+
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.copy-btn:hover{
+  color:#fff;
+  border-color:#38bdf8;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/03-communication-model/index.html">Communication Model</a> /
+  <span>Mailbox</span>
+</nav>
+
+<section class="hero">
+  <span class="hero-tag">Communication Model</span>
+  <h1>邮箱通信（Mailbox）</h1>
+  <p>
+    邮箱机制用于实现任务之间的轻量级消息传递。
+    发送任务将数据写入邮箱，接收任务从邮箱读取数据，实现异步通信。
+  </p>
+</section>
+
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="block">
+    Mailbox = 消息发送 + 邮箱缓存 + 消息接收 + 任务同步
+  </div>
+</section>
+
+<section class="section">
+  <h2>触发条件</h2>
+  <p>邮箱通信通常由以下情况触发：</p>
+
+  <div class="flow">
+    <div class="step">
+      <h3>任务发送消息</h3>
+      <p>发送任务写入邮箱数据。</p>
+    </div>
+
+    <div class="step">
+      <h3>接收任务等待</h3>
+      <p>接收任务阻塞等待消息到达。</p>
+    </div>
+
+    <div class="step">
+      <h3>邮箱数据就绪</h3>
+      <p>消息到达后唤醒等待任务。</p>
+    </div>
+
+    <div class="step">
+      <h3>消息处理完成</h3>
+      <p>任务读取并处理消息内容。</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="flow">
+    <div class="step">
+      <h3>1. 初始化邮箱</h3>
+      <p>创建系统邮箱资源。</p>
+    </div>
+
+    <div class="step">
+      <h3>2. 发送任务写入消息</h3>
+      <p>调用邮箱发送接口。</p>
+    </div>
+
+    <div class="step">
+      <h3>3. 接收任务等待消息</h3>
+      <p>任务阻塞等待数据。</p>
+    </div>
+
+    <div class="step">
+      <h3>4. 数据到达唤醒任务</h3>
+      <p>系统恢复接收任务执行。</p>
+    </div>
+
+    <div class="step">
+      <h3>5. 读取并处理消息</h3>
+      <p>完成任务间通信。</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">Copy</button>
+    <pre><code>
+#include &lt;HRTOS.H&gt;
+#include &lt;HRTOS_KERNEL.H&gt;
+
+void sender(void)
+{
+    while(1)
+    {
+        os_news_send1(0, 0x55);
+        os_wait1(10);
+    }
+}
+
+void receiver(void)
+{
+    while(1)
+    {
+        os_wait1(5);
+    }
+}
+
+void main(void)
+{
+    os_mail_init();
+
+    os_task((unsigned int)sender, 0, 3, 0);
+    os_task((unsigned int)receiver, 1, 2, 0);
+
+    os_task_release(0);
+
+    while(1)
+    {
+        os_nop();
+    }
+}
+    </code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    邮箱通信为RTOS提供了简单高效的任务间消息同步机制，
+    适用于事件通知、状态更新与异步数据交换。
+  </p>
+</section>
+
+<section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>通信模型</h3>
+      <p><a href="/docs/examples/03-communication-model/index.html">Communication Model</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度系统</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断机制</h3>
+      <p><a href="/docs/system/interrupt-flow/index.html">Interrupt Flow</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务生命周期</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Mailbox Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const box = btn.closest(".code-box");
+  if (!box) return;
+
+  const code = box.querySelector("code");
+  if (!code) return;
+
+  const text = code.innerText;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const old = btn.innerText;
+    btn.innerText = "已复制";
+
+    setTimeout(() => {
+      btn.innerText = old;
+    }, 1000);
+  });
+});
+</script>
+
+</body>
+</html>

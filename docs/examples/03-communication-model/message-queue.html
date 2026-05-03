@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>消息队列 | HRTOS 实验系统</title>
+<meta name="description" content="HRTOS 消息队列实验：演示任务间通过消息队列进行多消息缓存、顺序发送与接收的通信机制。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:12px;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+.hero{ margin-bottom:54px; }
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+  line-height:1.1;
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+.section{ margin-bottom:54px; }
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{
+  margin:0 0 20px;
+  color:var(--muted);
+}
+
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+}
+
+.flow{
+  display:grid;
+  gap:14px;
+}
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{
+  margin:0 0 8px;
+  font-size:1.05rem;
+  color:#f8fafc;
+}
+
+.step p{
+  margin:0;
+  color:var(--muted);
+}
+
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.copy-btn:hover{
+  color:#fff;
+  border-color:#38bdf8;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/03-communication-model/index.html">Communication Model</a> /
+  <span>Message Queue</span>
+</nav>
+
+<section class="hero">
+  <span class="hero-tag">Communication Model</span>
+  <h1>消息队列（Message Queue）</h1>
+  <p>
+    消息队列用于缓存多个消息对象，实现任务间顺序化数据传输。
+    相比邮箱，消息队列支持批量缓存与先进先出处理模型。
+  </p>
+</section>
+
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="block">
+    Message Queue = 消息入队 + 队列缓存 + 消息出队 + FIFO顺序处理
+  </div>
+</section>
+
+<section class="section">
+  <h2>触发条件</h2>
+  <p>消息队列通常用于以下场景：</p>
+
+  <div class="flow">
+    <div class="step">
+      <h3>多任务发送数据</h3>
+      <p>多个任务向队列写入消息。</p>
+    </div>
+
+    <div class="step">
+      <h3>接收任务排队处理</h3>
+      <p>按消息顺序逐个处理。</p>
+    </div>
+
+    <div class="step">
+      <h3>突发数据缓存</h3>
+      <p>短时间内缓存大量事件消息。</p>
+    </div>
+
+    <div class="step">
+      <h3>异步任务解耦</h3>
+      <p>发送与接收任务执行解耦。</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="flow">
+    <div class="step">
+      <h3>1. 初始化消息队列</h3>
+      <p>创建队列缓冲区。</p>
+    </div>
+
+    <div class="step">
+      <h3>2. 发送任务入队</h3>
+      <p>消息写入队列尾部。</p>
+    </div>
+
+    <div class="step">
+      <h3>3. 队列缓存消息</h3>
+      <p>系统维护FIFO顺序。</p>
+    </div>
+
+    <div class="step">
+      <h3>4. 接收任务出队</h3>
+      <p>读取队首消息。</p>
+    </div>
+
+    <div class="step">
+      <h3>5. 完成消息处理</h3>
+      <p>执行对应业务逻辑。</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">Copy</button>
+    <pre><code>
+#include &lt;HRTOS.H&gt;
+#include &lt;HRTOS_KERNEL.H&gt;
+
+void producer(void)
+{
+    while(1)
+    {
+        os_news_send1(0, 0x11);
+        os_wait1(5);
+    }
+}
+
+void consumer(void)
+{
+    while(1)
+    {
+        os_wait1(5);
+    }
+}
+
+void main(void)
+{
+    os_mail_init();
+
+    os_task((unsigned int)producer, 0, 3, 0);
+    os_task((unsigned int)consumer, 1, 2, 0);
+
+    os_task_release(0);
+
+    while(1)
+    {
+        os_nop();
+    }
+}
+    </code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    消息队列适合处理多事件、高吞吐异步通信场景，
+    能够提升系统解耦能力与任务间通信可靠性。
+  </p>
+</section>
+
+<section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>通信模型</h3>
+      <p><a href="/docs/examples/03-communication-model/index.html">Communication Model</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度系统</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断机制</h3>
+      <p><a href="/docs/system/interrupt-flow/index.html">Interrupt Flow</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务生命周期</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Message Queue Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const box = btn.closest(".code-box");
+  if (!box) return;
+
+  const code = box.querySelector("code");
+  if (!code) return;
+
+  const text = code.innerText;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const old = btn.innerText;
+    btn.innerText = "已复制";
+
+    setTimeout(() => {
+      btn.innerText = old;
+    }, 1000);
+  });
+});
+</script>
+
+</body>
+</html>

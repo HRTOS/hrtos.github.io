@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>04 调度循环 | HRTOS System View</title>
+<meta name="description" content="定义HRTOS调度器如何在任务与中断之间持续做出执行决策的循环机制">
+
+<meta name="page-role" content="system-view">
+<meta name="semantic-node" content="scheduler-cycle">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-cycle {
+  border-left: 3px solid #f59e0b;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/docs/index.html">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>4. 调度循环（Scheduler Cycle）</h1>
+  <div class="sub">
+    系统如何在时间维度上持续做出“谁执行”的决策
+  </div>
+
+  <!-- core -->
+  <div class="card card-core">
+    <h2>核心定义</h2>
+
+    <p>
+      调度循环（Scheduler Cycle）是 HRTOS 的核心控制闭环，用于在“任务执行流”和“中断事件流”之间持续进行决策更新。
+    </p>
+
+    <p>
+      它不是一次性算法，而是一个<strong>持续运行的实时决策系统</strong>。
+    </p>
+
+    <p>
+      每一次循环，都必须在有限时间内完成“可执行性判断 + 最优执行选择”。
+    </p>
+
+    <div class="en">
+      The scheduler cycle is a continuous real-time decision loop balancing task execution and interrupt events.
+    </div>
+  </div>
+
+  <!-- cycle step 1 -->
+  <div class="card card-cycle">
+    <h2>1. 系统状态采样（System State Sampling）</h2>
+
+    <p>
+      调度器首先获取当前系统状态快照：
+    </p>
+
+    <p>
+      • 任务状态（Ready / Running / Blocked）<br>
+      • 中断标志位（Pending Interrupts）<br>
+      • 资源锁状态（Mutex / Semaphore）<br>
+      • 时间约束窗口（Deadlines）
+    </p>
+
+    <p>
+      这是调度决策的输入空间。
+    </p>
+  </div>
+
+  <!-- cycle step 2 -->
+  <div class="card card-cycle">
+    <h2>2. 可执行集合构建（Ready Set Construction）</h2>
+
+    <p>
+      从所有任务中筛选“当前可执行集合（Ready Set）”。
+    </p>
+
+    <p>
+      条件包括：
+    </p>
+
+    <p>
+      • 不在阻塞状态<br>
+      • 满足资源依赖<br>
+      • 未超过调度屏障（Scheduling Barrier）
+    </p>
+  </div>
+
+  <!-- cycle step 3 -->
+  <div class="card card-cycle">
+    <h2>3. 调度决策计算（Scheduling Decision）</h2>
+
+    <p>
+      调度器在 Ready Set 中选择“最优执行任务”。
+    </p>
+
+    <p>
+      在 RTOS 中，“最优”不是性能意义，而是：
+    </p>
+
+    <p>
+      ✔ 满足时间约束<br>
+      ✔ 满足优先级规则<br>
+      ✔ 不破坏系统确定性
+    </p>
+
+    <p>
+      这是一个约束优化问题，而不是简单排序。
+    </p>
+  </div>
+
+  <!-- cycle step 4 -->
+  <div class="card card-cycle">
+    <h2>4. 上下文切换执行（Context Switch Execution）</h2>
+
+    <p>
+      当前任务被暂停，系统保存 CPU 状态并切换到目标任务。
+    </p>
+
+    <p>
+      切换过程必须满足：
+    </p>
+
+    <p>
+      • 时间上界可预测（Bounded Switch Time）<br>
+      • 不引入随机延迟<br>
+      • 不破坏中断一致性
+    </p>
+  </div>
+
+  <!-- cycle step 5 -->
+  <div class="card card-cycle">
+    <h2>5. 中断融合与再调度（Interrupt Fusion）</h2>
+
+    <p>
+      中断事件可能在任意时刻插入调度循环。
+    </p>
+
+    <p>
+      因此调度器必须具备：
+    </p>
+
+    <p>
+      ✔ 中断感知能力<br>
+      ✔ 即时重新计算能力<br>
+      ✔ 可抢占决策能力
+    </p>
+
+    <p>
+      这使调度循环成为“动态重计算系统”。
+    </p>
+  </div>
+
+  <!-- system meaning -->
+  <div class="card card-meta">
+    <h2>语义总结</h2>
+
+    <p>
+      调度循环的本质不是“调度算法”，而是一个持续运行的实时决策闭环系统。
+    </p>
+
+    <p>
+      它连接了任务执行流与中断流，是RTOS时间模型的核心控制器。
+    </p>
+
+    <div class="en">
+      The scheduler cycle is not an algorithm but a continuously running real-time decision loop that connects execution flow and interrupt flow.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

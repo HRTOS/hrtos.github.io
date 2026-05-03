@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>资源竞争（Resource Contention）| HRTOS Memory</title>
+<meta name="description" content="定义HRTOS中资源竞争模型：CPU、内存、锁与时间不确定性的来源与控制方式">
+
+<meta name="page-role" content="architecture">
+<meta name="semantic-node" content="resource-contention">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-mem {
+  border-left: 3px solid #a855f7;
+}
+
+.card-risk {
+  border-left: 3px solid #ef4444;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html">System</a>
+    <a href="/docs/index.html" style="color:#cfe3ff;">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+<h1>资源竞争（Resource Contention）</h1>
+<div class="sub">
+系统中“不可预测性”的结构性来源，而不是运行时现象
+</div>
+
+<!-- core -->
+<div class="card card-core">
+<h2>1. 核心定义（从现象到模型）</h2>
+
+<p>
+资源竞争不是“多个任务在抢资源”，而是：
+</p>
+
+<p>
+<b>多个执行流在时间维度上对同一系统状态产生不可交换影响</b>
+</p>
+
+<p>
+在 HRTOS 中，它的本质是：
+<b>时间路径分叉（Temporal Path Divergence）</b>
+</p>
+
+<div class="en">
+Resource contention is not competition for resources, but divergence of execution paths in time space.
+</div>
+</div>
+
+<!-- causal model -->
+<div class="card card-core">
+<h2>2. 因果链模型（Causal Chain Model）</h2>
+
+<p>
+资源竞争的完整因果链：
+</p>
+
+<p>
+资源请求 → 等待队列形成 → 执行延迟 → 调度重排 → 时间偏移 → 系统抖动
+</p>
+
+<p>
+关键点：
+<b>竞争不是问题，延迟传播才是问题</b>
+</p>
+</div>
+
+<!-- resource types -->
+<div class="card card-mem">
+<h2>3. 三类资源的“时间属性”</h2>
+
+<p><b>① CPU（时间资源）</b></p>
+<p>本质是“执行时间分配权”，竞争直接改变时间线。</p>
+
+<p><b>② Memory（空间资源）</b></p>
+<p>竞争会转化为访问延迟（Cache miss / Bus stall）。</p>
+
+<p><b>③ Synchronization（状态资源）</b></p>
+<p>Mutex / Semaphore 实际上是“时间阻断器”。</p>
+</div>
+
+<!-- timing impact -->
+<div class="card card-core">
+<h2>4. 时间确定性破坏机制</h2>
+
+<p>
+资源竞争通过三种方式破坏确定性：
+</p>
+
+<p>
+✔ Execution delay injection（执行延迟注入）<br/>
+✔ Scheduling order perturbation（调度顺序扰动）<br/>
+✔ Path amplification（路径放大效应）
+</p>
+
+<p>
+结果不是“慢”，而是：
+<b>时间边界失效</b>
+</p>
+</div>
+
+<!-- blocking -->
+<div class="card card-risk">
+<h2>5. 阻塞结构不是链，而是图</h2>
+
+<p>
+传统理解：Blocking Chain
+</p>
+
+<p>
+HRTOS 视角：Blocking Graph（阻塞图）
+</p>
+
+<p>
+多个任务形成依赖图：
+</p>
+
+<p>
+T1 → R1 ← T2 → R2 ← T3
+</p>
+
+<p>
+问题不在链长，而在：
+<b>循环依赖 + 不可预测解锁点</b>
+</p>
+</div>
+
+<!-- priority inversion -->
+<div class="card card-risk">
+<h2>6. 优先级反转 = 时间层级崩塌</h2>
+
+<p>
+优先级反转本质不是调度错误，而是：
+</p>
+
+<p>
+<b>时间优先级语义被资源锁重新排序</b>
+</p>
+
+<p>
+结果：
+</p>
+
+<p>
+✔ 高优先级任务失去时间优先权  
+✔ 调度模型与执行模型解耦  
+✔ 系统进入不可证明状态
+</p>
+</div>
+
+<!-- memory contention -->
+<div class="card card-mem">
+<h2>7. 内存竞争的隐藏层（Cache / Bus / DMA）</h2>
+
+<p>
+真正的竞争不在 heap，而在微架构层：
+</p>
+
+<p>
+• Cache line bouncing  
+• Memory bus arbitration  
+• DMA burst preemption
+</p>
+
+<p>
+这些因素导致：
+<b>同一函数执行时间变成随机变量</b>
+</p>
+</div>
+
+<!-- system implication -->
+<div class="card card-core">
+<h2>8. 可控系统 vs 不可控系统</h2>
+
+<p>
+HRTOS 的目标不是“消除竞争”，而是：
+</p>
+
+<p>
+✔ 将竞争转化为可建模延迟  
+✔ 将不可预测性转化为上界函数  
+✔ 将系统行为变为可证明集合
+</p>
+</div>
+
+<!-- failure -->
+<div class="card card-risk">
+<h2>9. 失控的最终形态</h2>
+
+<p>
+资源竞争失控不会“崩溃”，而是退化为：
+</p>
+
+<p>
+• WCET 不存在  
+• Deadline 无法证明  
+• Scheduling becomes probabilistic  
+• RTOS → GPOS 行为漂移
+</p>
+
+<p>
+本质结论：
+<b>系统仍在运行，但已经失去系统性</b>
+</p>
+</div>
+
+<!-- meta -->
+<div class="card card-meta">
+<h2>语义总结</h2>
+
+<p>
+资源竞争不是一个“问题点”，而是：
+<b>时间确定性结构的破坏机制</b>
+</p>
+
+<div class="en">
+Resource contention is not a problem to solve, but a structural mechanism that breaks temporal determinism.
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

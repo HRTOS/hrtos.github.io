@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>调度引擎 | HRTOS 实验系统</title>
+<meta name="description" content="调度引擎入口页：理解RTOS调度策略、优先级调度、时间片轮转与实时调度机制。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:12px;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+/* breadcrumb */
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+/* hero */
+.hero{
+  margin-bottom:54px;
+}
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+  line-height:1.1;
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+/* section */
+.section{
+  margin-bottom:54px;
+}
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{
+  margin:0 0 20px;
+  color:var(--muted);
+}
+
+/* grid */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+
+.card{
+  display:block;
+  padding:22px;
+  background:linear-gradient(180deg,rgba(30,41,59,.85),rgba(15,23,42,.95));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  transition:.25s ease;
+  text-decoration:none;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  border-color:rgba(56,189,248,.4);
+}
+
+.card h3{
+  margin:0 0 8px;
+  font-size:1.08rem;
+  color:#f8fafc;
+}
+
+.card p{
+  margin:0;
+  font-size:.95rem;
+  color:var(--muted);
+}
+
+.card span{
+  display:inline-block;
+  margin-top:12px;
+  color:#7dd3fc;
+  font-size:.9rem;
+  font-weight:600;
+}
+
+/* model block */
+.model-box{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+  margin-top:12px;
+}
+
+/* footer */
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+
+@media(max-width:900px){
+  .grid{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+
+<body data-header="docs">
+<script src="/header.js" defer></script>
+
+<main class="page">
+
+  <!-- 面包屑 -->
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">Docs</a> /
+    <a href="/docs/examples/index.html">Examples</a> /
+    <span>Scheduling Engine</span>
+  </nav>
+
+  <!-- 标题 -->
+  <section class="hero">
+    <span class="hero-tag">Scheduling Core</span>
+
+    <h1>调度引擎</h1>
+
+    <p>
+      调度引擎是RTOS内核的核心决策模块，用于在多个就绪任务之间选择
+      最合适的执行对象，并保证实时性与系统确定性。
+    </p>
+  </section>
+
+  <!-- 模型定义 -->
+  <section class="section">
+    <h2>调度模型定义</h2>
+    <div class="model-box">
+      Scheduler = Priority Policy + Run Queue + Context Switch Trigger + Preemption Control
+    </div>
+  </section>
+
+  <!-- 核心实验 -->
+  <section class="section">
+    <h2>核心实验</h2>
+    <p>以下实验用于分析不同调度策略的运行行为。</p>
+
+    <div class="grid">
+
+      <a class="card" href="priority-demo/index.html">
+        <h3>优先级调度</h3>
+        <p>验证高优先级任务优先执行机制。</p>
+        <span>进入实验 →</span>
+      </a>
+
+      <a class="card" href="rr-demo/index.html">
+        <h3>时间片轮转</h3>
+        <p>观察公平调度与时间片切换行为。</p>
+        <span>进入实验 →</span>
+      </a>
+
+      <a class="card" href="real-time-demo/index.html">
+        <h3>实时调度</h3>
+        <p>分析实时任务响应延迟特性。</p>
+        <span>进入实验 →</span>
+      </a>
+
+      <a class="card" href="starvation-demo/index.html">
+        <h3>饥饿现象</h3>
+        <p>观察低优先级任务长期无法执行问题。</p>
+        <span>进入实验 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- 关联模块 -->
+  <section class="section">
+    <h2>关联模块</h2>
+
+    <div class="grid">
+
+      <a class="card" href="/docs/examples/01-task-execution/index.html">
+        <h3>任务执行模型</h3>
+        <p>调度对象的生命周期与执行结构。</p>
+        <span>查看 →</span>
+      </a>
+
+      <a class="card" href="/docs/examples/06-interrupt-driven/index.html">
+        <h3>中断驱动系统</h3>
+        <p>调度触发源与抢占机制。</p>
+        <span>查看 →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS · Scheduling Engine
+  </footer>
+
+</main>
+
+</body>
+</html>

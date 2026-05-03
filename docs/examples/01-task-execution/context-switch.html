@@ -1,0 +1,420 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>上下文切换 | HRTOS 实验系统</title>
+<meta name="description" content="上下文切换实验：深入理解任务切换机制，包括寄存器保存、堆栈切换、调度触发与RTOS运行上下文恢复流程。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:12px;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+/* breadcrumb */
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+/* hero */
+.hero{
+  margin-bottom:54px;
+}
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+  line-height:1.1;
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+/* section */
+.section{
+  margin-bottom:54px;
+}
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{
+  margin:0 0 20px;
+  color:var(--muted);
+}
+
+/* highlight block */
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+}
+
+/* flow */
+.flow{
+  display:grid;
+  gap:14px;
+}
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{
+  margin:0 0 8px;
+  font-size:1.05rem;
+  color:#f8fafc;
+}
+
+.step p{
+  margin:0;
+  color:var(--muted);
+}
+
+/* ===== 新增：演示代码区域 ===== */
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.copy-btn:hover{
+  color:#fff;
+  border-color:#38bdf8;
+}
+
+/* footer */
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <!-- 面包屑 -->
+  <nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/01-task-execution/index.html">Task Execution</a> /
+  <span>Context Switch</span>
+</nav>
+
+  <!-- 标题 -->
+  <section class="hero">
+    <span class="hero-tag">Execution Core</span>
+    <h1>上下文切换（Context Switch）</h1>
+    <p>
+      上下文切换是RTOS任务调度的核心机制，用于在不同任务之间保存与恢复CPU执行状态，
+      保证多任务系统在有限CPU资源下的正确运行。
+    </p>
+  </section>
+
+  <!-- 定义 -->
+  <section class="section">
+    <h2>机制定义</h2>
+    <div class="block">
+      Context Switch = CPU寄存器保存 + 堆栈切换 + 任务控制块更新 + 恢复执行上下文
+    </div>
+  </section>
+
+  <!-- 触发机制 -->
+  <section class="section">
+    <h2>触发条件</h2>
+    <p>上下文切换通常由以下情况触发：</p>
+
+    <div class="flow">
+
+      <div class="step">
+        <h3>时间片耗尽</h3>
+        <p>调度器Tick中断触发任务切换。</p>
+      </div>
+
+      <div class="step">
+        <h3>高优先级任务就绪</h3>
+        <p>新任务进入Ready状态，抢占当前任务。</p>
+      </div>
+
+      <div class="step">
+        <h3>任务阻塞</h3>
+        <p>等待信号量、消息或资源导致CPU释放。</p>
+      </div>
+
+      <div class="step">
+        <h3>中断返回调度</h3>
+        <p>中断服务函数结束后触发调度判断。</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 执行流程 -->
+  <section class="section">
+    <h2>执行流程</h2>
+
+    <div class="flow">
+
+      <div class="step">
+        <h3>1. 保存当前任务上下文</h3>
+        <p>保存PC、SP、寄存器组到任务控制块（TCB）。</p>
+      </div>
+
+      <div class="step">
+        <h3>2. 更新任务状态</h3>
+        <p>将Running状态转换为Ready或Blocked。</p>
+      </div>
+
+      <div class="step">
+        <h3>3. 调度器选择任务</h3>
+        <p>根据优先级或时间片选择下一个执行任务。</p>
+      </div>
+
+      <div class="step">
+        <h3>4. 恢复任务上下文</h3>
+        <p>恢复目标任务寄存器与堆栈指针。</p>
+      </div>
+
+      <div class="step">
+        <h3>5. CPU继续执行</h3>
+        <p>跳转到任务断点位置继续运行。</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== 新增：演示代码（结构） ===== -->
+  <section class="section">
+    <h2>演示代码</h2>
+
+    <div class="code-box">
+      <button class="copy-btn">Copy</button>
+      <pre><code>
+/****************************************************************************
+* HRTOS Context Switch 实验（基于真实API）
+* 依赖：HRTOS_KERNEL.H / HRTOS.H
+* 目标：验证任务切换 + 调度器 + 优先级行为
+****************************************************************************/
+
+#include <HRTOS_KERNEL.H>
+#include <HRTOS.H>
+
+/* =========================
+ * 任务ID定义
+ * ========================= */
+#define TASK_A_ID   0
+#define TASK_B_ID   1
+
+/* =========================
+ * 任务函数
+ * ========================= */
+
+/* Task A */
+void task_A(void)
+{
+    while(1)
+    {
+        os_task_function(TASK_B_ID);   // 指定下一个任务（触发切换）
+
+        // 模拟运行负载
+        os_nop();
+        os_nop();
+
+        os_news_send1(0, 0xA1);        // 写入邮箱（验证执行路径）
+
+        os_task_service(TASK_A_ID);    // 任务服务登记（内核行为）
+    }
+}
+
+/* Task B */
+void task_B(void)
+{
+    while(1)
+    {
+        os_task_function(TASK_A_ID);   // 切换回A
+
+        os_wait1(5);                   // 模拟延时（触发调度窗口）
+
+        os_news_send1(1, 0xB2);       // 邮箱通信验证
+
+        os_task_service(TASK_B_ID);
+    }
+}
+
+/* =========================
+ * 系统初始化
+ * ========================= */
+void system_init(void)
+{
+    /* 初始化调度模式（HRTOS模式） */
+    os_scheduling(1);   // 1 = HRTOS模式
+
+    /* 初始化任务 */
+    os_task((unsigned int)task_A, TASK_A_ID, 3, 0);
+    os_task((unsigned int)task_B, TASK_B_ID, 2, 0);
+
+    /* 初始化邮箱 */
+    os_mail_init();
+
+    /* 初始化锁（可选） */
+    os_lock_init();
+}
+
+/* =========================
+ * 主函数
+ * ========================= */
+void main(void)
+{
+    system_init();
+
+    /* 启动第一个任务 */
+    os_task_release(TASK_A_ID);
+
+    while(1)
+    {
+        /* 系统空循环，由RTOS接管 */
+        os_nop();
+    }
+}
+      </code></pre>
+    </div>
+
+  </section>
+
+  <!-- 关键意义 -->
+  <section class="section">
+    <h2>系统意义</h2>
+    <p>
+      上下文切换是RTOS实现多任务并发的基础机制，其开销直接影响系统实时性。
+      在HRTOS中，该机制被优化为最小寄存器保存路径，以降低中断延迟。
+    </p>
+  </section>
+  <section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+  <h3>返回任务执行模型</h3>
+  <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+</div>
+
+<div class="step">
+  <h3>调度系统</h3>
+  <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+</div>
+
+<div class="step">
+  <h3>中断机制</h3>
+  <p><a href="/docs/system/interrupt-flow/index.html">Interrupt Flow</a></p>
+</div>
+
+<div class="step">
+  <h3>任务生命周期</h3>
+  <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+</div>
+
+  </div>
+</section>
+<script src="/header.js" defer></script>
+  <footer class="footer">
+    © 2017–2026 HRTOS · Context Switch Module
+  </footer>
+
+</main>
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const box = btn.closest(".code-box");
+  if (!box) return;
+
+  const code = box.querySelector("code");
+  if (!code) return;
+
+  const text = code.innerText;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const old = btn.innerText;
+    btn.innerText = "已复制";
+
+    setTimeout(() => {
+      btn.innerText = old;
+    }, 1000);
+  });
+});
+</script>
+</body>
+</html>

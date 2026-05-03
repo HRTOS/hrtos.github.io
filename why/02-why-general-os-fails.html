@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>02 通用操作系统为什么无法满足实时需求 | HRTOS Why Layer</title>
+<meta name="description" content="解释通用操作系统在实时系统中的局限性，包括非确定性调度、公平性设计与延迟不可预测问题">
+
+<meta name="page-role" content="why-layer">
+<meta name="semantic-node" content="general-os-failure">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-definition {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-failure {
+  border-left: 3px solid #ef4444;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+  opacity: 0.95;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html" style="color:#cfe3ff;">Why</a>
+    <a href="/system-view/index.html">系统</a>
+    <a href="/docs/index.html">文档</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>2. 通用操作系统为什么无法满足实时需求</h1>
+  <div class="sub">
+    Linux / Windows 在实时场景中的结构性限制
+  </div>
+
+  <!-- definition -->
+  <div class="card card-definition">
+    <h2>核心矛盾</h2>
+    <p>
+      通用操作系统（GPOS）的设计出发点是“平均性能最优”，
+      而实时系统要求的是“最坏情况可控”。
+    </p>
+
+    <p>
+      这意味着 GPOS 并不是“做得不够好”，而是“优化目标完全不同”。
+    </p>
+
+    <div class="en">
+      GPOS is optimized for average performance, while real-time systems require worst-case predictability.
+    </div>
+  </div>
+
+  <!-- failure 1 -->
+  <div class="card card-failure">
+    <h2>1. 调度路径不可预测</h2>
+    <p>
+      通用系统采用复杂调度算法（如 CFS、优先级动态调整等），
+      目的是提高整体公平性与CPU利用率。
+    </p>
+
+    <p>
+      但结果是：同一任务在不同时间点执行，其调度延迟可能完全不同。
+    </p>
+  </div>
+
+  <!-- failure 2 -->
+  <div class="card card-failure">
+    <h2>2. 内核路径长度不确定</h2>
+    <p>
+      在 GPOS 中，一个简单系统调用可能触发：
+      锁竞争 / 页调度 / 中断嵌套 / 内存回收等复杂路径。
+    </p>
+
+    <p>
+      这些路径的存在，使得最坏执行时间（WCET）难以建模。
+    </p>
+  </div>
+
+  <!-- failure 3 -->
+  <div class="card card-failure">
+    <h2>3. 中断与抢占的不稳定性</h2>
+    <p>
+      中断可能被延迟、屏蔽或重新排序执行，
+      内核临界区也可能导致不可预测的暂停时间。
+    </p>
+
+    <p>
+      在实时系统中，这种“不可控暂停”本身就是错误来源。
+    </p>
+  </div>
+
+  <!-- failure 4 -->
+  <div class="card card-failure">
+    <h2>4. 资源共享导致时间抖动</h2>
+    <p>
+      CPU cache、内存、IO 都是共享资源，
+      在多任务竞争下会产生抖动（jitter）。
+    </p>
+
+    <p>
+      即使平均性能优秀，也无法保证每一次执行的时间边界。
+    </p>
+  </div>
+
+  <!-- structural reason -->
+  <div class="card">
+    <h2>根本原因（结构层）</h2>
+    <p>
+      GPOS 的核心目标是：
+      <br>• 提高吞吐量
+      <br>• 提高系统利用率
+      <br>• 提供公平性
+    </p>
+
+    <p>
+      RTOS 的核心目标是：
+      <br>• 保证时间上界
+      <br>• 消除不可预测路径
+      <br>• 控制最坏情况
+    </p>
+  </div>
+
+  <!-- meta -->
+  <div class="card card-meta">
+    <h2>语义总结</h2>
+    <p>
+      通用操作系统的失败点不在性能，而在“无法定义时间上界”，
+      这使其无法作为严格实时系统的基础。
+    </p>
+
+    <div class="en">
+      The limitation is not performance, but the inability to define and guarantee timing upper bounds.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

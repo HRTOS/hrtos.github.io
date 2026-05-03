@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>PAGE_TITLE | HRTOS Documentation</title>
+<meta id="page-description" name="description" content="">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --surface-hover:rgba(30,41,59,.92);
+  --border:rgba(148,163,184,.18);
+  --border-strong:rgba(56,189,248,.45);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:8px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
+  background-size:28px 28px;
+  opacity:.14;
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,.65),transparent 90%);
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px,calc(100% - 40px));
+  margin:0 auto;
+  padding:104px 0 56px;
+  display:grid;
+  gap:56px;
+  position:relative;
+  z-index:1;
+}
+
+/* breadcrumb */
+.breadcrumb{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  font-size:.92rem;
+  color:var(--muted);
+  margin-bottom:-24px;
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.breadcrumb a:hover{
+  text-decoration:underline;
+}
+
+/* hero */
+.hero{
+  display:grid;
+  gap:18px;
+}
+
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border:1px solid rgba(56,189,248,.22);
+  border-radius:999px;
+  color:#bae6fd;
+  font-size:.92rem;
+  font-weight:600;
+}
+
+.hero h1{
+  margin:0;
+  font-size:clamp(2.3rem,5vw,4rem);
+  line-height:1.08;
+}
+
+.hero p{
+  margin:0;
+  max-width:860px;
+  color:var(--muted);
+  font-size:1rem;
+}
+
+/* section */
+.section{
+  display:grid;
+  gap:22px;
+}
+
+.section-header{
+  display:grid;
+  gap:8px;
+}
+
+.section-header h2{
+  margin:0;
+  font-size:clamp(1.4rem,3vw,2rem);
+}
+
+.section-header p{
+  margin:0;
+  color:var(--muted);
+}
+
+/* cards */
+.docs-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:20px;
+}
+
+.doc-card{
+  display:grid;
+  gap:10px;
+  min-height:168px;
+  padding:24px 22px;
+  background:linear-gradient(
+    180deg,
+    rgba(30,41,59,.78),
+    rgba(15,23,42,.92)
+  );
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  transition:
+    transform .22s ease,
+    border-color .22s ease,
+    background .22s ease;
+}
+
+.doc-card:hover{
+  transform:translateY(-6px);
+  border-color:var(--border-strong);
+  background:var(--surface-hover);
+}
+
+.doc-card h3{
+  margin:0;
+  font-size:1.12rem;
+  color:#f8fafc;
+}
+
+.doc-card p{
+  margin:0;
+  color:var(--muted);
+  font-size:.95rem;
+}
+
+.doc-link{
+  margin-top:auto;
+  color:#7dd3fc;
+  font-size:.92rem;
+  font-weight:600;
+}
+
+/* footer */
+.site-footer{
+  padding-top:12px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  text-align:center;
+  font-size:.95rem;
+}
+
+@media(max-width:980px){
+  .docs-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:640px){
+  .docs-grid{
+    grid-template-columns:1fr;
+  }
+
+  .page{
+    width:min(100% - 28px,1180px);
+    padding-top:88px;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <!-- breadcrumb -->
+  <nav id="breadcrumb" class="breadcrumb"></nav>
+
+  <!-- hero -->
+  <section class="hero">
+    <span id="hero-label" class="hero-label"></span>
+    <h1 id="hero-title"></h1>
+    <p id="hero-intro"></p>
+  </section>
+
+  <!-- main cards -->
+  <section class="section">
+    <div class="section-header">
+      <h2>核心栏目</h2>
+<p>聚焦当前专题的核心模块、技术概念与文档入口，帮助快速理解系统结构。</p>
+    </div>
+
+    <div id="section-grid" class="docs-grid"></div>
+  </section>
+
+  <!-- featured -->
+  <section class="section">
+    <div class="section-header">
+      <h2>推荐内容</h2>
+<p>精选当前专题中的关键页面与延伸阅读内容。</p>
+    </div>
+
+    <div id="featured-grid" class="docs-grid"></div>
+  </section>
+
+  <footer class="site-footer">
+    <p>© 2017–2026 HRTOS. Documentation for embedded real-time systems.</p>
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/components/docs-render.js"></script>
+<script src="https://hrtos.com/header.js"></script>
+
+</body>
+</html>

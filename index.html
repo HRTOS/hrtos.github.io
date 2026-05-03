@@ -3,914 +3,1160 @@
 <head>
 <meta charset="UTF-8">
 <title>HRTOS - Hard Real-Time Operating System | 硬实时操作系统</title>
-
 <meta name="description" content="HRTOS 是一款轻量级硬实时操作系统（Hard Real-Time Operating System），同时提供 RTOS 内核实践、源码解析与嵌入式开发内容，涵盖任务调度（Scheduler）、中断管理、内存控制与实时系统设计。">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050816">
+<link rel="canonical" href="https://hrtos.com/index.html">
+<meta property="og:title" content="HRTOS - Hard Real-Time Operating System">
+<meta property="og:description" content="Lightweight hard real-time operating system for embedded systems.">
+<meta property="og:url" content="https://hrtos.com/">
+<script type="application/ld+json">
+{
+ "@context":"https://schema.org",
+ "@type":"SoftwareApplication",
+ "name":"HRTOS",
+ "applicationCategory":"DeveloperApplication",
+ "operatingSystem":"Embedded System"
+}
+</script>
 <style>
+:root{
+  --bg:#050816;
+  --bg-deep:#02040d;
+  --panel:rgba(8,14,28,0.72);
+  --panel-strong:rgba(10,17,34,0.86);
+  --panel-soft:rgba(255,255,255,0.03);
+  --text:#f5f9ff;
+  --text-soft:#dce6f5;
+  --muted:#8fa0b7;
+  --line:rgba(255,255,255,0.08);
+  --accent:#4f46e5;
+  --accent-soft:#60a5fa;
+  --accent-cyan:#22d3ee;
+  --shadow:0 28px 80px rgba(1,5,16,0.5);
+  --shadow-soft:0 18px 48px rgba(1,5,16,0.32);
+  --content:min(1180px, calc(100vw - 48px));
+}
+
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
 body{
   margin:0;
-  font-family:"Segoe UI", Arial, "Microsoft YaHei", sans-serif;
-  background:#0a0f1f;
-  color:#e5e7eb;
-  scroll-behavior: smooth;
-  text-align:center;
+  min-height:100vh;
   overflow-x:hidden;
+  text-align:center;
+  font-family:"Segoe UI Variable","SF Pro Display","PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 18% 16%, rgba(79,70,229,0.22), transparent 28%),
+    radial-gradient(circle at 80% 14%, rgba(34,211,238,0.12), transparent 22%),
+    radial-gradient(circle at 50% 84%, rgba(96,165,250,0.12), transparent 26%),
+    linear-gradient(180deg, #040613 0%, #071020 40%, #030711 100%);
 }
-a{text-decoration:none;}
-h1,h2,h3,p{margin:0; text-align:center;}
-pre,table,th,td{margin:0; text-align:left;}
 
-/* 顶栏 */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size:120px 120px;
+  mask-image:radial-gradient(circle at center, #000 38%, transparent 100%);
+  opacity:0.42;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+h1,h2,h3,p{
+  margin:0;
+}
+
+.container{
+  width:var(--content);
+  margin:0 auto;
+  position:relative;
+  z-index:1;
+}
+
+.reveal{
+  opacity:0;
+  transform:translateY(28px);
+  transition:
+    opacity 0.8s cubic-bezier(.22,1,.36,1),
+    transform 0.8s cubic-bezier(.22,1,.36,1);
+}
+
+.reveal.in-view{
+  opacity:1;
+  transform:translateY(0);
+}
+
 .nav{
-  position:fixed; top:0; left:0; right:0;
-  display:flex; justify-content:space-between; align-items:center;
-  padding:15px 40px;
-  background:rgba(15,23,42,0.85);
-  border-bottom:1px solid #1f2937;
+  position:fixed;
+  top:18px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(1220px, calc(100vw - 24px));
+  padding:14px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  border-radius:999px;
+  background:rgba(7,12,24,0.5);
+  border:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  box-shadow:0 12px 34px rgba(2,6,23,0.18);
   z-index:1000;
-  backdrop-filter:blur(5px);
-  transition:0.3s;
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    backdrop-filter 0.35s ease;
 }
-.nav.transparent{background:rgba(15,23,42,0.4);}
-.nav a{color:#9ca3af;margin-left:20px;font-weight:500;transition:0.3s;}
-.nav a:hover{color:#60a5fa;}
-.nav .logo{font-weight:bold;font-size:20px;color:#60a5fa;}
 
-/* HERO */
+.nav.scrolled{
+  background:rgba(7,12,24,0.8);
+  border-color:rgba(255,255,255,0.12);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  box-shadow:0 18px 40px rgba(2,6,23,0.34);
+}
+
+.logo a{
+  display:inline-flex;
+  align-items:center;
+  font-size:18px;
+  font-weight:800;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  background:linear-gradient(135deg, #ffffff 0%, #b4d0ff 50%, #70e8ff 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.nav-links{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+.nav-links a{
+  padding:10px 14px;
+  border-radius:999px;
+  color:var(--muted);
+  font-size:14px;
+  font-weight:600;
+  transition:background 0.3s ease, color 0.3s ease;
+}
+
+.nav-links a:hover{
+  color:#ffffff;
+  background:rgba(255,255,255,0.05);
+}
+
 .hero{
-  height:100vh;
-  display:flex; flex-direction:column; justify-content:center; align-items:center;
-  position:relative; overflow:hidden;
+  position:relative;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:156px 0 120px;
+  overflow:hidden;
 }
+
+.hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(79,70,229,0.22), transparent 24%),
+    radial-gradient(circle at 74% 16%, rgba(34,211,238,0.12), transparent 18%),
+    radial-gradient(circle at 50% 72%, rgba(96,165,250,0.12), transparent 26%);
+  animation:heroFloat 14s ease-in-out infinite alternate;
+}
+
+.hero::after{
+  content:"";
+  position:absolute;
+  left:10%;
+  right:10%;
+  bottom:14%;
+  height:180px;
+  border-radius:999px;
+  pointer-events:none;
+  background:linear-gradient(90deg, rgba(79,70,229,0), rgba(79,70,229,0.24), rgba(34,211,238,0.18), rgba(79,70,229,0));
+  filter:blur(64px);
+  opacity:0.8;
+}
+
+.hero canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0.8;
+  z-index:0;
+}
+
+.hero-inner{
+  position:relative;
+  z-index:1;
+  max-width:980px;
+}
+
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 16px;
+  border-radius:999px;
+  color:#dbeafe;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)) padding-box,
+    linear-gradient(135deg, rgba(96,165,250,0.28), rgba(255,255,255,0.08), rgba(79,70,229,0.24)) border-box;
+  border:1px solid transparent;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+
 .hero h1{
-  font-size:80px;
-  background:linear-gradient(90deg,#60a5fa,#a78bfa,#22d3ee);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-  margin:0; animation: gradientMove 6s linear infinite;
+  margin-top:24px;
+  font-size:clamp(4.2rem, 11vw, 7.4rem);
+  line-height:0.9;
+  letter-spacing:-0.08em;
+  font-weight:900;
+  background:linear-gradient(135deg, #ffffff 0%, #b9d4ff 45%, #73ecff 100%);
+  background-size:200% 200%;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 28px rgba(96,165,250,0.16));
+  animation:gradientShift 8s linear infinite;
 }
-.hero p{font-size:22px;color:#cbd5e1;margin:15px 0 25px;}
-a.btn{
-  display:inline-block; padding:12px 24px;
-  border-radius:8px; font-weight:500;
-  transition:0.3s;
+
+.hero-subtitle{
+  max-width:740px;
+  margin:24px auto 0;
+  font-size:clamp(1.25rem, 2vw, 1.55rem);
+  line-height:1.8;
+  color:var(--text-soft);
 }
-a.btn:hover{background:#6366f1;}
 
-/* 粒子光晕 */
-.hero canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;}
+.hero-proof{
+  margin:30px auto 0;
+  padding:18px 20px;
+  max-width:780px;
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:12px;
+  border-radius:28px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  box-shadow:var(--shadow);
+}
 
-/* HERO 动画 */
-@keyframes gradientMove{
+.proof-item{
+  padding:12px 10px;
+  text-align:left;
+}
+
+.proof-label{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:#7dd3fc;
+}
+
+.proof-copy{
+  display:block;
+  margin-top:8px;
+  font-size:14px;
+  line-height:1.75;
+  color:#d8e2f0;
+}
+
+.hero-actions{
+  margin-top:34px;
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:14px;
+}
+
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:14px 24px;
+  border-radius:16px;
+  font-size:15px;
+  font-weight:700;
+  line-height:1;
+  color:#eef4ff;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)) padding-box,
+    linear-gradient(145deg, rgba(96,165,250,0.18), rgba(255,255,255,0.08), rgba(79,70,229,0.18)) border-box;
+  border:1px solid transparent;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  box-shadow:0 16px 38px rgba(2,6,23,0.22);
+  transition:
+    transform 0.35s cubic-bezier(.22,1,.36,1),
+    box-shadow 0.35s cubic-bezier(.22,1,.36,1),
+    color 0.35s ease;
+}
+
+.btn.primary{
+  background:
+    linear-gradient(135deg, rgba(79,70,229,0.34), rgba(34,211,238,0.12)) padding-box,
+    linear-gradient(145deg, rgba(160,199,255,0.28), rgba(255,255,255,0.14), rgba(34,211,238,0.26)) border-box;
+}
+
+.btn:hover{
+  transform:translateY(-5px);
+  box-shadow:
+    0 22px 46px rgba(79,70,229,0.2),
+    0 0 30px rgba(34,211,238,0.08);
+  color:#ffffff;
+}
+
+.section{
+  position:relative;
+  padding:128px 0;
+}
+
+.section.intro-space{
+  padding-top:84px;
+}
+
+.section-copy{
+  max-width:760px;
+  margin:0 auto 44px;
+}
+
+.section-kicker{
+  display:block;
+  margin-bottom:12px;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:#7dd3fc;
+}
+
+.section h2{
+  font-size:clamp(2.2rem, 4vw, 3.5rem);
+  line-height:1.06;
+  letter-spacing:-0.05em;
+  font-weight:850;
+  background:linear-gradient(135deg, #ffffff 0%, #b8d4ff 54%, #77ebff 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.section-lead{
+  margin-top:16px;
+  color:var(--muted);
+  font-size:16px;
+  line-height:1.9;
+}
+
+.architecture-grid{
+  display:grid;
+  grid-template-columns:repeat(12, 1fr);
+  gap:22px;
+}
+
+.panel-card{
+  position:relative;
+  overflow:hidden;
+  padding:34px;
+  border-radius:30px;
+  text-align:left;
+  background:
+    linear-gradient(180deg, rgba(12,18,35,0.8), rgba(7,12,24,0.72)) padding-box,
+    linear-gradient(150deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)) border-box;
+  border:1px solid transparent;
+  box-shadow:var(--shadow-soft);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  transition:
+    transform 0.42s cubic-bezier(.22,1,.36,1),
+    box-shadow 0.42s cubic-bezier(.22,1,.36,1),
+    background 0.42s ease;
+}
+
+.panel-card::before{
+  content:"";
+  position:absolute;
+  inset:auto -12% -48px 42%;
+  height:150px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(79,70,229,0.3), transparent 72%);
+  filter:blur(20px);
+  opacity:0.22;
+  pointer-events:none;
+  transition:opacity 0.4s ease, transform 0.4s ease;
+}
+
+.panel-card:hover{
+  transform:translateY(-6px);
+  box-shadow:
+    0 22px 54px rgba(1,5,16,0.42),
+    0 0 28px rgba(79,70,229,0.12);
+}
+
+.panel-card:hover::before{
+  opacity:0.38;
+  transform:translateY(-10px);
+}
+
+.panel-card.large{
+  grid-column:span 5;
+  min-height:420px;
+  background:
+    linear-gradient(180deg, rgba(14,22,42,0.88), rgba(7,12,24,0.78)) padding-box,
+    linear-gradient(145deg, rgba(79,70,229,0.46), rgba(255,255,255,0.08), rgba(34,211,238,0.24)) border-box;
+}
+
+.panel-card.medium{
+  grid-column:span 4;
+  min-height:420px;
+}
+
+.panel-card.small{
+  grid-column:span 3;
+  min-height:420px;
+}
+
+.card-kicker{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:#9fd0ff;
+}
+
+.panel-card h3{
+  margin-top:18px;
+  font-size:clamp(1.6rem, 2vw, 2.3rem);
+  line-height:1.1;
+  letter-spacing:-0.04em;
+  font-weight:800;
+  color:#f7fbff;
+}
+
+.panel-card p{
+  margin-top:16px;
+  font-size:15px;
+  line-height:1.9;
+  color:var(--text-soft);
+}
+
+.architecture-meta{
+  margin-top:24px;
+  display:grid;
+  gap:12px;
+}
+
+.meta-line{
+  padding-top:12px;
+  border-top:1px solid rgba(255,255,255,0.08);
+  color:#afbdd1;
+  font-size:14px;
+  line-height:1.7;
+}
+
+.link-row{
+  margin-top:26px;
+}
+
+.link-row a{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  color:#f1f6ff;
+  font-size:14px;
+  font-weight:700;
+}
+
+.trust-shell{
+  padding:38px;
+  border-radius:34px;
+  text-align:left;
+  background:
+    linear-gradient(180deg, rgba(11,18,35,0.88), rgba(6,11,22,0.76)) padding-box,
+    linear-gradient(150deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)) border-box;
+  border:1px solid transparent;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+
+.trust-head{
+  display:grid;
+  grid-template-columns:1.15fr 0.85fr;
+  gap:30px;
+  align-items:end;
+}
+
+.trust-summary{
+  max-width:650px;
+}
+
+.trust-summary h3{
+  font-size:clamp(2rem, 3vw, 2.9rem);
+  line-height:1.08;
+  letter-spacing:-0.05em;
+  font-weight:840;
+  color:#f8fbff;
+}
+
+.trust-summary p{
+  margin-top:18px;
+  color:var(--text-soft);
+  font-size:16px;
+  line-height:1.95;
+}
+
+.trust-badge{
+  padding:22px 24px;
+  border-radius:24px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+}
+
+.trust-badge strong{
+  display:block;
+  font-size:14px;
+  font-weight:800;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:#7dd3fc;
+}
+
+.trust-badge span{
+  display:block;
+  margin-top:10px;
+  color:#d7e2f1;
+  font-size:15px;
+  line-height:1.8;
+}
+
+.trust-grid{
+  margin-top:32px;
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:16px;
+}
+
+.trust-item{
+  padding:24px;
+  border-radius:24px;
+  background:rgba(255,255,255,0.03);
+}
+
+.trust-item strong{
+  display:block;
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:#9ed1ff;
+}
+
+.trust-item p{
+  margin-top:12px;
+  font-size:15px;
+  line-height:1.85;
+  color:#dbe5f2;
+}
+
+.code-section{
+  padding-top:110px;
+}
+
+.code-shell{
+  padding:34px;
+  border-radius:32px;
+  text-align:left;
+  background:
+    linear-gradient(180deg, rgba(11,18,35,0.84), rgba(5,9,18,0.86)) padding-box,
+    linear-gradient(150deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)) border-box;
+  border:1px solid transparent;
+  box-shadow:var(--shadow-soft);
+}
+
+.code-shell h3{
+  font-size:clamp(1.8rem, 2.6vw, 2.5rem);
+  line-height:1.12;
+  letter-spacing:-0.04em;
+  font-weight:820;
+  color:#f8fbff;
+}
+
+.code-shell p{
+  margin-top:16px;
+  max-width:760px;
+  color:var(--muted);
+  font-size:15px;
+  line-height:1.85;
+}
+
+pre.code{
+  margin-top:24px;
+  padding:24px;
+  border-radius:24px;
+  background:linear-gradient(160deg, rgba(15,23,42,0.96), rgba(2,6,16,0.96));
+  border:1px solid rgba(255,255,255,0.05);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 40px rgba(0,0,0,0.34);
+  color:#e5e7eb;
+  font-family:"Cascadia Code","Fira Code",Consolas,"Courier New",monospace;
+  font-size:13px;
+  line-height:1.78;
+  max-width:100%;
+  max-height:430px;
+  overflow:auto;
+  white-space:pre;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+
+pre.code::-webkit-scrollbar{
+  display:none;
+}
+
+pre.code .keyword{color:#60a5fa; font-weight:700;}
+pre.code .macro{color:#facc15; font-weight:700;}
+pre.code .number{color:#22d3ee;}
+pre.code .comment{color:#94a3b8; font-style:italic;}
+pre.code .function{color:#a78bfa;}
+pre.code .type{color:#f472b6; font-weight:600;}
+
+.code-note{
+  margin-top:18px;
+  color:#a8b7ca;
+  font-size:14px;
+  line-height:1.8;
+}
+
+.cta{
+  padding:110px 0 130px;
+}
+
+.cta-shell{
+  padding:46px 24px;
+  border-radius:34px;
+  background:
+    linear-gradient(180deg, rgba(15,23,42,0.72), rgba(7,12,24,0.78)) padding-box,
+    linear-gradient(150deg, rgba(79,70,229,0.32), rgba(255,255,255,0.06), rgba(34,211,238,0.22)) border-box;
+  border:1px solid transparent;
+  box-shadow:var(--shadow);
+}
+
+.cta-shell h2{
+  font-size:clamp(2.2rem, 4vw, 3.4rem);
+  line-height:1.08;
+  letter-spacing:-0.05em;
+  font-weight:860;
+  background:linear-gradient(135deg, #ffffff 0%, #bbd6ff 52%, #7be9ff 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.cta-shell p{
+  max-width:680px;
+  margin:16px auto 0;
+  color:var(--muted);
+  font-size:16px;
+  line-height:1.9;
+}
+
+.cta-actions{
+  margin-top:28px;
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:14px;
+}
+
+.footer{
+  padding:32px 20px 38px;
+  color:#8fa0b7;
+  font-size:14px;
+  border-top:1px solid rgba(255,255,255,0.06);
+  background:rgba(7,12,24,0.68);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+
+@keyframes gradientShift{
   0%{background-position:0% 50%;}
   50%{background-position:100% 50%;}
   100%{background-position:0% 50%;}
 }
-/* ===== 按钮 ===== */
-.btn{
-  display:inline-block;
-  padding:12px 26px;
-  border-radius:10px;
-  font-weight:500;
-  margin:6px;
-  transition:0.3s;
-  position:relative;
-  z-index:2;
+
+@keyframes heroFloat{
+  0%{transform:translate3d(0, 0, 0) scale(1);}
+  100%{transform:translate3d(0, -18px, 0) scale(1.04);}
 }
 
-.btn.primary{
-  background:linear-gradient(90deg,#4f46e5,#6366f1);
-  color:#fff;
-  box-shadow:0 10px 30px rgba(79,70,229,0.4);
+@media (max-width:1080px){
+  .hero-proof,
+  .trust-grid{
+    grid-template-columns:1fr;
+  }
+
+  .architecture-grid{
+    grid-template-columns:repeat(2, 1fr);
+  }
+
+  .panel-card.large,
+  .panel-card.medium,
+  .panel-card.small{
+    grid-column:span 1;
+    min-height:auto;
+  }
+
+  .trust-head{
+    grid-template-columns:1fr;
+    align-items:start;
+  }
 }
 
-.btn.secondary{
-  border:1px solid #374151;
-  color:#cbd5e1;
-}
-
-.btn:hover{
-  transform:translateY(-2px);
-}
-/* 模块区 */
-.section{padding:60px 20px; position:relative;}
-.panel{
-  max-width:1200px; margin:auto;
-  display:grid; grid-template-columns:repeat(3,1fr); gap:20px;
-}
-
-.card{
-  background:#0f172a;
-  border-radius:14px;
-  padding:24px;
-  border:1px solid #1f2937;
-  transition:0.5s;
-  box-shadow:0 5px 15px rgba(0,0,0,0.3);
-
-  opacity:0;
-  transform:translateY(30px);
-
-  overflow:hidden; /* ✅ 保留这个 */
-}
-.card h3{margin-bottom:12px;color:#60a5fa;}
-.card p{
-  line-height:1.7;
-  color:#cbd5e1;
-  min-height:48px;
-  margin:6px 0;
-}
-.card.show{opacity:1; transform:translateY(0);}
-
-/* 表格 */
-table{width:100%; border-collapse:collapse; margin-top:20px; background:#0f172a;table-layout:fixed;}
-th, td{padding:12px; border:1px solid #1f2937;}
-th{background:#1e293b;color:#60a5fa;font-weight:600;}
-td{color:#e5e7eb;}
-tbody tr:nth-child(even){background:#151d2b;}
-tbody tr:hover{background:#1f2937;}
-
-/* 代码块 */
-pre{background:#1e293b;color:#60a5fa;padding:16px;border-radius:10px;overflow-x:auto;font-size:13px; max-height:400px; text-align:left;}
-
-/* 代码高亮 */
-pre.code{
-  background:linear-gradient(145deg,#0f172a,#020617);
-  color:#e5e7eb;
-  padding:20px;
-  border-radius:16px;
-
-  font-family:'Fira Code', Consolas, 'Courier New', monospace;
-  font-size:13px;
-  line-height:1.7;
-
-  border:1px solid rgba(255,255,255,0.05);
-  box-shadow:0 10px 30px rgba(0,0,0,0.4);
-
-  /* ✅ 核心：横向滚动 */
-  overflow-x:auto;
-  overflow-y:hidden;
-  max-width:100%;
-  white-space:pre;
-
-  position:relative;
-	
-}
-
-
-
-/* 左侧渐隐 */
-pre.code::before{
-  content:"";
-  position:absolute;
-  top:0;
-  left:0;
-  width:40px;
-  height:100%;
-  pointer-events:none;
-  background:linear-gradient(to right, rgba(2,6,23,1), transparent);
-}
-
-/* 右侧渐隐 */
-pre.code::after{
-  content:"";
-  position:absolute;
-  top:0;
-  right:0;
-  width:60px;
-  height:100%;
-  pointer-events:none;
-  background:linear-gradient(to left, rgba(2,6,23,1), transparent);
-}
-pre.code .keyword{color:#60a5fa; font-weight:600;}
-pre.code .macro{color:#facc15; font-weight:600;}
-pre.code .number{color:#22d3ee;}
-pre.code .comment{color:#9ca3af; font-style:italic;}
-pre.code .function{color:#a78bfa;}
-pre.code .type{color:#f472b6; font-weight:500;}
-
-/* 底部 */
-.footer{ text-align:center; padding:30px 20px; background:#0f172a; border-top:1px solid #1f2937; color:#9ca3af; font-size:14px;}
-
-/* 响应式 */
-@media(max-width:992px){.panel{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:640px){.panel{grid-template-columns:1fr;}.hero h1{font-size:50px;}.hero p{font-size:18px;}}
-/* HERO 按钮 */
-.hero a.btn{
-  display:inline-block;
-  padding:12px 24px;
-  background:#4f46e5;
-  color:white;
-  border-radius:8px;
-  font-weight:500;
-  transition:0.3s;
-  position: relative; /* 让 z-index 生效 */
-  z-index: 2;         /* 保证按钮在 canvas 之上 */
-}
-.hero a.btn:hover{
-  background:#6366f1;
-}
-.cta h2{
-  margin-bottom:20px;
-  font-size:28px;
-}
-
-.cta .btn{
-  margin-top:10px;
-}
-/* ===== 手机端专用修复（只影响小屏）===== */
-@media(max-width:640px){
-
-  /* 顶栏防挤爆 */
+@media (max-width:760px){
   .nav{
-    padding:10px 12px;
-    flex-wrap:wrap;
-  }
-  .nav div:last-child{
-    width:100%;
-    margin-top:8px;
-  }
-  .nav a{
-    display:inline-block;
-    margin:5px 8px;
-    font-size:14px;
+    top:12px;
+    padding:14px 16px;
+    border-radius:30px;
+    flex-direction:column;
   }
 
-  /* HERO缩放 */
-  .hero h1{
-    font-size:42px;
-  }
-  .hero p{
-    font-size:16px;
+  .nav-links{
+    gap:2px;
   }
 
-  /* 按钮优化 */
-  .btn{
-    padding:10px 18px;
-    font-size:14px;
+  .section{
+    padding:96px 0;
   }
 
-  /* 卡片更紧凑 */
-  .card{
-    padding:18px;
+  .hero{
+    min-height:auto;
+    padding:150px 0 92px;
   }
 
-/* 表格防溢出（修正版） */
-
-#memory .card{
-  width:100%;
-  overflow-x:auto;
-}
-
-#memory table{
-	display:block;
-  min-width:600px;
-}
-  /* 代码块优化 */
-  pre{
-    font-size:12px;
+  .hero-proof,
+  .architecture-grid{
+    grid-template-columns:1fr;
   }
 
-  /* CTA优化 */
-  .cta h2{
-    font-size:22px;
+  .panel-card,
+  .trust-shell,
+  .code-shell,
+  .cta-shell{
+    padding:24px;
   }
 }
-	table{
-  max-width:100%;
-}
 
-
-pre.code{
-  max-height:400px;
-  overflow:auto;
-}
-pre.code{
-  max-width:100%;
-overflow-x:auto;
-  overflow-y:auto;
-  max-height:400px;
-white-space:pre; /* PC保持原样 */
-  /* 隐藏滚动条 - 通用 */
-  scrollbar-width: none;        /* Firefox */
-  -ms-overflow-style: none;     /* IE/旧Edge */
-}
-
-/* Chrome / Safari / Edge */
-pre.code::-webkit-scrollbar{
-  display: none;
-}
 @media (max-width:640px){
+  :root{
+    --content:min(100vw - 24px, 100%);
+  }
+
+  body::before{
+    background-size:72px 72px;
+    opacity:0.3;
+  }
+
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:0.1em;
+  }
+
+  .hero-subtitle{
+    font-size:1.08rem;
+  }
+
+  .proof-item,
+  .trust-item{
+    text-align:left;
+  }
+
+  .btn{
+    width:100%;
+  }
+
   pre.code{
-    white-space: pre-wrap !important;
-    word-break: break-word;
-    overflow-x: hidden;
+    font-size:12px;
+    white-space:pre-wrap;
+    word-break:break-word;
+    overflow-x:hidden;
   }
 }
-	.memory-card{
-  width:100%;
-  box-sizing:border-box;
-}
 
-.table-scroll{
-  width:100%;
-  overflow-x:auto;
-  overflow-y:hidden;
-  border-radius:12px;
-}
-
-.memory-table{
-  min-width:700px;
-  width:max-content;
-  border-collapse:collapse;
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  *,
+  *::before,
+  *::after{
+    animation:none !important;
+    transition:none !important;
+  }
+  .reveal{
+    opacity:1;
+    transform:none;
+  }
 }
 </style>
 </head>
 <body>
 
-<!-- 顶栏 -->
-<div class="nav" id="navbar">
-  <div class="logo"><a href="https://hrtos.com">HRTOS</a></div>
-  <div>
-    <a href="index.html">首页</a>
-    <a href="docs.html">系统文档</a>
-    <a href="manual.html">应用示例</a>
-    <a href="download.html">系统下载</a>
-  </div>
-</div>
+<header class="nav" id="navbar" role="banner">
+  <div class="logo"><a href="/index.html">HRTOS</a></div>
+  <nav class="nav-links" aria-label="主导航">
+    <a href="/docs/index.html">系统文档</a>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <a href="/docs/examples/index.html">应用示例</a>
+    <a href="/download/index.html">下载中心</a>
+  </nav>
+</header>
 
-<!-- HERO -->
-<div class="hero">
-  <h1>HRTOS</h1>
-  <p>高可靠嵌入式实时操作系统</p>
-  <a class="btn" href="docs.html">进入系统文档</a>
-  <canvas id="particles"></canvas>
-</div>
-
-<!-- 模块区 -->
-<div class="section">
-  <h2 style="
-    text-align:center;
-    font-size:30px;
-    margin-bottom:10px;
-    background:linear-gradient(90deg,#60a5fa,#a78bfa);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-  ">
-  RTOS 系统架构入口
-  </h2>
-
-  <p style="
-    text-align:center;
-    color:#9ca3af;
-    margin-bottom:40px;
-    font-size:15px;
-  ">
-  理解实时操作系统的定义、分类与应用场景及特点与典型应用分析等。
-  </p>
-
-  <div class="panel">
-
-    <!-- Fundamentals -->
-    <div class="card">
-      <h3>
-        <a href="/rtos/fundamentals/" style="color:#60a5fa;">
-        RTOS基础
-        </a>
-      </h3>
-      <p>理解实时操作系统的定义、分类与应用场景及其基本特点分析。</p>
-      <a href="/rtos/fundamentals/" class="btn secondary">
-        基础知识 →
-      </a>
-    </div>
-
-    <!-- Kernel -->
-    <div class="card">
-      <h3>
-        <a href="/rtos/kernel/" style="color:#60a5fa;">
-        内核机制
-        </a>
-      </h3>
-      <p>调度器、中断、任务系统等核心机制解析与实现原理分析说明。</p>
-      <a href="/rtos/kernel/" class="btn secondary">
-        内核调度 →
-      </a>
-    </div>
-
-    <!-- System -->
-    <div class="card">
-      <h3>
-        <a href="/rtos/system/" style="color:#60a5fa;">
-        系统资源
-        </a>
-      </h3>
-      <p>信号量、互斥锁、事件与内存管理机制及其实现原理分析。</p>
-      <a href="/rtos/system/" class="btn secondary">
-        资源管理 →
-      </a>
-    </div>
-
-    <!-- Practice -->
-    <div class="card">
-      <h3>
-        <a href="/rtos/practice/" style="color:#60a5fa;">
-        工程实践
-        </a>
-      </h3>
-      <p>从裸机到RTOS迁移与实际项目应用及开发流程实践分析。</p>
-      <a href="/rtos/practice/" class="btn secondary">
-        实战案例 →
-      </a>
-    </div>
-
-    <!-- HRTOS -->
-    <div class="card">
-      <h3>
-        <a href="/rtos/hrtos/" style="color:#60a5fa;">
-        HRTOS架构
-        </a>
-      </h3>
-      <p>HRTOS设计理念与系统实现模型解析及核心机制架构说明。</p>
-      <a href="/rtos/hrtos/" class="btn secondary">
-        系统架构 →
-      </a>
-    </div>
-
-    <!-- Hub -->
-    <div class="card">
-      <h3>
-        <a href="/rtos/" style="color:#60a5fa;">
-        RTOS知识体系
-        </a>
-      </h3>
-      <p>从基础到内核的完整RTOS知识结构体系与核心原理全景解析说明。</p>
-      <a href="/rtos/" class="btn secondary">
-        知识图谱 →
-      </a>
-    </div>
-
-  </div>
-</div>
-
-<!-- 内存分配表 -->
-<!-- 内存分配表（高级科技表格版） -->
-<div class="section" id="memory">
-  <div class="panel">
-    <div class="card memory-card">
-      
-      <h3>片内存储器分配结构</h3>
-
-      <div class="table-scroll">
-        <table class="memory-table">
-
-          <thead>
-            <tr>
-              <th>地址区间</th>
-              <th>功能模块</th>
-              <th>系统说明</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr>
-              <td>0 ~ 31</td>
-              <td>工作寄存器组</td>
-              <td>四组寄存器空间，由 PSW 切换当前运行组</td>
-            </tr>
-            <tr>
-              <td>32 ~ 33</td>
-              <td>位寻址区</td>
-              <td>系统位变量存储区域，用于状态与标志控制</td>
-            </tr>
-            <tr>
-              <td>34 ~ 38</td>
-              <td>内核堆栈</td>
-              <td>系统核心运行栈，用于调度与内核执行</td>
-            </tr>
-            <tr>
-              <td>39 ~ 42</td>
-              <td>中断堆栈</td>
-              <td>独立中断栈空间，保证中断上下文隔离</td>
-            </tr>
-            <tr>
-              <td>43 ~ 106</td>
-              <td>任务堆栈区</td>
-              <td>多任务运行栈空间，用于上下文切换保存</td>
-            </tr>
-            <tr>
-              <td>107 ~ 123</td>
-              <td>用户数据区</td>
-              <td>应用层数据存储空间，可自由扩展</td>
-            </tr>
-            <tr>
-              <td>124 ~ 127</td>
-              <td>系统保留区</td>
-              <td>内核关键变量与系统控制信息</td>
-            </tr>
-          </tbody>
-
-        </table>
-      </div>
-
-    </div>
-  </div>
-</div>
-<div class="section">
-  <h2 style="
-  text-align:center;
-  font-size:30px;
-  margin-bottom:10px;
-  background:linear-gradient(90deg,#60a5fa,#a78bfa);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-">
-RTOS 核心知识体系
-</h2>
-
-<p style="
-  text-align:center;
-  color:#9ca3af;
-  margin-bottom:40px;
-  font-size:15px;
-">
-从基础概念到核心机制，系统掌握实时操作系统（RTOS）设计原理
+<section class="hero">
+  <canvas id="particles" aria-hidden="true"></canvas>
+  <div class="container hero-inner reveal">
+    <div class="eyebrow">Embedded RTOS · Deterministic Kernel · Architecture</div>
+    <h1>HRTOS</h1>
+    <p class="hero-subtitle">
+为高可靠嵌入式系统而生的实时操作系统，以确定性调度、快速中断响应与工程级资源控制，支撑从裸机设备到量产产品的稳定运行。
 </p>
 
-  <div class="panel">
+    <div class="hero-proof">
+      <div class="proof-item">
+        <span class="proof-label">Deterministic</span>
+        <span class="proof-copy">以可预测调度路径保障实时性，让关键任务在受限硬件上保持稳定响应。</span>
+      </div>
+      <div class="proof-item">
+        <span class="proof-label">Reliable</span>
+        <span class="proof-copy">围绕中断、任务与资源边界设计系统行为，优先保证运行稳定性与控制感。</span>
+      </div>
+      <div class="proof-item">
+        <span class="proof-label">Deployable</span>
+        <span class="proof-copy">以工程落地为前提组织内核能力，适合产品开发、集成与持续演进。</span>
+      </div>
+    </div>
 
-    <div class="card">
-  <h3>RTOS 是什么（入门必读）</h3>
-  <p>
-  实时操作系统（RTOS）完整入门指南，包含定义、特点、应用场景与核心机制，
-  帮助快速建立嵌入式系统认知体系。
-  </p>
-  <a href="guide/rtos是什么.html" class="btn secondary">阅读详解 →</a>
-</div>
-
-<div class="card">
-  <h3>任务调度原理（核心机制）</h3>
-  <p>
-  深入解析优先级抢占、时间片轮转与调度算法，
-  理解 RTOS 如何在多任务环境下实现高效运行。
-  </p>
-  <a href="guide/任务调度原理.html" class="btn secondary">阅读详解 →</a>
-</div>
-
-<div class="card">
-  <h3>中断机制解析（实时核心）</h3>
-  <p>
-  从中断触发到上下文切换，完整讲清 RTOS 响应流程，
-  掌握系统“实时性”的本质来源。
-  </p>
-  <a href="guide/中断机制解析.html" class="btn secondary">阅读详解 →</a>
-</div>
-
-<div class="card">
-  <h3>内存管理机制（稳定基础）</h3>
-  <p>
-  系统讲解内存池、动态分配与碎片控制策略，
-  提升嵌入式系统的稳定性与运行效率。
-  </p>
-  <a href="guide/内存管理机制.html" class="btn secondary">阅读详解 →</a>
-</div>
-
-<div class="card">
-  <h3>信号量与互斥锁（并发控制）</h3>
-  <p>
-  解决任务同步与资源竞争问题，深入理解优先级反转、
-  互斥机制与实时系统并发控制。
-  </p>
-  <a href="guide/信号量互斥锁.html" class="btn secondary">阅读详解 →</a>
-</div>
-
-<div class="card">
-  <h3>时间与定时器（调度基础）</h3>
-  <p>
-  从系统 Tick 到定时任务执行机制，
-  全面掌握 RTOS 的时间驱动模型与调度基础。
-  </p>
-  <a href="guide/时间与定时器.html" class="btn secondary">阅读详解 →</a>
-</div>
-	  
+    <div class="hero-actions">
+      <a class="btn primary" href="/docs/index.html">进入系统文档</a>
+      <a class="btn" href="/docs/learn/index.html">学习 RTOS</a>
+    </div>
   </div>
-</div>
-<!-- 代码示例 -->
-<div class="section" id="code0">
-  <div class="panel">
-    <div class="card" style="grid-column:1/-1">
-      <h3>任务调度核心（Preemptive Scheduler）</h3>
-      <pre class="code">
-<span class="comment">// ===============================</span>
-<span class="comment">// RTOS 核心调度器（优先级抢占）</span>
-<span class="comment">// ===============================</span>
+</section>
 
-typedef struct
-{
-    uint8_t  priority;     <span class="comment">// 优先级（0最高）</span>
-    uint8_t  state;        <span class="comment">// 任务状态</span>
-    uint16_t *sp;          <span class="comment">// 栈指针</span>
-} os_tcb_t;
+<main>
+  <section class="section intro-space" id="architecture">
+    <div class="container">
+      <div class="section-copy reveal">
+        <span class="section-kicker">Architecture</span>
+        <h2>以三条核心能力，构成 HRTOS 的系统表达</h2>
+        <p class="section-lead">HRTOS 不是教程集合，而是一套围绕实时性、稳定性与工程可用性构建的产品级实时内核。页面只保留最关键的三块能力，让品牌表达回到系统本身。</p>
+      </div>
 
-extern os_tcb_t os_task_table[MAX_TASK];
-extern uint8_t  current_task;
-extern uint8_t  ready_bitmap;
+      <div class="architecture-grid">
+        <article class="panel-card large reveal">
+          <span class="card-kicker">Core Scheduling</span>
+          <h3>确定性调度内核</h3>
+          <p>围绕优先级抢占、上下文切换与执行顺序控制，建立更可预测的任务运行模型。核心目标不是展示概念，而是在真实产品环境中保持系统节奏稳定、响应及时。</p>
+          <div class="architecture-meta">
+            <div class="meta-line">面向关键任务的调度决策路径，优先保证实时响应与系统边界清晰。</div>
+            <div class="meta-line">让内核行为更容易推导、验证与落地到具体硬件工程。</div>
+          </div>
+          <div class="link-row">
+            <a href="/docs/architecture/index.html">查看系统架构 →</a>
+          </div>
+        </article>
 
-<span class="comment">// 查找最高优先级就绪任务（位图优化）</span>
-static uint8_t os_find_highest_ready(void)
-{
-    uint8_t i;
+        <article class="panel-card medium reveal">
+          <span class="card-kicker">Interrupt System</span>
+          <h3>中断优先的响应链路</h3>
+          <p>将中断处理、调度触发与上下文恢复组织为紧凑链路，在复杂外设事件下依然维持系统响应的确定性与连贯性。</p>
+          <div class="architecture-meta">
+            <div class="meta-line">减少不必要的中间层，突出硬件事件到任务切换之间的执行效率。</div>
+            <div class="meta-line">适用于对时序控制敏感的嵌入式场景。</div>
+          </div>
+          <div class="link-row">
+          <a href="/docs/system/interrupt-flow.html">中断流程</a>
+          |
+          <a href="/docs/learn/interrupt-basics.html">中断基础</a>
+        </div>
+        </article>
 
-    for(i = 0; i &lt; MAX_TASK; i++)
-    {
-        if(ready_bitmap &amp; (1 &lt;&lt; i))
-        {
-            return i;
-        }
-    }
+        <article class="panel-card small reveal">
+          <span class="card-kicker">Resource Control</span>
+          <h3>工程级资源管理</h3>
+          <p>围绕任务、同步与内存边界组织资源控制，让系统从实验代码走向可维护、可交付的产品状态。</p>
+          <div class="architecture-meta">
+            <div class="meta-line">强调稳定性、轻量性与项目集成效率。</div>
+            <div class="meta-line">适合长期演进与实际部署。</div>
+          </div>
+          <div class="link-row">
+            <a href="/docs/modules/memory/index.html">内存管理</a>
+            |
+            <a href="/docs/modules/ipc/index.html">IPC 通信</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
 
-    return IDLE_TASK;
-}
+  <section class="section" id="trust">
+    <div class="container">
+      <div class="trust-shell reveal">
+        <div class="trust-head">
+          <div class="trust-summary">
+            <span class="section-kicker">Trust</span>
+            <h3>系统可信度，来自可预测行为而不是堆叠功能</h3>
+            <p>HRTOS 将品牌重心放在“稳定运行”本身：调度要可预测，中断要足够直接，资源边界要足够清晰。对于嵌入式产品，这意味着更可靠的时序表现、更稳定的系统状态，以及更易于工程团队持续维护的内核基础。</p>
+          </div>
+          <div class="trust-badge">
+            <strong>Product Focus</strong>
+            <span>以实时性、稳定性、工程可用性为核心表达，避免教程站式的信息噪音，让品牌回到产品能力本身。</span>
+          </div>
+        </div>
 
-<span class="comment">// 核心调度入口</span>
-void os_schedule(void)
+        <div class="trust-grid">
+          <div class="trust-item">
+            <strong>系统稳定</strong>
+            <p>系统设计强调任务边界、资源控制与运行连续性，确保关键流程在长期运行中依然保持稳定。</p>
+          </div>
+          <div class="trust-item">
+            <strong>实时响应</strong>
+            <p>通过可推导的调度路径与更直接的中断响应，强化系统对关键事件的执行确定性。</p>
+          </div>
+          <div class="trust-item">
+            <strong>工程部署</strong>
+            <p>从裸机集成到项目部署，HRTOS 更关注真实开发流程中的可维护性、轻量性与接入效率。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section code-section">
+    <div class="container">
+      <div class="code-shell reveal">
+        <span class="section-kicker">Kernel Path</span>
+        <h3>一个核心示例，展示 HRTOS 的调度入口</h3>
+        <p>保留最能代表系统本质的调度路径，其余接口说明、扩展示例与完整知识内容统一收敛到系统文档页面，避免首页被教程内容淹没。</p>
+        <pre class="code"><span class="comment">// RTOS 核心调度器（优先级抢占）</span>
+<span class="type">void</span> <span class="function">os_task_schedule</span>(<span class="type">void</span>)
 {
     uint8_t next;
 
-    DISABLE_INT();
-
-    <span class="comment">// 获取最高优先级任务</span>
+    <span class="macro">DISABLE_INT</span>();
     next = os_find_highest_ready();
 
-    <span class="comment">// 判断是否需要切换</span>
-    if(next != current_task)
+    <span class="keyword">if</span>(next != current_task)
     {
-        <span class="comment">// 保存当前任务上下文</span>
         os_save_context(current_task);
-
-        <span class="comment">// 更新当前任务</span>
         current_task = next;
-
-        <span class="comment">// 恢复目标任务上下文</span>
         os_restore_context(current_task);
     }
 
-    ENABLE_INT();
+    <span class="macro">ENABLE_INT</span>();
 }
-
-<span class="comment">// 调度触发（用于中断或系统调用）</span>
-void os_schedule_request(void)
-{
-    if(!in_interrupt)
-    {
-        os_schedule();
-    }
-    else
-    {
-        <span class="comment">// 延迟到中断退出再调度</span>
-        need_schedule = 1;
-    }
-}
-</pre>
+        </pre>
+        <p class="code-note">更多接口、任务模型、中断机制与完整示例请进入 <a href="/docs/index.html">系统文档</a>。</p>
+      </div>
     </div>
+  </section>
+
+  <section class="section cta">
+    <div class="container">
+      <div class="cta-shell reveal">
+        <h2>让 HRTOS 成为你的实时系统内核基础</h2>
+        <p>从文档、集成到下载入口，保持更克制、更清晰的产品叙事，让访问者首先记住 HRTOS 的系统能力与品牌定位。</p>
+        <div class="cta-actions">
+          <a class="btn primary" href="/docs/index.html">阅读文档</a>
+          <a class="btn" href="/docs/learn/index.html">学习 RTOS</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div>HRTOS — 硬实时操作系统（Hard Real-Time Operating System）</div>
+
+  <div style="margin-top:14px; line-height:1.9;">
+  <a href="/docs/index.html">文档中心</a> |
+  <a href="/docs/learn/index.html">RTOS学习</a> |
+  <a href="/docs/architecture/index.html">系统架构</a> |
+  <a href="/docs/system/index.html">系统模型</a> |
+  <a href="/docs/modules/index.html">内核模块</a> |
+  <a href="/download/index.html">下载中心</a>
   </div>
-</div>
 
-<!-- 代码示例 -->
-<div class="section" id="code1">
-  <div class="panel">
-    <div class="card" style="grid-column:1/-1">
-  <h3>任务生命周期管理（Task Lifecycle）</h3>
-
-<pre class="code">
-#include &lt;hrtos.h&gt;
-#include &lt;reg52.h&gt;
-
-/* ===== 任务控制块示意 ===== */
-typedef struct {
-    void (*entry)(void);
-    u8 priority;
-    u8 state;
-    u16 *sp;
-} os_tcb_t;
-
-/* ===== 任务函数 ===== */
-void task_led()
-{
-    while(1)
-    {
-        P0 ^= 0xFF;
-        os_delay(10);
-    }
-}
-
-void task_monitor()
-{
-    while(1)
-    {
-        /* 系统状态监控 */
-        if(os_task_state(1) == OS_BLOCKED)
-        {
-            os_task_ready(1);
-        }
-        os_delay(5);
-    }
-}
-
-/* ===== 初始化入口 ===== */
-void hrtos_main()
-{
-    EA = 0;
-
-    /* 创建任务（入口 + 优先级 + 栈大小 + ID） */
-    os_task(task_led,     1,  8, 1);
-    os_task(task_monitor, 2,  6, 2);
-
-    /* 挂起低优先级任务 */
-    os_task_hang(2);
-
-    EA = 1;
-
-    while(1)
-    {
-        /* 主循环空转，调度由内核控制 */
-    }
-}
-</pre>
-
-</div>
+  <div style="margin-top:16px; font-size:13px; color:#6b7c93; line-height:1.8;">
+    © 2017–2026 HRTOS. All rights reserved. Engineered for embedded real-time systems.
   </div>
-</div>
-
-<!-- 代码示例 -->
-<div class="section" id="code2">
-  <div class="panel">
-    <div class="card" style="grid-column:1/-1">
-  <h3>中断调度与上下文切换（Interrupt Scheduling）</h3>
-
-<pre class="code">
-#include &lt;hrtos.h&gt;
-#include &lt;reg52.h&gt;
-
-/* ===== 当前运行任务ID ===== */
-volatile u8 current_task = 0;
-
-/* ===== 保存上下文 ===== */
-void os_save_context()
-{
-    OS_SP[current_task] = SP;   // 保存栈指针
-}
-
-/* ===== 恢复上下文 ===== */
-void os_restore_context(u8 next)
-{
-    SP = OS_SP[next];           // 恢复目标任务栈
-    current_task = next;
-}
-
-/* ===== 调度器核心 ===== */
-u8 os_schedule()
-{
-    u8 next = current_task;
-
-    /* 简化优先级选择 */
-    next = os_select(next);
-
-    return next;
-}
-
-/* ===== 中断入口 ===== */
-void os_interrupt_entry()
-{
-    u8 next;
-
-    os_save_context();          // 保存当前任务
-
-    next = os_schedule();       // 选择下一个任务
-
-    if(next != current_task)
-    {
-        os_restore_context(next);  // 切换任务
-    }
-}
-
-/* ===== 定时器中断（调度触发） ===== */
-void timer0_isr() interrupt 1
-{
-    TF0 = 0;
-
-    os_interrupt_entry();       // 进入内核调度
-}
-
-/* ===== 外部中断示例 ===== */
-void ext0_isr() interrupt 0
-{
-    /* 处理外设事件 */
-    os_interrupt_entry();       // 可触发任务切换
-}
-
-/* ===== 系统启动 ===== */
-void hrtos_main()
-{
-    EA = 0;
-
-    os_task(task1, 1, 8, 1);
-    os_task(task2, 2, 8, 2);
-
-    EA = 1;
-
-    while(1)
-    {
-        /* 空循环，调度由中断驱动 */
-    }
-}
-</pre>
-
-</div>
-  </div>
-</div>
-
-
-<div style="width:60px;height:2px;background:#374151;margin:40px auto;"></div>
-
-<div style="text-align:center; margin:30px 0 10px;">
-  <p style="color:#cbd5e1; font-size:18px;">
-    HRTOS 已具备完整实时调度能力，可直接应用于嵌入式项目开发
-  </p>
-  <p style="color:#9ca3af; font-size:14px; margin-top:8px;">
-    支持快速部署，轻量高效，稳定可靠
-  </p>
-</div>
-
-<!-- CTA -->
- 
-<div class="section cta">
-  <!--<h2>开始使用</h2>-->
-  <a class="btn primary" href="manual.html">应用示例</a>
-  <a class="btn secondary" href="download.html">下载系统</a>
-</div>
-
-<!-- 底部 -->
-<div class="footer">
-版权所有 © 2017 - 2026 HRTOS · 作者：谭舒
-</div>
+</footer>
 
 <script>
-// 粒子效果
-const canvas=document.getElementById('particles');
-const ctx=canvas.getContext('2d');
-canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-let particles=[];
-for(let i=0;i<150;i++){
-  particles.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*2+1, dx:(Math.random()-0.5)*0.7, dy:(Math.random()-0.5)*0.7, hue:Math.random()*360});
+const navbar = document.getElementById('navbar');
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function updateNavbar() {
+  navbar.classList.toggle('scrolled', window.scrollY > 24);
 }
-let mouse={x:null,y:null};
-canvas.addEventListener('mousemove', e=>{ mouse.x=e.x; mouse.y=e.y; });
-canvas.addEventListener('mouseleave', e=>{ mouse.x=null; mouse.y=null; });
-function animate(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  particles.forEach(p=>{
-    p.x+=p.dx; p.y+=p.dy;
-    if(p.x<0||p.x>canvas.width)p.dx*=-1;
-    if(p.y<0||p.y>canvas.height)p.dy*=-1;
-    if(mouse.x && mouse.y){
-      let dx=mouse.x-p.x, dy=mouse.y-p.y, dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<120){ p.x-=dx/35; p.y-=dy/35; }
-    }
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fillStyle=`hsl(${p.hue},70%,60%)`;
-    ctx.fill();
+
+updateNavbar();
+window.addEventListener('scroll', updateNavbar, { passive: true });
+
+const revealItems = document.querySelectorAll('.reveal');
+if (!reduceMotion && 'IntersectionObserver' in window) {
+  const observer = new IntersectionObserver((entries, io) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        io.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold:0.16,
+    rootMargin:'0px 0px -8% 0px'
   });
-  requestAnimationFrame(animate);
+
+  revealItems.forEach((item) => observer.observe(item));
+} else {
+  revealItems.forEach((item) => item.classList.add('in-view'));
 }
-animate();
 
-// 卡片淡入
-const cards=document.querySelectorAll('.card');
-const observer=new IntersectionObserver(entries=>{
-  entries.forEach(entry=>{ if(entry.isIntersecting) entry.target.classList.add('show'); });
-},{threshold:0.2});
-cards.forEach(card=>observer.observe(card));
+const canvas = document.getElementById('particles');
+const ctx = canvas ? canvas.getContext('2d') : null;
 
-// 顶栏滚动透明
-window.addEventListener('scroll',()=>{
-  const nav=document.getElementById('navbar');
-  if(window.scrollY>50) nav.classList.add('transparent');
-  else nav.classList.remove('transparent');
-});
-window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
-// ===== 滚动渐隐控制（核心逻辑）=====
-// ===== 渐隐控制（最终版）=====
-document.querySelectorAll('pre.code').forEach(el => {
-  const update = () => {
-    if (el.scrollLeft > 5) {
-      el.classList.add('scroll-left');
-    } else {
-      el.classList.remove('scroll-left');
+if (canvas && ctx) {
+  const pointer = { x:null, y:null };
+  const particles = [];
+
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function seedParticles() {
+    particles.length = 0;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    const count = Math.max(42, Math.min(78, Math.floor(width / 22)));
+
+    for (let i = 0; i < count; i += 1) {
+      particles.push({
+        x:Math.random() * width,
+        y:Math.random() * height,
+        vx:(Math.random() - 0.5) * 0.22,
+        vy:(Math.random() - 0.5) * 0.22,
+        r:Math.random() * 1.8 + 0.8,
+        alpha:Math.random() * 0.34 + 0.18
+      });
     }
-  };
+  }
 
-  el.addEventListener('scroll', update);
-  update();
-});
+  function renderParticles() {
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    ctx.clearRect(0, 0, width, height);
+
+    for (let i = 0; i < particles.length; i += 1) {
+      const p = particles[i];
+
+      if (!reduceMotion) {
+        p.x += p.vx;
+        p.y += p.vy;
+      }
+
+      if (p.x < -20 || p.x > width + 20) p.vx *= -1;
+      if (p.y < -20 || p.y > height + 20) p.vy *= -1;
+
+      if (!reduceMotion && pointer.x !== null && pointer.y !== null) {
+        const dx = pointer.x - p.x;
+        const dy = pointer.y - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 140) {
+          p.x -= dx * 0.0018;
+          p.y -= dy * 0.0018;
+        }
+      }
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(125, 211, 252, ${p.alpha})`;
+      ctx.fill();
+
+      for (let j = i + 1; j < particles.length; j += 1) {
+        const q = particles[j];
+        const lx = p.x - q.x;
+        const ly = p.y - q.y;
+        const dist = Math.sqrt(lx * lx + ly * ly);
+
+        if (dist < 112) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.strokeStyle = `rgba(96, 165, 250, ${0.14 - dist / 1000})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function animate() {
+    renderParticles();
+    if (!reduceMotion) {
+      requestAnimationFrame(animate);
+    }
+  }
+
+  canvas.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    pointer.x = event.clientX - rect.left;
+    pointer.y = event.clientY - rect.top;
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    pointer.x = null;
+    pointer.y = null;
+  });
+
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    seedParticles();
+    renderParticles();
+  }, { passive:true });
+
+  resizeCanvas();
+  seedParticles();
+  animate();
+}
 </script>
 
 </body>

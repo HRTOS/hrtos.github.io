@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>系统节拍机制 | HRTOS 实验系统</title>
+<meta name="description" content="HRTOS Tick System 实验：解析系统节拍中断机制、调度驱动方式与时间基准来源。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; text-decoration:none; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+.hero{
+  margin-bottom:54px;
+}
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+}
+
+.hero p{ color:var(--muted); max-width:780px; }
+
+.section{ margin-bottom:54px; }
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{ color:var(--muted); }
+
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+}
+
+.flow{ display:grid; gap:14px; }
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{ margin:0 0 8px; }
+
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.copy-btn:hover{
+  color:#fff;
+  border-color:#38bdf8;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<!-- 面包屑（强制 index.html） -->
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/04-time-control/index.html">Time Control</a> /
+  <span>Tick System</span>
+</nav>
+
+<!-- 标题 -->
+<section class="hero">
+  <span class="hero-tag">Time Base Core</span>
+  <h1>系统节拍机制（Tick System）</h1>
+  <p>
+    Tick System 是 RTOS 的时间基准来源，通过周期性中断驱动任务调度、
+    延时计数与时间片轮转，是整个实时系统的“心跳机制”。
+  </p>
+</section>
+
+<!-- 定义 -->
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="block">
+    Tick = 周期性中断 + 时间基准 + 调度触发源
+  </div>
+</section>
+
+<!-- 核心作用 -->
+<section class="section">
+  <h2>核心作用</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>时间基准</h3>
+      <p>提供系统统一时间源，用于 delay / timeout / schedule。</p>
+    </div>
+
+    <div class="step">
+      <h3>任务调度触发</h3>
+      <p>每次 Tick 触发调度器检查是否需要切换任务。</p>
+    </div>
+
+    <div class="step">
+      <h3>延时递减</h3>
+      <p>所有 delay 计数器在 Tick 中断中递减。</p>
+    </div>
+
+    <div class="step">
+      <h3>时间片控制</h3>
+      <p>支持 Round-Robin 等时间片轮转机制。</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- 执行流程 -->
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>1. 定时器中断触发</h3>
+      <p>硬件定时器周期性产生 Tick 中断。</p>
+    </div>
+
+    <div class="step">
+      <h3>2. Tick计数更新</h3>
+      <p>系统全局时间计数递增。</p>
+    </div>
+
+    <div class="step">
+      <h3>3. 延时队列处理</h3>
+      <p>所有阻塞任务的 delay 倒计时递减。</p>
+    </div>
+
+    <div class="step">
+      <h3>4. 调度器检查</h3>
+      <p>判断是否发生任务切换。</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- 代码区（必须保留） -->
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">Copy</button>
+<pre><code>
+/* HRTOS Tick System Demo */
+
+#include &lt;HRTOS_KERNEL.H&gt;
+#include &lt;HRTOS.H&gt;
+
+/* Tick中断服务函数 */
+void SysTick_Handler(void)
+{
+    os_tick_increment();     // 系统时间+1
+
+    os_delay_decrement();    // delay队列处理
+
+    os_schedule_check();     // 是否触发调度
+}
+
+/* 初始化Tick */
+void tick_init(void)
+{
+    os_tick_config(1000); // 1ms Tick
+}
+
+/* main */
+void main(void)
+{
+    tick_init();
+    os_scheduling(1);
+
+    while(1)
+    {
+        os_nop();
+    }
+}
+</code></pre>
+  </div>
+</section>
+
+<!-- 系统意义 -->
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    Tick System 是 RTOS 的时间核心，其频率直接影响实时性、CPU开销与调度精度。
+    在 HRTOS 中，Tick 被优化为“最小中断路径”以降低系统延迟。
+  </p>
+</section>
+
+<!-- 相关导航（锁死结构） -->
+<section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>任务执行模型</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度系统</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断机制</h3>
+      <p><a href="/docs/system/interrupt-flow/index.html">Interrupt Flow</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务生命周期</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Tick System Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const box = btn.closest(".code-box");
+  if (!box) return;
+
+  const code = box.querySelector("code");
+  if (!code) return;
+
+  navigator.clipboard.writeText(code.innerText).then(() => {
+    const old = btn.innerText;
+    btn.innerText = "已复制";
+    setTimeout(() => btn.innerText = old, 1000);
+  });
+});
+</script>
+
+</body>
+</html>

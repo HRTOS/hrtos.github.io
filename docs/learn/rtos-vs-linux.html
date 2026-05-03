@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>RTOS vs Linux | HRTOS 学习模块</title>
+<meta name="description" content="从系统设计哲学层面对比RTOS与Linux的调度模型、实时性差异与时间确定性本质。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:40px;
+}
+
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.hero{
+  display:grid;
+  gap:16px;
+}
+
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.22);
+  color:#bae6fd;
+  font-size:14px;
+}
+
+.hero h1{
+  margin:0;
+  font-size:42px;
+}
+
+.hero p{
+  margin:0;
+  max-width:860px;
+  color:var(--muted);
+}
+
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.tag{
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:13px;
+  color:#bae6fd;
+  background:rgba(15,23,42,.4);
+}
+
+.section{
+  display:grid;
+  gap:12px;
+}
+
+.section h2{
+  margin:0;
+  font-size:22px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+}
+
+.table{
+  display:grid;
+  gap:12px;
+}
+
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:12px;
+  padding:16px 18px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(15,23,42,.6);
+}
+
+.row.head{
+  background:rgba(56,189,248,.08);
+  border-color:rgba(56,189,248,.25);
+  font-weight:600;
+  color:#bae6fd;
+}
+
+.block{
+  padding:22px;
+  border-radius:10px;
+  border:1px solid rgba(56,189,248,.18);
+  background:rgba(15,23,42,.6);
+  font-family:Consolas, monospace;
+  color:#7dd3fc;
+  font-size:14px;
+  line-height:1.8;
+}
+
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:14px;
+}
+
+@media(max-width:900px){
+  .row{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/learn/index.html">学习模块</a> /
+    <span>RTOS vs Linux</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS 学习模块</span>
+
+    <h1>RTOS vs Linux</h1>
+
+    <p>
+      RTOS 与 Linux 的差异并不是“快与慢”的差异，而是两种完全不同的系统设计哲学。
+      一个以时间确定性为核心约束，一个以通用计算与资源利用率为核心目标。
+    </p>
+
+    <div class="meta">
+      <span class="tag">Determinism</span>
+      <span class="tag">Kernel Design</span>
+      <span class="tag">System Philosophy</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>一、核心认知：不是性能差异，而是目标冲突</h2>
+
+    <p>
+      RTOS 与 Linux 经常被误认为是“性能等级不同的操作系统”，但这种理解是错误的。
+      它们的本质区别在于：系统设计目标完全相反。
+    </p>
+
+    <div class="block">
+RTOS：控制最坏情况（Worst-case Guarantee）
+Linux：优化平均情况（Best-effort Optimization）
+    </div>
+
+    <p>
+      RTOS 关注“必须在什么时候完成”，Linux 关注“尽量快完成”。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>二、时间模型的本质差异</h2>
+
+    <p>
+      在RTOS中，时间是第一类资源；在Linux中，时间是调度结果。
+    </p>
+
+    <div class="block">
+RTOS：
+Task Execution Time ≤ Deadline (Hard Constraint)
+
+Linux：
+Task Execution Time ≈ Statistical Distribution
+    </div>
+
+    <p>
+      RTOS要求时间必须可证明；Linux只要求系统整体效率最优。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>三、调度器本质差异</h2>
+
+    <p>
+      Linux调度器的核心目标是“公平 + 吞吐量”，通过复杂算法在多任务之间平衡资源。
+      RTOS调度器的核心目标是“时间可行性”，它不是排序器，而是约束判断器。
+    </p>
+
+    <div class="block">
+RTOS Scheduler:
+→ 判断哪个任务不会破坏时间约束
+→ 保证最坏情况仍可执行
+
+Linux Scheduler:
+→ 计算权重与公平性
+→ 优化整体吞吐
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>四、延迟与抖动的根本来源</h2>
+
+    <p>
+      Linux的延迟不可预测，本质来源于系统复杂性：缓存、抢占点、调度公平性、中断合并等。
+    </p>
+
+    <p>
+      RTOS通过减少不确定性来源，将延迟控制在一个可分析的上界范围内。
+    </p>
+
+    <div class="block">
+Linux：
+Latency = f(load, scheduling fairness, kernel path variability)
+
+RTOS：
+Latency ≤ predefined upper bound
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>五、中断路径差异</h2>
+
+    <p>
+      在Linux中，中断只是事件入口，后续处理可能延迟或被调度推迟。
+      在RTOS中，中断路径必须尽可能短，并直接影响调度决策。
+    </p>
+
+    <p>
+      这意味着RTOS将“中断 → 调度”视为一个整体时间链路，而不是分离模块。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>六、系统结构差异</h2>
+
+    <div class="table">
+
+      <div class="row head">
+        <div>维度</div>
+        <div>RTOS</div>
+        <div>Linux</div>
+      </div>
+
+      <div class="row">
+        <div>设计目标</div>
+        <div>时间确定性</div>
+        <div>通用计算能力</div>
+      </div>
+
+      <div class="row">
+        <div>调度策略</div>
+        <div>可预测执行路径</div>
+        <div>动态公平调度</div>
+      </div>
+
+      <div class="row">
+        <div>延迟特性</div>
+        <div>上界可证明</div>
+        <div>统计分布</div>
+      </div>
+
+      <div class="row">
+        <div>系统复杂度</div>
+        <div>低复杂度控制系统</div>
+        <div>高复杂度通用系统</div>
+      </div>
+
+      <div class="row">
+        <div>应用场景</div>
+        <div>工业控制 / 嵌入式 / 汽车</div>
+        <div>服务器 / 桌面 / 云计算</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>七、本质结论</h2>
+
+    <p>
+      RTOS不是“轻量Linux”，Linux也不是“重型RTOS”。
+      它们之间不存在升级关系，而是两种完全不同的系统设计范式。
+    </p>
+
+    <div class="block">
+RTOS = 时间约束系统（Time-Constrained System）
+Linux = 资源优化系统（Resource-Optimized System）
+    </div>
+
+    <p>
+      一个追求“不会失控”，一个追求“整体更优”。
+    </p>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. 实时系统与通用系统对比分析模块。
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

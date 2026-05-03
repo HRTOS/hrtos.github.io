@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>调度理论（Scheduling Theory）| HRTOS Architecture</title>
+<meta name="description" content="HRTOS调度理论：任务调度的时间约束模型、优先级机制与可预测性分析">
+
+<meta name="page-role" content="architecture">
+<meta name="semantic-node" content="scheduling-theory">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-theory {
+  border-left: 3px solid #22c55e;
+}
+
+.card-warning {
+  border-left: 3px solid #ef4444;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html">System</a>
+    <a href="/docs/index.html" style="color:#cfe3ff;">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+<h1>调度理论（Scheduling Theory）</h1>
+<div class="sub">
+RTOS 的核心不是调度“机制”，而是调度“可证明性”
+</div>
+
+<!-- core -->
+<div class="card card-core">
+<h2>1. 核心定义</h2>
+
+<p>
+调度理论研究的是：在有限 CPU 资源下，对任务集合进行时间分配，使系统满足“时间约束可证明性”。
+</p>
+
+<p>
+在 HRTOS 中，调度问题不是优化问题，而是一个严格的：
+<b>时间约束可行性问题（Feasibility Problem）</b>。
+</p>
+
+<div class="en">
+Scheduling theory is a feasibility problem under time constraints, not an optimization problem.
+</div>
+</div>
+
+<!-- formal model -->
+<div class="card card-theory">
+<h2>2. 形式化系统模型</h2>
+
+<p>系统可抽象为：</p>
+
+<p><b>Task Set T = {T1, T2, …, Tn}</b></p>
+
+<p>每个任务 Ti 定义为：</p>
+
+<p>
+Ti = (Ri, Ci, Di, Pi)
+</p>
+
+<p>
+Ri = Release Time（释放时间）<br/>
+Ci = WCET（最坏执行时间）<br/>
+Di = Deadline（截止时间）<br/>
+Pi = Priority（优先级）
+</p>
+
+<p>
+系统约束条件：
+</p>
+
+<p>
+∀Ti : FinishTime(Ti) ≤ Di
+</p>
+
+<p>
+👉 这是 RTOS 正确性的数学定义
+</p>
+</div>
+
+<!-- feasibility boundary -->
+<div class="card card-theory">
+<h2>3. 可行性边界（Feasibility Boundary）</h2>
+
+<p>
+系统是否成立，取决于：
+</p>
+
+<p>
+Σ (Ci / Ti_period) ≤ 1
+</p>
+
+<p>
+这是 CPU 利用率边界（简化形式）。
+</p>
+
+<p>
+一旦超过该边界：
+</p>
+
+<p>
+❌ 系统不可调度（not schedulable）<br/>
+❌ 不是“慢”，而是“理论失败”
+</p>
+</div>
+
+<!-- core principle -->
+<div class="card card-theory">
+<h2>4. 调度的核心原则</h2>
+
+<p>
+HRTOS 调度理论第一原则：
+</p>
+
+<p>
+<b>Worst-case determinism first（最坏情况优先）</b>
+</p>
+
+<p>
+系统设计必须基于 WCET，而不是平均性能。
+</p>
+
+<p>
+对比：
+</p>
+
+<p>
+GPOS → maximize throughput<br/>
+RTOS → guarantee deadline
+</p>
+</div>
+
+<!-- models -->
+<div class="card card-theory">
+<h2>5. 调度模型分类（理论视角）</h2>
+
+<p><b>① Fixed Priority（静态优先级）</b></p>
+<p>可分析性强，是工业RTOS主流。</p>
+
+<p><b>② Round Robin（时间片）</b></p>
+<p>公平但破坏确定性边界。</p>
+
+<p><b>③ EDF（动态最早截止）</b></p>
+<p>理论最优，但实现复杂且分析成本高。</p>
+
+<p>
+核心不是“哪种更好”，而是：
+</p>
+
+<p>
+👉 是否可以进行 WCET + Worst-case response time analysis
+</p>
+</div>
+
+<!-- schedulability -->
+<div class="card card-theory">
+<h2>6. 可调度性分析（Schedulability Analysis）</h2>
+
+<p>
+系统验证流程：
+</p>
+
+<p>
+① 建立任务模型<br/>
+② 计算 WCET<br/>
+③ 计算 response time<br/>
+④ 检查 deadline constraint
+</p>
+
+<p>
+如果任一步无法建模：
+</p>
+
+<p>
+❌ 调度理论失效
+</p>
+</div>
+
+<!-- failure -->
+<div class="card card-warning">
+<h2>7. 调度失败的本质原因</h2>
+
+<p>
+系统不可证明性的来源：
+</p>
+
+<p>
+• WCET 不可界定<br/>
+• 中断延迟不确定<br/>
+• cache 行为不可预测<br/>
+• 动态内存分配<br/>
+• 锁竞争不可建模
+</p>
+
+<p>
+本质结论：
+</p>
+
+<p>
+👉 不可分析 = 不属于 RTOS 理论体系
+</p>
+</div>
+
+<!-- system meaning -->
+<div class="card card-theory">
+<h2>8. 系统级意义</h2>
+
+<p>
+调度理论的作用不是“运行任务”，而是：
+</p>
+
+<p>
+✔ 证明系统时间上可成立<br/>
+✔ 定义系统是否属于 RTOS<br/>
+✔ 建立实时系统的数学合法性
+</p>
+</div>
+
+<!-- meta -->
+<div class="card card-meta">
+<h2>语义总结</h2>
+
+<p>
+调度理论的本质不是算法集合，而是：
+<b>时间约束下的可证明计算系统模型</b>
+</p>
+
+<div class="en">
+Scheduling theory is a provable computational model under time constraints, not a set of algorithms.
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

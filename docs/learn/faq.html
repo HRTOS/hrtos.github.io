@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>RTOS常见误解 | HRTOS FAQ</title>
+<meta name="description" content="纠正常见RTOS认知误区，从系统本质重新理解实时操作系统的设计边界与约束。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  background:#0f172a;
+  color:#e2e8f0;
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1000px, calc(100% - 40px));
+  margin:0 auto;
+  padding:90px 0;
+  display:grid;
+  gap:28px;
+}
+
+h1{
+  font-size:42px;
+  margin:0;
+}
+
+.intro{
+  color:#94a3b8;
+}
+
+.item{
+  padding:22px;
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+}
+
+.q{
+  color:#7dd3fc;
+  font-weight:700;
+  margin-bottom:10px;
+}
+
+.a{
+  color:#e2e8f0;
+}
+
+.tag{
+  display:inline-block;
+  margin-top:10px;
+  font-size:12px;
+  padding:4px 10px;
+  border:1px solid rgba(56,189,248,.25);
+  border-radius:999px;
+  color:#bae6fd;
+}
+
+footer{
+  margin-top:40px;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#64748b;
+  font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<main class="page">
+
+<h1>RTOS 常见误解</h1>
+
+<p class="intro">
+这一页不是“FAQ列表”，而是对RTOS认知中最常见结构性错误的系统纠偏。
+目标不是解释概念，而是修正理解方式。
+</p>
+
+<!-- 1 -->
+<div class="item">
+  <div class="q">Q1：RTOS是不是更轻量的Linux？</div>
+  <div class="a">
+不是。
+
+RTOS和Linux之间不是“轻重关系”，而是设计目标完全不同。
+
+Linux优化的是平均性能和通用性，而RTOS约束的是最坏情况行为。
+RTOS的核心不是“更小”，而是“更确定”。
+
+如果用一句话区分：
+
+Linux允许系统偶尔不可预测，
+RTOS禁止系统在关键路径上不可预测。
+  </div>
+  <div class="tag">结构误解</div>
+</div>
+
+<!-- 2 -->
+<div class="item">
+  <div class="q">Q2：RTOS是不是就是实时性更高的系统？</div>
+  <div class="a">
+这个理解是不完整的。
+
+RTOS不是“更快”，而是“时间行为有上界”。
+
+实时性在RTOS中不是性能指标，而是约束条件。
+
+一个系统即使很快，但如果延迟无法预测，它仍然不是RTOS系统。
+  </div>
+  <div class="tag">时间误解</div>
+</div>
+
+<!-- 3 -->
+<div class="item">
+  <div class="q">Q3：RTOS是不是任务越多越复杂？</div>
+  <div class="a">
+RTOS的复杂度不来自任务数量，而来自时间约束的耦合关系。
+
+关键问题不是“有多少任务”，而是：
+
+这些任务在最坏情况下是否仍然满足时间约束。
+
+因此RTOS的复杂性是“时间耦合复杂性”，不是功能复杂性。
+  </div>
+  <div class="tag">系统结构误解</div>
+</div>
+
+<!-- 4 -->
+<div class="item">
+  <div class="q">Q4：RTOS是不是一定更快？</div>
+  <div class="a">
+不是。
+
+RTOS通常不会追求平均性能最优，甚至可能牺牲吞吐量。
+
+它的核心目标是：
+
+在最坏情况下仍然不超时。
+
+因此RTOS优化的是“稳定性下界”，而不是“性能上界”。
+  </div>
+  <div class="tag">性能误解</div>
+</div>
+
+<!-- 5 -->
+<div class="item">
+  <div class="q">Q5：RTOS和普通操作系统最大区别是什么？</div>
+  <div class="a">
+不是功能，而是约束方式。
+
+普通操作系统：
+- 允许不确定性存在
+- 通过调度优化平均体验
+
+RTOS：
+- 禁止关键路径不确定性
+- 通过约束保证时间可证明
+
+本质区别是：
+
+一个接受波动，一个消除波动。
+  </div>
+  <div class="tag">本质区别</div>
+</div>
+
+<footer>
+© 2017–2026 HRTOS · Real-Time System Misconception Layer
+</footer>
+
+</main>
+
+</body>
+</html>

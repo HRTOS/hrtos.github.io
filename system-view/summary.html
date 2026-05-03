@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>01 执行流模型 | HRTOS System View</title>
+<meta name="description" content="描述HRTOS系统中的任务执行流、调度路径与时间触发机制">
+
+<meta name="page-role" content="system-view">
+<meta name="semantic-node" content="execution-flow">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-flow {
+  border-left: 3px solid #22c55e;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/docs/index.html">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+<h1>1. 执行流模型（Execution Flow）</h1>
+<div class="sub">HRTOS 中任务从触发到完成的完整路径</div>
+
+<div class="card card-core">
+<h2>核心定义</h2>
+<p>
+执行流不仅描述“代码执行顺序”，而是描述**时间 + CPU + 调度器共同作用下的执行路径结构**。
+</p>
+<p>
+在RTOS中，一个执行流必须满足：可追踪（Traceable）、可预测（Predictable）、可分析（Analyzable）。
+</p>
+<div class="en">Execution flow is a deterministic path formed by time, CPU and scheduler interactions.</div>
+</div>
+
+<div class="card card-flow">
+<h2>1. 触发源（Trigger Source）</h2>
+<p>执行流的起点来自三类事件：</p>
+<p>• 外部中断（IO / Sensor）</p>
+<p>• 定时器事件（Tick / Alarm）</p>
+<p>• 任务主动唤醒（Signal / IPC）</p>
+</div>
+
+<div class="card card-flow">
+<h2>2. 进入调度（Scheduling Entry）</h2>
+<p>
+触发事件不会直接执行任务，而是进入调度器队列，由系统统一决定执行顺序。
+</p>
+</div>
+
+<div class="card card-flow">
+<h2>3. 执行路径（Execution Path）</h2>
+<p>
+任务执行过程中可能发生：
+• 中断嵌套  
+• 抢占切换  
+• 调度重新计算  
+</p>
+<p>
+执行路径不是线性，而是“受控分支结构”。
+</p>
+</div>
+
+<div class="card card-flow">
+<h2>4. 终止与回收</h2>
+<p>
+任务结束后必须进入明确状态迁移：
+Running → Dead → Resource Release
+</p>
+</div>
+
+<div class="card card-meta">
+<h2>语义总结</h2>
+<p>
+执行流 = 时间约束下的状态机路径。
+</p>
+<div class="en">Execution flow is a time-constrained state machine path.</div>
+</div>
+
+</div>
+</body>
+</html>

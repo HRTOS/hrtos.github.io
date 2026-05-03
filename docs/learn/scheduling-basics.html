@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>调度基础 | HRTOS 学习模块</title>
+<meta name="description" content="介绍RTOS调度基础概念，包括任务调度策略、优先级机制、抢占行为与实时系统调度模型。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:40px;
+}
+
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.hero{
+  display:grid;
+  gap:16px;
+}
+
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.22);
+  color:#bae6fd;
+  font-size:14px;
+}
+
+.hero h1{
+  margin:0;
+  font-size:42px;
+}
+
+.hero p{
+  margin:0;
+  max-width:860px;
+  color:var(--muted);
+}
+
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.tag{
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:13px;
+  color:#bae6fd;
+  background:rgba(15,23,42,.4);
+}
+
+.section{
+  display:grid;
+  gap:12px;
+}
+
+.section h2{
+  margin:0;
+  font-size:22px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+}
+
+.block{
+  padding:22px;
+  border-radius:10px;
+  border:1px solid rgba(56,189,248,.18);
+  background:rgba(15,23,42,.6);
+  font-family:Consolas, monospace;
+  color:#7dd3fc;
+  font-size:14px;
+  line-height:1.8;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+}
+
+.card{
+  padding:22px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+}
+
+.card h3{
+  margin:0 0 10px;
+  font-size:18px;
+}
+
+.card p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:14px;
+}
+
+@media(max-width:900px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/learn/index.html">学习模块</a> /
+    <span>调度基础</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS 学习模块</span>
+
+    <h1>调度基础（Scheduling Fundamentals）</h1>
+
+    <p>
+      调度（Scheduling）是实时操作系统中最核心的执行控制机制之一。
+      它决定了在任意时刻 CPU 资源分配给哪个任务，并直接影响系统的实时性、确定性与可预测性。
+      在RTOS体系中，调度不是“资源优化问题”，而是“时间约束满足问题”。
+    </p>
+
+    <div class="meta">
+      <span class="tag">Scheduling</span>
+      <span class="tag">RTOS Core</span>
+      <span class="tag">Deterministic Execution</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>一、调度的本质</h2>
+
+    <p>
+      在通用操作系统中，调度的目标通常是提升吞吐量与整体资源利用率。
+      但在RTOS中，调度的目标完全不同：它不是让系统“更高效”，而是让系统“可预测”。
+    </p>
+
+    <div class="block">
+Scheduling = Decision System under Time Constraints
+
+Goal:
+- Guarantee deadline satisfaction
+- Minimize worst-case latency
+- Ensure deterministic execution order
+    </div>
+
+    <p>
+      因此，RTOS调度器本质上不是“任务分配器”，而是“时间约束裁决器”。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>二、调度系统的基本生命周期</h2>
+
+    <p>
+      在RTOS中，一个任务从创建到执行，通常经历以下调度状态变化：
+    </p>
+
+    <div class="block">
+[ TASK STATE MACHINE ]
+
+NEW → READY → RUNNING → BLOCKED → READY → TERMINATED
+
+关键触发点：
+- 中断事件
+- 时间片到期
+- 资源释放
+- 优先级变化
+    </div>
+
+    <p>
+      每一次状态变化，都可能触发一次调度决策，这也是RTOS系统“高响应性”的来源。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>三、调度策略的核心类型</h2>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>优先级调度（Priority Scheduling）</h3>
+        <p>
+          系统根据任务优先级决定执行顺序。
+          在RTOS中这是最基础的模型，通常用于保证关键任务优先执行。
+          优先级越高，抢占能力越强。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>抢占式调度（Preemptive Scheduling）</h3>
+        <p>
+          高优先级任务可以随时中断低优先级任务执行。
+          这是实时系统实现“确定性响应时间”的关键机制。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>时间片调度（Time Slice Scheduling）</h3>
+        <p>
+          每个任务分配固定执行时间窗口，通过轮转方式共享CPU。
+          更偏向公平性，但会牺牲严格实时性。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>事件驱动调度（Event-driven Scheduling）</h3>
+        <p>
+          调度由外部事件（中断、信号、消息）触发。
+          是现代RTOS中与中断系统深度绑定的调度模型。
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>四、调度决策的核心逻辑</h2>
+
+    <p>
+      RTOS调度器并不是简单地选择“最高优先级任务”，而是在每一次调度点进行约束判断：
+    </p>
+
+    <div class="block">
+[ SCHEDULER DECISION LOGIC ]
+
+For each runnable task:
+
+1. Check priority
+2. Check deadline constraint
+3. Check resource availability
+4. Evaluate worst-case execution time
+5. Select feasible task
+    </div>
+
+    <p>
+      也就是说，调度决策的核心不是“谁更重要”，而是“谁在时间约束内仍然可执行”。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>五、抢占行为与系统代价</h2>
+
+    <p>
+      抢占式调度虽然提升实时性，但也引入系统代价，包括上下文切换开销与缓存失效。
+      这些成本在高频调度系统中可能成为关键性能瓶颈。
+    </p>
+
+    <div class="block">
+Cost of Preemption:
+
+- Context Switch Overhead
+- Cache Disruption
+- Pipeline Flush
+- Scheduling Jitter
+    </div>
+
+    <p>
+      因此RTOS设计必须在“响应时间”和“系统开销”之间进行严格权衡。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>六、调度与实时性的关系</h2>
+
+    <p>
+      调度机制直接决定系统的实时能力。
+      如果调度无法保证任务在截止时间前执行完成，那么系统就不再具备实时性。
+    </p>
+
+    <div class="block">
+Real-Time Condition:
+
+Execution Time + Scheduling Delay ≤ Deadline
+    </div>
+
+    <p>
+      这意味着RTOS调度器不仅是执行逻辑的一部分，更是时间约束系统的一部分。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>七、RTOS调度的本质结论</h2>
+
+    <div class="highlight">
+      RTOS调度不是“资源分配算法”，而是“时间约束满足引擎”。
+      它的目标不是优化平均性能，而是保证最坏情况下系统仍然可预测。
+    </div>
+  </section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. Scheduling Fundamentals Module.
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

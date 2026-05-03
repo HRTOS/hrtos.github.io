@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>07 确定性因果链 | HRTOS System View</title>
+<meta name="description" content="定义HRTOS中从触发到执行结果的完整确定性因果链模型，用于解释系统如何保证可预测行为">
+
+<meta name="page-role" content="system-view">
+<meta name="semantic-node" content="deterministic-chain">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-chain {
+  border-left: 3px solid #22c55e;
+}
+
+.card-failure {
+  border-left: 3px solid #ef4444;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/docs/index.html">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>07 确定性因果链（Deterministic Chain）</h1>
+  <div class="sub">
+    从事件触发到系统输出的完整时间因果结构
+  </div>
+
+  <!-- core definition -->
+  <div class="card card-core">
+    <h2>核心定义</h2>
+
+    <p>
+      确定性因果链（Deterministic Chain）描述的是：在 HRTOS 中，一个外部或内部事件如何经过一系列系统阶段，最终生成一个可预测的执行结果。
+    </p>
+
+    <p>
+      它不是“执行流程”，而是“时间 + 调度 + 中断 + 内存”共同构成的因果路径模型。
+    </p>
+
+    <div class="en">
+      A deterministic chain defines how events propagate through scheduling, interrupts and execution to produce predictable outcomes.
+    </div>
+  </div>
+
+  <!-- chain structure -->
+  <div class="card card-chain">
+    <h2>1. 因果链结构（Causal Pipeline）</h2>
+
+    <p>
+      一个完整的实时执行链可以抽象为以下顺序：
+    </p>
+
+    <p>
+      <b>Event Trigger → Interrupt → Scheduling Decision → Context Switch → Execution → Completion</b>
+    </p>
+
+    <p>
+      每一个阶段都是时间约束节点，而不是功能模块。
+    </p>
+
+    <p>
+      系统确定性 = 每个节点延迟上界的可证明性之和。
+    </p>
+  </div>
+
+  <!-- trigger -->
+  <div class="card card-chain">
+    <h2>2. 事件触发层（Event Layer）</h2>
+
+    <p>
+      事件来源包括：
+    </p>
+
+    <p>
+      • 外部中断（传感器 / IO）  
+      • 系统定时器（Tick）  
+      • 内部信号（任务间通信）
+    </p>
+
+    <p>
+      关键约束：事件必须可枚举，否则因果链无法建模。
+    </p>
+  </div>
+
+  <!-- scheduling -->
+  <div class="card card-chain">
+    <h2>3. 调度决策层（Decision Layer）</h2>
+
+    <p>
+      调度器在事件发生后执行唯一决策：
+    </p>
+
+    <p>
+      👉 谁在“下一时间片”获得 CPU
+    </p>
+
+    <p>
+      在确定性系统中，这个决策必须是：
+    </p>
+
+    <p>
+      ✔ 可重复  
+      ✔ 可分析  
+      ✔ 不依赖运行时随机状态
+    </p>
+  </div>
+
+  <!-- execution -->
+  <div class="card card-chain">
+    <h2>4. 执行层（Execution Layer）</h2>
+
+    <p>
+      执行阶段是因果链中“时间消耗最大”的部分。
+    </p>
+
+    <p>
+      它必须满足 WCET（Worst Case Execution Time）边界，否则整个链失效。
+    </p>
+
+    <p>
+      在 HRTOS 中：
+    </p>
+
+    <p>
+      ✔ 平均时间无意义  
+      ✔ 只有最坏路径有效
+    </p>
+  </div>
+
+  <!-- failure -->
+  <div class="card card-failure">
+    <h2>5. 确定性破坏点（Determinism Breakpoints）</h2>
+
+    <p>
+      以下任一因素都会破坏因果链：
+    </p>
+
+    <p>
+      • 不可预测调度（non-deterministic scheduler）  
+      • cache miss 抖动未建模  
+      • 动态内存分配  
+      • 未界定中断嵌套深度  
+      • 未约束锁竞争
+    </p>
+
+    <p>
+      一旦出现不可建模路径，系统就失去“可证明性”。
+    </p>
+  </div>
+
+  <!-- system implication -->
+  <div class="card card-chain">
+    <h2>6. 系统级意义</h2>
+
+    <p>
+      确定性因果链的意义不是描述系统，而是：
+    </p>
+
+    <p>
+      👉 把“操作系统行为”变成“可证明的时间函数”
+    </p>
+
+    <p>
+      即：
+    </p>
+
+    <p>
+      Input(Event) → F(t) → Output(Result)
+    </p>
+
+    <p>
+      其中 F(t) 必须是稳定的时间函数。
+    </p>
+  </div>
+
+  <!-- meta -->
+  <div class="card card-meta">
+    <h2>语义总结</h2>
+
+    <p>
+      确定性因果链的本质，是把操作系统从“执行系统”提升为“时间因果系统”。
+    </p>
+
+    <p>
+      它回答的问题不是“系统做了什么”，而是“系统为什么每次都能在同一时间结构中做出同样结果”。
+    </p>
+
+    <div class="en">
+      A deterministic chain transforms an operating system into a time-causal system with provable behavior.
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

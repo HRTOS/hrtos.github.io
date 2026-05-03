@@ -1,0 +1,260 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_task_ready | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_task_ready，用于将任务设置为就绪状态，使其重新参与调度执行，是任务状态恢复的重要接口。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{font-size:26px;}
+.meta{color:#64748b;margin-bottom:20px;}
+.section{margin-top:30px;}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_task_ready</h1>
+  <div class="meta">所属模块：任务管理 | 类型：任务状态控制函数</div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+    <p>
+      os_task_ready 用于将指定任务设置为就绪状态，使其重新参与系统调度。
+    </p>
+
+    <p>
+      该函数通常用于恢复被挂起（os_task_hang）的任务，
+      或在任务条件满足时，将其重新加入调度队列。
+    </p>
+  </div>
+
+  <!-- 原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+    <div class="code">
+char os_task_ready(unsigned char id);
+    </div>
+  </div>
+
+  <!-- 参数 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>id</td>
+        <td>任务ID（普通任务或快速任务）</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+    <p>0 表示成功，-1 表示失败（任务不存在或参数错误）。</p>
+  </div>
+
+  <!-- 核心机制 -->
+  <div class="section">
+    <h2>核心机制解析</h2>
+
+    <p><b>1. 参数合法性检查</b></p>
+    <div class="code">
+if(id > OS_JINCHENG_MAX+1)
+    return -1;
+    </div>
+
+    <p><b>2. 快速任务处理</b></p>
+    <div class="code">
+if(id >= OS_JINCHENG_MAX)
+{
+    id %= OS_JINCHENG_MAX;
+
+    if(OS_KUAI_SP[id] == 0)
+        return -1;
+
+    if(id == 1)
+        OS_KUAI_PEOCESS_B = 1;
+    else
+        OS_KUAI_PEOCESS_A = 1;
+}
+    </div>
+
+    <p>
+      快速任务通过独立标志位控制，就绪状态通过置位实现。
+    </p>
+
+    <p><b>3. 普通任务处理</b></p>
+    <div class="code">
+if(OS_PEOCESS_OK[id] == 0)
+    return -1;
+
+OS_PEOCESS_OK[id] |= 0x01;
+    </div>
+
+    <p>
+      设置最低位为1，表示任务进入“就绪状态”，
+      调度器将在扫描时选择该任务参与执行。
+    </p>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void main()
+{
+    // 恢复任务1
+    os_task_ready(1);
+
+    while(1)
+    {
+    }
+}
+    </div>
+
+  </div>
+
+  <!-- 使用场景 -->
+  <div class="section">
+    <h2>典型使用场景</h2>
+
+    <ul>
+      <li>恢复被挂起的任务</li>
+      <li>事件触发后允许任务执行</li>
+      <li>任务状态机控制</li>
+    </ul>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      任务必须已创建，否则设置就绪状态会失败。
+    </div>
+
+    <div class="note">
+      就绪任务不一定立即执行，具体由调度器决定。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="./os_task_hang.html">os_task_hang</a>
+      <a href="./os_task_state.html">os_task_state</a>
+      <a href="./os_task_delete.html">os_task_delete</a>
+      <a href="../task/index.html">任务管理模块</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

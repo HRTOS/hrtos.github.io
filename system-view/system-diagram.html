@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>System Diagram | HRTOS</title>
+<meta name="description" content="HRTOS 系统运行结构图：任务、调度、中断、内存与执行流关系">
+
+<meta name="page-role" content="system-view">
+<meta name="semantic-node" content="system-diagram">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#0b0f14;
+  color:#e8eef5;
+}
+
+.nav{
+  display:flex;
+  justify-content:space-between;
+  padding:14px 24px;
+  border-bottom:1px solid #1e2a3a;
+}
+
+.nav a{
+  color:#9fb0c3;
+  text-decoration:none;
+  margin-left:12px;
+  font-size:14px;
+}
+
+.container{
+  max-width:1000px;
+  margin:0 auto;
+  padding:60px 24px;
+}
+
+h1{
+  font-size:38px;
+  margin-bottom:10px;
+}
+
+.sub{
+  color:#9fb0c3;
+  margin-bottom:40px;
+}
+
+/* 新增：系统语义层提示 */
+.layer{
+  border:1px solid #1e2a3a;
+  background:#0f1722;
+  border-radius:14px;
+  padding:18px 22px;
+  margin-bottom:24px;
+  color:#9fb0c3;
+  font-size:14px;
+}
+
+.diagram{
+  display:grid;
+  gap:18px;
+}
+
+.node{
+  background:#111823;
+  border:1px solid #1e2a3a;
+  border-radius:14px;
+  padding:22px;
+  transition:.2s;
+}
+
+.node:hover{
+  border-color:#4da3ff;
+  transform:translateY(-2px);
+}
+
+.node a{
+  color:#cfe3ff;
+  text-decoration:none;
+  font-size:18px;
+  font-weight:600;
+}
+
+.meta{
+  color:#9fb0c3;
+  font-size:14px;
+  margin-top:8px;
+  line-height:1.6;
+}
+
+/* 新增：系统关系标记 */
+.flow{
+  text-align:center;
+  color:#4da3ff;
+  font-size:13px;
+  margin:6px 0;
+  opacity:.9;
+}
+
+.group-title{
+  margin-top:10px;
+  font-size:13px;
+  color:#7dd3fc;
+  letter-spacing:.5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/docs/index.html">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>System Diagram</h1>
+  <div class="sub">
+    HRTOS 系统运行结构：执行流 × 时间 × 控制路径
+  </div>
+
+  <!-- 新增：系统语义说明 -->
+  <div class="layer">
+    HRTOS 系统不是线性流程，而是一个<strong>事件驱动 + 调度决策 + 时间约束</strong>共同构成的闭环系统。<br>
+    下面的结构表示“控制关系”，不是“阅读顺序”。
+  </div>
+
+  <div class="diagram">
+
+    <div class="group-title">[ Execution Foundation ]</div>
+
+    <div class="node">
+      <a href="/system-view/01-execution-flow.html">01 Execution Flow</a>
+      <div class="meta">
+        系统执行的基础路径结构：任务如何从触发进入 CPU 执行空间<br>
+        <b>本质：时间路径模型（Time Path Model）</b>
+      </div>
+    </div>
+
+    <div class="flow">↑ 被调度器驱动 / 被中断打断 ↓</div>
+
+    <div class="node">
+      <a href="/system-view/04-scheduler-cycle.html">04 Scheduler Cycle</a>
+      <div class="meta">
+        系统控制中心：持续决定“谁可以执行”<br>
+        <b>本质：时间决策引擎（Time Decision Engine）</b>
+      </div>
+    </div>
+
+    <div class="flow">↑ 依赖状态系统 ↓</div>
+
+    <div class="node">
+      <a href="/system-view/02-task-lifecycle.html">02 Task Lifecycle</a>
+      <div class="meta">
+        系统中所有执行单元的状态集合<br>
+        Ready / Running / Blocked 构成调度输入空间
+      </div>
+    </div>
+
+    <div class="flow">↑ 被外部事件修改 ↓</div>
+
+    <div class="node">
+      <a href="/system-view/03-interrupt-flow.html">03 Interrupt Flow</a>
+      <div class="meta">
+        系统外部世界进入内核的唯一通道<br>
+        <b>本质：执行流重写机制</b>
+      </div>
+    </div>
+
+    <div class="flow">↑ 影响时间行为 ↓</div>
+
+    <div class="node">
+      <a href="/system-view/05-memory-view.html">05 Memory View</a>
+      <div class="meta">
+        所有执行行为的隐性约束层<br>
+        Cache / 分配 / 访问延迟 → 直接影响确定性
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

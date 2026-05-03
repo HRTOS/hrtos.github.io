@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>中断延迟 | HRTOS 文档中心</title>
+<meta name="description" content="HRTOS 中断延迟机制说明，包括响应时间、ISR进入延迟、影响因素与优化策略。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: rgba(15, 23, 42, 0.72);
+  --surface-card: rgba(30, 41, 59, 0.72);
+  --border: rgba(148, 163, 184, 0.16);
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
+  --radius: 10px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.75;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.page {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 96px 0 56px;
+  display: grid;
+  gap: 40px;
+}
+
+.breadcrumb {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.breadcrumb a {
+  color: #7dd3fc;
+}
+
+.hero {
+  display: grid;
+  gap: 16px;
+}
+
+.hero-label {
+  display: inline-flex;
+  width: fit-content;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(56,189,248,.22);
+  color: #bae6fd;
+  font-size: 14px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 42px;
+}
+
+.hero p {
+  margin: 0;
+  max-width: 820px;
+  color: var(--muted);
+}
+
+.meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px;
+  color: #bae6fd;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 280px;
+  gap: 28px;
+}
+
+.content {
+  display: grid;
+  gap: 22px;
+}
+
+.section {
+  display: grid;
+  gap: 12px;
+  padding: 24px 22px;
+  background: linear-gradient(
+    180deg,
+    rgba(30,41,59,.72),
+    rgba(15,23,42,.92)
+  );
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.section h2 {
+  margin: 0;
+  font-size: 24px;
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+}
+
+.section p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.note {
+  padding: 14px 16px;
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: rgba(15,23,42,.6);
+  color: var(--muted);
+}
+
+.code {
+  background: #020617;
+  border: 1px solid rgba(56,189,248,.14);
+  border-radius: 8px;
+  padding: 16px;
+  font-family: Consolas, monospace;
+  color: #7dd3fc;
+  line-height: 1.65;
+}
+
+.sidebar {
+  display: grid;
+  gap: 16px;
+}
+
+.box {
+  padding: 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(30,41,59,.56);
+}
+
+.box h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.box a {
+  display: block;
+  color: #7dd3fc;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.footer {
+  text-align: center;
+  padding-top: 18px;
+  border-top: 1px solid rgba(148,163,184,.14);
+  color: #8ea3be;
+  font-size: 14px;
+}
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/architecture/index.html">系统架构</a> /
+    <span>中断延迟</span>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-label">HRTOS 文档中心</span>
+
+    <h1>中断延迟（Interrupt Latency）</h1>
+
+    <p>
+      中断延迟描述从中断事件发生到系统真正开始执行中断服务程序（ISR）之间的时间间隔。
+    </p>
+
+    <div class="meta">
+      <span class="tag">系统架构</span>
+      <span class="tag">实时性分析</span>
+      <span class="tag">中断机制</span>
+    </div>
+  </section>
+
+  <div class="layout">
+
+    <div class="content">
+
+      <section class="section" id="overview">
+        <h2>概述</h2>
+        <p>
+          在实时系统中，中断延迟决定系统响应外部事件的速度，是衡量实时性能的重要指标之一。
+        </p>
+      </section>
+
+      <section class="section" id="mechanism">
+        <h2>工作原理</h2>
+        <p>
+          当硬件中断产生后，CPU需要完成当前指令、处理中断屏蔽状态、保存上下文，并跳转至ISR入口。
+        </p>
+
+        <div class="note">
+          中断延迟越大，系统对外部事件的实时响应能力越弱。
+        </div>
+      </section>
+
+      <section class="section" id="interface">
+        <h2>关键接口 / 结构</h2>
+
+        <div class="code">
+os_interrupt_enable()
+os_interrupt_disable()
+os_get_interrupt_latency()
+os_isr_enter()
+        </div>
+      </section>
+
+      <section class="section" id="flow">
+        <h2>运行流程</h2>
+        <p>
+          中断发生 → CPU完成当前指令 → 检查中断屏蔽 → 保存上下文 → 跳转ISR → 开始处理中断
+        </p>
+      </section>
+
+      <section class="section" id="extension">
+        <h2>扩展说明</h2>
+        <p>
+          中断延迟通常受到CPU频率、中断嵌套、临界区长度、Cache状态以及总线访问延迟影响。
+        </p>
+      </section>
+
+    </div>
+
+    <aside class="sidebar">
+
+      <div class="box">
+        <h3>目录导航</h3>
+        <a href="#overview">概述</a>
+        <a href="#mechanism">工作原理</a>
+        <a href="#interface">关键接口</a>
+        <a href="#flow">运行流程</a>
+      </div>
+
+      <div class="box">
+        <h3>相关页面</h3>
+        <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程</a>
+        <a href="/system-view/03-interrupt-flow.html">系统中断流模型</a>
+        <a href="/docs/system/scheduling-flow.html">调度循环</a>
+      </div>
+
+      <div class="box">
+        <h3>所属模块</h3>
+        <a href="/docs/architecture/index.html">系统架构模块</a>
+      </div>
+
+      <div class="box">
+        <h3>学习路径</h3>
+        <a href="/docs/architecture/kernel/index.html">内核学习路径</a>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. 面向嵌入式实时系统的技术文档。
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+</body>
+</html>

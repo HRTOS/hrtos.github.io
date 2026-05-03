@@ -1,0 +1,264 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_data_xdata | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_data_xdata，用于将内部RAM数据写入外部xdata，通过MOVX指令实现高速数据搬运，是嵌入式内存管理的重要接口。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{font-size:26px;}
+.meta{color:#64748b;margin-bottom:20px;}
+.section{margin-top:30px;}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_data_xdata</h1>
+  <div class="meta">所属模块：内存管理 | 类型：数据搬运函数</div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+    <p>
+      os_data_xdata 用于将内部 RAM 中的数据写入外部 xdata 存储区，
+      是 HRTOS 中实现不同存储空间数据交换的重要接口。
+    </p>
+
+    <p>
+      该函数基于 8051 架构的 MOVX 指令实现，具有较高执行效率，
+      常用于任务数据同步、外设缓冲区写入等场景。
+    </p>
+  </div>
+
+  <!-- 原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+    <div class="code">
+void os_data_xdata(u8 addr, u16 addr2);
+    </div>
+  </div>
+
+  <!-- 参数 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>addr</td>
+        <td>内部 RAM 源地址</td>
+      </tr>
+
+      <tr>
+        <td>addr2</td>
+        <td>xdata 目标地址</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 核心机制 -->
+  <div class="section">
+    <h2>核心机制解析</h2>
+
+    <p><b>1. 中断保护机制</b></p>
+    <div class="code">
+ie_backup = IE;
+EA = 0;
+    </div>
+
+    <p>
+      在数据搬运过程中关闭中断，防止被调度或中断打断，
+      确保操作的原子性。
+    </p>
+
+    <p><b>2. 内部RAM寻址</b></p>
+    <div class="code">
+OS_HRTOS = addr;
+__asm mov R1,OS_HRTOS
+    </div>
+
+    <p>
+      使用 R1 作为间接寻址寄存器，读取内部 RAM 数据。
+    </p>
+
+    <p><b>3. xdata 地址设置</b></p>
+    <div class="code">
+DPH = addr2 >> 8;
+DPL = addr2 & 0xff;
+    </div>
+
+    <p>
+      通过 DPTR 指向外部 xdata 地址空间。
+    </p>
+
+    <p><b>4. 数据写入</b></p>
+    <div class="code">
+MOV A,@R1
+MOVX @DPTR,A
+    </div>
+
+    <p>
+      先从内部 RAM 读取，再通过 MOVX 写入 xdata。
+    </p>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void main()
+{
+    unsigned char data = 0x55;
+
+    // 假设 data 位于内部RAM地址0x20
+    os_data_xdata(0x20, 0x1000);
+
+    while(1)
+    {
+    }
+}
+    </div>
+
+  </div>
+
+  <!-- 使用场景 -->
+  <div class="section">
+    <h2>典型使用场景</h2>
+
+    <ul>
+      <li>数据缓存写入外部存储</li>
+      <li>任务数据交换</li>
+      <li>外设通信缓冲区更新</li>
+    </ul>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      操作期间会关闭中断，不适合在高频调用场景使用。
+    </div>
+
+    <div class="note">
+      地址必须有效，否则可能导致非法访问。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="./os_xdata_data.html">os_xdata_data</a>
+      <a href="./os_memset.html">os_memset</a>
+      <a href="./os_task_stack.html">os_task_stack</a>
+      <a href="../memory/index.html">内存管理模块</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

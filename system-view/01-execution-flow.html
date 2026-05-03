@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>01 执行流模型 | HRTOS System View</title>
+<meta name="description" content="描述HRTOS系统中的任务执行流、调度路径与时间触发机制">
+
+<meta name="page-role" content="system-view">
+<meta name="semantic-node" content="execution-flow">
+
+<link rel="stylesheet" href="/global.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b0f14;
+  color: #e8eef5;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+}
+
+.nav a {
+  color: #9fb0c3;
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  color: #9fb0c3;
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #111823;
+  border: 1px solid #1e2a3a;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.card-core {
+  border-left: 3px solid #4da3ff;
+  background: #0f1722;
+}
+
+.card-flow {
+  border-left: 3px solid #22c55e;
+}
+
+.card-meta {
+  border-left: 3px solid #9fb0c3;
+}
+
+h2 {
+  font-size: 20px;
+  color: #cfe3ff;
+  margin-bottom: 10px;
+}
+
+.en {
+  color: #9fb0c3;
+  font-size: 14px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+  <div style="font-weight:600;">HRTOS</div>
+  <div>
+    <a href="/index.html">首页</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/docs/index.html">Docs</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>1. 执行流模型（Execution Flow）</h1>
+  <div class="sub">
+    HRTOS 中任务从触发到完成的完整路径（含时间与调度视角）
+  </div>
+
+  <!-- core -->
+  <div class="card card-core">
+    <h2>核心定义</h2>
+
+    <p>
+      执行流（Execution Flow）描述的是：一个任务在实时系统中，从“触发条件成立”到“最终完成”的完整时间路径。
+    </p>
+
+    <p>
+      在 HRTOS 中，执行流不仅是控制流（Control Flow），更是<strong>时间流（Time Flow）</strong>：
+      每一步都必须具备可分析的时间上界。
+    </p>
+
+    <div class="en">
+      Execution Flow is both control flow and time flow, where every step must have analyzable timing bounds.
+    </div>
+  </div>
+
+  <!-- trigger -->
+  <div class="card card-flow">
+    <h2>1. 任务触发（Trigger / Activation）</h2>
+
+    <p>
+      任务的执行起点来自三类触发源：
+      外部中断（External Interrupt）、内核事件（Kernel Event）、以及调度器唤醒（Scheduler Wake-up）。
+    </p>
+
+    <p>
+      触发本身必须满足“低抖动 + 有界延迟”，否则后续调度分析将失效。
+    </p>
+
+    <p>
+      在硬实时系统中，触发延迟通常被纳入系统 WCET（Worst Case Execution Time）分析的一部分。
+    </p>
+  </div>
+
+  <!-- scheduling -->
+  <div class="card card-flow">
+    <h2>2. 调度决策（Scheduling Decision）</h2>
+
+    <p>
+      调度器在该阶段进行“可执行任务集合”筛选，并基于优先级、截止时间（Deadline）或资源约束做决策。
+    </p>
+
+    <p>
+      该过程本质是一个约束选择问题：
+      在当前系统状态下，选择不会破坏时间约束的任务执行路径。
+    </p>
+
+    <p>
+      RTOS调度器的关键不是“选择最优”，而是“选择可证明不违反约束的解”。
+    </p>
+
+    <div class="en">
+      Scheduling is a constraint satisfaction problem under timing guarantees, not an optimization problem.
+    </div>
+  </div>
+
+  <!-- ready queue -->
+  <div class="card card-flow">
+    <h2>3. 就绪队列竞争（Ready Queue Arbitration）</h2>
+
+    <p>
+      当多个任务同时处于 READY 状态时，系统进入竞争阶段。
+    </p>
+
+    <p>
+      竞争因素包括：
+      优先级、抢占状态、CPU亲和性、中断恢复路径。
+    </p>
+
+    <p>
+      在 HRTOS 设计中，该阶段必须避免“不可控随机性”，否则会破坏确定性模型。
+    </p>
+  </div>
+
+  <!-- execution -->
+  <div class="card card-flow">
+    <h2>4. 执行阶段（Execution Phase）</h2>
+
+    <p>
+      CPU 开始执行任务主体逻辑，此时系统进入“时间消耗阶段”。
+    </p>
+
+    <p>
+      该阶段受到三类因素干扰：
+      <br>• 中断抢占（Interrupt Preemption）
+      <br>• 高优先级任务插入
+      <br>• Cache / Pipeline / Memory 延迟
+    </p>
+
+    <p>
+      因此必须引入 WCET（Worst Case Execution Time）模型进行约束分析。
+    </p>
+
+    <div class="en">
+      Execution must be bounded by WCET under all interference conditions.
+    </div>
+  </div>
+
+  <!-- interrupt interaction -->
+  <div class="card card-flow">
+    <h2>5. 中断交互阶段（Interrupt Interaction）</h2>
+
+    <p>
+      执行流并不是连续的，它可能被中断系统切断并插入新的执行流。
+    </p>
+
+    <p>
+      中断的关键约束是：
+      <strong>延迟必须有上界（Bounded Latency）</strong>。
+    </p>
+
+    <p>
+      在 HRTOS 中，中断处理必须设计为“短路径 + 可预测返回路径”，避免破坏任务时间窗口。
+    </p>
+  </div>
+
+  <!-- completion -->
+  <div class="card card-flow">
+    <h2>6. 完成与返回（Completion & Return）</h2>
+
+    <p>
+      任务完成后必须执行资源释放、状态回收与调度回归。
+    </p>
+
+    <p>
+      关键点不是“结束”，而是：
+      <strong>系统何时重新进入可调度状态</strong>。
+    </p>
+
+    <p>
+      这一阶段决定系统是否能稳定进入下一周期调度闭环。
+    </p>
+  </div>
+
+  <!-- system loop -->
+  <div class="card card-flow">
+    <h2>7. 系统闭环（System Loop）</h2>
+
+    <p>
+      执行流不是单次过程，而是周期性闭环结构：
+    </p>
+
+    <p>
+      Trigger → Schedule → Execute → Interrupt → Resume → Completion → Trigger
+    </p>
+
+    <p>
+      RTOS 的本质是不断重复该闭环，并保证每一轮时间误差不会累积失控。
+    </p>
+  </div>
+
+  <!-- meta -->
+  <div class="card card-meta">
+    <h2>语义总结</h2>
+
+    <p>
+      执行流的核心不在“任务执行过程”，而在“时间路径是否可被建模与约束”。
+    </p>
+
+    <p>
+      一旦执行流不可分析，实时系统就退化为通用系统。
+    </p>
+
+    <div class="en">
+      Execution flow is about analyzable time paths. Without determinism, real-time systems collapse into general-purpose systems.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

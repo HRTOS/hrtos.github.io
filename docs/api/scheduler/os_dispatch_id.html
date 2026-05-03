@@ -1,0 +1,257 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_dispatch_id | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_dispatch_id，用于设置调度器使用的中断号，支持0~31范围配置，是调度触发机制的重要接口。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{font-size:26px;}
+
+.meta{color:#64748b;margin-bottom:20px;}
+
+.section{margin-top:30px;}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_dispatch_id</h1>
+  <div class="meta">所属模块：调度管理 | 类型：调度配置函数</div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+    <p>
+      os_dispatch_id 用于设置 HRTOS 调度器所使用的中断号，
+      是调度触发机制中的关键配置接口。
+    </p>
+
+    <p>
+      在实时操作系统中，任务调度通常由定时中断或外部中断触发，
+      该函数允许开发者灵活指定调度中断来源，从而适配不同硬件平台或应用需求。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+    <div class="code">
+char os_dispatch_id(unsigned char INTERRUPT_ID);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>INTERRUPT_ID</td>
+        <td>中断号（取值范围：0 ~ 31）</td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+    <p>
+      0 表示设置成功，-1 表示参数非法（超出允许范围）。
+    </p>
+  </div>
+
+  <!-- 核心机制 -->
+  <div class="section">
+    <h2>核心机制解析</h2>
+
+    <p><b>1. 参数合法性校验</b></p>
+    <p>
+      函数首先检查中断号是否在允许范围内（0~31），
+      防止非法配置导致系统异常。
+    </p>
+
+    <div class="code">
+if(INTERRUPT_ID > 31)
+{
+    return -1;
+}
+    </div>
+
+    <p><b>2. 调度入口绑定</b></p>
+    <p>
+      当参数合法时，系统将中断号写入内部变量，
+      用于后续调度器绑定中断入口。
+    </p>
+
+    <div class="code">
+OS_DISPATCH_ID = INTERRUPT_ID;
+    </div>
+
+    <p>
+      调度器将在指定中断触发时调用 os_switch，
+      从而完成任务切换流程。
+    </p>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void main()
+{
+    // 设置调度使用定时器0中断
+    os_dispatch_id(1);
+
+    // 开启RTOS
+    os_rtos(1);
+
+    while(1)
+    {
+    }
+}
+    </div>
+  </div>
+
+  <!-- 使用场景 -->
+  <div class="section">
+    <h2>典型使用场景</h2>
+
+    <ul>
+      <li>指定定时器中断作为调度触发源</li>
+      <li>适配不同单片机中断结构</li>
+      <li>多中断系统中选择调度入口</li>
+    </ul>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      中断号必须与实际硬件中断配置一致，否则调度器无法正常触发。
+    </div>
+
+    <div class="note">
+      建议在系统初始化阶段完成设置，运行过程中不建议频繁修改。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="./os_switch.html">os_switch（任务切换）</a>
+      <a href="./os_scheduling.html">os_scheduling（调度策略）</a>
+      <a href="./os_rtos.html">os_rtos（运行模式）</a>
+      <a href="../scheduler/index.html">调度管理模块</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>
