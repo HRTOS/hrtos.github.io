@@ -1,125 +1,213 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>为什么选择 HRTOS | HRTOS Documentation</title>
+  <meta name="description" content="了解为何选择 HRTOS，适合嵌入式实时系统的 RTOS 设计，任务调度、内存管理、中断处理等技术优势。">
 
-<title>WHY Layer | HRTOS</title>
-<meta name="description" content="HRTOS WHY层：解释实时系统存在的根本原因">
+  <link rel="stylesheet" href="https://hrtos.com/global.css">
 
-<link rel="stylesheet" href="/global.css">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: rgba(15, 23, 42, 0.72);
+      --surface-hover: rgba(30, 41, 59, 0.92);
+      --border: rgba(148, 163, 184, 0.18);
+      --border-strong: rgba(56, 189, 248, 0.45);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
+      --radius: 8px;
+      color-scheme: dark;
+    }
 
-<style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-}
+    * { box-sizing: border-box; }
 
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
-}
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+      line-height: 1.7;
+    }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
-}
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
+      background-size:28px 28px;
+      opacity:.14;
+      mask-image:linear-gradient(to bottom,rgba(0,0,0,.65),transparent 90%);
+    }
 
-.nav a {
-  color: #9fb0c3;
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
-}
+    a{color:inherit;text-decoration:none;}
 
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
-}
+    .page{
+      width:min(1180px,calc(100% - 40px));
+      margin:0 auto;
+      padding:104px 0 56px;
+      display:grid;
+      gap:56px;
+      position:relative;
+      z-index:1;
+    }
 
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
-}
+    .breadcrumb{
+      display:flex;
+      gap:8px;
+      color:var(--muted);
+      font-size:.92rem;
+      flex-wrap:wrap;
+    }
 
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 18px;
-  border-radius: 14px;
-  margin-bottom: 14px;
-}
+    .breadcrumb a{color:#7dd3fc;}
 
-.card a {
-  color: #cfe3ff;
-  text-decoration: none;
-}
+    .hero{display:grid;gap:18px;}
 
-.card a:hover {
-  color: #ffffff;
-}
+    .hero-label{
+      display:inline-flex;
+      padding:8px 14px;
+      border:1px solid rgba(56,189,248,.22);
+      border-radius:999px;
+      color:#bae6fd;
+      font-size:.92rem;
+      font-weight:600;
+      width:fit-content;
+    }
 
-.section-title {
-  color: #cfe3ff;
-  font-size: 18px;
-  margin-bottom: 10px;
-}
+    .hero h1{
+      margin:0;
+      font-size:clamp(2.3rem,5vw,4rem);
+    }
 
-.meta {
-  color: #9fb0c3;
-  font-size: 14px;
-}
-</style>
+    .hero p{margin:0;color:var(--muted);max-width:860px;}
+
+    .section{display:grid;gap:22px;}
+
+    .section-header h2{margin:0;font-size:clamp(1.4rem,3vw,2rem);}
+
+    .section-header p{margin:0;color:var(--muted);}
+
+    .docs-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:20px;
+    }
+
+    .doc-card{
+      display:grid;
+      gap:10px;
+      padding:24px 22px;
+      min-height:160px;
+      background:linear-gradient(180deg,rgba(30,41,59,.78),rgba(15,23,42,.92));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      transition:.2s;
+    }
+
+    .doc-card:hover{
+      transform:translateY(-6px);
+      border-color:var(--border-strong);
+      background:var(--surface-hover);
+    }
+
+    .doc-card h3{margin:0;color:#f8fafc;}
+    .doc-card p{margin:0;color:var(--muted);font-size:.95rem;}
+
+    .doc-link{margin-top:auto;color:#7dd3fc;font-weight:600;}
+
+    .site-footer{
+      text-align:center;
+      border-top:1px solid rgba(148,163,184,.14);
+      padding-top:12px;
+      color:#8ea3be;
+      font-size:.95rem;
+    }
+
+    @media(max-width:980px){
+      .docs-grid{grid-template-columns:repeat(2,1fr);}
+    }
+
+    @media(max-width:640px){
+      .docs-grid{grid-template-columns:1fr;}
+      .page{width:calc(100% - 28px);}
+    }
+  </style>
 </head>
 
-<body>
+<body data-header="docs">
+<main class="page">
 
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
-    <a href="/index.html">首页</a>
-    <a href="/why/index.html" style="color:#cfe3ff;">Why</a>
-    <a href="/system-view/index.html">系统</a>
-    <a href="/docs/index.html">文档</a>
-  </div>
-</div>
+  <nav class="breadcrumb">
+    <a href="/">首页</a> &gt;
+    <a href="/docs/index.html">文档中心</a> &gt;
+    <span>为什么选择 HRTOS</span>
+  </nav>
 
-<div class="container">
+  <section class="hero">
+    <span class="hero-label">WHY HRTOS</span>
+    <h1>为什么选择 HRTOS</h1>
+    <p>HRTOS 面向高可靠实时嵌入式系统设计，提供确定性调度、低延迟中断响应与可裁剪内核架构。</p>
+  </section>
 
-  <h1>WHY Layer</h1>
-  <div class="sub">
-    HRTOS 存在的根本原因与系统级约束定义
-  </div>
+  <section class="section">
+    <div class="section-header">
+      <h2>核心原因</h2>
+      <p>从系统设计层面解释 HRTOS 的关键优势</p>
+    </div>
 
-  <div class="card">
-    <div class="section-title">基础链路</div>
+    <div class="docs-grid">
+      <a class="doc-card" href="01-real-time-problem.html">
+        <h3>实时性问题</h3>
+        <p>为什么通用操作系统无法满足硬实时需求。</p>
+        <span class="doc-link">阅读</span>
+      </a>
 
-    <p><a href="/why/01-real-time-problem.html">01 实时问题的本质</a></p>
-    <div class="meta">时间不是性能指标，而是系统正确性的一部分</div>
+      <a class="doc-card" href="02-why-general-os-fails.html">
+        <h3>通用OS局限</h3>
+        <p>Linux / GPOS 在确定性调度上的结构性限制。</p>
+        <span class="doc-link">阅读</span>
+      </a>
 
-    <p><a href="/why/02-why-general-os-fails.html">02 通用操作系统的局限</a></p>
-    <div class="meta">GPOS 无法提供确定性执行保证</div>
+      <a class="doc-card" href="03-determinism-constraint.html">
+        <h3>确定性约束</h3>
+        <p>实时系统必须满足的时间可预测性模型。</p>
+        <span class="doc-link">阅读</span>
+      </a>
 
-    <p><a href="/why/03-determinism-constraint.html">03 确定性约束</a></p>
-    <div class="meta">实时系统的唯一核心标准</div>
+      <a class="doc-card" href="04-rtos-vs-gpos.html">
+        <h3>RTOS vs GPOS</h3>
+        <p>两类系统在设计目标上的本质差异。</p>
+        <span class="doc-link">阅读</span>
+      </a>
+    </div>
+  </section>
 
-    <p><a href="/why/04-rtos-vs-gpos.html">04 RTOS vs GPOS</a></p>
-    <div class="meta">系统设计哲学的分裂点</div>
-  </div>
+  <section class="section">
+    <div class="section-header">
+      <h2>扩展阅读</h2>
+      <p>深入理解实时系统设计原则</p>
+    </div>
 
-  <div class="card">
-    <div class="section-title">语义入口</div>
+    <div class="docs-grid">
+      <a class="doc-card" href="summary.html">
+        <h3>总结</h3>
+        <p>HRTOS 设计思想整体总结</p>
+        <span class="doc-link">进入</span>
+      </a>
+    </div>
+  </section>
 
-    <p><a href="/why/summary.html">WHY Summary（系统定义）</a></p>
-    <div class="meta">把 WHY 压缩成系统级定义</div>
-  </div>
-
-</div>
-
+  <footer class="site-footer">
+    © 2017–2026 HRTOS
+  </footer>
+<script src="https://hrtos.com/header.js" defer></script>
+</main>
 </body>
 </html>
