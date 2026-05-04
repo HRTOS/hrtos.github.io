@@ -4,13 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>System Diagram | HRTOS</title>
-<meta name="description" content="HRTOS 系统运行结构图：任务、调度、中断、内存与执行流关系">
+<title>System Model | HRTOS</title>
+<meta name="description" content="HRTOS 论文级系统模型：基于时间因果链的实时系统运行结构">
 
 <meta name="page-role" content="system-view">
-<meta name="semantic-node" content="system-diagram">
-
-
+<meta name="semantic-node" content="system-model">
 
 <style>
 body{
@@ -25,21 +23,22 @@ body{
   justify-content: space-between;
   padding: 14px 24px;
   border-bottom: 1px solid #1e2a3a;
-  background: #0f172a; /* 使用主色调的深蓝 */
+  background: #0f172a;
 }
 
 .nav a {
-  color: #38bdf8; /* 主色调浅蓝色 */
+  color: #38bdf8;
   text-decoration: none;
   margin-left: 12px;
   font-size: 14px;
 }
 
 .nav a:hover {
-  color: #2563eb; /* 更深的蓝色用于 hover 效果 */
+  color: #2563eb;
 }
+
 .container{
-  max-width:1000px;
+  max-width:980px;
   margin:0 auto;
   padding:60px 24px;
 }
@@ -51,66 +50,81 @@ h1{
 
 .sub{
   color:#9fb0c3;
-  margin-bottom:40px;
+  margin-bottom:30px;
+  line-height:1.6;
 }
-
-/* 新增：系统语义层提示 */
-.layer{
+/* footer */
+.site-footer{
+  text-align:center;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:12px;
+  color:#8ea3be;
+  font-size:.95rem;
+}
+/* 核心框 */
+.box{
   border:1px solid #1e2a3a;
   background:#0f1722;
   border-radius:14px;
   padding:18px 22px;
-  margin-bottom:24px;
-  color:#9fb0c3;
+  margin-bottom:18px;
+}
+
+.title{
+  font-size:15px;
+  color:#7dd3fc;
+  margin-bottom:8px;
+  letter-spacing:.5px;
+}
+
+.text{
+  color:#cbd5e1;
   font-size:14px;
+  line-height:1.7;
 }
 
-.diagram{
-  display:grid;
-  gap:18px;
-}
-
-.node{
-  background:#111823;
-  border:1px solid #1e2a3a;
-  border-radius:14px;
-  padding:22px;
-  transition:.2s;
-}
-
-.node:hover{
-  border-color:#4da3ff;
-  transform:translateY(-2px);
-}
-
-.node a{
-  color:#cfe3ff;
-  text-decoration:none;
-  font-size:18px;
-  font-weight:600;
-}
-
-.meta{
-  color:#9fb0c3;
-  font-size:14px;
-  margin-top:8px;
-  line-height:1.6;
-}
-
-/* 新增：系统关系标记 */
 .flow{
   text-align:center;
   color:#4da3ff;
   font-size:13px;
   margin:6px 0;
-  opacity:.9;
 }
 
-.group-title{
-  margin-top:10px;
-  font-size:13px;
-  color:#7dd3fc;
-  letter-spacing:.5px;
+/* 主链 */
+.chain{
+  border-left:3px solid #4da3ff;
+}
+
+/* 决策 */
+.decide{
+  border-left:3px solid #f59e0b;
+}
+
+/* 执行 */
+.exec{
+  border-left:3px solid #22c55e;
+}
+
+/* 扰动 */
+.noise{
+  border-left:3px solid #ef4444;
+}
+
+/* 约束 */
+.time{
+  border-left:3px solid #a855f7;
+}
+
+.model{
+  background:#111823;
+  border:1px solid #1e2a3a;
+  border-radius:14px;
+  padding:20px;
+  margin-bottom:30px;
+}
+
+.model b{
+  color:#cfe3ff;
 }
 </style>
 </head>
@@ -129,72 +143,143 @@ h1{
 
 <div class="container">
 
-  <h1>System Diagram</h1>
-  <div class="sub">
-    HRTOS 系统运行结构：执行流 × 时间 × 控制路径
-  </div>
+<h1>System Model（论文级系统模型）</h1>
 
-  <!-- 新增：系统语义说明 -->
-  <div class="layer">
-    HRTOS 系统不是线性流程，而是一个<strong>事件驱动 + 调度决策 + 时间约束</strong>共同构成的闭环系统。<br>
-    下面的结构表示“控制关系”，不是“阅读顺序”。
-  </div>
-
-  <div class="diagram">
-
-    <div class="group-title">[ Execution Foundation ]</div>
-
-    <div class="node">
-      <a href="/system-view/01-execution-flow.html">01 Execution Flow</a>
-      <div class="meta">
-        系统执行的基础路径结构：任务如何从触发进入 CPU 执行空间<br>
-        <b>本质：时间路径模型（Time Path Model）</b>
-      </div>
-    </div>
-
-    <div class="flow">↑ 被调度器驱动 / 被中断打断 ↓</div>
-
-    <div class="node">
-      <a href="/system-view/04-scheduler-cycle.html">04 Scheduler Cycle</a>
-      <div class="meta">
-        系统控制中心：持续决定“谁可以执行”<br>
-        <b>本质：时间决策引擎（Time Decision Engine）</b>
-      </div>
-    </div>
-
-    <div class="flow">↑ 依赖状态系统 ↓</div>
-
-    <div class="node">
-      <a href="/system-view/02-task-lifecycle.html">02 Task Lifecycle</a>
-      <div class="meta">
-        系统中所有执行单元的状态集合<br>
-        Ready / Running / Blocked 构成调度输入空间
-      </div>
-    </div>
-
-    <div class="flow">↑ 被外部事件修改 ↓</div>
-
-    <div class="node">
-      <a href="/system-view/03-interrupt-flow.html">03 Interrupt Flow</a>
-      <div class="meta">
-        系统外部世界进入内核的唯一通道<br>
-        <b>本质：执行流重写机制</b>
-      </div>
-    </div>
-
-    <div class="flow">↑ 影响时间行为 ↓</div>
-
-    <div class="node">
-      <a href="/system-view/05-memory-view.html">05 Memory View</a>
-      <div class="meta">
-        所有执行行为的隐性约束层<br>
-        Cache / 分配 / 访问延迟 → 直接影响确定性
-      </div>
-    </div>
-
-  </div>
-
+<div class="sub">
+HRTOS 不是模块系统，而是一个由<strong>时间因果链驱动的实时闭环系统</strong>。<br>
+系统所有行为都必须映射到“时间可预测性约束”。
 </div>
 
+<!-- 核心模型 -->
+<div class="model">
+<b>核心定义：</b><br><br>
+
+系统运行不是流程，而是一个循环因果函数：
+
+<br><br>
+
+<b>
+Event(t) → Decision(t) → State(t) → Execution(t) → Disturbance(t) → Constraint(t) → Event(t+1)
+</b>
+
+<br><br>
+
+其中：
+- t 表示系统时间
+- 每一阶段必须满足“可界定上界（Bounded）”
+- 任意不可预测变量都会破坏系统确定性
+</div>
+
+<!-- 主链 -->
+<div class="box chain">
+<div class="title">① 事件层（Interrupt Layer）</div>
+<div class="text">
+系统唯一外部输入源。<br>
+包括中断、定时器、通信事件。<br><br>
+
+<b>作用：</b>打断时间连续性，生成调度触发点。
+</div>
+</div>
+
+<div class="flow">↓ 时间进入调度决策</div>
+
+<div class="box decide">
+<div class="title">② 调度层（Scheduler Layer）</div>
+<div class="text">
+系统的时间分配中心。<br>
+决定“谁在某个时间窗口内拥有CPU”。<br><br>
+
+<b>本质：</b>时间资源分配函数，而非算法选择问题。
+</div>
+</div>
+
+<div class="flow">↓ 状态空间更新</div>
+
+<div class="box chain">
+<div class="title">③ 状态层（Task Lifecycle）</div>
+<div class="text">
+系统中所有执行实体的时间状态模型。<br>
+Ready / Running / Blocked 是“时间可调度性”的表达。<br><br>
+
+<b>本质：</b>时间可执行空间的划分。
+</div>
+</div>
+
+<div class="flow">↓ CPU执行</div>
+
+<div class="box exec">
+<div class="title">④ 执行层（Execution Flow）</div>
+<div class="text">
+CPU真实时间消耗轨迹。<br>
+执行路径受到中断、调度与资源约束影响。<br><br>
+
+<b>关键约束：</b>必须满足 WCET（最坏执行时间）
+</div>
+</div>
+
+<div class="flow">↓ 引入不确定性</div>
+
+<div class="box noise">
+<div class="title">⑤ 扰动层（Memory & Cache）</div>
+<div class="text">
+系统中唯一不可完全确定的时间来源。<br>
+Cache miss、内存访问延迟、分配行为都会引入时间抖动。<br><br>
+
+<b>本质：</b>时间误差生成器
+</div>
+</div>
+
+<div class="flow">↓ 系统收敛</div>
+
+<div class="box time">
+<div class="title">⑥ 约束层（Time System）</div>
+<div class="text">
+系统最终正确性判定层。<br>
+所有行为必须满足时间窗口约束。<br><br>
+
+<b>规则：</b>
+超时 = 错误（不是性能下降）
+</div>
+</div>
+
+<div class="flow">↺ 回到事件层，形成闭环</div>
+
+<!-- 结论 -->
+<div class="model">
+<b>系统本质总结：</b><br><br>
+
+HRTOS 的本质不是操作系统，而是：
+
+<br><br>
+
+<b>一个以时间为核心变量的因果闭环函数系统。</b>
+
+<br><br>
+
+它不回答“程序怎么执行”，而是回答：
+
+<br>
+👉 “系统为什么每次都能在可预测时间内做出同样结果”
+</div>
+<div class="model-box">
+<b>Related Links（System View Modules）</b><br><br>
+
+<a href="/system-view/01-execution-flow.html">01 Execution Flow（执行流模型）</a><br>
+<a href="/system-view/02-task-lifecycle.html">02 Task Lifecycle（任务生命周期）</a><br>
+<a href="/system-view/03-interrupt-flow.html">03 Interrupt Flow（中断流模型）</a><br>
+<a href="/system-view/04-scheduler-cycle.html">04 Scheduler Cycle（调度循环）</a><br>
+<a href="/system-view/05-memory-view.html">05 Memory View（内存视图）</a><br>
+<a href="/system-view/06-time-system.html">06 Time System（时间系统）</a><br>
+<a href="/system-view/07-deterministic-chain.html">07 Deterministic Chain（确定性因果链）</a><br>
+
+<br>
+<b>System Entry Strategy：</b><br>
+建议阅读顺序（理解系统本质）：<br>
+Time System → Scheduler Cycle → Execution Flow → Interrupt Flow → Deterministic Chain
+</div>
+</div>
+<footer class="site-footer">
+    © 2017–2026 HRTOS System View
+  </footer>
 </body>
 </html>

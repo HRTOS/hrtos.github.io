@@ -34,7 +34,14 @@ body {
   border-bottom: 1px solid #1e2a3a;
   background: #0f172a; /* 使用主色调的深蓝 */
 }
-
+/* footer */
+.site-footer{
+  text-align:center;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:12px;
+  color:#8ea3be;
+  font-size:.95rem;
+}
 .nav a {
   color: #38bdf8; /* 主色调浅蓝色 */
   text-decoration: none;
@@ -161,7 +168,75 @@ Running → Dead → Resource Release
 </p>
 <div class="en">Execution flow is a time-constrained state machine path.</div>
 </div>
+<div class="card card-meta">
+  <h2>System Context（系统关联关系）</h2>
+
+  <p>
+    Execution Flow 并不是独立模块，它位于 RTOS 时间模型的“执行层”，并受到调度、中断、时间与内存共同约束。
+  </p>
+
+  <p><b>系统因果关系：</b></p>
+  <p>
+    Interrupt Flow → Scheduler Cycle → Execution Flow → Memory View → Time System → Deterministic Chain
+  </p>
+
+  <br>
+
+  <p><b>Related System Modules（相关模块）</b></p>
+
+  <p>
+    → <a href="/system-view/03-interrupt-flow.html">03 Interrupt Flow（中断流模型）</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">
+      外部事件如何打断执行流，是 Execution Flow 的上游驱动源
+    </span>
+  </p>
+
+  <p>
+    → <a href="/system-view/04-scheduler-cycle.html">04 Scheduler Cycle（调度循环）</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">
+      决定 Execution Flow 在何时、由谁执行
+    </span>
+  </p>
+
+  <p>
+    → <a href="/system-view/02-task-lifecycle.html">02 Task Lifecycle（任务生命周期）</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">
+      Execution Flow 的状态基础（Ready / Running / Blocked）
+    </span>
+  </p>
+
+  <p>
+    → <a href="/system-view/05-memory-view.html">05 Memory View（内存视图）</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">
+      执行时间的不确定性来源之一（Cache / Allocation）
+    </span>
+  </p>
+
+  <p>
+    → <a href="/system-view/06-time-system.html">06 Time System（时间系统）</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">
+      Execution Flow 的时间约束基准（Tick / WCET）
+    </span>
+  </p>
+
+  <p>
+    → <a href="/system-view/07-deterministic-chain.html">07 Deterministic Chain（确定性因果链）</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">
+      Execution Flow 的最终数学化表达（时间因果函数）
+    </span>
+  </p>
+
+  <br>
+
+  <p><b>System Position（系统定位）</b></p>
+  <p style="color:#9fb0c3;font-size:13px;">
+    Execution Flow = RTOS 执行层核心结构（Time-Driven Execution Path）
+  </p>
+</div>
 
 </div>
+<footer class="site-footer">
+    © 2017–2026 HRTOS System View
+  </footer>
 </body>
 </html>

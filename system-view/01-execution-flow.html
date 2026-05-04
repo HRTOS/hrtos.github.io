@@ -26,7 +26,14 @@ body {
   margin: 0 auto;
   padding: 60px 24px;
 }
-
+/* footer */
+.site-footer{
+  text-align:center;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:12px;
+  color:#8ea3be;
+  font-size:.95rem;
+}
 .nav {
   display: flex;
   justify-content: space-between;
@@ -279,7 +286,35 @@ h2 {
       Execution flow is about analyzable time paths. Without determinism, real-time systems collapse into general-purpose systems.
     </div>
   </div>
+<!-- related reading -->
+<div class="card card-meta">
+  <h2>相关阅读（Related Reading）</h2>
 
+  <p><strong>上级入口</strong></p>
+  <p>
+    <a href="/system-view/index.html">System View 总览</a>
+  </p>
+
+  <p><strong>下一篇（学习顺序）</strong></p>
+  <p>
+    <a href="/system-view/02-task-lifecycle.html">02 任务生命周期（Task Lifecycle）→</a>
+  </p>
+
+  <p><strong>同类型内容（Execution / Scheduling）</strong></p>
+  <p>
+    <a href="/system-view/04-scheduler-cycle.html">调度器周期模型</a><br>
+    <a href="/system-view/03-interrupt-flow.html">中断流模型</a>
+  </p>
+
+  <p><strong>跨模块关联（系统级理解）</strong></p>
+  <p>
+    <a href="/docs/modules/task/context-switch.html">任务上下文切换</a><br>
+    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度模型</a>
+  </p>
 </div>
+</div>
+<footer class="site-footer">
+    © 2017–2026 HRTOS System View
+  </footer>
 </body>
 </html>

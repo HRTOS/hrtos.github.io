@@ -20,7 +20,14 @@ body {
   color: #e8eef5;
   line-height: 1.6;
 }
-
+/* footer */
+.site-footer{
+  text-align:center;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:12px;
+  color:#8ea3be;
+  font-size:.95rem;
+}
 .container {
   max-width: 920px;
   margin: 0 auto;
@@ -251,7 +258,40 @@ h2 {
       The scheduler cycle is not an algorithm but a continuously running real-time decision loop that connects execution flow and interrupt flow.
     </div>
   </div>
+<!-- related reading -->
+<div class="card card-meta">
+  <h2>相关阅读（Related Reading）</h2>
 
+  <p><strong>上级入口</strong></p>
+  <p>
+    <a href="/system-view/index.html">System View 总览</a>
+  </p>
+
+  <p><strong>上一篇（学习顺序）</strong></p>
+  <p>
+    <a href="/system-view/03-interrupt-flow.html">03 中断流模型（Interrupt Flow）←</a>
+  </p>
+
+  <p><strong>下一篇（学习顺序）</strong></p>
+  <p>
+    <a href="/system-view/05-memory-view.html">05 内存视图模型（Memory View）→</a>
+  </p>
+
+  <p><strong>同类型扩展（调度 / 执行系统）</strong></p>
+  <p>
+    <a href="/system-view/01-execution-flow.html">执行流模型</a><br>
+    <a href="/system-view/02-task-lifecycle.html">任务生命周期</a>
+  </p>
+
+  <p><strong>跨模块关联（系统级理解）</strong></p>
+  <p>
+    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度模型</a><br>
+    <a href="/docs/modules/task/context-switch.html">任务上下文切换（Context Switch）</a>
+  </p>
 </div>
+</div>
+<footer class="site-footer">
+    © 2017–2026 HRTOS System View
+  </footer>
 </body>
 </html>

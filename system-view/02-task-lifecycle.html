@@ -55,7 +55,14 @@ h1 {
   color: #9fb0c3;
   margin-bottom: 40px;
 }
-
+/* footer */
+.site-footer{
+  text-align:center;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:12px;
+  color:#8ea3be;
+  font-size:.95rem;
+}
 .card {
   background: #111823;
   border: 1px solid #1e2a3a;
@@ -294,8 +301,40 @@ h2 {
       Task lifecycle is not a state model, but a time-resource allocation model.
     </div>
   </div>
+<!-- related reading -->
+<div class="card card-meta">
+  <h2>相关阅读（Related Reading）</h2>
 
+  <p><strong>上级入口</strong></p>
+  <p>
+    <a href="/system-view/index.html">System View 总览</a>
+  </p>
+
+  <p><strong>上一篇（学习顺序）</strong></p>
+  <p>
+    <a href="/system-view/01-execution-flow.html">01 执行流模型（Execution Flow）←</a>
+  </p>
+
+  <p><strong>下一篇（学习顺序）</strong></p>
+  <p>
+    <a href="/system-view/03-interrupt-flow.html">03 中断流模型（Interrupt Flow）→</a>
+  </p>
+
+  <p><strong>同类型扩展（Task / Scheduling 视角）</strong></p>
+  <p>
+    <a href="/system-view/04-scheduler-cycle.html">调度器周期模型</a><br>
+    <a href="/system-view/07-deterministic-chain.html">确定性执行链</a>
+  </p>
+
+  <p><strong>跨模块关联（系统级理解）</strong></p>
+  <p>
+    <a href="/docs/modules/task/context-switch.html">任务上下文切换（Context Switch）</a><br>
+    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度模型</a>
+  </p>
 </div>
-
+</div>
+<footer class="site-footer">
+    © 2017–2026 HRTOS System View
+  </footer>
 </body>
 </html>

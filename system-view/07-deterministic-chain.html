@@ -55,7 +55,14 @@ h1 {
   color: #9fb0c3;
   margin-bottom: 40px;
 }
-
+/* footer */
+.site-footer{
+  text-align:center;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:12px;
+  color:#8ea3be;
+  font-size:.95rem;
+}
 .card {
   background: #111823;
   border: 1px solid #1e2a3a;
@@ -279,8 +286,40 @@ h2 {
       A deterministic chain transforms an operating system into a time-causal system with provable behavior.
     </div>
   </div>
+<!-- related reading -->
+<div class="card card-meta">
+  <h2>相关阅读（Related Reading）</h2>
 
+  <p><strong>上级入口</strong></p>
+  <p>
+    <a href="/system-view/index.html">System View 总览</a>
+  </p>
+
+  <p><strong>上一篇（学习顺序）</strong></p>
+  <p>
+    <a href="/system-view/06-time-system.html">06 时间系统（Time System）←</a>
+  </p>
+
+  <p><strong>下一步（体系扩展）</strong></p>
+  <p>
+    <a href="/docs/index.html">进入 Docs 体系（实现层）→</a>
+  </p>
+
+  <p><strong>同类型扩展（系统因果 / 调度视角）</strong></p>
+  <p>
+    <a href="/system-view/04-scheduler-cycle.html">调度循环模型</a><br>
+    <a href="/system-view/03-interrupt-flow.html">中断流模型</a>
+  </p>
+
+  <p><strong>跨模块关联（系统实现层）</strong></p>
+  <p>
+    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度模型</a><br>
+    <a href="/docs/modules/memory/memory-protection.html">内存保护机制</a>
+  </p>
 </div>
-
+</div>
+<footer class="site-footer">
+    © 2017–2026 HRTOS System View
+  </footer>
 </body>
 </html>
