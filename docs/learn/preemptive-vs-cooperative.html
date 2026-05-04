@@ -366,7 +366,57 @@ Kernel does NOT forcibly interrupt tasks
       因为实时系统的核心不是效率，而是“时间约束的可证明性”。
     </p>
   </section>
+<section class="section">
+  <h2>七、调度模型在RTOS体系中的位置</h2>
 
+  <p>
+    调度模型不是独立概念，而是RTOS执行链路中的核心控制层。
+    它连接任务创建、上下文切换与CPU执行之间的关系。
+  </p>
+
+  <div class="block">
+RTOS执行链路：
+
+中断触发（Interrupt）
+   ↓
+任务状态变化（Task State Change）
+   ↓
+调度器决策（Scheduler Decision）
+   ↓
+调度模型（Preemptive / Cooperative）
+   ↓
+上下文切换（Context Switch）
+   ↓
+任务执行（Task Execution）
+  </div>
+
+  <p>
+    调度模型决定“何时切换”，上下文切换决定“如何切换”。
+  </p>
+</section>
+
+<section class="section">
+  <h2>相关阅读（调度体系链路）</h2>
+
+  <div class="grid">
+
+    <a class="card" href="scheduler-basics.html">
+      <h3>调度器基础</h3>
+      <p>理解调度决策是如何生成的（抢占发生的根源）</p>
+    </a>
+
+    <a class="card" href="context-switch-basics.html">
+      <h3>上下文切换基础</h3>
+      <p>调度结果如何变成实际CPU执行切换</p>
+    </a>
+
+    <a class="card" href="interrupt-basics.html">
+      <h3>中断基础</h3>
+      <p>调度模型的触发源：系统如何被事件驱动</p>
+    </a>
+
+  </div>
+</section>
   <footer class="footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的调度模型学习模块。
   </footer>

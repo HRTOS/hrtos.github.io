@@ -131,6 +131,39 @@ footer{
     grid-template-columns:1fr;
   }
 }
+
+.tree{
+  font-family:Consolas, monospace;
+  color:#7dd3fc;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  padding:22px;
+  border-radius:10px;
+  border:1px solid rgba(56,189,248,.18);
+  background:rgba(15,23,42,.6);
+}
+
+.tree-line{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  line-height:1.6;
+}
+
+.tree a{
+  color:#38bdf8;
+  text-decoration:none;
+}
+
+.tree a:hover{
+  text-decoration:underline;
+}
+
+.indent{
+  padding-left:16px;
+}
+
 </style>
 </head>
 
@@ -152,8 +185,83 @@ footer{
 
 <h1>HRTOS 学习图谱</h1>
 <p>知识结构导航：从基础概念到HRTOS系统化认知路径</p>
+<section class="section">
+  <h2>什么是 HRTOS 学习图谱？</h2>
 
-<!-- ================= GRAPH (简化稳定版) ================= -->
+  <p>
+    HRTOS 学习图谱是一个围绕实时操作系统（RTOS）构建的系统化知识导航体系，
+    用于帮助开发者从基础概念逐步理解实时系统设计逻辑。
+  </p>
+
+  <p>
+    与传统文档目录不同，本学习图谱按照 RTOS 的核心认知路径组织内容：
+    从实时系统基础、调度机制、中断模型、任务切换，到内核架构与系统设计。
+  </p>
+
+  <p>
+    整个知识体系围绕一个核心目标展开：
+    <strong>理解时间确定性（Time Determinism）如何影响实时系统设计。</strong>
+  </p>
+
+  <div class="highlight">
+    HRTOS = Real-Time System + Scheduler + Interrupt + IPC + Deterministic Execution
+  </div>
+</section>
+<section class="section">
+  <h2>HRTOS 知识体系概览</h2>
+
+  <p>
+    HRTOS学习系统不是普通文档集合，而是一个完整的实时操作系统知识模型。
+    它围绕“时间确定性”这一核心约束，将RTOS拆解为多个相互依赖的系统层级。
+  </p>
+
+  <div class="tree">
+
+  <div class="tree-line">
+    知识体系结构：
+  </div>
+
+  <div class="tree-line">
+    RTOS = 时间约束系统
+  </div>
+
+  <div class="tree-line">
+    ├── <a href="/docs/learn/real-time-systems.html">实时系统（Real-Time Model）</a>
+  </div>
+
+  <div class="tree-line indent">
+    ├── <a href="/docs/learn/hard-soft-real-time.html">硬实时 / 软实时</a>
+  </div>
+
+  <div class="tree-line indent">
+    ├── <a href="/docs/learn/time-constraints.html">时间约束定义</a>
+  </div>
+
+  <div class="tree-line indent">
+    └── <a href="/docs/learn/wcet-wcrt.html">WCET / WCRT模型</a>
+  </div>
+
+  <div class="tree-line">
+    ├── <a href="/docs/learn/scheduling-basics.html">调度系统（Scheduling）</a>
+  </div>
+
+  <div class="tree-line indent">
+    ├── <a href="/docs/learn/preemptive-vs-cooperative.html">抢占式调度</a>
+  </div>
+
+  <div class="tree-line indent">
+    └── <a href="/docs/learn/cooperative-scheduling.html">协作式调度</a>
+  </div>
+
+  <div class="tree-line">
+    ├── <a href="/docs/learn/interrupt-basics.html">中断系统（Interrupt）</a>
+  </div>
+
+  <div class="tree-line">
+    └── <a href="/docs/architecture/index.html">内核架构（Kernel Design）</a>
+  </div>
+
+</div>
 <!-- ================= GRAPH（简化稳定版）================= -->
 <div class="graph">
 
@@ -292,16 +400,37 @@ line{
 <div class="grid">
 
 <div class="card">
-<h3>学习入门</h3>
-<a href="what-is-rtos.html">RTOS是什么</a>
-<a href="real-time-systems.html">实时系统</a>
-<a href="scheduling-basics.html">调度基础</a>
-<a href="context-switch-basics.html">上下文切换</a>
-<a href="interrupt-basics.html">中断系统</a>
-<a href="ipc-basics.html">进程通信</a>
-<a href="rtos-vs-linux.html">RTOS vs Linux</a>
-<a href="faq.html">常见问题</a>
+<h3>RTOS基础体系</h3>
+<p>
+实时操作系统的核心概念体系，包括时间确定性、任务模型与系统约束逻辑。
+</p>
+<a href="what-is-rtos.html">→ 什么是RTOS（核心定义）</a>
+<a href="real-time-systems.html">→ 实时系统基础（时间模型）</a>
+<a href="rtos-vs-linux.html">→ RTOS vs Linux（系统本质差异）</a>
 </div>
+
+<div class="card">
+<h3>调度与执行模型</h3>
+<p>
+RTOS调度器的设计原理，包括优先级机制、抢占行为与时间片模型。
+</p>
+<a href="scheduling-basics.html">→ 调度基础</a>
+<a href="preemptive-vs-cooperative.html">→ 抢占式 vs 协作式</a>
+<a href="context-switch-basics.html">→ 上下文切换机制</a>
+</div>
+
+<div class="card">
+<h3>系统核心机制</h3>
+<p>
+构成RTOS运行的底层机制，包括中断系统与进程通信模型。
+</p>
+<a href="interrupt-basics.html">→ 中断系统</a>
+<a href="ipc-basics.html">→ IPC通信机制</a>
+</div>
+
+
+
+
 
 <div class="card">
 <h3>系统架构</h3>
@@ -315,7 +444,15 @@ line{
 </div>
 
 </div>
+<section class="section">
+  <h2>仍有疑问？</h2>
+  <p>
+    如果你刚接触 RTOS，很多概念（如抢占式调度、上下文切换、中断延迟、优先级反转）
+    可能仍然容易混淆。可以查看常见问题汇总页面。
+  </p>
 
+  <a href="faq.html">→ 查看 RTOS 常见问题（FAQ）</a>
+</section>
 <footer>
 © 2017–2026 HRTOS. Real-Time Operating System Knowledge System.
 </footer>

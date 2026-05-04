@@ -337,7 +337,78 @@ Subject to:
       它定义了现代控制系统与工业系统的基础运行逻辑。
     </p>
   </section>
+<section class="section">
+  <h2>八、实时系统在HRTOS中的体系位置</h2>
 
+  <p>
+    实时系统不是独立模块，而是HRTOS整个执行体系的“约束层”。
+    它定义了系统中所有机制必须遵守的时间规则。
+  </p>
+
+  <div class="block">
+HRTOS体系结构（抽象层级）：
+
+[应用层]
+   ↓
+[任务模型（Tasks）]
+   ↓
+[执行机制（IPC / Context Switch）]
+   ↓
+[调度系统（Scheduler）]
+   ↓
+[中断系统（Interrupt）]
+   ↓
+[实时约束层（Real-Time System）]
+   ↓
+[时间模型（Time Determinism）]
+  </div>
+
+  <p>
+    实时系统不是执行单元，而是“约束所有执行单元的规则层”。
+  </p>
+</section>
+
+<section class="section">
+  <h2>体系展开路径（推荐学习顺序）</h2>
+
+  <div class="grid">
+
+    <a class="card" href="interrupt-basics.html">
+      <h3>中断机制</h3>
+      <p>实时系统的时间入口（事件驱动源头）</p>
+    </a>
+
+    <a class="card" href="scheduler-basics.html">
+      <h3>调度器原理</h3>
+      <p>如何在时间约束下做任务选择</p>
+    </a>
+
+    <a class="card" href="context-switch-basics.html">
+      <h3>上下文切换</h3>
+      <p>执行状态如何在时间维度迁移</p>
+    </a>
+
+    <a class="card" href="ipc-basics.html">
+      <h3>IPC通信机制</h3>
+      <p>任务之间如何在时间约束下协作</p>
+    </a>
+
+  </div>
+
+  <div class="grid" style="margin-top:16px;">
+
+    <a class="card" href="preemptive-vs-cooperative.html">
+      <h3>调度模型对比</h3>
+      <p>抢占式 vs 协作式（时间控制权差异）</p>
+    </a>
+
+    <a class="card" href="/why/summary.html">
+      <h3>WHY层总结</h3>
+      <p>为什么实时系统必须存在</p>
+    </a>
+
+  </div>
+</section>
   <footer class="footer">
     © 2017–2026 HRTOS. 实时系统基础理论与时间约束模型。
   </footer>

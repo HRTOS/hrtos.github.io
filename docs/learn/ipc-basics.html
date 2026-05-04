@@ -389,7 +389,55 @@ IPC = System Coordination Layer
       它决定了任务如何协作、如何同步，以及系统是否具备可预测性。
     </p>
   </section>
+<section class="section">
+  <h2>九、IPC在RTOS体系中的位置</h2>
 
+  <p>
+    IPC不是独立机制，而是RTOS任务系统中的“协同层”。
+    它位于调度与执行机制之间，是连接“任务行为”和“系统状态”的桥梁。
+  </p>
+
+  <div class="block">
+RTOS系统结构链路：
+
+中断（Interrupt）
+   ↓
+调度器（Scheduler）
+   ↓
+任务切换（Context Switch）
+   ↓
+IPC（任务协同层）
+   ↓
+任务执行（Task Execution）
+  </div>
+
+  <p>
+    理解IPC，必须放在整个执行链中，而不是孤立理解。
+  </p>
+</section>
+
+<section class="section">
+  <h2>相关阅读（体系路径）</h2>
+
+  <div class="grid">
+
+    <a class="card" href="interrupt-basics.html">
+      <h3>中断基础</h3>
+      <p>IPC的上游触发源：系统如何从外部事件进入内核路径</p>
+    </a>
+
+    <a class="card" href="context-switch-basics.html">
+      <h3>上下文切换基础</h3>
+      <p>IPC触发后的执行迁移机制</p>
+    </a>
+
+    <a class="card" href="scheduler-basics.html">
+      <h3>调度器原理</h3>
+      <p>IPC如何影响任务优先级与执行顺序</p>
+    </a>
+
+  </div>
+</section>
   <footer class="footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的IPC基础学习模块。
   </footer>

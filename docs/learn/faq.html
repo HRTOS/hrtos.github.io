@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>RTOS常见误解 | HRTOS FAQ</title>
-<meta name="description" content="纠正常见RTOS认知误区，从系统本质重新理解实时操作系统的设计边界与约束。" />
+<title>RTOS常见误解（认知纠偏系统）| HRTOS FAQ</title>
+<meta name="description" content="系统性纠正RTOS常见误解，从确定性、时间约束与系统设计本质重新理解实时操作系统。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -35,7 +35,12 @@ h1{
   color:#94a3b8;
 }
 
-.item{
+.section{
+  display:grid;
+  gap:14px;
+}
+
+.block{
   padding:22px;
   border:1px solid rgba(148,163,184,.18);
   border-radius:12px;
@@ -54,12 +59,23 @@ h1{
 
 .tag{
   display:inline-block;
-  margin-top:10px;
+  margin-top:12px;
   font-size:12px;
   padding:4px 10px;
   border:1px solid rgba(56,189,248,.25);
   border-radius:999px;
   color:#bae6fd;
+}
+
+.hint{
+  color:#94a3b8;
+  font-size:13px;
+}
+
+hr{
+  border:none;
+  border-top:1px solid rgba(148,163,184,.12);
+  margin:10px 0;
 }
 
 footer{
@@ -74,107 +90,190 @@ footer{
 
 <body>
 
-<main class="page">
+<main class="page" data-header="docs">
+<nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/learn/index.html">学习模块</a> /
+    <span>常见问题</span>
+  </nav>
 
-<h1>RTOS 常见误解</h1>
+<h1>RTOS 常见误解（认知纠偏系统）</h1>
 
 <p class="intro">
-这一页不是“FAQ列表”，而是对RTOS认知中最常见结构性错误的系统纠偏。
-目标不是解释概念，而是修正理解方式。
+这一页不是FAQ集合，而是对RTOS认知结构的系统性纠偏。
+核心目标：把“错误理解”还原为“设计约束的真实来源”。
 </p>
 
-<!-- 1 -->
-<div class="item">
-  <div class="q">Q1：RTOS是不是更轻量的Linux？</div>
-  <div class="a">
-不是。
+<hr>
 
-RTOS和Linux之间不是“轻重关系”，而是设计目标完全不同。
+<div class="section">
 
-Linux优化的是平均性能和通用性，而RTOS约束的是最坏情况行为。
-RTOS的核心不是“更小”，而是“更确定”。
+<div class="block">
+<div class="q">误解1：RTOS = 更轻量的 Linux</div>
+<div class="a">
+RTOS 与 Linux 不在同一维度。
 
-如果用一句话区分：
+Linux 的设计目标是：
+→ 通用性 + 吞吐量 + 平均性能
 
-Linux允许系统偶尔不可预测，
-RTOS禁止系统在关键路径上不可预测。
-  </div>
-  <div class="tag">结构误解</div>
+RTOS 的设计目标是：
+→ 时间确定性 + 最坏情况可控
+
+因此 RTOS 并不是“轻量版 Linux”，
+而是“约束模型完全不同的系统类型”。
+
+<br><br>
+
+关键差异在于：
+
+<strong>Linux允许不可预测性存在</strong><br>
+<strong>RTOS要求不可预测性被消除</strong>
+</div>
+<div class="tag">结构性误解</div>
 </div>
 
-<!-- 2 -->
-<div class="item">
-  <div class="q">Q2：RTOS是不是就是实时性更高的系统？</div>
-  <div class="a">
-这个理解是不完整的。
+<div class="block">
+<div class="q">误解2：RTOS只是实时性更高</div>
+<div class="a">
+“实时性更高”是错误表述。
 
-RTOS不是“更快”，而是“时间行为有上界”。
+RTOS的本质不是“更快”，而是：
 
-实时性在RTOS中不是性能指标，而是约束条件。
+→ 所有执行行为必须有时间上界（Bounded Latency）
 
-一个系统即使很快，但如果延迟无法预测，它仍然不是RTOS系统。
-  </div>
-  <div class="tag">时间误解</div>
+即：
+系统不仅要快，还必须“可证明不会慢到失控”。
+
+<br><br>
+
+在RTOS中：
+
+延迟 ≠ 性能问题<br>
+延迟 = 正确性的一部分
+</div>
+<div class="tag">时间模型误解</div>
 </div>
 
-<!-- 3 -->
-<div class="item">
-  <div class="q">Q3：RTOS是不是任务越多越复杂？</div>
-  <div class="a">
-RTOS的复杂度不来自任务数量，而来自时间约束的耦合关系。
+<div class="block">
+<div class="q">误解3：RTOS只是任务更多更复杂</div>
+<div class="a">
+RTOS的复杂性不来自任务数量，而来自：
 
-关键问题不是“有多少任务”，而是：
+→ 时间约束之间的耦合关系
 
-这些任务在最坏情况下是否仍然满足时间约束。
+问题不在“有多少任务”，
+而在：
 
-因此RTOS的复杂性是“时间耦合复杂性”，不是功能复杂性。
-  </div>
-  <div class="tag">系统结构误解</div>
+这些任务在最坏情况下是否仍满足时间约束。
+
+<br><br>
+
+因此RTOS复杂度本质是：
+
+<strong>时间可证明复杂度（Temporal Proof Complexity）</strong>
+</div>
+<div class="tag">系统结构误解</div>
 </div>
 
-<!-- 4 -->
-<div class="item">
-  <div class="q">Q4：RTOS是不是一定更快？</div>
-  <div class="a">
-不是。
+<div class="block">
+<div class="q">误解4：RTOS一定更快</div>
+<div class="a">
+RTOS通常不会追求最快。
 
-RTOS通常不会追求平均性能最优，甚至可能牺牲吞吐量。
+它优化的是：
 
-它的核心目标是：
+→ 最坏情况执行时间（WCET）
 
-在最坏情况下仍然不超时。
+而不是平均性能。
 
-因此RTOS优化的是“稳定性下界”，而不是“性能上界”。
-  </div>
-  <div class="tag">性能误解</div>
+<br><br>
+
+因此RTOS可能：
+
+- 吞吐量更低
+- CPU利用率更保守
+- 但时间边界可预测
+
+<br>
+
+<strong>核心不是更快，而是不会失控。</strong>
+</div>
+<div class="tag">性能误解</div>
 </div>
 
-<!-- 5 -->
-<div class="item">
-  <div class="q">Q5：RTOS和普通操作系统最大区别是什么？</div>
-  <div class="a">
-不是功能，而是约束方式。
+<div class="block">
+<div class="q">误解5：RTOS只是工业领域用的系统</div>
+<div class="a">
+RTOS不是行业分类，而是系统约束模型。
 
-普通操作系统：
-- 允许不确定性存在
-- 通过调度优化平均体验
+它存在于所有需要：
 
-RTOS：
-- 禁止关键路径不确定性
-- 通过约束保证时间可证明
+- 可预测控制
+- 确定性响应
+- 时间约束执行
 
-本质区别是：
+的系统中。
 
-一个接受波动，一个消除波动。
+例如：
+
+- 汽车控制
+- 飞控系统
+- 工业控制
+- 机器人控制
+
+<br>
+
+本质是：
+
+<strong>只要“时间影响正确性”，RTOS模型就成立</strong>
+</div>
+<div class="tag">应用误解</div>
+</div>
+
+<div class="block">
+<div class="q">总结：RTOS的真实定义</div>
+<div class="a">
+RTOS不是一种操作系统实现，而是一种系统设计约束：
+
+<br>
+
+<strong>所有执行行为必须满足可证明的时间边界</strong>
+
+<br>
+
+因此RTOS的核心不是“功能”，而是：
+
+→ 时间是否可建模  
+→ 行为是否可预测  
+→ 最坏情况是否可控制
+</div>
+</div>
+<section class="section">
+  <h2>延伸阅读</h2>
+
+  <div class="block">
+    <div class="q">继续理解这个问题的下一步路径：</div>
+
+    <div class="a">
+      → <a href="/why/02-why-general-os-fails.html" style="color:#7dd3fc;">通用操作系统为什么无法满足实时需求</a><br>
+
+      → <a href="/why/03-determinism-constraint.html" style="color:#7dd3fc;">确定性约束（Determinism Constraint）</a><br>
+
+      → <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;">调度周期与系统行为模型</a>
+    </div>
+
+    <div style="margin-top:10px;color:#94a3b8;font-size:13px;">
+      建议按顺序阅读，可以建立完整实时系统认知链路
+    </div>
   </div>
-  <div class="tag">本质区别</div>
+</section>
 </div>
 
 <footer>
-© 2017–2026 HRTOS · Real-Time System Misconception Layer
+© 2017–2026 HRTOS · Real-Time System Misconception Layer · Deterministic System Model
 </footer>
 
 </main>
-
+<script src="https://hrtos.com/header.js"></script>
 </body>
 </html>

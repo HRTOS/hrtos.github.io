@@ -186,7 +186,25 @@ a{
       <span class="tag">Deterministic Execution</span>
     </div>
   </section>
+<div class="meta">
+  <span class="tag">内核核心机制</span>
+  <span class="tag">实时调度</span>
+  <span class="tag">执行模型</span>
+  <span class="tag">确定性系统</span>
+</div>
 
+<div class="block" style="margin-top:16px;">
+本页面属于 HRTOS 学习体系中的 <b>内核执行层</b>。
+
+学习路径结构：
+WHY层（为什么需要实时系统）
+→ SYSTEM层（系统结构设计）
+→ LEARN层（机制实现原理）
+→ KERNEL层（底层实现）
+
+当前章节：
+<b>上下文切换 = 实时系统最底层执行原语</b>
+</div>
   <section class="section">
     <h2>一、什么是上下文切换</h2>
 
@@ -271,7 +289,28 @@ a{
       对实时系统而言，切换过程本身也是“时间开销的一部分”。
     </p>
   </section>
+<section class="section">
+  <h2>上下文切换在系统中的位置</h2>
 
+  <div class="block">
+[ 系统执行模型 ]
+
+中断触发层 ─────────┐
+                     ↓
+             调度决策层（Scheduler）
+                     ↓
+             上下文切换引擎（当前页）
+                     ↓
+             任务执行流（Task Execution）
+                     ↓
+             硬件执行层（CPU）
+</div>
+
+<p>
+上下文切换不是独立概念，而是 RTOS 执行链中的“核心枢纽层”。
+它连接了调度决策与实际执行。
+</p>
+</section>
   <section class="section">
     <h2>五、上下文切换的触发方式</h2>
 
@@ -382,10 +421,44 @@ Context Switch = State Save + Scheduler Decision + State Restore
 - 可预测开销
     </div>
   </section>
+<section class="section">
+  <h2>系统关联路径</h2>
 
+  <div class="grid">
+
+    <!-- 上游 -->
+    <a class="card" href="/docs/learn/scheduler-cycle.html">
+      <h3>上游：调度器决策</h3>
+      <p>
+        上下文切换由调度器触发，决定“谁获得CPU”
+      </p>
+    </a>
+
+    <!-- 同层 -->
+    <a class="card" href="/system-view/01-execution-flow.html">
+      <h3>同层：执行流模型</h3>
+      <p>
+        描述任务从触发到执行的完整路径结构
+      </p>
+    </a>
+
+    <!-- 下游 -->
+    <a class="card" href="/docs/learn/interrupt-flow.html">
+      <h3>下游：中断与抢占</h3>
+      <p>
+        上下文切换发生的主要触发机制之一
+      </p>
+    </a>
+
+  </div>
+</section>
   <footer class="footer">
-    © 2017–2026 HRTOS. 上下文切换机制与实时系统执行模型基础。
-  </footer>
+  © 2017–2026 HRTOS · 内核执行层 · 上下文切换机制
+
+  <div style="margin-top:8px;color:#64748b;font-size:12px;">
+    实时系统执行模型的一部分 · Kernel Execution Architecture
+  </div>
+</footer>
 
 </main>
 
