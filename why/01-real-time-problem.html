@@ -81,6 +81,13 @@ h2 {
   font-size: 14px;
   margin-top: 6px;
 }
+.site-footer{
+      text-align:center;
+      border-top:1px solid rgba(148,163,184,.14);
+      padding-top:12px;
+      color:#8ea3be;
+      font-size:.95rem;
+    }
 </style>
 </head>
 
@@ -133,7 +140,31 @@ h2 {
       在嵌入式、工业控制、机器人与汽车电子系统中，任何不可预测的延迟都可能导致系统行为失控。
     </p>
   </div>
+<div class="card">
+<h2>为什么必须存在时间约束系统（核心因果）</h2>
 
+<p>
+实时系统的问题不是工程选择，而是结构性必然。
+</p>
+
+<p>
+一旦系统引入外部事件（Interrupt / IO / Sensor），
+执行流就不再是纯函数计算，而变成：
+</p>
+
+<p>
+<b>Event + Scheduling + Execution + Time Constraint</b>
+</p>
+
+<p>
+这意味着系统行为不再只依赖输入，而依赖“时间分布”。
+</p>
+
+<p>
+👉 这就是为什么普通操作系统无法满足实时需求：
+它们没有对时间做数学约束建模。
+</p>
+</div>
   <!-- concept expanded -->
   <div class="card">
     <h2>时间与正确性的关系</h2>
@@ -167,7 +198,28 @@ h2 {
       Determinism means every operation has a known and bounded execution time.
     </div>
   </div>
+<div class="card">
+<h2>与 System View 的对应关系</h2>
 
+<p>
+Why 层回答“为什么必须这样设计”，System View 才回答“如何实现这种结构”。
+</p>
+
+<p>
+对应关系如下：
+</p>
+
+<p>
+• 实时问题本质 → Time System（时间模型）<br>
+• 为什么会抢占 → Interrupt Flow（中断流）<br>
+• 为什么必须调度 → Scheduler Cycle（调度闭环）<br>
+• 为什么执行不确定 → Execution Flow（执行路径）<br>
+</p>
+
+<p>
+👉 System View 是实现层，Why 是不可避免性证明层。
+</p>
+</div>
   <!-- classification -->
   <div class="card">
     <h2>实时系统中的失败定义</h2>
@@ -211,7 +263,22 @@ h2 {
       这些系统共同特点是：时间即控制逻辑的一部分。
     </p>
   </div>
+<div class="card">
+<h2>核心结论（System-level Insight）</h2>
 
+<p>
+实时系统不是“更复杂的软件”，而是“必须引入时间作为第一类约束变量的计算模型”。
+</p>
+
+<p>
+如果没有时间约束建模：
+系统就无法预测，也无法证明正确性。
+</p>
+
+<div class="en">
+Real-time systems are not complex software systems, but computation models where time is a first-class constraint.
+</div>
+</div>
   <!-- meta -->
   <div class="card card-meta">
     <h2>语义总结</h2>
@@ -222,8 +289,73 @@ h2 {
     <div class="en">
       The core of real-time systems is not computation itself, but provable timing guarantees.
     </div>
+    
   </div>
+<div class="card">
+<h2>相关阅读（Related System Model）</h2>
+
+<p>
+为了理解“时间为什么是系统正确性的一部分”，需要进一步阅读系统级实现模型：
+</p>
+
+<p>
+<a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;">
+→ 执行流模型（Execution Flow）
+</a>
+</p>
+
+<p>
+解释任务如何在时间约束下形成执行路径，是Why层的直接实现基础。
+</p>
+
+<p>
+<a href="/system-view/03-interrupt-flow.html" style="color:#7dd3fc;">
+→ 中断流模型（Interrupt Flow）
+</a>
+</p>
+
+<p>
+说明外部事件如何破坏时间连续性，是实时系统不可预测性的来源。
+</p>
+
+<p>
+<a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;">
+→ 调度循环（Scheduler Cycle）
+</a>
+</p>
+
+<p>
+展示系统如何在时间约束下做出执行决策，是“为什么必须有调度”的工程实现。
+</p>
+
+<p>
+<a href="/system-view/06-time-system.html" style="color:#7dd3fc;">
+→ 时间系统（Time System）
+</a>
+</p>
+
+<p>
+定义时间如何成为系统约束变量，是Why层“时间即正确性”的直接对应模型。
+</p>
 
 </div>
+</div>
+<footer class="site-footer">
+  <div style="margin-bottom:10px;">
+    © 2017–2026 HRTOS · WHY Layer
+  </div>
+
+  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:800px;margin:0 auto;">
+    WHY 层用于定义实时系统成立的前提条件，包括时间确定性、调度约束与系统不可变规则。<br>
+    本层不描述实现细节，而是定义系统“为什么必须这样设计”。
+  </div>
+
+  <div style="margin-top:14px;font-size:13px;">
+    <a href="/why/index.html" style="color:#7dd3fc;margin-right:12px;">WHY 首页</a>
+    <a href="/why/01-real-time-problem.html" style="color:#7dd3fc;margin-right:12px;">实时问题</a>
+    <a href="/why/02-why-general-os-fails.html" style="color:#7dd3fc;margin-right:12px;">GPOS局限</a>
+    <a href="/system-view/index.html" style="color:#7dd3fc;">System View →</a>
+  </div>
+</footer>
 </body>
 </html>

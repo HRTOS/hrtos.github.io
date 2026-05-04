@@ -88,6 +88,13 @@ h2 {
   font-size: 14px;
   margin-top: 6px;
 }
+.site-footer{
+      text-align:center;
+      border-top:1px solid rgba(148,163,184,.14);
+      padding-top:12px;
+      color:#8ea3be;
+      font-size:.95rem;
+    }
 </style>
 </head>
 
@@ -189,7 +196,43 @@ h2 {
       The difference between RTOS and GPOS is not performance, but a divergence in system design philosophy.
     </div>
   </div>
+<div class="card" style="border-left:3px solid #38bdf8;">
+  <h2>相关阅读（Why → System 对照）</h2>
 
+  <p>
+    <b>Why 层基础概念：</b><br>
+    • <a href="/why/01-real-time-problem.html" style="color:#7dd3fc;">实时问题的本质</a><br>
+    • <a href="/why/03-determinism-constraint.html" style="color:#7dd3fc;">确定性约束（Determinism）</a>
+  </p>
+
+  <p>
+    <b>系统层映射（RTOS结构实现）：</b><br>
+    • <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;">执行流模型（Execution Flow）</a><br>
+    • <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;">调度循环（Scheduler Cycle）</a><br>
+    • <a href="/system-view/06-time-system.html" style="color:#7dd3fc;">时间系统（Time System）</a>
+  </p>
+
+  <p style="color:#9fb0c3;font-size:13px;">
+    说明：RTOS vs GPOS 的本质差异，在 System View 中体现为“是否可建立时间上界模型”。
+  </p>
 </div>
+</div>
+<footer class="site-footer">
+  <div style="margin-bottom:10px;">
+    © 2017–2026 HRTOS · WHY Layer
+  </div>
+
+  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:800px;margin:0 auto;">
+    WHY 层用于定义实时系统成立的前提条件，包括时间确定性、调度约束与系统不可变规则。<br>
+    本层不描述实现细节，而是定义系统“为什么必须这样设计”。
+  </div>
+
+  <div style="margin-top:14px;font-size:13px;">
+    <a href="/why/index.html" style="color:#7dd3fc;margin-right:12px;">WHY 首页</a>
+    <a href="/why/01-real-time-problem.html" style="color:#7dd3fc;margin-right:12px;">实时问题</a>
+    <a href="/why/02-why-general-os-fails.html" style="color:#7dd3fc;margin-right:12px;">GPOS局限</a>
+    <a href="/system-view/index.html" style="color:#7dd3fc;">System View →</a>
+  </div>
+</footer>
 </body>
 </html>

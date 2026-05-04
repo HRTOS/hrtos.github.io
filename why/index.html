@@ -177,7 +177,41 @@
     <h1>为什么选择 HRTOS</h1>
     <p>HRTOS 面向高可靠实时嵌入式系统设计，提供确定性调度、低延迟中断响应与可裁剪内核架构。</p>
   </section>
+<section class="section">
+  <div class="section-header">
+    <h2>WHY层定义</h2>
+  </div>
 
+  <div class="doc-card">
+    <p>
+      WHY层不是功能文档集合，而是HRTOS系统设计的“前提层”。
+      它定义系统为什么成立，而不是系统如何实现。
+    </p>
+
+    <p>
+      核心约束：时间确定性是系统正确性的组成部分，而不是性能指标。
+    </p>
+  </div>
+</section>
+<section class="section">
+  <div class="section-header">
+    <h2>WHY层结构模型</h2>
+  </div>
+
+  <div class="doc-card">
+    <p>
+      WHY层不是章节集合，而是因果链结构：
+    </p>
+
+    <p>
+      实时问题本质 → GPOS局限 → 确定性约束 → RTOS vs GPOS → WHY总结
+    </p>
+
+    <p>
+      每一篇文档是因果链中的一个节点，而不是独立内容。
+    </p>
+  </div>
+</section>
   <section class="section">
     <div class="section-header">
       <h2>核心原因</h2>
@@ -210,7 +244,29 @@
       </a>
     </div>
   </section>
+<section class="section">
+  <div class="section-header">
+    <h2>推荐阅读路径</h2>
+  </div>
 
+  <div class="doc-card">
+    <p>
+      建议阅读顺序（从因到果）：
+    </p>
+
+    <p>
+      1. 实时问题本质<br>
+      2. 通用OS局限<br>
+      3. 确定性约束<br>
+      4. RTOS vs GPOS<br>
+      
+    </p>
+
+    <p>
+      这是一个“认知递进路径”，而不是目录列表。
+    </p>
+  </div>
+</section>
   <section class="section">
     <div class="section-header">
       <h2>扩展阅读</h2>
@@ -220,15 +276,44 @@
     <div class="docs-grid">
       <a class="doc-card" href="summary.html">
         <h3>总结</h3>
-        <p>HRTOS 设计思想整体总结</p>
+        <p>HRTOS 设计思想整体总结((WHY Summary))</p>
         <span class="doc-link">进入</span>
       </a>
     </div>
   </section>
+<section class="section">
+  <div class="doc-card">
+    <h3>WHY层语义总结</h3>
 
+    <p>
+      WHY层的本质不是解释系统，而是定义系统成立的条件。
+    </p>
+
+    <p>
+      如果无法证明时间确定性，那么系统无法进入实时系统范畴。
+    </p>
+
+    <p>
+      因此WHY层是HRTOS的“理论前提层”。
+    </p>
+  </div>
+</section>
   <footer class="site-footer">
+  <div style="margin-bottom:10px;">
     © 2017–2026 HRTOS
-  </footer>
+  </div>
+
+  <div style="font-size:13px;color:#8ea3be;line-height:1.8;">
+    HRTOS 是面向实时系统设计的操作系统项目，强调确定性调度与时间约束建模。<br>
+    WHY 层定义系统成立条件，System View 描述运行结构，Docs 层提供实现细节。
+  </div>
+
+  <div style="margin-top:12px;font-size:13px;">
+    <a href="/why/index.html" style="color:#7dd3fc;margin-right:12px;">WHY</a>
+    <a href="/system-view/index.html" style="color:#7dd3fc;margin-right:12px;">System</a>
+    <a href="/docs/index.html" style="color:#7dd3fc;">Docs</a>
+  </div>
+</footer>
 
 </main>
 </body>

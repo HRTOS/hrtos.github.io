@@ -84,6 +84,13 @@ h2 {
   font-size: 14px;
   margin-top: 6px;
 }
+.site-footer{
+      text-align:center;
+      border-top:1px solid rgba(148,163,184,.14);
+      padding-top:12px;
+      color:#8ea3be;
+      font-size:.95rem;
+    }
 </style>
 </head>
 
@@ -213,7 +220,48 @@ h2 {
       Determinism defines whether a system can be time-modeled, which determines whether it qualifies as a real-time system.
     </div>
   </div>
+<div class="card" style="border-left:3px solid #38bdf8;">
+  <h2>知识图谱（Knowledge Graph）</h2>
 
+  <p>
+    当前节点：<b>确定性约束</b>
+  </p>
+
+  <p>
+    上游原因：
+    <a href="/why/01-real-time-problem.html" style="color:#7dd3fc;">实时问题的本质</a>,
+    <a href="/why/02-general-os-failure.html" style="color:#7dd3fc;">通用OS限制</a>
+  </p>
+
+  <p>
+    同层概念：
+    <a href="/why/03-determinism-constraint.html" style="color:#7dd3fc;">确定性约束</a>
+  </p>
+
+  <p>
+    下游系统映射：
+    <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;">执行流模型</a>,
+    <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;">调度循环</a>,
+    <a href="/system-view/06-time-system.html" style="color:#7dd3fc;">时间系统</a>
+  </p>
 </div>
+</div>
+<footer class="site-footer">
+  <div style="margin-bottom:10px;">
+    © 2017–2026 HRTOS · WHY Layer
+  </div>
+
+  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:800px;margin:0 auto;">
+    WHY 层用于定义实时系统成立的前提条件，包括时间确定性、调度约束与系统不可变规则。<br>
+    本层不描述实现细节，而是定义系统“为什么必须这样设计”。
+  </div>
+
+  <div style="margin-top:14px;font-size:13px;">
+    <a href="/why/index.html" style="color:#7dd3fc;margin-right:12px;">WHY 首页</a>
+    <a href="/why/01-real-time-problem.html" style="color:#7dd3fc;margin-right:12px;">实时问题</a>
+    <a href="/why/02-why-general-os-fails.html" style="color:#7dd3fc;margin-right:12px;">GPOS局限</a>
+    <a href="/system-view/index.html" style="color:#7dd3fc;">System View →</a>
+  </div>
+</footer>
 </body>
 </html>
