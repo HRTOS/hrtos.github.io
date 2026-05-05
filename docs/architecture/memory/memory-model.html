@@ -203,28 +203,28 @@ a{
    <div class="model">
   [ 系统内存模型 ]
 
-  <a href="/docs/modules/task/task-stack.html">任务空间（Task Space）</a>
-  <a href="/docs/modules/task/task-stack.html">- 任务A栈（Task A Stack）</a>
-  <a href="/docs/modules/task/task-stack.html">- 任务B栈（Task B Stack）</a>
-  <a href="/docs/modules/task/task-stack.html">- 任务C栈（Task C Stack）</a>
+  <a href="/docs/modules/memory/stack-management.html">任务空间（Task Space）</a>
+  <a href="/docs/modules/memory/stack-management.html">- 任务A栈（Task A Stack）</a>
+  <a href="/docs/modules/memory/stack-management.html">- 任务B栈（Task B Stack）</a>
+  <a href="/docs/modules/memory/stack-management.html">- 任务C栈（Task C Stack）</a>
 
   <a href="/docs/architecture/kernel/index.html">内核空间（Kernel Space）</a>
   <a href="/docs/architecture/scheduler/index.html">- 调度器状态（Scheduler State）</a>
   <a href="/docs/architecture/interrupt/index.html">- 中断上下文（Interrupt Context）</a>
-  <a href="/docs/architecture/kernel/system-control-block.html">- 系统控制块（System Control Block）</a>
+  <a href="/docs/architecture/kernel/kernel-structure.html">- 系统控制块（System Control Block）</a>
 
   <a href="/docs/architecture/ipc/index.html">共享资源区（Shared Resource）</a>
-  <a href="/docs/architecture/ipc/message-queue.html">- IPC缓冲区（IPC Buffer）</a>
-  <a href="/docs/architecture/ipc/message-queue.html">- 消息队列（Message Queue）</a>
-  <a href="/docs/architecture/ipc/semaphore.html">- 信号量对象（Semaphore Object）</a>
+  <a href="/docs/modules/ipc/message-queue.html">- IPC缓冲区（IPC Buffer）</a>
+  <a href="/docs/modules/ipc/message-queue.html">- 消息队列（Message Queue）</a>
+  <a href="/docs/modules/ipc/semaphore.html">- 信号量对象（Semaphore Object）</a>
 
-  <a href="/docs/modules/memory/static-memory.html">静态区域（Static Region）</a>
-  <a href="/docs/modules/memory/static-memory.html">- 全局变量（Global Variables）</a>
-  <a href="/docs/modules/memory/static-memory.html">- 系统配置（System Config）</a>
+  <a href="/docs/modules/memory/allocation.html">静态区域（Static Region）</a>
+  <a href="/docs/modules/memory/allocation.html">- 全局变量（Global Variables）</a>
+  <a href="/docs/modules/memory/allocation.html">- 系统配置（System Config）</a>
 
-  <a href="/docs/modules/memory/heap.html">堆区域（Heap Region）</a>
-  <a href="/docs/modules/memory/heap.html">- 动态分配池（Dynamic Allocation Pool）</a>
-  <a href="/docs/modules/memory/heap.html">- 碎片控制区（Fragment Control Area）</a>
+  <a href="/docs/modules/memory/allocation.html">堆区域（Heap Region）</a>
+  <a href="/docs/modules/memory/allocation.html">- 动态分配池（Dynamic Allocation Pool）</a>
+  <a href="/docs/modules/memory/allocation.html">- 碎片控制区（Fragment Control Area）</a>
 </div>
   </section>
 <section class="section">
@@ -311,12 +311,12 @@ a{
       <p>查看共享内存、消息队列与同步机制的通信实现方式。</p>
     </a>
 
-    <a class="card" href="/docs/modules/memory/heap.html">
+    <a class="card" href="/docs/modules/memory/allocation.html">
       <h3>堆管理机制</h3>
       <p>分析动态内存分配策略、碎片控制与实时性影响。</p>
     </a>
 
-    <a class="card" href="/docs/modules/memory/pool.html">
+    <a class="card" href="/docs/modules/memory/allocation.html">
       <h3>内存池模型</h3>
       <p>固定块分配模型，用于降低动态分配的不确定性。</p>
     </a>
