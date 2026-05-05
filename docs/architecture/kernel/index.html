@@ -6,7 +6,8 @@
 
 <title>内核架构 Kernel | HRTOS 架构模块</title>
 <meta name="description" content="HRTOS 内核架构模块，定义执行控制层、调度域与系统边界，是实时系统确定性运行的核心控制中心。" />
-
+<meta name="semantic-type" content="kernel-core-architecture" />
+<meta name="content-depth" content="system-level" />
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
@@ -200,53 +201,101 @@ a{
   </section>
 
   <section class="section">
-    <h2>模块概述</h2>
-    <p>
-      Kernel模块定义系统运行的控制逻辑，它不只是执行调度器，
-      而是协调任务、时间、中断与资源之间关系的核心系统层。
-    </p>
-  </section>
+  <h2>系统级定义（System Definition）</h2>
 
+  <p>
+    Kernel 是 HRTOS 中唯一的<strong>全局调度控制器（Global Control Executor）</strong>，
+    其作用不是执行任务，而是定义系统执行的“可运行空间”。
+  </p>
+
+  <p>
+    从形式化角度：
+  </p>
+
+  <p>
+    Kernel = { Scheduling + Preemption + Timing + Boundary Enforcement }
+  </p>
+
+  <p>
+    即：Kernel 决定系统“允许发生什么”，而不是“发生了什么”。
+  </p>
+</section>
+<section class="section">
+  <h2>Kernel 控制模型（Control Model）</h2>
+
+  <p>
+    Kernel 的运行不是线性执行，而是一个闭环控制系统：
+  </p>
+
+  <p>
+    Event → Control Decision → Scheduling → Execution → State Transition → Re-entry
+  </p>
+
+  <p>
+    每一次系统行为，都会重新回到 Kernel 进行再决策。
+  </p>
+</section>
   <section class="section">
     <h2>核心结构</h2>
 
     <div class="grid">
 
-      <a class="card" href="kernel-overview.html">
-        <h3>内核总览</h3>
-        <p>定义内核在系统中的控制边界与职责模型。</p>
-        <span>进入 →</span>
-      </a>
+  <a class="card" href="kernel-overview.html">
+    <h3>内核总览</h3>
+    <p>定义内核在系统中的控制边界与职责模型。</p>
+    <span>进入 →</span>
+  </a>
 
-      <a class="card" href="kernel-structure.html">
-        <h3>内核结构</h3>
-        <p>解析调度器、中断与任务管理的内部组织关系。</p>
-        <span>进入 →</span>
-      </a>
+  <a class="card" href="kernel-structure.html">
+    <h3>内核结构</h3>
+    <p>解析调度器、中断与任务管理的内部组织关系。</p>
+    <span>进入 →</span>
+  </a>
 
-      <a class="card" href="kernel-flow.html">
-        <h3>内核执行流程</h3>
-        <p>描述从中断触发到任务切换的完整执行链。</p>
-        <span>进入 →</span>
-      </a>
+  <a class="card" href="kernel-flow.html">
+    <h3>内核执行流程</h3>
+    <p>描述从中断触发到任务切换的完整执行链。</p>
+    <span>进入 →</span>
+  </a>
 
-    </div>
+  <!-- ⭐新增：关键权重页 -->
+  <a class="card" href="system-boundary.html">
+    <h3>内核控制模型</h3>
+    <p>定义内核如何进行调度决策、抢占判定与系统控制逻辑。</p>
+    <span>进入 →</span>
+  </a>
+
+</div>
   </section>
 
   <section class="section">
-    <h2>系统关系</h2>
-    <p>
-      Interrupt → Kernel Control → Scheduler Decision → Task Execution → Resource Access → Re-entry
-    </p>
-  </section>
+  <h2>系统关系</h2>
 
-  <section class="section">
-    <h2>语义定位</h2>
-    <p>
-      Kernel不是执行器，而是系统确定性的“控制边界维护器”。
-      它的作用是限制不确定性扩散，而不是增加功能复杂度。
-    </p>
-  </section>
+  <p>
+    <a href="/docs/architecture/interrupt/index.html"><strong>中断事件（Interrupt）</strong></a>
+    →
+    <a href="/docs/architecture/kernel/index.html">进入内核控制域</a>
+    →
+    <a href="/docs/architecture/scheduler/index.html">调度决策点（Scheduler Decision）</a>
+    →
+    <span>任务选择（基于优先级与时间约束）</span>
+    →
+    <a href="/docs/architecture/kernel/kernel-flow.html">上下文切换执行</a>
+    →
+    <span>资源访问与权限仲裁</span>
+    →
+    <span>系统状态迁移（Running / Ready / Blocked）</span>
+    →
+    <span>重新进入内核调度循环</span>
+  </p>
+
+  <p>
+    该执行链路的本质是：<strong>系统在每一次中断或事件触发后，重新回到内核进行确定性收敛</strong>，
+    从而保证实时系统行为始终处于可预测状态。
+  </p>
+</section>
+
+  
 
   <footer class="footer">
     © 2017–2026 HRTOS. Deterministic Kernel Architecture.

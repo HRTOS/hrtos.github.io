@@ -143,7 +143,16 @@ a{
   color:var(--muted);
   font-size:14px;
 }
+.model a{
+  display:block;
+  color:#7dd3fc;
+  text-decoration:none;
+  margin:4px 0;
+}
 
+.model a:hover{
+  color:#bae6fd;
+}
 .footer{
   text-align:center;
   padding-top:18px;
@@ -191,40 +200,74 @@ a{
   <section class="section">
     <h2>系统内存模型</h2>
 
-    <div class="model">
-[ SYSTEM MEMORY MODEL ]
+   <div class="model">
+  [ 系统内存模型 ]
 
-TASK SPACE:
-- Task A Stack
-- Task B Stack
-- Task C Stack
+  <a href="/docs/modules/task/task-stack.html">任务空间（Task Space）</a>
+  <a href="/docs/modules/task/task-stack.html">- 任务A栈（Task A Stack）</a>
+  <a href="/docs/modules/task/task-stack.html">- 任务B栈（Task B Stack）</a>
+  <a href="/docs/modules/task/task-stack.html">- 任务C栈（Task C Stack）</a>
 
-KERNEL SPACE:
-- Scheduler State
-- Interrupt Context
-- System Control Block
+  <a href="/docs/architecture/kernel/index.html">内核空间（Kernel Space）</a>
+  <a href="/docs/architecture/scheduler/index.html">- 调度器状态（Scheduler State）</a>
+  <a href="/docs/architecture/interrupt/index.html">- 中断上下文（Interrupt Context）</a>
+  <a href="/docs/architecture/kernel/system-control-block.html">- 系统控制块（System Control Block）</a>
 
-SHARED RESOURCE:
-- IPC Buffer
-- Message Queue
-- Semaphore Object
+  <a href="/docs/architecture/ipc/index.html">共享资源区（Shared Resource）</a>
+  <a href="/docs/architecture/ipc/message-queue.html">- IPC缓冲区（IPC Buffer）</a>
+  <a href="/docs/architecture/ipc/message-queue.html">- 消息队列（Message Queue）</a>
+  <a href="/docs/architecture/ipc/semaphore.html">- 信号量对象（Semaphore Object）</a>
 
-STATIC REGION:
-- Global Variables
-- System Config
+  <a href="/docs/modules/memory/static-memory.html">静态区域（Static Region）</a>
+  <a href="/docs/modules/memory/static-memory.html">- 全局变量（Global Variables）</a>
+  <a href="/docs/modules/memory/static-memory.html">- 系统配置（System Config）</a>
 
-HEAP REGION:
-- Dynamic Allocation Pool
-- Fragment Control Area
-    </div>
+  <a href="/docs/modules/memory/heap.html">堆区域（Heap Region）</a>
+  <a href="/docs/modules/memory/heap.html">- 动态分配池（Dynamic Allocation Pool）</a>
+  <a href="/docs/modules/memory/heap.html">- 碎片控制区（Fragment Control Area）</a>
+</div>
   </section>
+<section class="section">
+  <h2>内存与内核的关系</h2>
 
+  <p>
+    内存模型直接约束 Kernel 的执行行为，包括调度、上下文切换与中断响应。
+  </p>
+
+  <p>
+    Kernel 不仅使用内存执行任务，还通过内存隔离机制保证系统不会发生非确定性行为。
+  </p>
+
+  <p>
+    👉 Memory 是 Kernel 可执行性的边界条件
+  </p>
+</section>
   <section class="section">
     <h2>核心设计逻辑</h2>
     <p>
       内存模型的核心目标不是“最大利用率”，而是“访问可预测性与隔离性”。
     </p>
   </section>
+
+<section class="section">
+  <h2>内存访问规则（Memory Access Rules）</h2>
+
+  <p>
+    HRTOS 内存模型不仅定义结构，还定义访问约束。
+    所有运行行为必须遵循以下规则：
+  </p>
+
+  <p>
+    1. Task Space 不能直接访问 Kernel Space<br/>
+    2. Kernel 可访问所有区域，但不受任务调用<br/>
+    3. Shared Memory 必须通过 IPC 控制访问<br/>
+    4. Heap 分配必须保证时间上界可分析（Bounded Allocation）
+  </p>
+
+  <p>
+    👉 任何违反访问规则的行为都会破坏系统确定性（Determinism）
+  </p>
+</section>
 
   <section class="section">
     <h2>关键子系统</h2>
@@ -253,13 +296,68 @@ HEAP REGION:
 
     </div>
   </section>
+<section class="section">
+  <h2>相关阅读</h2>
 
+  <div class="grid">
+
+    <a class="card" href="/docs/architecture/kernel/index.html">
+      <h3>内核架构</h3>
+      <p>理解内核控制层如何管理调度、中断与系统运行边界。</p>
+    </a>
+
+    <a class="card" href="/docs/architecture/ipc/index.html">
+      <h3>IPC 通信模型</h3>
+      <p>查看共享内存、消息队列与同步机制的通信实现方式。</p>
+    </a>
+
+    <a class="card" href="/docs/modules/memory/heap.html">
+      <h3>堆管理机制</h3>
+      <p>分析动态内存分配策略、碎片控制与实时性影响。</p>
+    </a>
+
+    <a class="card" href="/docs/modules/memory/pool.html">
+      <h3>内存池模型</h3>
+      <p>固定块分配模型，用于降低动态分配的不确定性。</p>
+    </a>
+
+    <a class="card" href="/docs/architecture/interrupt/index.html">
+      <h3>中断架构</h3>
+      <p>查看中断上下文如何访问内核内存与共享资源。</p>
+    </a>
+
+    <a class="card" href="/docs/architecture/scheduler/index.html">
+      <h3>调度器模型</h3>
+      <p>理解任务切换时栈保存、恢复与调度状态管理。</p>
+    </a>
+
+  </div>
+</section>
   <section class="section">
     <h2>设计目标</h2>
     <p>
       可预测性 / 隔离性 / 最小碎片化 / 实时访问延迟控制
     </p>
   </section>
+
+<section class="section">
+  <h2>系统意义</h2>
+
+  <p>
+    内存模型在 HRTOS 中不是资源管理问题，而是系统正确性的基础假设。
+  </p>
+
+  <p>
+    如果内存访问不可预测，则调度不可预测；
+    如果调度不可预测，则实时系统失效。
+  </p>
+
+  <p>
+    因此：
+    <strong>Memory Model = RTOS 可成立的前提条件</strong>
+  </p>
+</section>
+
 
   <footer class="footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的内存模型体系。

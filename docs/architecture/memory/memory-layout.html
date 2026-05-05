@@ -167,6 +167,7 @@ a{
   <nav class="breadcrumb">
     <a href="/docs/index.html">文档中心</a> /
     <a href="/docs/architecture/index.html">系统架构</a> /
+    <a href="/docs/architecture/memory/index.html">内存架构</a> /
     <span>内存模型</span>
   </nav>
 
@@ -176,9 +177,14 @@ a{
     <h1>内存布局（Memory Layout）</h1>
 
     <p>
-      内存布局定义HRTOS在运行时如何划分内核空间、任务空间、堆与栈结构，
-      是系统稳定性与实时性的重要基础。
-    </p>
+  内存布局定义 HRTOS 在运行时的<strong>执行空间划分规则</strong>，
+  包括内核空间、任务空间、栈与堆的隔离关系。
+</p>
+
+<p>
+  这种划分不是为了存储管理，而是为了保证：
+  <strong>调度行为、上下文切换与中断执行具有可预测性</strong>。
+</p>
 
     <div class="meta">
       <span class="tag">Memory Model</span>
@@ -187,27 +193,99 @@ a{
     </div>
   </section>
 
+
+<section class="section">
+  <h2>内存模型的系统角色</h2>
+
+  <p>
+    在 HRTOS 中，内存不仅是数据存储区域，而是<strong>系统执行约束的一部分</strong>。
+    所有调度行为、中断响应与任务执行，都依赖于内存结构的确定性划分。
+  </p>
+
+  <p>
+    因此，Memory Layout 本质上定义的是：
+    <strong>系统运行的可执行边界（Executable Boundary）</strong>。
+  </p>
+</section>
+
   <section class="section">
     <h2>内存结构模型</h2>
-
+<p>
+  HRTOS 的内存结构遵循严格的确定性分层模型，确保所有运行行为可预测：
+</p>
     <div class="diagram">
-[ 高地址 ]
-+----------------------+
-| 任务栈（Task Stack） |
-+----------------------+
-| 动态堆（Heap）       |
-+----------------------+
-| 内核区（Kernel）     |
-| - 调度器            |
-| - 中断栈            |
-+----------------------+
-| 静态数据区          |
-| - 全局变量          |
-+----------------------+
-[ 低地址 ]
-    </div>
-  </section>
 
+  <div>
+    [ 高地址 ]
+  </div>
+
+  <div style="margin-top:10px; border:1px solid rgba(56,189,248,.18); padding:12px; border-radius:8px;">
+    任务栈（Task Stack）
+  </div>
+
+  <div style="margin-top:10px; border:1px solid rgba(56,189,248,.18); padding:12px; border-radius:8px;">
+    动态堆（Heap）
+  </div>
+
+  <div style="margin-top:10px; border:1px solid rgba(56,189,248,.18); padding:12px; border-radius:8px;">
+    <a href="/docs/architecture/kernel/index.html">内核区（Kernel）</a>
+    <div style="margin-top:6px; font-size:13px; color:#7dd3fc;">
+      <a href="/docs/architecture/scheduler/index.html">调度器</a> ｜ 
+      <a href="/docs/architecture/interrupt/index.html">中断栈</a>
+    </div>
+  </div>
+
+  <div style="margin-top:10px; border:1px solid rgba(148,163,184,.18); padding:12px; border-radius:8px;">
+    静态数据区（Static Data）
+    <div style="margin-top:6px; font-size:13px; color:#94a3b8;">
+      全局变量 / 编译期数据
+    </div>
+  </div>
+
+  <div style="margin-top:10px;">
+    [ 低地址 ]
+  </div>
+
+</div>
+
+<section class="section">
+  <h2>内存语义模型（Memory Semantics）</h2>
+
+  <p>
+    HRTOS 的内存不是“存储区域划分”，而是一个<strong>确定性访问模型</strong>。
+  </p>
+
+  <p>
+    每一类内存区域，都对应一组访问约束：
+  </p>
+
+  <p>
+    Task Stack → 私有执行空间（Private Execution Context）<br/>
+    Heap → 非确定性资源（Non-deterministic Region）<br/>
+    Kernel → 受控执行区（Controlled Execution Zone）<br/>
+    Static → 全局只读/初始化区域（Stable State Region）
+  </p>
+</section>
+
+
+  </section>
+<section class="section">
+  <h2>内存与内核的关系</h2>
+
+  <p>
+    内存结构直接约束 Kernel 的调度行为：
+  </p>
+
+  <p>
+    Kernel 不仅依赖内存执行任务上下文切换，
+    同时也通过内存隔离机制保证系统不会发生不可控访问。
+  </p>
+
+  <p>
+    换句话说：
+    <strong>没有确定的内存模型，就不存在确定性的 RTOS 内核。</strong>
+  </p>
+</section>
   <section class="section">
     <h2>核心内存区域</h2>
 
@@ -239,10 +317,88 @@ a{
   <section class="section">
     <h2>设计原则</h2>
     <p>
-      内存隔离、确定性分配、最小碎片化、可预测访问延迟
-    </p>
+  内存设计遵循 RTOS 三大确定性原则：
+</p>
+
+<p>
+  ✔ Memory Isolation（内存隔离）<br/>
+  ✔ Deterministic Allocation（确定性分配）<br/>
+  ✔ Bounded Access Latency（访问延迟有界）
+</p>
+
+<p>
+  这些原则共同保证系统不会出现“不可分析行为”。
+</p>
   </section>
 
+<section class="section">
+  <h2>内存访问规则</h2>
+
+  <p>
+    为保证实时系统的确定性，HRTOS 对内存访问施加以下约束：
+  </p>
+
+  <p>
+    1. Task 不能直接访问 Kernel Space<br/>
+    2. ISR 只能通过 Kernel Gateway 修改状态<br/>
+    3. Heap 分配不允许影响调度路径时间<br/>
+    4. Stack 必须可静态分析（Stack Bounded）
+  </p>
+
+  <p>
+    👉 违反任意规则 = 破坏 RTOS 可预测性
+  </p>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+
+  <p>
+    内存布局在 HRTOS 中不是优化问题，而是系统正确性问题。
+  </p>
+
+  <p>
+    如果内存不可预测，则：
+    调度不可预测 → RTOS 失效 → 系统退化为 GPOS 行为模型
+  </p>
+
+  <p>
+    因此 Memory Layout = Real-Time System 的基础假设层
+  </p>
+</section>
+
+
+<section class="section">
+  <h2>相关阅读</h2>
+
+  <div class="grid">
+
+    <a class="card" href="/docs/architecture/kernel/index.html">
+      <h3>内核架构</h3>
+      <p>内存访问的最终控制者：Kernel 如何约束系统行为</p>
+      <span>进入 →</span>
+    </a>
+
+    <a class="card" href="/docs/architecture/scheduler/index.html">
+      <h3>调度器模型</h3>
+      <p>调度决策与内存访问时间耦合关系</p>
+      <span>进入 →</span>
+    </a>
+
+    <a class="card" href="/docs/architecture/interrupt/index.html">
+      <h3>中断模型</h3>
+      <p>ISR 如何影响栈与内核空间</p>
+      <span>进入 →</span>
+    </a>
+
+    <a class="card" href="/docs/architecture/ipc/index.html">
+      <h3>IPC通信机制</h3>
+      <p>任务间数据交换与内存共享边界</p>
+      <span>进入 →</span>
+    </a>
+
+  </div>
+</section>
   <footer class="footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的内存模型文档。
   </footer>

@@ -173,13 +173,14 @@ a{
   <nav class="breadcrumb">
     <a href="/docs/index.html">文档中心</a> /
     <a href="/docs/architecture/index.html">系统架构</a> /
-    <span>内核架构</span>
+    <a href="/docs/architecture/kernel/index.html">内核架构</a> /
+    <span>内核架构总览</span>
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS 架构模块</span>
+    <span class="hero-label">HRTOS 架构总览</span>
 
-    <h1>内核架构（Kernel Architecture）</h1>
+    <h1>内核架构总览（Kernel Architecture）</h1>
 
     <p>
       内核是HRTOS的核心控制层，负责调度执行、任务切换、中断响应与系统资源管理，
@@ -194,37 +195,77 @@ a{
   </section>
 
   <section class="section">
-    <h2>模块概述</h2>
-    <p>
-      Kernel层是所有系统行为的控制中心，它不执行业务逻辑，而是决定执行顺序与资源分配。
-    </p>
-  </section>
+  <h2>模块概述</h2>
 
-  <section class="section">
-    <h2>核心子模块</h2>
+  <p>
+    Kernel（内核层）是 HRTOS 的核心控制层，负责系统级任务调度、上下文切换、中断响应与资源分配。
+    它不执行业务逻辑，而是统一管理所有任务的执行顺序与系统运行状态。
+  </p>
 
-    <div class="grid">
+  <p>
+    在整个实时系统中，Kernel 决定“谁在运行、什么时候运行、运行多久”，
+    是系统确定性（Determinism）的基础来源。
+  </p>
+</section>
+<section class="section">
+  <h2>内核执行闭环模型（Execution Loop）</h2>
 
-      <a class="card" href="kernel-flow.html">
-        <h3>内核执行流程</h3>
-        <p>描述调度触发、上下文切换与任务执行路径。</p>
-        <span>查看 →</span>
-      </a>
+  <p>
+    HRTOS 内核不是线性流程，而是一个持续循环的控制闭环：
+  </p>
 
-      <a class="card" href="/docs/system/scheduling-flow.html">
-        <h3>调度循环</h3>
-        <p>系统如何持续选择并切换任务执行。</p>
-        <span>查看 →</span>
-      </a>
+  <p>
+    <a href="kernel-flow.html">事件触发</a>
+    →
+    <a href="/docs/architecture/interrupt/index.html">中断进入内核</a>
+    →
+    <a href="/docs/architecture/scheduler/index.html">调度决策</a>
+    →
+    <a href="/docs/architecture/ipc/index.html">通信/同步唤醒</a>
+    →
+    任务执行
+    →
+    返回内核
+  </p>
 
-      <a class="card" href="/docs/architecture/interrupt/interrupt-flow.html">
-        <h3>中断进入内核</h3>
-        <p>中断如何进入内核并触发调度行为。</p>
-        <span>查看 →</span>
-      </a>
+  <div class="note">
+    该闭环是 RTOS 实时性的本质来源：系统永远围绕“内核调度点”循环运行。
+  </div>
+</section>
 
-    </div>
-  </section>
+<section class="section">
+  <h2>内核在系统中的地位</h2>
+
+  <p>
+    在HRTOS中，所有模块最终都会回到内核调度点。
+    无论是中断、通信还是任务阻塞，本质都是“触发内核重新决策”。
+  </p>
+
+  <p>
+    因此内核不是执行单元，而是系统唯一的控制中心（Control Plane）。
+  </p>
+</section>
+
+  
+
+
+
+<!-- ⭐ 插入这里 -->
+<section class="section">
+  <h2>为什么内核是RTOS核心</h2>
+
+  <p>
+    在实时系统中，内核决定了系统的确定性边界（Determinism Boundary）。
+    所有任务执行、通信与中断响应，最终都必须回到内核调度决策。
+  </p>
+
+  <p>
+    如果调度不可预测，则系统实时性无法保证，因此内核是整个HRTOS的唯一“控制权中心”。
+  </p>
+</section>
+
+
+
 
   <section class="section">
     <h2>内核核心职责</h2>
@@ -232,7 +273,43 @@ a{
       调度控制 / 上下文切换 / 中断响应 / 系统资源管理 / 实时性保证
     </p>
   </section>
+<section class="section">
+    <h2>相关模块</h2>
 
+    <div class="grid">
+
+  <a class="card" href="kernel-flow.html">
+    <h3>内核执行流程</h3>
+    <p>调度触发 → 上下文切换 → 任务执行的完整路径。</p>
+    <span>进入 →</span>
+  </a>
+
+  <a class="card" href="/docs/architecture/scheduler/index.html">
+    <h3>调度器模型</h3>
+    <p>优先级队列、抢占策略与任务选择机制。</p>
+    <span>进入 →</span>
+  </a>
+
+  <a class="card" href="/docs/architecture/interrupt/index.html">
+    <h3>中断进入内核</h3>
+    <p>ISR如何触发调度与内核重入。</p>
+    <span>进入 →</span>
+  </a>
+
+  <a class="card" href="/docs/architecture/ipc/index.html">
+    <h3>IPC通信驱动</h3>
+    <p>任务间同步与唤醒机制。</p>
+    <span>进入 →</span>
+  </a>
+
+  <a class="card" href="/docs/architecture/kernel/context-switch.html">
+    <h3>上下文切换机制</h3>
+    <p>CPU寄存器保存与恢复流程。</p>
+    <span>进入 →</span>
+  </a>
+
+</div>
+  </section>
   <footer class="footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的内核架构文档。
   </footer>

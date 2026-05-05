@@ -87,6 +87,14 @@ h2 {
   font-size: 14px;
   margin-top: 6px;
 }
+
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:14px;
+}
 </style>
 </head>
 
@@ -168,8 +176,10 @@ Ib = 不确定性边界（Uncertainty Bound）
 
 <!-- kernel role -->
 <div class="card card-core">
-<h2>3. Kernel 的真实角色</h2>
-
+<h2>3. Kernel 的真实角色（关键转折点）</h2>
+<p>
+在RTOS语义中，Kernel不是系统组件，而是“边界执行器”。
+</p>
 <p>
 传统 OS：
 </p>
@@ -194,7 +204,19 @@ Kernel = Boundary Enforcement Engine（边界执行器）
 👉 防止系统行为突破可分析空间
 </p>
 </div>
+<section class="card card-meta">
+<h2>系统关系模型</h2>
 
+<p>
+Kernel ≠ System  
+Scheduler ≠ Control  
+Boundary = System Validity Condition
+</p>
+
+<p>
+Scheduler 在 Boundary 内运行，而 Kernel 负责维持 Boundary 不被突破。
+</p>
+</section>
 <!-- scheduling domain -->
 <div class="card card-boundary">
 <h2>4. 调度域 = 时间边界投影</h2>
@@ -330,8 +352,22 @@ RTOS → GPOS = 从确定性系统 → 非确定性系统
 System boundary is not architecture, but the necessary condition for RTOS to exist as a provable system.
 </div>
 </div>
+<!-- related links -->
+<div class="card card-meta">
+  <h2>相关架构链接</h2>
+
+  <p>
+    <a href="/docs/architecture/kernel/kernel-flow.html">内核执行流程</a> ·
+    <a href="/docs/architecture/scheduler/index.html">调度器模型</a> ·
+    <a href="/docs/architecture/interrupt/index.html">中断架构</a> ·
+    <a href="/docs/architecture/ipc/index.html">IPC通信模型</a>
+  </p>
+</div>
+</section>
 
 </div>
-
+<footer class="footer">
+  © 2017–2026 HRTOS. 面向嵌入式实时系统的内核结构模型。
+</footer>
 </body>
 </html>

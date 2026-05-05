@@ -220,47 +220,96 @@ a {
     <div class="content">
 
       <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          在实时系统中，任务通常需要共享数据或触发事件，因此必须依赖可控通信机制完成协作。
-        </p>
-      </section>
+  <h2>概述</h2>
+  <p>
+    在实时系统中，任务通常需要共享数据或触发事件，因此必须依赖可控通信机制完成协作。
+    IPC（Inter-Process Communication）确保任务间的数据传递高效、可靠且符合实时性要求。
+  </p>
+  <p>
+    HRTOS 支持多种通信方式，包括消息队列、信号量、事件组等，每种机制都有其适用场景和性能特点。
+  </p>
+</section>
 
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          发送任务通过通信接口写入消息或事件，接收任务根据同步机制进行读取、等待或唤醒。
-        </p>
+<section class="section" id="mechanism">
+  <h2>工作原理</h2>
+  <p>
+    发送任务通过通信接口写入消息或事件，接收任务根据同步机制进行读取、等待或唤醒。
+    数据传递过程中，调度器保证任务按优先级获得 CPU，确保系统的确定性和实时响应。
+  </p>
 
-        <div class="note">
-          通信机制不仅负责数据传递，还负责执行顺序协调与同步控制。
-        </div>
-      </section>
+  <div class="note">
+    通信机制不仅负责数据传递，还负责执行顺序协调与同步控制，避免竞态条件和死锁。
+  </div>
+</section>
 
-      <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
+<section class="section" id="interface">
+  <h2>关键接口 / 结构</h2>
 
-        <div class="code">
-os_queue_send()
-os_queue_receive()
-os_sem_take()
-os_sem_give()
-        </div>
-      </section>
+  <div class="code">
+os_queue_send(queue, msg, timeout)       // 将消息发送到队列，可设超时等待<br>
+os_queue_receive(queue, msg, timeout)    // 从队列接收消息，阻塞或非阻塞<br>
+os_sem_take(sem, timeout)                // 获取信号量，控制任务同步<br>
+os_sem_give(sem)                         // 释放信号量，唤醒等待任务<br>
+os_event_set(event, mask)                // 设置事件标志，通知任务<br>
+os_event_wait(event, mask, timeout)      // 等待事件标志，支持超时
+  </div>
+  <p>
+    以上接口提供了 HRTOS IPC 的核心操作，可组合实现任务间复杂通信逻辑。
+  </p>
+</section>
 
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          发送任务写入消息 → 数据进入队列/缓冲区 → 接收任务等待或唤醒 → 读取消息 → 完成同步处理
-        </p>
-      </section>
+<section class="section" id="flow">
+  <h2>运行流程</h2>
+  <p>典型通信流程如下（任务间消息传递与同步示意）：</p>
 
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          高级通信机制支持消息优先级、超时等待、广播通知以及事件组合。
-        </p>
-      </section>
+<div class="code">
+<a href="#taskA-generate" style="display:block;">[任务A] 生成数据</a>
+<span style="display:block;">↓</span>
+<a href="#taskA-write" style="display:block;">[任务A] 写入消息队列 / 设置事件标志</a>
+<span style="display:block;">↓</span>
+<a href="#scheduler" style="display:block;">[调度器] 检查任务优先级，决定是否切换任务</a>
+<span style="display:block;">↓</span>
+<a href="#taskB-wait" style="display:block;">[任务B] 等待或就绪，根据事件或队列状态唤醒</a>
+<span style="display:block;">↓</span>
+<a href="#taskB-read" style="display:block;">[任务B] 读取消息 / 响应事件</a>
+<span style="display:block;">↓</span>
+<a href="#taskB-finish" style="display:block;">[任务B] 完成数据处理并可能触发下一任务或事件</a>
+</div>
+
+  <p>
+    在此流程中：  
+    <ul>
+      <li>调度器负责根据任务优先级分配 CPU，保证高优先级任务及时响应。</li>
+      <li>通信机制维护数据完整性，防止消息丢失或竞争条件。</li>
+      <li>任务同步确保发送与接收顺序正确，避免状态不一致。</li>
+      <li>高级机制可支持超时等待、事件组合、广播通知等复杂场景。</li>
+    </ul>
+  </p>
+
+  <p>
+    通过这样的通信流程，HRTOS 能够在实时系统中保证任务间协作高效、安全，同时最大化响应性能。
+  </p>
+</section>
+
+<section class="section" id="best-practice">
+  <h2>注意事项与最佳实践</h2>
+  <ul>
+    <li>避免在 ISR 中直接操作复杂队列，使用事件或信号量通知任务处理。</li>
+    <li>队列容量需根据任务生产速度和处理速度合理配置，防止溢出。</li>
+    <li>合理设置超时等待，防止任务长时间阻塞。</li>
+    <li>高优先级任务可抢占低优先级任务，保证关键通信及时处理。</li>
+    <li>对于共享资源，结合互斥锁和信号量确保数据安全。</li>
+  </ul>
+</section>
+
+<section class="section" id="application">
+  <h2>应用案例</h2>
+  <p>
+    - <strong>实时数据采集：</strong>传感器任务将数据发送至消息队列，由处理任务按顺序读取并分析。<br>
+    - <strong>外设控制：</strong>ISR 设置事件通知控制任务执行相应操作。<br>
+    - <strong>共享资源管理：</strong>互斥锁和信号量保证多个任务安全访问同一硬件寄存器。
+  </p>
+</section>
 
     </div>
 
@@ -287,9 +336,13 @@ os_sem_give()
       </div>
 
       <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/learn/ipc-basics.html">通信学习路径</a>
-      </div>
+  <h3>学习路径</h3>
+  <a href="/docs/learn/ipc-basics.html">IPC 基础概念</a> <!-- 消息队列、信号量、事件概念 -->
+  <a href="/docs/learn/ipc-queue.html">消息队列实践</a> <!-- 队列使用、注意事项 -->
+  <a href="/docs/learn/ipc-semaphore.html">信号量与同步</a> <!-- 互斥、同步控制 -->
+  <a href="/docs/learn/ipc-event.html">事件组应用</a> <!-- 事件通知、任务唤醒 -->
+  <a href="/docs/learn/ipc-best-practices.html">通信最佳实践</a> <!-- 实时系统中常见问题和优化 -->
+</div>
 
     </aside>
 

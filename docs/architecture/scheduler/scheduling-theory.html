@@ -10,7 +10,7 @@
 <meta name="page-role" content="architecture">
 <meta name="semantic-node" content="scheduling-theory">
 
-<link rel="stylesheet" href="/global.css">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 body {
@@ -87,20 +87,52 @@ h2 {
   font-size: 14px;
   margin-top: 6px;
 }
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:14px;
+}
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:40px;
+}
+
+:root{
+  --header-height: 72px;
+}
+
+body {
+  padding-top: var(--header-height);
+}
+
+.page{
+  margin-top: 0;
+}
+
 </style>
 </head>
 
-<body>
-
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
-    <a href="/index.html">首页</a>
-    <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html">System</a>
-    <a href="/docs/index.html" style="color:#cfe3ff;">Docs</a>
-  </div>
-</div>
+<body data-header="docs">
+<main class="page">
+<nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/architecture/index.html">系统架构</a> /
+    <a href="/docs/architecture/scheduler/index.html">调度器</a> /
+    <span>调度理论</span>
+  </nav>
 
 <div class="container">
 
@@ -108,7 +140,21 @@ h2 {
 <div class="sub">
 RTOS 的核心不是调度“机制”，而是调度“可证明性”
 </div>
+<div class="card card-meta">
+<h2>理论定位</h2>
 
+<p>
+调度理论位于 HRTOS 三层模型中的：
+<b>时间确定性层（Temporal Determinism Layer）</b>
+</p>
+
+<p>
+它连接：
+系统事件（Interrupt）
+→ 调度决策（Scheduler）
+→ 执行控制（Kernel）
+</p>
+</div>
 <!-- core -->
 <div class="card card-core">
 <h2>1. 核心定义</h2>
@@ -186,7 +232,25 @@ Pi = Priority（优先级）
 ❌ 不是“慢”，而是“理论失败”
 </p>
 </div>
+<section class="card card-core">
+<h2>系统关联模型</h2>
 
+<p>调度理论与以下系统模块形成强耦合关系：</p>
+
+<p>
+<a href="/docs/architecture/interrupt/index.html">中断系统</a>
+<span style="color:#38bdf8;"> → </span>
+
+<a href="/docs/architecture/scheduler/index.html">调度器模型</a>
+<span style="color:#38bdf8;"> → </span>
+
+<a href="/docs/architecture/kernel/index.html">内核控制层</a>
+</p>
+
+<p>
+该链路构成“事件触发 → 调度决策 → 执行控制”的完整时间闭环。
+</p>
+</section>
 <!-- core principle -->
 <div class="card card-theory">
 <h2>4. 调度的核心原则</h2>
@@ -299,6 +363,32 @@ RTOS → guarantee deadline
 </p>
 </div>
 
+<div class="card card-theory">
+<h2>适用范围</h2>
+
+<p>
+本理论适用于以下系统类型：
+</p>
+
+<p>
+✔ Hard Real-Time System<br/>
+✔ Embedded RTOS<br/>
+✔ Safety-Critical System<br/>
+✔ Deterministic Scheduling System
+</p>
+
+<p>
+不适用于：
+</p>
+
+<p>
+✘ Best-effort OS<br/>
+✘ Cloud scheduling<br/>
+✘ Non-deterministic systems
+</p>
+</div>
+
+
 <!-- meta -->
 <div class="card card-meta">
 <h2>语义总结</h2>
@@ -312,8 +402,46 @@ RTOS → guarantee deadline
 Scheduling theory is a provable computational model under time constraints, not a set of algorithms.
 </div>
 </div>
+<section class="card card-meta">
+<h2>相关阅读（Related Concepts）</h2>
 
+<p>
+调度理论并不是孤立模型，它依赖整个 HRTOS 时间系统结构：
+</p>
+
+<p>
+<a href="/docs/architecture/interrupt/index.html">中断系统（Interrupt System）</a>
+<span style="color:#38bdf8;"> → </span>
+
+<a href="/docs/architecture/scheduler/index.html">调度器模型（Scheduling Model）</a>
+<span style="color:#38bdf8;"> → </span>
+
+<a href="/docs/architecture/scheduler/priority-model.html">优先级模型（Priority Model）</a>
+<span style="color:#38bdf8;"> → </span>
+
+<a href="/docs/architecture/kernel/index.html">内核控制层（Kernel Control）</a>
+</p>
+
+<p>
+在更底层，还涉及执行时间与资源约束：
+</p>
+
+<p>
+<a href="/docs/architecture/memory/index.html">内存架构（Memory Architecture）</a>
+<span style="color:#38bdf8;"> → </span>
+
+<a href="/docs/architecture/memory/resource-contention.html">资源竞争（Resource Contention）</a>
+</p>
+
+<p>
+这些模块共同构成 HRTOS 的核心约束体系：<b>时间确定性（Temporal Determinism）</b>
+</p>
+</section>
 </div>
-
+<footer class="footer">
+    © 2017–2026 HRTOS. 面向嵌入式实时系统的调度模型体系。
+  </footer>
+  </main>
+<script src="https://hrtos.com/header.js"></script>
 </body>
 </html>

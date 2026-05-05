@@ -90,20 +90,17 @@ h2 {
 </style>
 </head>
 
-<body>
+<body data-header="docs">
 
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
-    <a href="/index.html">首页</a>
-    <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html">System</a>
-    <a href="/docs/index.html" style="color:#cfe3ff;">Docs</a>
-  </div>
-</div>
+
 
 <div class="container">
-
+<nav style="font-size:14px;color:#9fb0c3;margin-bottom:28px;">
+  <a href="/docs/index.html" style="color:#7dd3fc;">文档中心</a> /
+  <a href="/docs/architecture/index.html" style="color:#7dd3fc;">系统架构</a> /
+  <a href="/docs/architecture/memory/index.html" style="color:#7dd3fc;">内存架构</a> /
+  <span>资源竞争</span>
+</nav>
 <h1>资源竞争（Resource Contention）</h1>
 <div class="sub">
 系统中“不可预测性”的结构性来源，而不是运行时现象
@@ -300,9 +297,50 @@ HRTOS 的目标不是“消除竞争”，而是：
 <div class="en">
 Resource contention is not a problem to solve, but a structural mechanism that breaks temporal determinism.
 </div>
-</div>
+
 
 </div>
+<section style="margin-top:42px;">
+  <h2 style="font-size:22px;color:#cfe3ff;margin-bottom:18px;">相关阅读</h2>
 
+  <div style="
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:18px;
+  ">
+
+    <a href="/docs/architecture/memory/memory-model.html" class="card">
+      <h2>内存模型</h2>
+      <p>理解任务、内核与共享资源的内存组织方式。</p>
+    </a>
+
+    <a href="/docs/architecture/kernel/system-boundary.html" class="card">
+      <h2>系统边界</h2>
+      <p>理解确定性系统如何通过边界约束成立。</p>
+    </a>
+
+    <a href="/docs/architecture/scheduler/index.html" class="card">
+      <h2>调度器模型</h2>
+      <p>查看调度决策如何受阻塞与竞争影响。</p>
+    </a>
+
+    <a href="/docs/architecture/ipc/index.html" class="card">
+      <h2>IPC 通信模型</h2>
+      <p>分析锁、信号量与消息队列带来的同步竞争。</p>
+    </a>
+  </div>
+</section>
+</div>
+<footer style="
+  margin-top:48px;
+  padding-top:18px;
+  border-top:1px solid #1e2a3a;
+  color:#8ea3be;
+  font-size:14px;
+  text-align:center;
+">
+  © 2017–2026 HRTOS. 面向嵌入式实时系统的资源竞争模型文档。
+</footer>
+<script src="https://hrtos.com/header.js" defer></script>
 </body>
 </html>

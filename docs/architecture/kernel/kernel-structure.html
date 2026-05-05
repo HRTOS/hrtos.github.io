@@ -173,11 +173,42 @@ a{
   </section>
 
   <section class="section">
-    <h2>结构概述</h2>
-    <p>
-      内核不是单一模块，而是由多个协同子系统构成，包括调度器、执行控制层、中断处理层与资源管理层。
-    </p>
-  </section>
+  <h2>结构概述</h2>
+
+  <p>
+    在 HRTOS 中，Kernel 结构不是静态模块划分，而是一个运行时控制体系。
+    它通过调度器、中断系统与通信机制的协同，实现对“CPU执行权”的持续控制。
+  </p>
+
+  <p>
+    这种结构的本质不是“模块组合”，而是一个循环控制系统：
+    <b>事件驱动 → 调度决策 → 执行切换 → 状态反馈 → 再次调度</b>
+  </p>
+</section>
+<section class="section">
+  <h2>Kernel 设计目标</h2>
+
+  <p>
+    Kernel 的目标不是提升执行速度，而是建立“可预测执行模型”。
+  </p>
+
+  <p>
+    在实时系统中，关键指标不是吞吐量，而是：
+    <b>调度延迟上界（Worst-case latency）</b>
+  </p>
+
+  <p>
+    因此 Kernel 必须保证：
+  </p>
+
+  <p>
+    - 任意时刻都有明确可运行任务<br/>
+    - 高优先级任务可立即抢占<br/>
+    - 状态切换路径可追踪<br/>
+    - 中断不会破坏调度一致性
+  </p>
+</section>
+
 
   <section class="section">
     <h2>核心结构层</h2>
@@ -214,10 +245,43 @@ a{
   <section class="section">
     <h2>结构关系</h2>
     <p>
-      中断 → 触发调度 → 内核切换 → 任务执行 → IPC同步 → 返回调度循环
-    </p>
-  </section>
+  HRTOS 内核运行本质是一个闭环控制系统：
+</p>
 
+<p>
+  <b>① 事件触发</b>（中断 / 系统调用 / 任务状态变化）<br/>
+  ↓<br/>
+  <b>② 进入调度入口</b>（Kernel Entry）<br/>
+  ↓<br/>
+  <b>③ 就绪队列评估</b>（Ready Queue Scan）<br/>
+  ↓<br/>
+  <b>④ 调度决策</b>（Priority / Preemption Decision）<br/>
+  ↓<br/>
+  <b>⑤ 上下文切换</b>（Context Switch）<br/>
+  ↓<br/>
+  <b>⑥ 任务执行</b>（Task Running）<br/>
+  ↓<br/>
+  <b>⑦ 状态反馈</b>（阻塞 / 就绪 / 事件触发）<br/>
+  ↓<br/>
+  <b>⑧ 回归内核循环</b>
+</p>
+  </section>
+<section class="section">
+  <h2>系统本质</h2>
+
+  <p>
+    Kernel 并不是“执行代码的地方”，而是一个持续运行的决策器（Decision Engine）。
+  </p>
+
+  <p>
+    所有任务执行，本质上都是：
+    <b>调度器不断重新分配 CPU 使用权的结果</b>
+  </p>
+
+  <p>
+    因此 HRTOS 的实时性，本质由 Kernel 决策路径长度决定，而不是 CPU 性能决定。
+  </p>
+</section>
   <footer class="footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的内核结构模型。
   </footer>

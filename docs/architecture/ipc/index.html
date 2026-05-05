@@ -194,45 +194,76 @@ a{
     </div>
   </section>
 
-  <section class="section">
-    <h2>模块概述</h2>
-    <p>
-      IPC模块负责解决“任务之间如何协作”的问题，而不是简单的数据传输问题，
-      其核心目标是实现可预测的同步与调度行为。
-    </p>
-  </section>
+ <section class="section">
+  <h2>模块概述</h2>
+  <p>
+    IPC（Inter-Process Communication）模块是 HRTOS 系统中核心的任务协作层。  
+    它定义了任务之间如何交换数据、如何同步执行以及如何管理共享资源。  
+    在实时系统中，IPC不仅仅是数据传输，它直接影响任务响应时间、调度顺序和系统稳定性。
+  </p>
 
-  <section class="section">
-    <h2>核心主题</h2>
+  <div class="note">
+    核心目标：保证任务协作可预测、同步机制可靠、系统行为确定。
+  </div>
+</section>
 
-    <div class="grid">
+<section class="section">
+  <h2>关键概念</h2>
+  <ul>
+    <li><strong>信号量（Semaphore）：</strong>用于任务同步和互斥，保证共享资源访问安全。</li>
+    <li><strong>事件组（Event Group）：</strong>允许任务等待多个事件组合，提供灵活的通知机制。</li>
+    <li><strong>邮箱（Mailbox）：</strong>轻量级消息传递机制，适合单一数据传递。</li>
+    <li><strong>共享内存（Shared Memory）：</strong>提供高速数据共享，但需要严格同步控制以避免竞态条件。</li>
+  </ul>
+</section>
 
-      <a class="card" href="communication-flow.html">
-        <h3>通信流程</h3>
-        <p>
-          描述任务之间消息传递与同步执行的完整路径。
-        </p>
-        <span>查看详情 →</span>
-      </a>
+<section class="section">
+  <h2>应用场景示例</h2>
+  <p>
+    - 高优先级任务需要立即处理传感器数据，可以使用信号量或事件组唤醒低优先级任务。  
+    - 多个任务需要处理同一数据流，可使用事件组或邮箱确保顺序和数据完整性。  
+    - 系统状态变化通知多个任务时，可使用事件组实现高效同步。
+  </p>
+</section>
 
-      <a class="card" href="ipc-model.html">
-        <h3>IPC模型</h3>
-        <p>
-          定义通信机制的抽象结构与系统级组织方式。
-        </p>
-        <span>查看详情 →</span>
-      </a>
+<section class="section">
+  <h2>设计要点</h2>
+  <p>
+    在设计 IPC 架构时，需要考虑以下方面：
+  </p>
+  <ul>
+    <li>通信延迟与任务响应时间的平衡</li>
+    <li>死锁和优先级反转的避免</li>
+    <li>多任务广播和事件组合的可扩展性</li>
+    <li>资源使用效率和系统整体性能</li>
+  </ul>
+</section>
 
-      <a class="card" href="/docs/architecture/ipc/ipc-model.html">
-        <h3>同步模型</h3>
-        <p>
-          描述信号量、事件组与阻塞/唤醒机制。
-        </p>
-        <span>（待扩展）→</span>
-      </a>
+<section class="section">
+  <h2>进一步阅读</h2>
+  <p>
+    可通过以下页面深入理解每个 IPC 机制的实现和应用：
+  </p>
+  <div class="grid">
+    <a class="card" href="communication-flow.html">
+      <h3>通信流程</h3>
+      <p>任务间消息传递、调度与同步完整路径解析。</p>
+      <span>查看详情 →</span>
+    </a>
 
-    </div>
-  </section>
+    <a class="card" href="ipc-model.html">
+      <h3>IPC模型</h3>
+      <p>通信结构抽象、系统级组织方式与同步机制。</p>
+      <span>查看详情 →</span>
+    </a>
+
+    <a class="card" href="/docs/architecture/ipc/sync-model.html">
+      <h3>同步模型</h3>
+      <p>信号量、事件组与阻塞/唤醒机制说明。</p>
+      <span>查看详情 →</span>
+    </a>
+  </div>
+</section>
 
   <section class="section">
     <h2>相关架构模块</h2>

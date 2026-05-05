@@ -181,32 +181,91 @@ a{
     </p>
 
     <div class="meta">
-      <span class="tag">Scheduling Core</span>
-      <span class="tag">RTOS Model</span>
-      <span class="tag">Deterministic Execution</span>
+      <span class="tag">Scheduling System Model</span>
+<span class="tag">Time Deterministic Kernel</span>
+<span class="tag">Preemption Control System</span>
     </div>
   </section>
+<section class="section">
+  <h2>调度模型定义</h2>
+
+  <p>
+    调度模型本质上不是“任务执行顺序算法”，而是一个
+    <strong>系统状态选择函数（System State Selection Function）</strong>。
+  </p>
+
+  <p>
+    在 HRTOS 中，调度行为可以抽象为：
+  </p>
+
+  <p>
+    S(t) = f(Interrupt, Priority, System State, Resource Availability)
+  </p>
+
+  <p>
+    即：系统在每一个事件触发点重新计算“下一执行状态”。
+  </p>
+</section>
 
   <section class="section">
     <h2>调度流程模型</h2>
 
     <div class="model">
-[ SCHEDULING FLOW ]
 
-1. Interrupt / Event Trigger
-        ↓
-2. Ready Queue Update
-        ↓
-3. Priority Evaluation
-        ↓
-4. Scheduler Decision
-        ↓
-5. Context Switch
-        ↓
-6. Task Execution
-    </div>
+<p><strong>【调度控制闭环（Scheduling Control Loop）】</strong></p>
+
+<p>
+<a href="/docs/architecture/interrupt/index.html">1. 中断 / 事件触发（Interrupt / Event Trigger）</a>
+</p>
+
+<p>↓</p>
+
+<p>
+<a href="/docs/architecture/scheduler/index.html">2. 就绪队列更新（Ready Queue Update）</a>
+</p>
+
+<p>↓</p>
+
+<p>
+<a href="/docs/architecture/scheduler/priority-model.html">3. 优先级评估（Priority Evaluation）</a>
+</p>
+
+<p>↓</p>
+
+<p>
+<a href="/docs/architecture/scheduler/index.html">4. 调度决策（Scheduler Decision）</a>
+</p>
+
+<p>↓</p>
+
+<p>
+<a href="/docs/architecture/kernel/context-switch.html">5. 上下文切换（Context Switch）</a>
+</p>
+
+<p>↓</p>
+
+<p>
+<a href="/docs/architecture/kernel/index.html">6. 任务执行（Task Execution）</a>
+</p>
+
+</div>
   </section>
+<section class="section">
+  <h2>调度系统本质</h2>
 
+  <p>
+    调度器不是执行器，而是“系统时间控制器（Time Control Unit）”。
+  </p>
+
+  <p>
+    它的作用不是运行任务，而是决定“系统下一瞬间处于哪个状态”。
+  </p>
+
+  <p>
+    因此调度模型本质上是：
+    <strong>时间离散化决策系统</strong>
+  </p>
+</section>
   <section class="section">
     <h2>核心调度策略</h2>
     <p>
@@ -242,12 +301,55 @@ a{
     </div>
   </section>
 
+<section class="section">
+  <h2>设计目标（Design Objectives）</h2>
+
+  <p>
+    HRTOS 的设计目标不是功能丰富性，而是对“时间行为”的严格约束。
+    所有系统行为必须满足以下确定性条件：
+  </p>
+
+  <p>
+    <strong>可预测执行</strong>：任意任务执行路径在系统运行前可分析<br/>
+    <strong>最小调度延迟</strong>：调度开销必须存在稳定上界<br/>
+    <strong>优先级确定性</strong>：高优先级任务不会被语义破坏<br/>
+    <strong>实时响应保证</strong>：中断到执行的路径必须可证明
+  </p>
+
+  <p>
+    这些目标共同构成：
+    <strong>系统确定性边界（Deterministic Execution Boundary）</strong>
+  </p>
+</section>
+
+
   <section class="section">
-    <h2>设计目标</h2>
-    <p>
-      可预测执行 / 最小调度延迟 / 优先级确定性 / 实时响应保证
-    </p>
-  </section>
+  <h2>系统关联结构</h2>
+
+  <p>
+    调度模型依赖以下系统模块共同作用：
+  </p>
+
+  <p>
+    <a href="/docs/architecture/interrupt/index.html" style="color:#38bdf8; text-decoration:underline;">
+      中断系统
+    </a>
+
+    <span style="color:#64748b;"> → </span>
+
+    <a href="/docs/architecture/scheduler/index.html" style="color:#38bdf8; text-decoration:underline;">
+      调度器核心
+    </a>
+
+    <span style="color:#64748b;"> → </span>
+
+    <a href="/docs/architecture/kernel/index.html" style="color:#38bdf8; text-decoration:underline;">
+      内核控制层
+    </a>
+  </p>
+</section>
+
+ 
 
   <footer class="footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的调度模型体系。

@@ -192,23 +192,63 @@ a{
     <h2>优先级结构模型</h2>
 
     <div class="model">
-[ PRIORITY LEVELS ]
 
-Level 0  : Idle Task（最低）
-Level 1-10: Background Tasks
-Level 11-50: Normal Tasks
-Level 51-90: High Priority Tasks
-Level 91-99: Real-Time Critical Tasks
-    </div>
+<p><a href="#lvl-99">Level 99 : 硬实时（中断 / ISR / 内核关键路径）</a></p>
+
+<p><a href="#lvl-80-98">Level 80-98 : 系统关键任务（调度控制 / 资源仲裁）</a></p>
+
+<p><a href="#lvl-50-79">Level 50-79 : 高优先级用户任务（时间敏感执行）</a></p>
+
+<p><a href="#lvl-20-49">Level 20-49 : 普通任务（尽力调度）</a></p>
+
+<p><a href="#lvl-1-19">Level 1-19 : 后台任务（低优先级执行）</a></p>
+
+<p><a href="#lvl-0">Level 0 : 空闲任务（系统空闲状态）</a></p>
+
+<br/>
+
+<p><a href="#model-semantic-1">→ 每一层代表：执行优先级</a></p>
+<p><a href="#model-semantic-2">→ 每一层代表：抢占强度</a></p>
+<p><a href="#model-semantic-3">→ 每一层代表：延迟上界</a></p>
+
+</div>
   </section>
 
   <section class="section">
-    <h2>调度规则</h2>
-    <p>
-      高优先级任务始终优先执行；同优先级任务采用时间片或FIFO策略。
-    </p>
-  </section>
+  <h2>优先级语义模型</h2>
 
+  <p>
+    在 HRTOS 中，优先级不仅是“执行顺序标记”，而是一个时间优先级函数：
+  </p>
+
+  <p>
+    Priority = f(Deadline, Preemption, Blocking, System Load)
+  </p>
+
+  <p>
+    也就是说，调度行为不是静态排序，而是动态时间决策过程。
+  </p>
+
+  <p>
+    同一优先级并不意味着同等执行权，而是共享同一调度竞争域（Scheduling Contention Domain）。
+  </p>
+</section>
+<section class="section">
+  <h2>优先级的系统本质</h2>
+
+  <p>
+    在实时系统中，优先级不是分类，而是“抢占力（Preemption Force）”的表达。
+  </p>
+
+  <p>
+    高优先级任务的本质能力是：
+    <strong>打断系统当前执行路径的能力</strong>
+  </p>
+
+  <p>
+    因此优先级模型直接决定系统是否具备可预测性边界。
+  </p>
+</section>
   <section class="section">
     <h2>核心机制</h2>
 
@@ -238,12 +278,53 @@ Level 91-99: Real-Time Critical Tasks
   </section>
 
   <section class="section">
-    <h2>设计目标</h2>
-    <p>
-      可预测性 / 实时响应 / 抢占确定性 / 延迟上界控制
-    </p>
-  </section>
+  <h2>设计目标</h2>
 
+  <p>
+    HRTOS 的设计目标定义的是系统行为边界，而不是功能特性。
+    所有执行行为必须在以下约束条件下成立：
+  </p>
+
+  <p>
+    <strong>可预测性</strong>：任意任务执行路径在运行前可分析<br/>
+    <strong>实时响应</strong>：中断到任务执行的延迟具有可证明上界<br/>
+    <strong>抢占确定性</strong>：高优先级任务不会被语义级阻断<br/>
+    <strong>延迟上界控制</strong>：系统调度开销存在稳定 worst-case bound
+  </p>
+
+  <p>
+    该目标体系定义了：
+    <strong>RTOS 与非实时系统的本质分界条件</strong>
+  </p>
+</section>
+<section class="section">
+  <h2>系统关联模型</h2>
+
+  <p>
+    优先级模型与以下系统模块强耦合：
+  </p>
+
+  <p>
+    <a href="/docs/architecture/scheduler/index.html"
+       style="color:#38bdf8; text-decoration:underline;">
+      调度器模型
+    </a>
+
+    <span style="color:#64748b;"> → </span>
+
+    <a href="/docs/architecture/interrupt/index.html"
+       style="color:#38bdf8; text-decoration:underline;">
+      中断系统
+    </a>
+
+    <span style="color:#64748b;"> → </span>
+
+    <a href="/docs/architecture/kernel/index.html"
+       style="color:#38bdf8; text-decoration:underline;">
+      内核控制层
+    </a>
+  </p>
+</section>
   <footer class="footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的调度优先级模型。
   </footer>

@@ -222,47 +222,112 @@ a {
     <div class="content">
 
       <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          在实时系统中，中断延迟决定系统响应外部事件的速度，是衡量实时性能的重要指标之一。
-        </p>
-      </section>
+  <h2>概述</h2>
+
+  <p>
+    在实时系统（RTOS）中，中断延迟（Interrupt Latency）表示从中断事件发生，到 CPU 开始执行中断服务程序（ISR）之间的时间间隔。
+    它直接决定系统对外部事件的响应速度，是衡量实时性能最核心的指标之一。
+  </p>
+
+  <p>
+    中断延迟不仅影响单次事件响应，还会影响整个系统的实时确定性（Determinism），尤其在高频中断场景下（如定时器、通信外设、传感器采样等），延迟抖动会直接改变系统行为。
+  </p>
+
+  <p>
+    在 HRTOS 中，中断延迟被纳入整体时间约束模型，与
+    <a href="/docs/architecture/scheduler/index.html">调度系统</a>、
+    <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程</a>
+    以及
+    <a href="/docs/system-view/03-interrupt-flow.html">系统执行流模型</a>
+    共同构成实时执行链路。
+  </p>
+</section>
 
       <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          当硬件中断产生后，CPU需要完成当前指令、处理中断屏蔽状态、保存上下文，并跳转至ISR入口。
-        </p>
-
-        <div class="note">
-          中断延迟越大，系统对外部事件的实时响应能力越弱。
-        </div>
-      </section>
+  <h2>工作原理</h2>
+  <p>
+    当外部硬件中断产生时，CPU 首先完成当前指令的执行，并检查中断屏蔽状态，确保允许中断响应。随后，系统保存当前任务的上下文（寄存器、程序计数器等）并跳转至对应的中断服务程序（ISR）入口。ISR 执行期间可能触发嵌套中断，或受中断优先级和临界区控制影响。
+  </p>
+  <p>
+    中断处理完成后，ISR 会通过 <code>os_isr_exit()</code> 或类似机制通知内核调度器检查是否需要任务切换，从而保证系统高实时性与可预测性。
+  </p>
+  <div class="note">
+    中断延迟直接影响系统对外部事件的响应速度。为了最小化延迟，ISR 应尽量短小、快速完成，并避免在 ISR 中执行阻塞操作或长时间临界区操作。可以参考 <a href="/docs/architecture/interrupt/interrupt-latency.html">中断延迟</a> 了解优化策略。
+  </div>
+</section>
 
       <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
-
-        <div class="code">
-os_interrupt_enable()
-os_interrupt_disable()
-os_get_interrupt_latency()
-os_isr_enter()
-        </div>
-      </section>
+  <h2>关键接口 / 结构</h2>
+  <p>
+    HRTOS 提供一组用于管理中断的核心接口，支持中断的使能、屏蔽、进入和延迟监控：
+  </p>
+  
+ <div class="code">
+<a href="/docs/modules/task/context-switch.html">os_interrupt_enable()</a>      // 开启全局中断，允许外部事件打断当前任务<br>
+<a href="/docs/modules/task/context-switch.html">os_interrupt_disable()</a>     // 关闭全局中断，用于临界区保护<br>
+<a href="/docs/modules/task/context-switch.html">os_get_interrupt_latency()</a> // 查询当前系统中断延迟，评估实时性能<br>
+<a href="/docs/modules/task/context-switch.html">os_isr_enter()</a>             // ISR入口调用，保存上下文，准备处理中断<br>
+<a href="/docs/modules/task/context-switch.html">os_isr_exit()</a>              // ISR退出调用，恢复上下文，触发调度检查
+  </div>
+  <p>
+    以上接口是 HRTOS 中断管理的核心操作，通过合理组合可实现高实时性与可预测的系统行为。
+    更多使用示例请参见
+    <a href="/docs/modules/task/context-switch.html">任务切换</a>
+    与
+    <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程</a> 页面。
+  </p>
+  <p>
+    其中：
+  </p>
+  <ul>
+    <li><code>os_interrupt_enable()</code>：开启全局中断，使系统可以响应外部事件。</li>
+    <li><code>os_interrupt_disable()</code>：禁止全局中断，用于保护关键临界区。</li>
+    <li><code>os_get_interrupt_latency()</code>：获取当前中断延迟时间，用于性能分析与优化。</li>
+    <li><code>os_isr_enter()</code> / <code>os_isr_exit()</code>：分别标记 ISR 的入口与出口，支持嵌套中断管理和调度触发。</li>
+  </ul>
+  <p>
+    这些接口与 <a href="/docs/architecture/interrupt/interrupt-model.html">中断模型</a> 和 <a href="/docs/architecture/scheduler/scheduling-model.html">调度模型</a> 紧密结合，确保中断处理的高效与系统实时性。
+  </p>
+</section>
 
       <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          中断发生 → CPU完成当前指令 → 检查中断屏蔽 → 保存上下文 → 跳转ISR → 开始处理中断
-        </p>
-      </section>
+  <h2>运行流程</h2>
+  <p>
+    HRTOS 中断的执行流程确保系统对外部事件的高实时响应：
+  </p>
+  <p>
+    1. 外部或内部事件触发中断信号 → 
+    2. CPU 完成当前指令并检查中断屏蔽状态 → 
+    3. 保存当前任务上下文（寄存器、堆栈指针等） → 
+    4. 跳转至对应的 ISR（中断服务程序）入口 → 
+    5. ISR 执行处理逻辑，可根据需要触发 <a href="/docs/architecture/interrupt/interrupt-model.html">嵌套中断</a> → 
+    6. ISR 退出，恢复上下文 → 
+    7. 调度器根据 <a href="/docs/architecture/scheduler/scheduling-model.html">调度模型</a> 决定是否切换任务 → 
+    8. 继续执行被中断任务或切换到新的就绪任务。
+  </p>
+  <div class="note">
+    该流程体现了 HRTOS 对任务和中断的确定性管理，确保高优先级任务及时响应。
+  </div>
+</section>
 
       <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          中断延迟通常受到CPU频率、中断嵌套、临界区长度、Cache状态以及总线访问延迟影响。
-        </p>
-      </section>
+  <h2>扩展说明</h2>
+  <p>
+    中断延迟受多种因素影响，包括 CPU 频率、总线延迟、嵌套中断优先级、Cache 状态以及临界区长度。
+  </p>
+  <p>
+    高级优化策略包括：
+  </p>
+  <ul>
+    <li>使用短小的 ISR 并将复杂处理延迟至任务上下文执行</li>
+    <li>合理设计中断优先级与嵌套，避免低优先级阻塞高优先级</li>
+    <li>优化临界区长度，减少中断屏蔽时间</li>
+    <li>结合 <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程</a> 和 <a href="/system-view/03-interrupt-flow.html">系统中断流模型</a> 分析延迟瓶颈</li>
+  </ul>
+  <p>
+    通过以上方法，HRTOS 能保证高优先级任务及时响应，实现确定性的实时行为。
+  </p>
+</section>
 
     </div>
 
@@ -289,9 +354,16 @@ os_isr_enter()
       </div>
 
       <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/architecture/kernel/index.html">内核学习路径</a>
-      </div>
+  <h3>学习路径</h3>
+  <a href="/docs/learn/what-is-rtos.html">RTOS 基础概念</a>
+  <a href="/docs/learn/real-time-systems.html">实时系统原理</a>
+  <a href="/docs/learn/context-switch-basics.html">上下文切换基础</a>
+  <a href="/docs/learn/interrupt-basics.html">中断基础</a>
+  <a href="/docs/architecture/interrupt/index.html">中断架构概览</a>
+  <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程</a>
+  <a href="/docs/architecture/interrupt/interrupt-latency.html">中断延迟分析</a>
+  <a href="/docs/architecture/interrupt/interrupt-model.html">中断模型</a>
+</div>
 
     </aside>
 

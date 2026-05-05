@@ -217,49 +217,140 @@ a{
     <div class="content">
 
       <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          内核是HRTOS的核心控制层，负责管理任务调度、中断响应以及系统资源分配。
-        </p>
-      </section>
+  <h2>概述</h2>
+  <p>
+    内核是 HRTOS 的调度与执行核心，其职责不是“执行任务逻辑”，而是构建一个可预测的运行环境。
+    它负责在中断、系统调用与任务阻塞事件之间，持续维护系统的运行一致性。
+  </p>
+
+  <p>
+    在实时系统中，内核执行流程直接决定三个关键指标：
+    <strong>响应延迟</strong>、<strong>调度确定性</strong>与<strong>上下文切换开销</strong>。
+  </p>
+</section>
 
       <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          当系统发生事件（任务切换/中断/阻塞恢复）时，内核触发调度器重新选择最高优先级任务执行。
-        </p>
+  <h2>工作原理</h2>
+  <p>
+    内核执行流程由“事件驱动模型”触发，所有执行路径均来源于三类入口：
+    中断触发、系统调用以及任务状态变化。
+  </p>
 
-        <div class="note">
-          内核的核心职责是“决定谁在什么时候运行”，而不是执行任务本身。
-        </div>
-      </section>
+  <div class="note">
+    HRTOS 内核采用“抢占式优先级调度模型”，当高优先级任务就绪时，系统会立即触发上下文切换，而不是等待当前任务执行完成。
+  </div>
+
+  <p>
+    调度器在每次触发时执行以下逻辑：
+    1）检查就绪队列  
+    2）比较任务优先级  
+    3）判断是否发生抢占  
+    4）决定是否执行上下文切换
+  </p>
+</section>
 
       <section class="section" id="flow">
-        <h2>执行流程</h2>
+  <h2>执行流程</h2>
 
-        <div class="code">
-事件触发（中断 / 系统调用）
-        ↓
-调度器检查就绪队列
-        ↓
-选择最高优先级任务
-        ↓
-保存当前任务上下文
-        ↓
-恢复目标任务上下文
-        ↓
-进入任务执行状态
-        ↓
-返回内核（下一轮调度）
-        </div>
-      </section>
+<div class="code">
 
+<a href="#event-trigger">事件触发（中断 / 系统调用 / 任务状态变化）</a><br>
+
+↓
+
+<a href="#kernel-entry">内核进入调度入口（Kernel Entry）</a><br>
+
+↓
+
+<a href="#ready-queue">检查就绪队列（Ready Queue Scan）</a><br>
+
+↓
+
+<a href="#priority-eval">优先级比较（Priority Evaluation）</a><br>
+
+↓
+
+<a href="#preemption">是否发生抢占判断（Preemption Decision）</a><br>
+
+↓
+
+<a href="#context-save">保存当前任务上下文（Context Save）</a><br>
+
+↓
+
+<a href="#context-switch">切换至目标任务上下文（Context Switch）</a><br>
+
+↓
+
+<a href="#context-restore">恢复任务执行现场（Context Restore）</a><br>
+
+↓
+
+<a href="#task-running">进入任务执行状态（Task Running）</a><br>
+
+↓
+
+<a href="#loop-return">执行结束或再次阻塞 → 返回内核调度入口</a>
+
+</div>
+
+  <p>
+    该流程构成 HRTOS 的核心执行闭环（Kernel Execution Loop），
+    所有任务调度、响应中断与系统调用最终都会回到该路径。
+  </p>
+</section>
+<section id="interrupt-nesting">
+  <h3>中断嵌套</h3>
+  <p>
+    中断嵌套允许高优先级中断打断低优先级 ISR 执行，是实时系统响应能力的关键机制。
+    在复杂系统中，它通常与
+    <a href="/docs/architecture/interrupt/interrupt-latency.html">中断延迟分析</a>
+    共同影响系统实时性边界。
+  </p>
+
+  <h3>优先级抢占</h3>
+  <p>
+    当高优先级任务就绪时，内核立即触发上下文切换，实现确定性调度行为。
+    该机制直接依赖
+    <a href="/docs/architecture/scheduler/index.html">调度器模型</a>
+    的优先级队列实现。
+  </p>
+
+  <h3>时间片调度</h3>
+  <p>
+    时间片调度用于同优先级任务之间的公平执行，避免单任务长期占用 CPU。
+    在抢占式内核中，它与
+    <a href="/docs/architecture/kernel/index.html">内核执行流程</a>
+    共同构成调度循环。
+  </p>
+
+  <h3>阻塞恢复触发</h3>
+  <p>
+    任务从阻塞状态恢复时，会重新进入就绪队列等待调度器分配执行权。
+    该过程通常由
+    <a href="/docs/architecture/ipc/index.html">IPC同步机制</a>
+    或中断事件触发。
+  </p>
+</section>
       <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          在复杂系统中，内核流程可能嵌套中断、优先级抢占以及时间片调度机制。
-        </p>
-      </section>
+  <h2>扩展说明</h2>
+
+  <p>
+    在复杂实时系统中，内核执行流程并不是线性结构，而是一个“多入口闭环系统”。
+  </p>
+
+ <p>
+  以下机制会影响执行路径：
+  <a href="#interrupt-nesting">中断嵌套（Interrupt Nesting）</a>、
+  <a href="#priority-preemption">优先级抢占（Priority Preemption）</a>、
+  <a href="#time-slice">时间片调度（Time Slice Scheduling）</a>、
+  <a href="#wake-up">阻塞恢复触发（Wake-up Scheduling）</a>
+</p>
+
+  <div class="note">
+    在极端实时场景中，调度路径的稳定性比执行效率更重要，因此 HRTOS 强调“确定性优先于吞吐量”。
+  </div>
+</section>
 
     </div>
 

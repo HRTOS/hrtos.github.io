@@ -219,11 +219,52 @@ a{
   </section>
 
   <section class="section">
-    <h2>概述</h2>
-    <p>
-      HRTOS 中断架构定义了系统在异步事件发生时的响应模型，包括中断触发、中断处理、中断延迟与整体结构设计。
-    </p>
-  </section>
+  <h2>中断架构概览</h2>
+  <p>
+    HRTOS 的中断架构决定了系统如何处理外部异步事件，同时保证任务调度和系统确定性。通过清晰划分中断源、控制器、ISR 和调度接口，系统能够在响应外部事件的同时保持高性能和可靠性。
+  </p>
+  <p>
+    本模块内容涵盖三大核心主题：中断流程、延迟分析以及中断模型。每个主题独立阐述实现细节与优化方法，同时通过案例展示在实际系统中的应用。
+  </p>
+</section>
+
+<section class="section">
+  <h2>设计原则</h2>
+  <ul>
+    <li><strong>快速响应：</strong>中断机制必须保证高优先级事件能够尽快被 CPU 处理。</li>
+    <li><strong>最小延迟：</strong>通过优化 ISR 和中断嵌套策略，减少对关键任务的阻塞。</li>
+    <li><strong>可扩展性：</strong>中断架构允许用户根据外设需求增加新的中断源或自定义 ISR。</li>
+    <li><strong>系统确定性：</strong>即使存在多个并发中断，调度器和任务恢复机制也能保持系统行为可预测。</li>
+  </ul>
+</section>
+
+<section class="section">
+  <h2>架构示意</h2>
+  <p>
+    系统中断架构可以简化为以下流程：
+  </p>
+  <div class="code">
+    外部事件 → 中断控制器 → ISR入口 → 调度判断 → 任务恢复或切换
+  </div>
+  <p>
+    上述流程显示了中断从事件产生到任务恢复的完整路径，每一环节都可以优化，以平衡响应速度与系统稳定性。
+  </p>
+</section>
+
+<section class="section">
+  <h2>学习建议</h2>
+  <p>
+    如果你是第一次接触 RTOS 中断机制，建议先浏览：
+  </p>
+  <ul>
+    <li><a href="interrupt-flow.html">中断流程</a> — 理解事件到 ISR 的执行路径。</li>
+    <li><a href="interrupt-latency.html">中断延迟</a> — 学习延迟来源和优化策略。</li>
+    <li><a href="interrupt-model.html">中断模型</a> — 掌握中断源、优先级和任务恢复机制。</li>
+  </ul>
+  <p>
+    通过阅读上述内容，你可以完整理解 HRTOS 中断架构的实现与设计理念。
+  </p>
+</section>
 
   <section class="section">
     <h2>核心主题</h2>
