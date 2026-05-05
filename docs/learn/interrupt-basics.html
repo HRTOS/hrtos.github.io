@@ -118,6 +118,9 @@ a{
   color:#7dd3fc;
   font-size:14px;
   line-height:1.8;
+
+    white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .grid{
@@ -230,9 +233,9 @@ a{
     <h2>三、中断执行完整流程</h2>
 
     <div class="block">
-[ INTERRUPT EXECUTION MODEL ]
+[ 中断执行模型 ]
 
-1. 外部/内部事件发生（Timer / Peripheral / Software）
+1. 外部/内部事件发生（定时器 / 外设 / 软件）
 2. 中断控制器检测到中断请求
 3. CPU暂停当前任务执行
 4. 保存关键上下文（PC / SP / 寄存器）
@@ -366,8 +369,8 @@ a{
     <div class="block">
 实时系统核心约束：
 
-Interrupt Latency ≤ Upper Bound
-ISR Execution Time ≤ Deterministic Limit
+中断延迟 ≤ 上界限制
+ISR 执行时间 ≤ 确定性上限
     </div>
   </section>
 
@@ -380,7 +383,7 @@ ISR Execution Time ≤ Deterministic Limit
     </p>
 
     <div class="block">
-Interrupt = Event → System State Change → Scheduling Trigger
+中断 = 事件 → 系统状态变化 → 调度触发
 
 核心价值：
 - 让系统具备异步能力

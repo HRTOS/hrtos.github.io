@@ -118,6 +118,9 @@ a{
   color:#7dd3fc;
   font-size:14px;
   line-height:1.8;
+
+    white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .grid{
@@ -199,7 +202,7 @@ a{
     <div class="block">
 调度问题本质：
 
-CPU Control = Kernel OR Task
+CPU 控制 = 内核 或 任务
     </div>
 
     <p>
@@ -218,13 +221,13 @@ CPU Control = Kernel OR Task
     </p>
 
     <div class="block">
-[ PREEMPTIVE MODEL ]
+[抢占式模型]
 
-High Priority Task
-      ↓ (interrupt / scheduler event)
-Low Priority Task is forcibly suspended
+高优先级任务
+  ↓（中断 / 调度事件）
+低优先级任务被强制挂起
 
-Kernel decides execution order at runtime
+内核在运行时决定执行顺序
     </div>
 
     <p>
@@ -264,13 +267,13 @@ Kernel decides execution order at runtime
     </p>
 
     <div class="block">
-[ COOPERATIVE MODEL ]
+[协作式模型]
 
-Task A runs → must yield()
-Task B runs → must yield()
-Task C runs → must yield()
+任务 A 运行 → 必须主动让出（yield()）
+任务 B 运行 → 必须主动让出（yield()）
+任务 C 运行 → 必须主动让出（yield()）
 
-Kernel does NOT forcibly interrupt tasks
+内核不会强制中断任务执行
     </div>
 
     <p>

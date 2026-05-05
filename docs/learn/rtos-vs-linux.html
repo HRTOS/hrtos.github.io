@@ -140,6 +140,9 @@ a{
   color:#7dd3fc;
   font-size:14px;
   line-height:1.8;
+
+    white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .footer{
@@ -212,10 +215,10 @@ Linux：优化平均情况（Best-effort Optimization）
 
     <div class="block">
 RTOS：
-Task Execution Time ≤ Deadline (Hard Constraint)
+任务执行时间 ≤ 截止时间（硬约束）
 
 Linux：
-Task Execution Time ≈ Statistical Distribution
+任务执行时间 ≈ 统计分布
     </div>
 
     <p>
@@ -255,10 +258,10 @@ Linux Scheduler:
 
     <div class="block">
 Linux：
-Latency = f(load, scheduling fairness, kernel path variability)
+延迟 = f(负载，调度公平性，内核路径不确定性)
 
 RTOS：
-Latency ≤ predefined upper bound
+延迟 ≤ 预定义上界
     </div>
   </section>
 

@@ -113,6 +113,9 @@ a{color:inherit;text-decoration:none;}
   color:#7dd3fc;
   font-size:14px;
   line-height:1.8;
+
+    white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .grid{
@@ -190,12 +193,12 @@ a{color:inherit;text-decoration:none;}
     </p>
 
     <div class="block">
-Correctness = Logical Correctness + Temporal Correctness
+正确性 = 逻辑正确性 + 时间正确性
 
-Temporal Constraint:
-Execution Time ≤ Deadline
+时间约束：
+执行时间 ≤ 截止期限（Deadline）
 
-If violated → system-level failure (not application failure)
+若违反 → 系统级失败（非应用级失败）
     </div>
 
     <p>
@@ -213,12 +216,12 @@ If violated → system-level failure (not application failure)
     </p>
 
     <div class="block">
-Task Model:
+任务模型：
 
-Task = (Start Time, Execution Time, Deadline)
+任务 =（开始时间，执行时间，截止时间）
 
-Constraint:
-Start + Execution ≤ Deadline
+约束：
+开始时间 + 执行时间 ≤ 截止时间
     </div>
 
     <p>
@@ -274,10 +277,10 @@ Start + Execution ≤ Deadline
     <div class="block">
 关键指标：
 
-1. Worst Case Execution Time (WCET)
-2. Worst Case Response Time (WCRT)
-3. Interrupt Latency Bound
-4. Scheduling Determinism
+1. Worst Case Execution Time（最坏情况执行时间，WCET）
+2. Worst Case Response Time（最坏情况响应时间，WCRT）
+3. Interrupt Latency Bound（中断延迟上界）
+4. Scheduling Determinism（调度确定性）
     </div>
 
     <p>
@@ -293,9 +296,9 @@ Start + Execution ≤ Deadline
     </p>
 
     <div class="block">
-System Execution Model:
+系统执行模型：
 
-Interrupt → Scheduler → Task Execution → Context Switch → Deadline Check → Repeat
+中断 → 调度器 → 任务执行 → 上下文切换 → 截止时间检查 → 循环重复
     </div>
 
     <p>
@@ -321,15 +324,15 @@ Interrupt → Scheduler → Task Execution → Context Switch → Deadline Check
     <h2>七、总结：实时系统的抽象模型</h2>
 
     <div class="block">
-RTOS System Definition:
+RTOS 系统定义：
 
-System = (Tasks, Scheduler, Interrupts, Constraints)
+系统 =（任务，调度器，中断，约束）
 
-Subject to:
+满足以下条件：
 
-∀ task: Finish Time ≤ Deadline
-∀ interrupt: Latency ≤ Upper Bound
-∀ schedule: Deterministic Behavior
+∀ 任务：完成时间 ≤ 截止时间
+∀ 中断：延迟 ≤ 上界
+∀ 调度：确定性行为
     </div>
 
     <p>

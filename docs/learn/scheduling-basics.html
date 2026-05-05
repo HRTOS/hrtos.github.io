@@ -118,6 +118,9 @@ a{
   color:#7dd3fc;
   font-size:14px;
   line-height:1.8;
+
+    white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .grid{
@@ -197,12 +200,13 @@ a{
     </p>
 
     <div class="block">
-Scheduling = Decision System under Time Constraints
+调度 = 时间约束下的决策系统
 
-Goal:
-- Guarantee deadline satisfaction
-- Minimize worst-case latency
-- Ensure deterministic execution order
+目标：
+
+- 保证截止时间满足
+- 最小化最坏情况延迟
+- 确保确定性执行顺序
     </div>
 
     <p>
@@ -218,9 +222,9 @@ Goal:
     </p>
 
     <div class="block">
-[ TASK STATE MACHINE ]
+[任务状态机]
 
-NEW → READY → RUNNING → BLOCKED → READY → TERMINATED
+创建态 → 就绪态 → 运行态 → 阻塞态 → 就绪态 → 终止态
 
 关键触发点：
 - 中断事件
@@ -283,15 +287,15 @@ NEW → READY → RUNNING → BLOCKED → READY → TERMINATED
     </p>
 
     <div class="block">
-[ SCHEDULER DECISION LOGIC ]
+[调度器决策逻辑]
 
-For each runnable task:
+对于每个可运行任务：
 
-1. Check priority
-2. Check deadline constraint
-3. Check resource availability
-4. Evaluate worst-case execution time
-5. Select feasible task
+1. 检查优先级
+2. 检查截止时间约束
+3. 检查资源可用性
+4. 评估最坏情况执行时间
+5. 选择可执行任务
     </div>
 
     <p>
@@ -308,12 +312,12 @@ For each runnable task:
     </p>
 
     <div class="block">
-Cost of Preemption:
+抢占代价：
 
-- Context Switch Overhead
-- Cache Disruption
-- Pipeline Flush
-- Scheduling Jitter
+1. 上下文切换开销
+2. 缓存破坏
+3. 流水线清空
+4. 调度抖动
     </div>
 
     <p>
@@ -330,9 +334,9 @@ Cost of Preemption:
     </p>
 
     <div class="block">
-Real-Time Condition:
+实时约束：
 
-Execution Time + Scheduling Delay ≤ Deadline
+执行时间 + 调度延迟 ≤ 截止时间
     </div>
 
     <p>

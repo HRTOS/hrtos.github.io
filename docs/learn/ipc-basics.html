@@ -118,6 +118,9 @@ a{
   color:#7dd3fc;
   font-size:14px;
   line-height:1.8;
+
+    white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .grid{
@@ -202,7 +205,7 @@ a{
     </p>
 
     <div class="block">
-IPC本质 = Task Isolation + Controlled Interaction
+IPC本质 = 任务隔离 + 受控交互
 
 不是数据共享，而是状态协调
 不是通信机制，而是并发控制结构
@@ -242,13 +245,13 @@ IPC本质 = Task Isolation + Controlled Interaction
     </p>
 
     <div class="block">
-Task A  --->  Message Queue  --->  Task B   (数据流模型)
+任务 A → 消息队列 → 任务 B   (数据流模型)
 
-Task A  --->  Semaphore      --->  Resource (控制流模型)
+任务 A → 信号量 → 资源 (控制流模型)
 
-Task A  <-->  Shared Memory   <-->  Task B   (状态共享模型)
+任务 A ⇄ 共享内存 ⇄ 任务 B   (状态共享模型)
 
-Task A  --->  Pipe/Channel    --->  Task B   (连续流模型)
+任务 A → 管道 / 通道 → 任务 B   (连续流模型)
     </div>
 
     <p>
@@ -379,7 +382,7 @@ Task A  --->  Pipe/Channel    --->  Task B   (连续流模型)
     <h2>九、总结：IPC的本质抽象</h2>
 
     <div class="block">
-IPC = System Coordination Layer
+IPC = 系统协调层
 
 核心不是通信，而是控制并发行为的结构层
     </div>

@@ -118,6 +118,9 @@ a{
   color:#7dd3fc;
   font-size:14px;
   line-height:1.8;
+
+    white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .grid{
@@ -271,7 +274,7 @@ WHY层（为什么需要实时系统）
     <h2>四、上下文切换完整流程</h2>
 
     <div class="block">
-[ CONTEXT SWITCH FLOW ]
+[ 上下文切换流程 ]
 
 1. 进入中断或调度点
 2. 保存当前任务CPU寄存器
@@ -295,7 +298,7 @@ WHY层（为什么需要实时系统）
   <div class="block">
 [ 系统执行模型 ]
 
-中断触发层 ─────────┐
+中断触发层   ─────────┐
                      ↓
              调度决策层（Scheduler）
                      ↓
@@ -413,7 +416,7 @@ WHY层（为什么需要实时系统）
     </p>
 
     <div class="block">
-Context Switch = State Save + Scheduler Decision + State Restore
+上下文切换 = 状态保存 + 调度决策 + 状态恢复
 
 核心目标：
 - 不丢状态
