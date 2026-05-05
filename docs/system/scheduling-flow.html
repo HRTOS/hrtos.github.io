@@ -176,6 +176,7 @@ a{
   font-size:0.92rem;
   color:#7dd3fc;
   line-height:1.65;
+  white-space: pre-wrap;
 }
 
 /* sidebar */
@@ -215,7 +216,15 @@ a{
   color:#8ea3be;
   font-size:0.9rem;
 }
+#related a{
+  display:inline-block;
+  margin-bottom:8px;
+  color:#7dd3fc;
+}
 
+#related a:hover{
+  color:#38bdf8;
+}
 @media(max-width:980px){
   .layout{grid-template-columns:1fr;}
 }
@@ -288,7 +297,46 @@ a{
           调度策略直接决定系统实时性与响应稳定性。
         </div>
       </section>
+<section class="section" id="trigger">
+  <h2>调度触发条件</h2>
 
+  <p>
+    HRTOS在以下场景触发调度决策：
+  </p>
+
+  <div class="code">
+1. 时间片耗尽
+2. 当前任务主动 Yield
+3. 任务阻塞
+4. 高优先级任务就绪
+5. 中断退出后检查调度
+  </div>
+
+  <div class="note">
+    调度触发时机直接决定系统响应速度与抢占能力。
+  </div>
+</section>
+<section class="section" id="execution-path">
+  <h2>执行路径</h2>
+
+  <div class="code">
+调度事件触发
+    ↓
+进入调度器
+    ↓
+检查就绪队列
+    ↓
+选择最高优先级任务
+    ↓
+执行上下文切换
+    ↓
+进入目标任务执行
+  </div>
+
+  <p>
+    调度路径决定任务切换效率与实时系统执行节奏。
+  </p>
+</section>
       <section class="section" id="interface">
         <h2>关键接口 / 结构</h2>
 
@@ -304,7 +352,23 @@ struct scheduler {
 };
         </div>
       </section>
+<section class="section" id="ready-queue">
+  <h2>就绪队列管理</h2>
 
+  <p>
+    调度器维护可运行任务集合，
+    并根据优先级快速选择下一个执行目标。
+  </p>
+
+  <div class="code">
+Ready Queue:
+Priority 0
+Priority 1
+Priority 2
+...
+Highest Ready Task
+  </div>
+</section>
       <section class="section" id="flow">
         <h2>运行流程</h2>
         <p>
@@ -313,7 +377,23 @@ struct scheduler {
           进入目标任务执行。
         </p>
       </section>
+<section class="section" id="policy">
+  <h2>调度策略</h2>
 
+  <p>
+    HRTOS支持多种调度策略组合：
+  </p>
+
+  <div class="code">
+1. 抢占式优先级调度
+2. 时间片轮转
+3. 协作式让出
+  </div>
+
+  <p>
+    不同策略适用于不同实时任务场景。
+  </p>
+</section>
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>
@@ -321,18 +401,46 @@ struct scheduler {
           可在实时性与公平性之间进行权衡配置。
         </p>
       </section>
+<section class="section" id="performance">
+  <h2>性能影响因素</h2>
 
+  <p>
+    调度性能主要受以下因素影响：
+  </p>
+
+  <div class="code">
+1. 任务数量
+2. 优先级数量
+3. 队列管理复杂度
+4. 上下文切换成本
+5. Tick频率
+  </div>
+</section>
+<section class="section" id="related">
+  <h2>相关阅读</h2>
+
+  <a href="/docs/system/context-switch-flow.html">上下文切换流程</a><br>
+  <a href="/docs/system/interrupt-flow.html">中断流程</a><br>
+  <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a><br>
+  <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a><br>
+  <a href="/docs/architecture/scheduler/scheduling-model.html">调度模型</a>
+</section>
     </div>
 
     <aside class="sidebar">
 
       <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
-      </div>
+  <h3>目录导航</h3>
+  <a href="#overview">概述</a>
+  <a href="#mechanism">工作原理</a>
+  <a href="#trigger">触发条件</a>
+  <a href="#execution-path">执行路径</a>
+  <a href="#interface">关键接口</a>
+  <a href="#ready-queue">就绪队列</a>
+  <a href="#flow">运行流程</a>
+  <a href="#policy">调度策略</a>
+  <a href="#performance">性能分析</a>
+</div>
 
       <div class="box">
         <h3>相关页面</h3>

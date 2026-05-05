@@ -176,6 +176,7 @@ a{
   font-size:0.92rem;
   color:#7dd3fc;
   line-height:1.65;
+  white-space: pre-wrap;
 }
 
 /* sidebar */
@@ -214,6 +215,16 @@ a{
   border-top:1px solid rgba(148,163,184,.14);
   color:#8ea3be;
   font-size:0.9rem;
+}
+
+#related a{
+  display:inline-block;
+  margin-bottom:8px;
+  color:#7dd3fc;
+}
+
+#related a:hover{
+  color:#38bdf8;
 }
 
 @media(max-width:980px){
@@ -289,6 +300,50 @@ a{
         </div>
       </section>
 
+<section class="section" id="trigger">
+  <h2>中断触发条件</h2>
+
+  <p>
+    中断通常由外设事件或系统内部异常触发。
+  </p>
+
+  <div class="code">
+1. 外设数据到达
+2. 定时器到期
+3. GPIO事件触发
+4. 系统异常
+5. 软件中断请求
+  </div>
+
+  <div class="note">
+    中断机制使CPU无需轮询外设状态，从而提升实时响应效率。
+  </div>
+</section>
+
+<section class="section" id="execution-path">
+  <h2>执行路径</h2>
+
+  <div class="code">
+中断触发
+    ↓
+CPU保存上下文
+    ↓
+进入中断服务程序（ISR）
+    ↓
+执行中断处理逻辑
+    ↓
+清除中断标志
+    ↓
+检查是否需要调度
+    ↓
+恢复上下文并返回
+  </div>
+
+  <p>
+    中断执行路径决定系统响应速度与任务切换时机。
+  </p>
+</section>
+
       <section class="section" id="interface">
         <h2>关键接口 / 结构</h2>
 
@@ -305,6 +360,23 @@ struct interrupt_context {
         </div>
       </section>
 
+<section class="section" id="isr">
+  <h2>中断服务程序（ISR）</h2>
+
+  <p>
+    ISR负责处理中断事件，并尽可能快速完成关键逻辑，
+    避免阻塞后续中断响应。
+  </p>
+
+  <div class="code">
+ISR Best Practice:
+- 保持执行时间短
+- 避免阻塞调用
+- 只做必要处理
+- 延迟复杂任务到调度阶段
+  </div>
+</section>
+
       <section class="section" id="flow">
         <h2>运行流程</h2>
         <p>
@@ -314,6 +386,26 @@ struct interrupt_context {
         </p>
       </section>
 
+<section class="section" id="nested">
+  <h2>中断嵌套机制</h2>
+
+  <p>
+    HRTOS支持高优先级中断抢占低优先级中断，
+    以保证关键事件优先处理。
+  </p>
+
+  <div class="code">
+低优先级 ISR 执行
+    ↓
+高优先级中断到达
+    ↓
+进入嵌套 ISR
+    ↓
+返回原中断继续执行
+</div>
+</section>
+
+
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>
@@ -321,18 +413,48 @@ struct interrupt_context {
           可在保证实时性的同时避免关键路径阻塞。
         </p>
       </section>
+<section class="section" id="performance">
+  <h2>性能影响因素</h2>
 
+  <p>
+    中断延迟主要受以下因素影响：
+  </p>
+
+  <div class="code">
+1. ISR执行时间
+2. 中断嵌套层级
+3. 上下文保存开销
+4. 调度器复杂度
+5. CPU架构特性
+  </div>
+</section>
+
+
+<section class="section" id="related">
+  <h2>相关阅读</h2>
+
+  <a href="/docs/system/context-switch-flow.html">上下文切换流程</a><br>
+  <a href="/docs/system/scheduling-flow.html">调度流程</a><br>
+  <a href="/docs/architecture/interrupt/interrupt-model.html">中断模型</a><br>
+  <a href="/docs/architecture/interrupt/interrupt-latency.html">中断延迟</a><br>
+  <a href="/docs/architecture/interrupt/interrupt-flow.html">架构中断流程</a>
+</section>
     </div>
 
     <aside class="sidebar">
 
       <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
-      </div>
+  <h3>目录导航</h3>
+  <a href="#overview">概述</a>
+  <a href="#mechanism">工作原理</a>
+  <a href="#trigger">触发条件</a>
+  <a href="#execution-path">执行路径</a>
+  <a href="#interface">关键接口</a>
+  <a href="#isr">ISR说明</a>
+  <a href="#flow">运行流程</a>
+  <a href="#nested">中断嵌套</a>
+  <a href="#performance">性能分析</a>
+</div>
 
       <div class="box">
         <h3>相关页面</h3>

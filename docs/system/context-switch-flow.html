@@ -176,6 +176,7 @@ a{
   font-size:0.92rem;
   color:#7dd3fc;
   line-height:1.65;
+  white-space: pre-line;
 }
 
 /* sidebar */
@@ -289,6 +290,51 @@ a{
         </div>
       </section>
 
+<section class="section" id="trigger">
+  <h2>切换触发条件</h2>
+  <p>
+    HRTOS在以下情况下会触发上下文切换：
+  </p>
+
+  <div class="code">
+1. 时间片耗尽（Tick Expire）
+2. 当前任务主动让出CPU（Yield）
+3. 任务进入阻塞状态
+4. 更高优先级任务就绪
+5. 中断退出后触发调度
+  </div>
+
+  <div class="note">
+    高优先级任务抢占是实时系统响应能力的重要保障。
+  </div>
+</section>
+
+
+<section class="section" id="execution-path">
+  <h2>执行路径</h2>
+
+ <div class="code">
+中断触发 / 主动让出CPU
+    ↓
+进入调度器
+    ↓
+保存当前任务上下文
+    ↓
+更新就绪队列
+    ↓
+选择最高优先级任务
+    ↓
+恢复目标任务上下文
+    ↓
+返回任务继续执行
+</div>
+
+  <p>
+    上下文切换本质上是任务状态保存与恢复流程，
+    同时伴随调度器重新选择最高优先级可运行任务。
+  </p>
+</section>
+
       <section class="section" id="interface">
         <h2>关键接口 / 结构</h2>
 
@@ -308,6 +354,28 @@ struct task_control_block {
         </div>
       </section>
 
+<section class="section" id="register-save">
+  <h2>寄存器保存与恢复</h2>
+
+  <p>
+    切换过程中，CPU需要将当前任务寄存器状态保存到任务控制块（TCB），
+    并恢复下一个任务的寄存器上下文。
+  </p>
+
+  <div class="code">
+R0 - R12
+SP
+LR
+PC
+xPSR
+  </div>
+
+  <div class="note">
+    保存寄存器数量越多，上下文切换开销越高。
+  </div>
+</section>
+
+
       <section class="section" id="flow">
         <h2>运行流程</h2>
         <p>
@@ -317,6 +385,27 @@ struct task_control_block {
         </p>
       </section>
 
+<section class="section" id="performance">
+  <h2>性能影响因素</h2>
+
+  <p>
+    上下文切换延迟受以下因素影响：
+  </p>
+
+  <div class="code">
+1. CPU寄存器数量
+2. 调度器复杂度
+3. 中断嵌套深度
+4. 栈保存开销
+5. Cache影响
+  </div>
+
+  <p>
+    HRTOS通过精简调度路径与优化寄存器保存策略降低切换延迟。
+  </p>
+</section>
+
+
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>
@@ -324,18 +413,31 @@ struct task_control_block {
           并针对不同架构优化寄存器保存策略。
         </p>
       </section>
+<section class="section" id="related">
+  <h2>相关阅读</h2>
 
+  <a href="/docs/system/scheduling-flow.html">调度流程</a><br>
+<a href="/docs/system/interrupt-flow.html">中断流程</a><br>
+<a href="/docs/modules/task/state-model.html">任务状态模型</a><br>
+<a href="/docs/architecture/kernel/kernel-flow.html">内核执行流程</a><br>
+<a href="/docs/modules/task/context-switch.html">任务上下文切换</a><br>
+<a href="/docs/architecture/scheduler/scheduling-model.html">调度模型</a>
+</section>
     </div>
 
     <aside class="sidebar">
 
       <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
-      </div>
+  <h3>目录导航</h3>
+  <a href="#overview">概述</a>
+  <a href="#mechanism">工作原理</a>
+  <a href="#trigger">触发条件</a>
+  <a href="#execution-path">执行路径</a>
+  <a href="#interface">关键接口</a>
+  <a href="#register-save">寄存器保存</a>
+  <a href="#flow">运行流程</a>
+  <a href="#performance">性能分析</a>
+</div>
 
       <div class="box">
         <h3>相关页面</h3>
