@@ -172,15 +172,18 @@ a {
 }
 
 .code {
-  background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
-  border-radius: 8px;
-  padding: 16px;
-  overflow-x: auto;
-  font-family: Consolas, monospace;
-  font-size: 0.92rem;
-  color: #7dd3fc;
-  line-height: 1.65;
+  background:#020617;
+  border:1px solid rgba(56,189,248,.14);
+  border-radius:8px;
+  padding:16px;
+  overflow-x:auto;
+  font-family:Consolas,monospace;
+  font-size:0.92rem;
+  color:#7dd3fc;
+  line-height:1.65;
+
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* sidebar */
@@ -295,6 +298,21 @@ a {
         </div>
       </section>
 
+<section class="section" id="rules">
+  <h2>调度规则</h2>
+  <p>
+    在优先级调度模型中，系统始终选择最高优先级且处于就绪状态的任务执行。
+    当更高优先级任务进入就绪队列时，当前任务将被立即抢占。
+  </p>
+
+  <div class="code">
+1. 高优先级优先执行
+2. 同优先级可轮转调度
+3. 低优先级仅在高优先级阻塞时运行
+  </div>
+</section>
+
+
       <section class="section" id="interface">
         <h2>关键接口 / 结构</h2>
 
@@ -313,11 +331,32 @@ struct task_control_block {
 
       <section class="section" id="flow">
         <h2>运行流程</h2>
-        <p>
-          任务进入就绪队列 → 调度器选择最高优先级任务 →
-          发生上下文切换 → 当前任务执行或被抢占。
-        </p>
+        <div class="code">
+任务进入就绪队列
+    ↓
+调度器扫描最高优先级
+    ↓
+发现更高优先级任务
+    ↓
+触发上下文切换
+    ↓
+开始目标任务执行
+</div>
       </section>
+
+<section class="section" id="inversion">
+  <h2>优先级反转问题</h2>
+  <p>
+    当低优先级任务持有共享资源，
+    高优先级任务等待该资源，
+    而中优先级任务持续运行时，
+    将导致高优先级任务被间接阻塞。
+  </p>
+
+  <div class="note">
+    HRTOS通过优先级继承机制缓解优先级反转问题。
+  </div>
+</section>
 
       <section class="section" id="extension">
         <h2>扩展说明</h2>
@@ -334,16 +373,20 @@ struct task_control_block {
       <div class="box">
         <h3>目录导航</h3>
         <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
+<a href="#mechanism">工作原理</a>
+<a href="#interface">关键接口</a>
+<a href="#flow">运行流程</a>
+<a href="#inversion">优先级反转</a>
       </div>
 
       <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/scheduler/index.html">调度器总览</a>
-        <a href="/docs/modules/task/index.html">任务管理</a>
-      </div>
+  <h3>相关页面</h3>
+  <a href="/docs/modules/scheduler/index.html">调度器总览</a>
+  <a href="/docs/modules/task/priority.html">任务优先级</a>
+  <a href="/docs/system/scheduling-flow.html">调度流程</a>
+  <a href="/docs/system/context-switch-flow.html">上下文切换</a>
+  <a href="/docs/architecture/scheduler/scheduling-model.html">调度模型</a>
+</div>
 
       <div class="box">
         <h3>所属模块</h3>

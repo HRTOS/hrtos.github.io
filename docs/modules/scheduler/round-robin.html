@@ -171,15 +171,18 @@ a {
 }
 
 .code {
-  background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
-  border-radius: 8px;
-  padding: 16px;
-  overflow-x: auto;
-  font-family: Consolas, monospace;
-  font-size: 0.92rem;
-  color: #7dd3fc;
-  line-height: 1.65;
+  background:#020617;
+  border:1px solid rgba(56,189,248,.14);
+  border-radius:8px;
+  padding:16px;
+  overflow-x:auto;
+  font-family:Consolas,monospace;
+  font-size:0.92rem;
+  color:#7dd3fc;
+  line-height:1.65;
+
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* sidebar */
@@ -219,7 +222,19 @@ a {
   color: #8ea3be;
   font-size: 0.9rem;
 }
+.link-list{
+  display:grid;
+  gap:10px;
+}
 
+.link-list a{
+  color:#7dd3fc;
+  font-size:0.95rem;
+}
+
+.link-list a:hover{
+  color:var(--accent);
+}
 @media (max-width: 980px) {
   .layout { grid-template-columns: 1fr; }
 }
@@ -325,7 +340,21 @@ struct rr_task {
           用于同优先级任务之间的公平调度。
         </p>
       </section>
+</section>  <!-- extension结束 -->
 
+<section class="section" id="related">
+  <h2>相关阅读</h2>
+  <p>
+    继续学习调度策略与任务切换机制，深入理解实时系统中的执行控制模型。
+  </p>
+
+  <div class="link-list">
+  <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
+  <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
+  <a href="/docs/modules/task/context-switch.html">任务上下文切换</a>
+  <a href="/docs/system/scheduling-flow.html">调度流程</a>
+</div>
+</section>
     </div>
 
     <aside class="sidebar">

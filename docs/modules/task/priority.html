@@ -176,6 +176,9 @@ a{
   font-size:0.92rem;
   color:#7dd3fc;
   line-height:1.65;
+
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* sidebar */
@@ -258,6 +261,9 @@ a{
       任务优先级用于决定任务在调度器中的执行顺序，
       是实时系统中影响响应时间与抢占行为的核心参数。
     </p>
+    <p>
+  优先级是调度器进行任务选择时最核心的决策依据之一。
+</p>
 
     <div class="meta">
       <span class="tag">Task</span>
@@ -307,17 +313,34 @@ struct task_control_block {
       <section class="section" id="flow">
         <h2>运行流程</h2>
         <p>
-          任务创建 → 分配优先级 → 加入就绪队列 →
-          调度器选择最高优先级任务执行 → 发生抢占或切换。
-        </p>
+  任务创建后首先分配优先级，然后进入就绪队列等待调度。
+  调度器始终选择当前系统中优先级最高的任务执行。
+  在运行过程中，如果出现更高优先级任务，将立即发生抢占。
+</p>
+
+<div class="code">
+创建任务
+  ↓
+分配优先级
+  ↓
+进入就绪队列
+  ↓
+调度器选择最高优先级任务
+  ↓
+运行中
+  ↓
+发生抢占 / 阻塞 / 切换
+</div>
       </section>
 
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>
-          HRTOS支持动态优先级调整与优先级继承机制，
-          用于解决优先级反转与实时性优化问题。
-        </p>
+  HRTOS支持动态优先级调整与优先级继承机制，
+  用于解决优先级反转问题（Priority Inversion），
+  并结合抢占式调度（Preemptive Scheduling）
+  提升实时任务的响应确定性。
+</p>
       </section>
 
     </div>
@@ -336,6 +359,7 @@ struct task_control_block {
         <h3>相关页面</h3>
         <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
         <a href="/docs/modules/scheduler/index.html">调度器</a>
+        <a href="/docs/modules/task/context-switch.html">上下文切换</a>
       </div>
 
       <div class="box">

@@ -154,6 +154,8 @@ a{
   border-radius:var(--radius);
   box-shadow:var(--shadow);
   transition:.22s ease;
+  white-space: pre-wrap;
+word-break: break-word;
 }
 
 .card:hover{
@@ -211,7 +213,7 @@ a{
   <nav class="breadcrumb">
     <a href="/docs/index.html">Docs</a> /
     <a href="/docs/modules/index.html">Modules</a> /
-    <span>Task</span>
+    <span>Task（任务）</span>
   </nav>
 
   <section class="hero">
@@ -292,7 +294,22 @@ a{
 
     </div>
   </section>
+  <section class="section">
+  <h2>模块关系</h2>
+  <p>Task模块与Scheduler模块共同构成调度体系核心。</p>
 
+  <div class="grid">
+    <a class="card" href="/docs/modules/scheduler/index.html">
+      Scheduler → 调度核心
+    </a>
+
+    <a class="card" href="/docs/modules/task/index.html">
+      Task → 执行单元
+    </a>
+  </div>
+</section>
+
+  
   <footer class="footer">
     © 2017–2026 HRTOS. Documentation for embedded real-time systems.
   </footer>

@@ -169,15 +169,18 @@ a {
 }
 
 .code {
-  background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
-  border-radius: 8px;
-  padding: 16px;
-  overflow-x: auto;
-  font-family: Consolas, monospace;
-  font-size: 0.92rem;
-  color: #7dd3fc;
-  line-height: 1.65;
+  background:#020617;
+  border:1px solid rgba(56,189,248,.14);
+  border-radius:8px;
+  padding:16px;
+  overflow-x:auto;
+  font-family:Consolas,monospace;
+  font-size:0.92rem;
+  color:#7dd3fc;
+  line-height:1.65;
+
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* sidebar */
@@ -279,7 +282,25 @@ a {
           是实时操作系统区别于通用操作系统的核心特性之一。
         </p>
       </section>
+<section class="section" id="task-type">
+  <h2>实时任务分类</h2>
+  <p>
+    实时系统中的任务通常分为硬实时任务（Hard Real-Time）
+    与软实时任务（Soft Real-Time）。
+    硬实时任务必须在截止时间前完成，
+    否则将导致系统失效或严重后果。
+  </p>
 
+  <div class="code">
+硬实时任务（Hard Real-Time）
+    ↓
+必须满足截止时间
+
+软实时任务（Soft Real-Time）
+    ↓
+允许偶发延迟
+  </div>
+</section>
       <section class="section" id="mechanism">
         <h2>工作原理</h2>
         <p>
@@ -310,12 +331,36 @@ struct rt_task {
 
       <section class="section" id="flow">
         <h2>运行流程</h2>
-        <p>
-          任务进入系统 → 注册时间约束 →
-          调度器评估截止时间与优先级 →
-          触发确定性调度与执行。
-        </p>
+        <div class="code">
+任务进入系统
+    ↓
+注册周期与截止时间
+    ↓
+调度器分析优先级
+    ↓
+选择可执行任务
+    ↓
+开始实时执行
+</div>
       </section>
+
+<section class="section" id="algorithms">
+  <h2>经典实时调度算法</h2>
+  <p>
+    常见实时调度算法包括固定优先级调度与动态优先级调度。
+    不同算法适用于不同实时任务模型。
+  </p>
+
+  <div class="code">
+RMS（Rate Monotonic Scheduling）
+    ↓
+周期越短，优先级越高
+
+EDF（Earliest Deadline First）
+    ↓
+截止时间越近，优先级越高
+  </div>
+</section>
 
       <section class="section" id="extension">
         <h2>扩展说明</h2>
@@ -332,16 +377,21 @@ struct rt_task {
       <div class="box">
         <h3>目录导航</h3>
         <a href="#overview">概述</a>
+        <a href="#task-type">任务分类</a>
         <a href="#mechanism">工作原理</a>
         <a href="#interface">关键接口</a>
+        <a href="#algorithms">调度算法</a>
         <a href="#flow">运行流程</a>
       </div>
 
       <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/scheduler/index.html">调度器总览</a>
-        <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
-      </div>
+  <h3>相关页面</h3>
+  <a href="/docs/modules/scheduler/index.html">调度器总览</a>
+  <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
+  <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a>
+  <a href="/docs/system/scheduling-flow.html">调度流程</a>
+  <a href="/docs/architecture/scheduler/scheduling-model.html">调度模型</a>
+</div>
 
       <div class="box">
         <h3>所属模块</h3>

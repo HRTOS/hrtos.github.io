@@ -176,6 +176,9 @@ a{
   font-size:0.92rem;
   color:#7dd3fc;
   line-height:1.65;
+
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* sidebar */
@@ -255,8 +258,8 @@ a{
     <h1>任务生命周期（Task Lifecycle）</h1>
 
     <p>
-      任务生命周期定义了任务从创建到销毁全过程中的状态变化模型，
-      是任务管理与调度执行的基础结构。
+      任务生命周期模型决定任务在不同系统状态下的行为边界，
+是实时调度、资源同步与系统确定性分析的基础。
     </p>
 
     <div class="meta">
@@ -309,20 +312,39 @@ enum task_state {
       </section>
 
       <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          创建任务 → 进入就绪态 → 调度运行 →
-          资源等待进入阻塞 → 恢复回就绪 →
-          结束后进入终止状态。
-        </p>
-      </section>
+  <h2>运行流程</h2>
+
+  <p>
+    创建任务 → 进入就绪态 → 调度运行 →
+    资源等待进入阻塞 → 恢复回就绪 →
+    结束后进入终止状态。
+  </p>
+
+  <div class="code">
+CREATE
+  ↓
+READY
+  ↓
+RUNNING
+ ↙   ↘
+BLOCKED  SUSPENDED
+  ↓
+READY
+  ↓
+TERMINATED
+  </div>
+</section>
 
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>
-          在HRTOS中，任务生命周期与调度器紧密绑定，
-          状态变化通常由调度器与中断系统共同驱动。
-        </p>
+  在实时系统中，任务状态切换通常由调度器、
+  中断系统以及同步原语（Mutex / Semaphore / Event）
+  共同驱动。
+
+  不同状态切换路径直接影响任务响应延迟、
+  CPU利用率与系统确定性。
+</p>
       </section>
 
     </div>
@@ -341,6 +363,7 @@ enum task_state {
         <h3>相关页面</h3>
         <a href="/docs/modules/task/context-switch.html">上下文切换</a>
         <a href="/docs/modules/scheduler/index.html">调度器</a>
+        <a href="/docs/modules/ipc/index.html">IPC Communication</a>
       </div>
 
       <div class="box">
@@ -354,7 +377,15 @@ enum task_state {
       </div>
 
     </aside>
+<section class="section">
+  <h2>常见问题</h2>
 
+  <p><strong>任务为什么会进入阻塞状态？</strong></p>
+  <p>通常由于等待资源、消息、事件或延时触发。</p>
+
+  <p><strong>阻塞态和挂起态有什么区别？</strong></p>
+  <p>阻塞通常由系统条件触发，挂起通常由用户或系统主动暂停。</p>
+</section>
   </div>
 
   <footer class="footer">

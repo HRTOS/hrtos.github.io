@@ -176,6 +176,9 @@ a{
   font-size:0.92rem;
   color:#7dd3fc;
   line-height:1.65;
+
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* sidebar */
@@ -273,9 +276,10 @@ a{
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
-          任务状态模型定义任务在系统中的生命周期状态集合，
-          包括就绪、运行、阻塞、挂起和终止等状态。
-        </p>
+  任务状态模型是一种有限状态机（FSM），
+  用于描述任务在实时系统中的执行路径与转换规则，
+  是调度器行为分析的基础结构。
+</p>
       </section>
 
       <section class="section" id="mechanism">
@@ -312,18 +316,35 @@ enum task_state {
       <section class="section" id="flow">
         <h2>运行流程</h2>
         <p>
-          创建任务 → READY → RUNNING →
-          BLOCKED（资源等待）→ READY →
-          TERMINATED（结束）。
-        </p>
+  任务从创建开始进入 READY 状态，
+  在调度器选择后进入 RUNNING 状态执行。
+  在运行过程中，可能因资源等待进入 BLOCKED，
+  或被更高优先级任务抢占返回 READY。
+  任务执行完成后进入 TERMINATED 状态。
+</p>
+
+<div class="code">
+CREATE
+  ↓
+READY
+  ↓ (调度器选择)
+RUNNING
+ ↙        ↘
+BLOCKED   READY (抢占)
+  ↓
+READY
+  ↓
+TERMINATED
+</div>
       </section>
 
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>
-          在HRTOS中，状态迁移通常由调度器自动维护，
-          并结合优先级与事件触发机制实现精确控制。
-        </p>
+  状态模型直接影响系统的实时性分析能力，
+  包括任务响应时间、调度确定性以及系统可预测性。
+  在复杂系统中，状态设计不合理会导致优先级反转或调度饥饿问题。
+</p>
       </section>
 
     </div>
@@ -342,6 +363,7 @@ enum task_state {
         <h3>相关页面</h3>
         <a href="/docs/modules/task/lifecycle.html">任务生命周期</a>
         <a href="/docs/modules/task/context-switch.html">上下文切换</a>
+        <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
       </div>
 
       <div class="box">
