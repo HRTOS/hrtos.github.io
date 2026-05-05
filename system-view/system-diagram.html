@@ -261,29 +261,39 @@ HRTOS 的本质不是操作系统，而是：
 <br>
 👉 “系统为什么每次都能在可预测时间内做出同样结果”
 </div>
-<div class="model-box">
-<b>Related Links（System View Modules）</b><br><br>
+<!-- 相关链接 -->
+<div class="box">
+  <div class="title">相关链接（系统视图模块）</div>
 
-<a href="/system-view/01-execution-flow.html">01 Execution Flow（执行流模型）</a><br>
-<a href="/system-view/02-task-lifecycle.html">02 Task Lifecycle（任务生命周期）</a><br>
-<a href="/system-view/03-interrupt-flow.html">03 Interrupt Flow（中断流模型）</a><br>
-<a href="/system-view/04-scheduler-cycle.html">04 Scheduler Cycle（调度循环）</a><br>
-<a href="/system-view/05-memory-view.html">05 Memory View（内存视图）</a><br>
-<a href="/system-view/06-time-system.html">06 Time System（时间系统）</a><br>
-<a href="/system-view/07-deterministic-chain.html">07 Deterministic Chain（确定性因果链）</a><br>
+  <div class="text">
+    <a href="/system-view/01-execution-flow.html">01 Execution Flow（执行流模型）</a><br>
+    <a href="/system-view/02-task-lifecycle.html">02 Task Lifecycle（任务生命周期）</a><br>
+    <a href="/system-view/03-interrupt-flow.html">03 Interrupt Flow（中断流模型）</a><br>
+    <a href="/system-view/04-scheduler-cycle.html">04 Scheduler Cycle（调度循环）</a><br>
+    <a href="/system-view/05-memory-view.html">05 Memory View（内存视图）</a><br>
+    <a href="/system-view/06-time-system.html">06 Time System（时间系统）</a><br>
+    <a href="/system-view/07-deterministic-chain.html">07 Deterministic Chain（确定性因果链）</a>
+  </div>
+</div>
 
-<br>
-<b>System Entry Strategy：</b><br>
-建议阅读顺序（理解系统本质）：<br>
-Time System → Scheduler Cycle → Execution Flow → Interrupt Flow → Deterministic Chain
+<!-- 入口策略 -->
+<div class="box">
+  <div class="title">系统入口策略</div>
+
+  <div class="text">建议阅读顺序（理解系统本质）：</div>
+
+  <div class="flow">
+    时间系统 → 调度周期 → 执行流程 → 中断流程 → 确定性链
+  </div>
 </div>
-</div>
+
+<!-- footer -->
 <footer class="site-footer">
   <div style="margin-bottom:10px;">
     © 2017–2026 HRTOS · SYSTEM VIEW
   </div>
 
-  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
+  <div style="font-size:13px;color:#8ea3be;line-height:1.6;max-width:860px;margin:0 auto;">
     System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
     该层关注“系统如何运行”，而非“为什么这样设计”。
   </div>
@@ -296,5 +306,7 @@ Time System → Scheduler Cycle → Execution Flow → Interrupt Flow → Determ
     <a href="/why/index.html" style="color:#7dd3fc;">← WHY Layer</a>
   </div>
 </footer>
+</div>
+
 </body>
 </html>
