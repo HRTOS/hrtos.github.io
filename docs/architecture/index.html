@@ -220,11 +220,59 @@ a{
 
   <!-- hero -->
   <section class="hero">
-    <span id="hero-label" class="hero-label"></span>
-    <h1 id="hero-title"></h1>
-    <p id="hero-intro"></p>
+    <span id="hero-label" class="hero-label">HRTOS 架构模块</span>
+<h1 id="hero-title">实时操作系统系统架构（Architecture Overview）</h1>
+<p id="hero-intro">
+HRTOS 架构将实时操作系统拆分为应用、调度、内核、中断与内存层级，保证系统实时性、确定性和可调度性。
+</p>
   </section>
+<section class="section">
+  <div class="section-header">
+    <h2>系统架构概览</h2>
+    <p>
+  HRTOS Architecture 定义实时操作系统在执行、调度、内存与中断层面的整体架构组织方式。
+</p>
 
+<p>
+  HRTOS 将实时系统拆分为多个核心架构模块，每个模块负责不同层级的时间约束与资源管理：
+</p>
+
+<ul>
+  <li><a href="/docs/architecture/scheduler/index.html">调度器（Scheduler）</a>：负责任务选择与时间分配，保证系统 <b>实时性</b> 与 <b>确定性</b>。</li>
+  <li><a href="/docs/architecture/interrupt/index.html">中断系统（Interrupt System）</a>：处理外部与内部事件，确保 <b>响应及时</b>。</li>
+  <li><a href="/docs/architecture/kernel/index.html">内核控制层（Kernel Control）</a>：执行调度决策与任务切换。</li>
+  <li><a href="/docs/architecture/memory/index.html">内存架构（Memory Architecture）</a>：管理资源分配与访问控制，保证 <b>可预测性</b>。</li>
+  <li><a href="/docs/architecture/ipc/index.html">IPC 通信模型（IPC Model）</a>：提供任务间安全、高效的通信机制。</li>
+</ul>
+
+<p>
+  这些模块共同决定系统是否具备：
+  <b>实时性（Real-Time Behavior）、确定性（Determinism）、可调度性（Schedulability）与资源可控性（Resource Predictability）</b>。
+</p>
+  </div>
+
+ 
+</section>
+<section class="section">
+  <div class="section-header">
+    <h2>架构层级模型</h2>
+    <p>HRTOS 采用分层架构组织实时系统能力。</p>
+  </div>
+
+  <div class="card" style="font-family:Consolas, monospace; color:#7dd3fc;">
+    应用层（负责用户任务执行与接口调用）<br>
+    ↓<br>
+    调度层（任务选择与时间分配）<br>
+    ↓<br>
+    中断层（外部和内部事件响应）<br>
+    ↓<br>
+    内核控制层（执行调度决策）<br>
+    ↓<br>
+    内存与资源层（管理资源访问与调度）<br>
+    ↓<br>
+    硬件抽象层（屏蔽底层硬件差异）
+</div>
+</section>
   <!-- main cards -->
   <section class="section">
     <div class="section-header">
@@ -244,6 +292,35 @@ a{
 
     <div id="featured-grid" class="docs-grid"></div>
   </section>
+<section class="section">
+  <div class="section-header">
+    <h2>架构设计原则</h2>
+    <p>HRTOS Architecture 的设计目标是建立可分析、可预测且具备实时正确性的系统结构。</p>
+  </div>
+
+  <div class="card">
+    <p>
+      HRTOS 的核心目标不是追求更高吞吐量，而是构建一个具备时间约束可证明性的实时系统。
+    </p>
+
+    <p>
+      系统设计遵循以下原则：
+    </p>
+
+    <p style="color:#7dd3fc; line-height:2;">
+      ✔ 确定性执行（Deterministic Execution）<br>
+      ✔ 延迟上界控制（Bounded Latency）<br>
+      ✔ 资源隔离与访问可控（Resource Isolation）<br>
+      ✔ 可预测调度路径（Predictable Scheduling）<br>
+      ✔ 实时系统正确性（Real-Time Correctness）
+    </p>
+
+    <p>
+      这些原则共同定义 HRTOS 是否能够满足实时系统的核心要求：
+      <b>在有限资源条件下保持行为可预测、时间可分析与执行可验证。</b>
+    </p>
+  </div>
+</section>
 
   <footer class="site-footer">
     <p>© 2017–2026 HRTOS. Documentation for embedded real-time systems.</p>
