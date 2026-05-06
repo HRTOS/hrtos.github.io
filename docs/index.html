@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HRTOS Documentation Center | RTOS Kernel & Embedded System Reference</title>
 <meta name="description" content="HRTOS documentation center for RTOS kernel design, task scheduling, memory management, IPC communication, API reference and embedded real-time systems.">
- 
+ <link rel="canonical" href="https://hrtos.com/docs/index.html">
+ <meta name="keywords" content="RTOS, real-time operating system, HRTOS, task scheduling, embedded system, kernel design, IPC, memory management">
   <style>
     :root {
       --bg: #0f172a;
@@ -412,51 +413,90 @@
     
 <section class="section" aria-labelledby="rtos-reference-title">
   <div class="section-header">
-    <h2 id="rtos-reference-title">RTOS 学习与参考</h2>
+    <h2 id="rtos-reference-title">RTOS 知识体系入口</h2>
     <p>
-      面向实时系统学习与工程实践，提供从基础认知、系统结构到技术专题的参考入口，
-      帮助开发者建立完整的 RTOS 知识体系。
+      从系统动机 → 架构设计 → 内核模块 → 工程实践，构建完整 RTOS 知识图谱。
     </p>
   </div>
 
+  <!-- 🔵 第一组：为什么 & 基础 -->
   <div class="docs-grid">
-    
+
+    <a class="doc-card" href="why/index.html">
+      <h3>为什么需要 RTOS</h3>
+      <p>实时系统为什么不同于普通操作系统？</p>
+      <span class="doc-link">进入</span>
+    </a>
+
+    <a class="doc-card" href="learn/index.html">
+      <h3>RTOS 学习路径</h3>
+      <p>从基础概念到调度模型的系统学习路线。</p>
+      <span class="doc-link">进入</span>
+    </a>
+
+    <a class="doc-card" href="../download/index.html">
+      <h3>下载中心</h3>
+      <p>HRTOS 版本发布与系统下载。</p>
+      <span class="doc-link">进入</span>
+    </a>
+
+  </div>
+
+  <!-- 🟢 第二组：系统架构 -->
+  <div class="docs-grid" style="margin-top:20px;">
 
     <a class="doc-card" href="architecture/index.html">
-  <h3>系统架构</h3>
-  <p>展示 HRTOS 内核模块组成、层级结构与系统运行关系。</p>
-  <span class="doc-link">进入专题</span>
-</a>
+      <h3>系统架构</h3>
+      <p>内核结构、调度模型与系统设计。</p>
+      <span class="doc-link">进入</span>
+    </a>
 
-<a class="doc-card" href="learn/index.html">
-  <h3>RTOS 学习中心</h3>
-  <p>整理实时系统基础概念、学习路径与核心知识入口，帮助建立完整 RTOS 认知体系。</p>
-  <span class="doc-link">进入专题</span>
-</a>
+    <a class="doc-card" href="system/index.html">
+      <h3>执行流程</h3>
+      <p>上下文切换与调度执行流程。</p>
+      <span class="doc-link">进入</span>
+    </a>
 
-<a class="doc-card" href="api/index.html">
-  <h3>API Reference</h3>
-  <p>汇总任务、调度、时间、内存与通信接口文档，提供完整 API 参考入口。</p>
-  <span class="doc-link">进入专题</span>
-</a>
+    <a class="doc-card" href="../system-view/summary.html">
+      <h3>System View 图谱</h3>
+      <p>系统运行状态可视化理解。</p>
+      <span class="doc-link">进入</span>
+    </a>
 
-<a class="doc-card" href="system/index.html">
-  <h3>系统流程</h3>
-  <p>展示上下文切换、中断流程与调度运行模型。</p>
-  <span class="doc-link">进入专题</span>
-</a>
+  </div>
 
-<a class="doc-card" href="../system-view/index.html">
-  <h3>System View</h3>
-  <p>通过可视化方式理解系统执行流与资源结构。</p>
-  <span class="doc-link">进入专题</span>
-</a>
+  <!-- 🟡 第三组：内核模块 -->
+  <div class="docs-grid" style="margin-top:20px;">
 
-<a class="doc-card" href="examples/index.html">
-  <h3>应用示例</h3>
-  <p>提供 MyOS、自调度示例与工程实践案例，帮助理解系统运行流程。</p>
-  <span class="doc-link">进入专题</span>
-</a>
+    <a class="doc-card" href="modules/task/index.html">
+      <h3>任务系统</h3>
+      <p>任务生命周期与状态管理。</p>
+      <span class="doc-link">进入</span>
+    </a>
+
+    <a class="doc-card" href="modules/scheduler/index.html">
+      <h3>调度系统</h3>
+      <p>优先级调度与实时调度机制。</p>
+      <span class="doc-link">进入</span>
+    </a>
+
+    <a class="doc-card" href="api/index.html">
+      <h3>API 接口文档</h3>
+      <p>系统调用与接口文档。</p>
+      <span class="doc-link">进入</span>
+    </a>
+
+  </div>
+
+  <!-- 🔴 第四组：实验 -->
+  <div class="docs-grid" style="margin-top:20px;">
+
+    <a class="doc-card" href="examples/index.html">
+      <h3>实验系统</h3>
+      <p>调度、通信与系统行为实验。</p>
+      <span class="doc-link">进入</span>
+    </a>
+
   </div>
 </section>
     

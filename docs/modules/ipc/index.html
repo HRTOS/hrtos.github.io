@@ -248,7 +248,17 @@ a{
   <section class="section">
     <h2>核心机制</h2>
     <p>以下为HRTOS中主要的IPC通信与同步机制。</p>
+<div style="margin:18px 0 24px; padding:14px 16px; border-left:3px solid #38bdf8; background:rgba(15,23,42,.5); color:#94a3b8; border-radius:8px;">
+  <strong style="color:#bae6fd;">IPC 分类结构：</strong><br><br>
 
+  ① 状态同步层：Event（事件）<br>
+  ② 资源控制层：Semaphore / Mutex<br>
+  ③ 数据通信层：Mailbox / Message Queue<br><br>
+
+  <span style="color:#7dd3fc;">
+    → 从“信号”到“资源”再到“数据”，复杂度逐级上升
+  </span>
+</div>
     <div class="grid">
 
       <a class="card" href="event.html">
@@ -256,6 +266,7 @@ a{
         <p>
           基于位标志的状态同步机制，用于任务条件触发与轻量通知。
         </p>
+
         <span>进入详情 →</span>
       </a>
 

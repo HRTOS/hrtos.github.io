@@ -183,11 +183,15 @@ a {
   border: 1px solid rgba(56,189,248,.14);
   border-radius: 8px;
   padding: 16px;
-  overflow-x: auto;
+
   font-family: Consolas, monospace;
   font-size: 0.92rem;
   color: #7dd3fc;
   line-height: 1.65;
+
+  white-space: pre-wrap;
+  word-break: normal;        /* ❗关键：不要 break-word */
+  overflow-wrap: normal;     /* ❗关键：禁止强制断词 */
 }
 
 .sidebar {
@@ -300,7 +304,46 @@ a {
           HRTOS中的Mutex支持优先级继承机制，用于解决高优先级任务被低优先级任务阻塞的问题。
         </div>
       </section>
+<section class="section" id="recursion">
+  <h2>递归特性</h2>
 
+  <div class="note">
+    HRTOS Mutex 默认是否支持递归锁取决于配置：
+    <br><br>
+    • 不支持递归：同一任务重复 lock 会死锁  
+    • 支持递归：需要配合 lock_count 计数释放  
+  </div>
+</section>
+<section class="section" id="priority-inheritance">
+  <h2>优先级继承机制（核心）</h2>
+
+  <div class="note">
+    当发生以下情况时触发优先级继承：
+    <br><br>
+    1. 高优先级任务阻塞在 Mutex 上  
+    2. Mutex 被低优先级任务持有  
+    3. 内核临时提升持有者优先级  
+    <br><br>
+    释放 Mutex 后恢复原优先级
+  </div>
+</section>
+<section class="section" id="failure">
+  <h2>获取失败行为</h2>
+
+  <div class="code">
+os_mutex_lock(mutex, timeout)
+
+返回值：
+  0   → 成功获取
+ -1   → 超时
+ -2   → 死锁检测失败（可选）
+  </div>
+
+  <p>
+    当 timeout = 0 时为非阻塞调用；
+    timeout = -1 表示永久阻塞。
+  </p>
+</section>
       <section class="section" id="interface">
         <h2>关键接口 / 结构</h2>
 
@@ -324,7 +367,25 @@ struct mutex {
           若被占用则阻塞等待 → 释放后唤醒等待任务并重新调度。
         </p>
       </section>
+<section class="section" id="decision">
+  <h2>使用决策（非常重要）</h2>
 
+  <div class="code">
+Mutex vs Semaphore：
+
+Mutex：
+- 资源独占
+- 有所有权（必须 unlock）
+- 支持优先级继承
+- 防止并发访问
+
+Semaphore：
+- 资源计数
+- 无所有权
+- 不支持优先级继承
+- 用于同步/通知
+  </div>
+</section>
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>

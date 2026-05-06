@@ -6,7 +6,11 @@
 
 <title>邮箱机制（Mailbox） | HRTOS Documentation</title>
 <meta name="description" content="HRTOS邮箱机制（Mailbox）用于任务间小数据传递，是一种基于固定缓冲区的轻量级IPC通信方式。" />
+<link rel="canonical" href="https://hrtos.com/docs/modules/ipc/mailbox.html">
 
+<meta name="keywords" content="RTOS mailbox, IPC mailbox, embedded system communication, message buffer, real-time operating system, HRTOS mailbox mechanism">
+
+<meta name="robots" content="index, follow">
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
@@ -183,11 +187,15 @@ a {
   border: 1px solid rgba(56,189,248,.14);
   border-radius: 8px;
   padding: 16px;
-  overflow-x: auto;
+
   font-family: Consolas, monospace;
   font-size: 0.92rem;
   color: #7dd3fc;
   line-height: 1.65;
+
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .sidebar {
@@ -267,7 +275,7 @@ a {
     <h1>邮箱机制（Mailbox）</h1>
 
     <p>
-      邮箱机制用于任务之间的小数据传递，通过固定大小的消息槽实现低开销通信，是一种轻量级IPC数据交换方式。
+      邮箱机制（Mailbox）是RTOS中一种轻量级IPC通信机制，用于任务之间的小数据传递与状态同步。通过固定大小的消息槽实现低开销通信，是一种轻量级IPC数据交换方式。
     </p>
 
     <div class="meta">
@@ -276,10 +284,24 @@ a {
       <span class="tag">内核机制</span>
     </div>
   </section>
+<section class="section" id="ipc-hub">
+  <h2>IPC体系中的位置</h2>
+  <p>
+    Mailbox属于HRTOS IPC轻量级通信机制，与消息队列、信号量、互斥锁共同构成任务间通信体系。
+    其中Mailbox用于小数据高频传递，具有低延迟和固定结构优势。
+  </p>
+</section>
 
   <div class="layout">
 
     <div class="content">
+<section class="section" id="definition">
+  <h2>定义</h2>
+  <p>
+    Mailbox（邮箱机制）是一种基于固定缓冲区或消息槽的IPC通信方式，
+    用于任务间小数据单元的高效传递。
+  </p>
+</section>
 
       <section class="section" id="overview">
         <h2>概述</h2>
@@ -288,7 +310,13 @@ a {
           每个邮箱可以存放一个或多个消息指针或数据块。
         </p>
       </section>
-
+<section class="section" id="use-cases">
+  <h2>典型使用场景</h2>
+  <p>
+    Mailbox常用于传感器数据上报、状态同步、驱动层事件通知等小数据高频通信场景。
+    相比消息队列，它更轻量，但不适合大数据传输。
+  </p>
+</section>
       <section class="section" id="mechanism">
         <h2>工作原理</h2>
         <p>
@@ -325,7 +353,13 @@ struct mailbox {
           接收任务在邮箱非空时读取数据并处理。
         </p>
       </section>
-
+<section class="section" id="comparison">
+  <h2>Mailbox vs Message Queue</h2>
+  <p>
+    Mailbox适用于固定大小的小数据传输，结构简单、开销低；
+    Message Queue支持变长数据与更复杂调度机制，适用于复杂任务通信场景。
+  </p>
+</section>
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>
@@ -337,7 +371,12 @@ struct mailbox {
     </div>
 
     <aside class="sidebar">
-
+<div class="box">
+  <h3>知识链路</h3>
+  <a href="/docs/modules/ipc/index.html">← IPC 模块首页</a>
+  <a href="/docs/modules/ipc/semaphore.html">信号量</a>
+  <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
+</div>
       <div class="box">
         <h3>目录导航</h3>
         <a href="#overview">概述</a>

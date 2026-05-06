@@ -183,11 +183,14 @@ a {
   border: 1px solid rgba(56,189,248,.14);
   border-radius: 8px;
   padding: 16px;
-  overflow-x: auto;
+
   font-family: Consolas, monospace;
   font-size: 0.92rem;
   color: #7dd3fc;
   line-height: 1.65;
+
+  white-space: pre;        /* ⭐核心：不自动换行 */
+  overflow-x: auto;        /* ⭐横向滚动 */
 }
 
 .sidebar {
@@ -300,14 +303,75 @@ a {
           信号量分为二值信号量（0/1）和计数信号量（N），分别用于同步与资源管理。
         </div>
       </section>
+<section class="section" id="behavior">
+  <h2>行为特性（关键）</h2>
 
+  <div class="note">
+    • 当 count > 0：os_semaphore_wait() 立即返回  
+    • 当 count == 0：任务进入阻塞队列  
+    • os_semaphore_post() 可能触发任务唤醒与调度切换  
+    • 信号量不具有“所有权”概念（区别 Mutex）  
+  </div>
+</section>
+<section class="section" id="blocking">
+  <h2>阻塞语义</h2>
+
+  <p>
+    信号量支持阻塞与非阻塞两种行为模式，
+    阻塞行为取决于等待接口是否启用 timeout。
+  </p>
+
+  <div class="code">
+os_semaphore_wait(sem, timeout)
+
+// timeout = 0   → 非阻塞
+// timeout = T    → 阻塞等待 T tick
+// timeout = -1   → 永久阻塞
+  </div>
+</section>
+<section class="section" id="compare">
+  <h2>机制对比（非常关键）</h2>
+
+  <div class="code">
+Semaphore vs Mutex vs Event
+
+Semaphore:
+- 无所有权
+- 用于计数资源
+- 可多释放多获取
+
+Mutex:
+- 有所有权
+- 用于互斥访问
+- 支持优先级继承
+
+Event:
+- 仅状态通知
+- 不消耗资源
+- 位触发机制
+  </div>
+</section>
+<section class="section" id="usecase">
+  <h2>典型使用场景</h2>
+
+  <div class="note">
+    • 任务池资源管理（线程池 / buffer pool）  
+    • ISR → Task 通知  
+    • 生产者 / 消费者模型  
+    • 多资源计数控制（如连接数限制）
+  </div>
+</section>
       <section class="section" id="interface">
         <h2>关键接口 / 结构</h2>
 
         <div class="code">
-os_semaphore_init()
-os_semaphore_wait()
-os_semaphore_post()
+os_semaphore_wait(sem, timeout)
+  return: 0 success / -1 timeout / -2 error
+
+os_semaphore_post(sem)
+  return: 0 success / -1 overflow
+
+os_semaphore_init(sem, count)
 
 struct semaphore {
     int count;

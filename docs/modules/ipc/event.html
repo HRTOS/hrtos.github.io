@@ -6,7 +6,11 @@
 
 <title>事件机制（Event） | HRTOS Documentation</title>
 <meta name="description" content="HRTOS事件机制（Event）用于任务间同步与条件触发，是一种轻量级IPC同步机制。" />
+<link rel="canonical" href="https://hrtos.com/docs/modules/ipc/event.html">
 
+<meta name="keywords" content="RTOS event, IPC event, os_event, task synchronization, embedded system, real-time operating system, HRTOS event mechanism">
+
+<meta name="robots" content="index, follow">
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
@@ -183,11 +187,13 @@ a {
   border: 1px solid rgba(56,189,248,.14);
   border-radius: 8px;
   padding: 16px;
-  overflow-x: auto;
   font-family: Consolas, monospace;
   font-size: 0.92rem;
   color: #7dd3fc;
   line-height: 1.65;
+
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .sidebar {
@@ -280,7 +286,13 @@ a {
   <div class="layout">
 
     <div class="content">
-
+<section class="section" id="definition">
+  <h2>定义</h2>
+  <p>
+    事件（Event）是RTOS中用于任务间状态同步的一种轻量级IPC机制，
+    通过位标志（flag bits）表达条件状态。
+  </p>
+</section>
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
@@ -300,7 +312,18 @@ a {
           事件机制不传递数据，只传递状态信息，适用于轻量级同步与状态触发场景。
         </div>
       </section>
+<section class="section" id="classification">
+  <h2>事件机制的定位</h2>
+  <p>
+    在 HRTOS IPC 体系中，Event 属于“状态同步类机制”，
+    与 Semaphore（资源计数）、Message Queue（数据传递）形成三类基础模型。
+  </p>
 
+  <div class="note">
+    分类关系：
+    状态同步（Event） → 资源控制（Semaphore / Mutex） → 数据通信（Message Queue / Mailbox）
+  </div>
+</section>
       <section class="section" id="interface">
         <h2>关键接口 / 结构</h2>
 
@@ -332,11 +355,28 @@ struct event_control_block {
           在复杂系统中可与信号量、消息队列配合使用。
         </p>
       </section>
+<section class="section">
+  <h2>知识链路</h2>
+  <p>
+    event 属于 IPC 同步机制的一部分，通常与 semaphore / mutex / message queue 配合使用。
+  </p>
 
+  <div class="note">
+    下一步建议学习：
+    <a href="/docs/modules/ipc/semaphore.html">信号量</a> →
+    <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
+  </div>
+</section>
     </div>
 
     <aside class="sidebar">
 
+      <div class="box">
+  <h3>文档路径</h3>
+  <a href="/docs/modules/ipc/index.html">← IPC 模块首页</a>
+  <a href="/docs/modules/index.html">← 返回 Modules</a>
+</div>
+      
       <div class="box">
         <h3>目录导航</h3>
         <a href="#overview">概述</a>

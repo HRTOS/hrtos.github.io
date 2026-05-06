@@ -6,7 +6,9 @@
 
 <title>消息队列（Message Queue） | HRTOS Documentation</title>
 <meta name="description" content="HRTOS消息队列（Message Queue）用于任务间结构化数据传递，是一种支持阻塞与优先级调度的IPC机制。" />
-
+<link rel="canonical" href="https://hrtos.com/docs/modules/ipc/message-queue.html">
+<meta name="keywords" content="RTOS message queue, IPC queue, embedded system communication, real-time operating system, HRTOS, task communication, FIFO queue">
+<meta name="robots" content="index, follow">
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
@@ -183,11 +185,15 @@ a {
   border: 1px solid rgba(56,189,248,.14);
   border-radius: 8px;
   padding: 16px;
-  overflow-x: auto;
+
   font-family: Consolas, monospace;
   font-size: 0.92rem;
   color: #7dd3fc;
   line-height: 1.65;
+
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .sidebar {
@@ -276,11 +282,22 @@ a {
       <span class="tag">调度机制</span>
     </div>
   </section>
-
+<section class="section" id="graph">
+  <h2>IPC关系图</h2>
+  <p>
+    消息队列是HRTOS IPC体系的一部分，与信号量、互斥锁、邮箱机制共同构成任务通信基础。
+  </p>
+</section>
   <div class="layout">
 
     <div class="content">
-
+<section class="section" id="definition">
+  <h2>定义</h2>
+  <p>
+    消息队列（Message Queue）是RTOS中用于任务间结构化数据传递的IPC机制，
+    支持FIFO顺序访问与阻塞/非阻塞通信模式。
+  </p>
+</section>
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
@@ -288,7 +305,13 @@ a {
           允许任务以消息为单位进行数据交换，避免直接共享内存带来的风险。
         </p>
       </section>
-
+<section class="section" id="use-cases">
+  <h2>典型应用场景</h2>
+  <p>
+    消息队列常用于任务间异步通信，例如：
+    传感器数据上报、驱动层事件传递、日志系统缓冲等。
+  </p>
+</section>
       <section class="section" id="mechanism">
         <h2>工作原理</h2>
         <p>
@@ -300,14 +323,19 @@ a {
           消息队列支持阻塞与非阻塞模式，可与调度器联动实现任务唤醒机制。
         </div>
       </section>
-
+<section class="section" id="features">
+  <h2>特性总结</h2>
+  <p>
+    FIFO顺序传递、支持阻塞机制、支持固定长度与变长消息、适用于任务间解耦通信。
+  </p>
+</section>
       <section class="section" id="interface">
         <h2>关键接口 / 结构</h2>
 
         <div class="code">
-os_msg_queue_init()
-os_msg_queue_send()
-os_msg_queue_recv()
+os_msg_queue_init()   // 初始化消息队列
+os_msg_queue_send()   // 发送消息
+os_msg_queue_recv()   // 接收消息
 
 struct msg_queue {
     void* buffer;
@@ -326,7 +354,13 @@ struct msg_queue {
           接收任务从队列头部读取消息并触发处理逻辑。
         </p>
       </section>
-
+<section class="section" id="comparison">
+  <h2>与其他IPC机制对比</h2>
+  <p>
+    相比信号量，消息队列支持结构化数据传递；
+    相比互斥锁，它不用于资源独占，而用于数据通信。
+  </p>
+</section>
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>
@@ -338,6 +372,15 @@ struct msg_queue {
     </div>
 
     <aside class="sidebar">
+
+
+      <div class="box">
+  <h3>知识链路</h3>
+  <a href="/docs/modules/ipc/index.html">← IPC 模块首页</a>
+  <a href="/docs/modules/ipc/event.html">事件机制</a>
+  <a href="/docs/modules/ipc/mailbox.html">邮箱机制</a>
+  <a href="/docs/modules/ipc/semaphore.html">信号量</a>
+</div>
 
       <div class="box">
         <h3>目录导航</h3>
