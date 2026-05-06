@@ -175,6 +175,27 @@ body{
   <div class="block">
     Mutex = 获取锁 + 独占访问 + 释放锁 + 任务同步
   </div>
+  <p>
+Mutex 是 HRTOS 同步模型（Synchronization Mechanism）中的核心组件，用于实现对共享资源的互斥访问控制。
+</p>
+</section>
+
+<section class="section">
+  <h2>所属同步模型</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Communication Model</h3>
+      <p><a href="/docs/examples/03-communication-model/index.html">通信模型体系</a></p>
+    </div>
+
+    <div class="step">
+      <h3>Synchronization Model</h3>
+      <p>Mutex 属于任务同步机制，用于解决资源竞争问题。</p>
+    </div>
+
+  </div>
 </section>
 
 <section class="section">
@@ -246,9 +267,12 @@ body{
 
 void task1(void)
 {
-    while(1)
+  os_lock_init();  
+  while(1)
     {
-        os_lock_init();
+        os_mutex_init();
+        os_mutex_lock();
+        os_mutex_unlock();
         os_wait1(5);
     }
 }
@@ -274,6 +298,46 @@ void main(void)
     }
 }
     </code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>API 参考</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>互斥锁初始化</h3>
+      <p><a href="/docs/api/mutex/os_mutex_init.html">os_mutex_init()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>加锁</h3>
+      <p><a href="/docs/api/mutex/os_mutex_lock.html">os_mutex_lock()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>解锁</h3>
+      <p><a href="/docs/api/mutex/os_mutex_unlock.html">os_mutex_unlock()</a></p>
+    </div>
+
+  </div>
+</section>
+<section class="section">
+  <h2>Mutex vs Semaphore</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Mutex</h3>
+      <p>用于互斥访问资源，具有所有权概念。</p>
+    </div>
+
+    <div class="step">
+      <h3>Semaphore</h3>
+      <p>用于计数资源或同步，不具备严格所有权。</p>
+    </div>
+
   </div>
 </section>
 

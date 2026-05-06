@@ -114,6 +114,31 @@ body{
   </div>
 </section>
 
+<!-- API 接口映射（必须新增） -->
+<section class="section">
+  <h2>API接口映射</h2>
+  <p>中断入口依赖内核提供的标准ISR上下文管理接口。</p>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>进入中断</h3>
+      <p><a href="/docs/api/interrupt/os_interrupt_enter.html">os_interrupt_enter()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>退出中断</h3>
+      <p><a href="/docs/api/interrupt/os_interrupt_exit.html">os_interrupt_exit()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断初始化</h3>
+      <p><a href="/docs/api/interrupt/os_interrupt_init.html">os_interrupt_init()</a></p>
+    </div>
+
+  </div>
+</section>
+
 <!-- 触发来源 -->
 <section class="section">
   <h2>触发来源</h2>
@@ -136,6 +161,15 @@ body{
     <div class="step">3. 跳转中断向量表</div>
     <div class="step">4. 切换至中断栈</div>
     <div class="step">5. 进入HRTOS ISR入口</div>
+  </div>
+</section>
+
+<!-- 内核执行路径（必须增强理解） -->
+<section class="section">
+  <h2>内核执行路径</h2>
+
+  <div class="step">
+    Interrupt Trigger → Vector Table → ISR Handler → os_interrupt_enter() → Kernel Context Save → Scheduler Check
   </div>
 </section>
 

@@ -175,6 +175,27 @@ body{
   <div class="block">
     Message Queue = 消息入队 + 队列缓存 + 消息出队 + FIFO顺序处理
   </div>
+  <p>
+Message Queue 是 HRTOS Communication Model 中的核心通信机制之一，用于提供可靠的多消息缓存与顺序处理能力。
+</p>
+</section>
+
+<section class="section">
+  <h2>所属通信模型</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Communication Model</h3>
+      <p><a href="/docs/examples/03-communication-model/index.html">返回通信模型总览</a></p>
+    </div>
+
+    <div class="step">
+      <h3>Mailbox vs Message Queue</h3>
+      <p>Mailbox：单消息轻量传递 ｜ Queue：多消息缓存与FIFO处理</p>
+    </div>
+
+  </div>
 </section>
 
 <section class="section">
@@ -276,6 +297,52 @@ void main(void)
     }
 }
     </code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>API 参考</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>队列初始化</h3>
+      <p><a href="/docs/api/msg/os_msg_init.html">os_msg_init()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>发送消息</h3>
+      <p><a href="/docs/api/msg/os_msg_send.html">os_msg_send()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>接收消息</h3>
+      <p><a href="/docs/api/msg/os_msg_recv.html">os_msg_recv()</a></p>
+    </div>
+
+  </div>
+</section>
+
+<section class="section">
+  <h2>与Mailbox对比</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Mailbox</h3>
+      <p>单消息缓存，适合轻量事件通知。</p>
+    </div>
+
+    <div class="step">
+      <h3>Message Queue</h3>
+      <p>多消息缓存，支持FIFO顺序处理。</p>
+    </div>
+
+    <div class="step">
+      <h3>核心区别</h3>
+      <p>Queue = 可扩展缓冲结构 ｜ Mailbox = 单槽通信</p>
+    </div>
+
   </div>
 </section>
 

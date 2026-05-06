@@ -170,7 +170,17 @@ body{
       高优先级任务等待低优先级任务释放资源，而中优先级任务持续抢占CPU → 导致高优先级任务被“反向延迟”
     </div>
   </section>
+<section class="section">
+  <h2>内核调度API入口</h2>
 
+  <div class="block">
+    os_schedule_enter() → 进入调度上下文<br/>
+    os_context_save() → 保存任务上下文<br/>
+    os_scheduler_run() → 执行调度决策<br/>
+    os_context_restore() → 恢复目标任务<br/>
+    os_schedule_exit() → 退出调度流程
+  </div>
+</section>
   <section class="section">
     <h2>触发条件</h2>
     <div class="flow">
@@ -279,6 +289,17 @@ void system_init(void)
       直接影响系统确定性与实时性边界。
     </p>
   </section>
+
+  <section class="section">
+  <h2>核心API映射</h2>
+
+  <div class="block">
+    中断触发 → os_interrupt_enter()<br/>
+    调度决策 → os_scheduler_run()<br/>
+    上下文切换 → os_context_switch()<br/>
+    任务恢复 → os_context_restore()
+  </div>
+</section>
 
   <section class="section">
   <h2>相关导航</h2>

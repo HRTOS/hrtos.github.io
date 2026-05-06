@@ -235,7 +235,10 @@ a{
   <section class="section">
     <h2>核心内容</h2>
     <p>时间模块构成RTOS调度与事件驱动的时间基础。</p>
-
+<div class="note">
+HRTOS 的 Time 模块不仅提供时间接口，更是整个内核调度的驱动层。
+所有任务切换、延时、定时器触发与实时调度，都依赖 Tick 系统推进。
+</div>
     <div class="grid">
 
       <a class="card" href="tick-system.html">
@@ -271,6 +274,16 @@ a{
       </a>
 
     </div>
+    <div class="section" style="margin-top:32px;">
+  <h2>时间体系结构关系</h2>
+  <p>
+    Time 模块内部由 Tick 系统驱动，向下支撑调度与时间控制机制：
+  </p>
+
+  <div class="note">
+    Tick System → Scheduler Tick → Delay / Timer → Task Scheduling
+  </div>
+</div>
   </section>
 
   <section class="section">
@@ -290,7 +303,22 @@ a{
         <span>查看 →</span>
       </a>
 
+      <a class="card" href="/docs/modules/event/index.html">
+  <h3>Event System</h3>
+  <p>事件驱动机制与时间触发结合的异步通信模型。</p>
+  <span>查看 →</span>
+</a>
+
     </div>
+    <div style="margin-top:20px;">
+  <p style="color:var(--muted);">
+    深入学习时间子系统：
+    <a href="tick-system.html">系统节拍</a> ·
+    <a href="scheduler-tick.html">调度节拍</a> ·
+    <a href="delay.html">任务延时</a> ·
+    <a href="timer.html">定时器</a>
+  </p>
+</div>
   </section>
 
   <footer class="footer">

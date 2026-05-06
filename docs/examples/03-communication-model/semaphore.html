@@ -182,6 +182,34 @@ body{
 </section>
 
 <section class="section">
+  <h2>API接口</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Mailbox API</h3>
+      <p><a href="/api/communication/mailbox.html">/api/communication/mailbox</a></p>
+    </div>
+
+    <div class="step">
+      <h3>Message Queue API</h3>
+      <p><a href="/api/communication/message-queue.html">/api/communication/message-queue</a></p>
+    </div>
+
+    <div class="step">
+      <h3>Mutex API</h3>
+      <p><a href="/api/communication/mutex.html">/api/communication/mutex</a></p>
+    </div>
+
+    <div class="step">
+      <h3>Semaphore API</h3>
+      <p><a href="/api/communication/semaphore.html">/api/communication/semaphore</a></p>
+    </div>
+
+  </div>
+</section>
+
+<section class="section">
   <h2>核心行为</h2>
 
   <div class="flow">
@@ -205,6 +233,19 @@ body{
       <p>资源可用时恢复等待任务执行。</p>
     </div>
   </div>
+</section>
+
+<section class="section">
+  <h2>系统关系模型</h2>
+
+  <div class="block">
+    Task → Communication Object → Scheduler → Task
+  </div>
+
+  <p>
+    通信对象（Mailbox / Queue / Mutex / Semaphore）
+    本质上是调度器控制的资源中介。
+  </p>
 </section>
 
 <section class="section">

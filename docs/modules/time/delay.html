@@ -176,6 +176,8 @@ a{
   font-size:0.92rem;
   color:#7dd3fc;
   line-height:1.65;
+  white-space: pre-wrap;
+word-break: break-word;
 }
 
 /* sidebar */
@@ -292,9 +294,9 @@ a{
       </section>
 
       <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
+  <h2>关键接口 / 结构</h2>
 
-        <div class="code">
+  <div class="code">
 os_delay(ms)
 os_sleep(ticks)
 os_task_delay_until()
@@ -303,8 +305,16 @@ struct delay_entry {
     uint32_t expire_tick;
     task_t* task;
 };
-        </div>
-      </section>
+  </div>
+
+  <p>
+    相关接口文档：
+    <a href="/docs/modules/time/index.html">时间管理</a> /
+    <a href="/docs/modules/scheduler/index.html">调度机制</a> /
+    <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a> /
+    <a href="/docs/modules/task/state-model.html">任务状态模型</a>
+  </p>
+</section>
 
       <section class="section" id="flow">
         <h2>运行流程</h2>
@@ -313,6 +323,16 @@ struct delay_entry {
           加入延时队列 → Tick递增 →
           到期 → 恢复就绪态。
         </p>
+        <div class="note">
+  延时过程中任务状态将从 Running 切换为 Blocked，
+  到期后恢复为 Ready 状态重新参与调度。
+</div>
+
+<p>
+  深入理解：
+  <a href="/docs/modules/task/state-model.html">任务状态模型</a> /
+  <a href="/docs/modules/task/lifecycle.html">任务生命周期</a>
+</p>
       </section>
 
       <section class="section" id="extension">
@@ -322,6 +342,32 @@ struct delay_entry {
           可用于周期任务控制与实时节拍同步。
         </p>
       </section>
+      <section class="section" id="related">
+  <h2>相关阅读</h2>
+  <p>
+    继续学习时间管理、任务调度与实时控制机制。
+  </p>
+
+  <div class="code">
+Time 模块
+├─ Tick 节拍机制
+├─ Delay 延时控制
+└─ 定时器 Timer
+
+Scheduler 模块
+├─ Real-Time Scheduling
+├─ Priority Scheduling
+└─ Round Robin
+  </div>
+
+  <p>
+    推荐阅读：
+    <a href="/docs/modules/time/index.html">时间管理模块</a> /
+    <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a> /
+    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a> /
+    <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a>
+  </p>
+</section>
 
     </div>
 
@@ -336,10 +382,13 @@ struct delay_entry {
       </div>
 
       <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/time/index.html">时间管理</a>
-        <a href="/docs/modules/scheduler/index.html">调度机制</a>
-      </div>
+  <h3>相关页面</h3>
+  <a href="/docs/modules/time/index.html">时间管理</a>
+  <a href="/docs/modules/scheduler/index.html">调度机制</a>
+  <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
+  <a href="/docs/modules/task/state-model.html">任务状态模型</a>
+  <a href="/docs/modules/task/lifecycle.html">任务生命周期</a>
+</div>
 
       <div class="box">
         <h3>所属模块</h3>

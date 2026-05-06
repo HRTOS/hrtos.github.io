@@ -275,7 +275,8 @@ a {
     <h1>邮箱机制（Mailbox）</h1>
 
     <p>
-      邮箱机制（Mailbox）是RTOS中一种轻量级IPC通信机制，用于任务之间的小数据传递与状态同步。通过固定大小的消息槽实现低开销通信，是一种轻量级IPC数据交换方式。
+      邮箱机制（Mailbox）是RTOS中一种轻量级IPC通信机制，邮箱机制（Mailbox）用于任务间固定大小数据传递，
+通过消息槽或缓冲区实现低开销、低延迟的小数据通信。
     </p>
 
     <div class="meta">
@@ -310,6 +311,21 @@ a {
           每个邮箱可以存放一个或多个消息指针或数据块。
         </p>
       </section>
+
+      <section class="section" id="design-goal">
+  <h2>设计目标</h2>
+  <p>
+    Mailbox 的设计目标是在保持极低系统开销的前提下，
+    提供确定性的小数据通信能力。
+    相比复杂消息系统，Mailbox更强调固定结构、快速访问与低延迟。
+  </p>
+
+  <div class="note">
+    适合：短消息、状态值、指针传递、驱动通知。<br>
+    不适合：大数据块、复杂优先级消息调度。
+  </div>
+</section>
+
 <section class="section" id="use-cases">
   <h2>典型使用场景</h2>
   <p>
@@ -344,6 +360,13 @@ struct mailbox {
     uint32_t tail;
 };
         </div>
+        <div class="note">
+  API Reference:
+  <br>
+  <a href="/api/ipc/os_mailbox_init/index.html">os_mailbox_init()</a><br>
+  <a href="/api/ipc/os_mailbox_send/index.html">os_mailbox_send()</a><br>
+  <a href="/api/ipc/os_mailbox_recv/index.html">os_mailbox_recv()</a>
+</div>
       </section>
 
       <section class="section" id="flow">
@@ -353,6 +376,20 @@ struct mailbox {
           接收任务在邮箱非空时读取数据并处理。
         </p>
       </section>
+
+<section class="section" id="blocking">
+  <h2>阻塞与唤醒机制</h2>
+  <p>
+    当邮箱为空时，接收任务可进入阻塞等待状态；
+    当邮箱已满时，发送任务可选择阻塞、超时返回或覆盖旧数据，
+    具体行为由系统配置策略决定。
+  </p>
+
+  <div class="note">
+    典型策略：block / timeout / non-blocking。
+  </div>
+</section>
+
 <section class="section" id="comparison">
   <h2>Mailbox vs Message Queue</h2>
   <p>
@@ -360,6 +397,22 @@ struct mailbox {
     Message Queue支持变长数据与更复杂调度机制，适用于复杂任务通信场景。
   </p>
 </section>
+
+<section class="section" id="selection-guide">
+  <h2>机制选择建议</h2>
+  <p>
+    不同IPC机制适用于不同通信需求：
+  </p>
+
+  <div class="code">
+Mailbox        -> 小数据 / 高频 / 低延迟
+Message Queue  -> 复杂消息 / 多生产者消费者
+Event          -> 状态同步 / 条件触发
+Semaphore      -> 资源控制 / 同步计数
+Mutex          -> 临界区互斥保护
+  </div>
+</section>
+
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>
@@ -378,12 +431,14 @@ struct mailbox {
   <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
 </div>
       <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
-      </div>
+  <h3>目录导航</h3>
+  <a href="#definition">定义</a>
+  <a href="#overview">概述</a>
+  <a href="#design-goal">设计目标</a>
+  <a href="#mechanism">工作原理</a>
+  <a href="#blocking">阻塞与唤醒</a>
+  <a href="#comparison">机制比较</a>
+</div>
 
       <div class="box">
         <h3>相关页面</h3>

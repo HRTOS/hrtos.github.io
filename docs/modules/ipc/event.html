@@ -8,8 +8,7 @@
 <meta name="description" content="HRTOS事件机制（Event）用于任务间同步与条件触发，是一种轻量级IPC同步机制。" />
 <link rel="canonical" href="https://hrtos.com/docs/modules/ipc/event.html">
 
-<meta name="keywords" content="RTOS event, IPC event, os_event, task synchronization, embedded system, real-time operating system, HRTOS event mechanism">
-
+<meta name="keywords" content="RTOS事件机制, IPC事件, os_event, 任务同步, 嵌入式系统, 实时操作系统, HRTOS事件机制">
 <meta name="robots" content="index, follow">
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -261,10 +260,10 @@ a {
 <main class="page">
 
   <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/ipc/index.html">IPC</a> /
-    <span>Event</span>
+    <a href="/docs/index.html">文档</a> /
+<a href="/docs/modules/index.html">模块</a> /
+<a href="/docs/modules/ipc/index.html">进程间通信</a> /
+<span>事件机制</span>
   </nav>
 
   <section class="hero">
@@ -282,7 +281,13 @@ a {
       <span class="tag">内核机制</span>
     </div>
   </section>
-
+<section class="section">
+  <h2>适用场景</h2>
+  <p>
+    事件机制适用于状态通知、多条件等待和中断触发同步等场景，
+    常用于外设完成通知、系统状态变更广播以及任务协同控制。
+  </p>
+</section>
   <div class="layout">
 
     <div class="content">
@@ -339,7 +344,18 @@ struct event_control_block {
 };
         </div>
       </section>
+<section class="section">
+  <h2>相关接口文档</h2>
+  <p>
+    查看事件机制相关API接口定义与使用说明。
+  </p>
 
+  <div class="note">
+    <a href="/docs/api/ipc/index.html">IPC接口总览</a><br><br>
+    <a href="/docs/api/ipc/os_event_set.html">os_event_set()</a><br>
+    <a href="/docs/api/ipc/os_event_wait.html">os_event_wait()</a>
+  </div>
+</section>
       <section class="section" id="flow">
         <h2>运行流程</h2>
         <p>
@@ -347,7 +363,13 @@ struct event_control_block {
           当事件被触发后，内核检查条件是否满足，并唤醒对应任务。
         </p>
       </section>
-
+<section class="section">
+  <h2>执行时序</h2>
+  <p>
+    典型流程包括：任务等待事件 → 内核挂起任务 →
+    其他任务或中断设置事件位 → 条件满足后唤醒任务恢复执行。
+  </p>
+</section>
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>
@@ -370,7 +392,12 @@ struct event_control_block {
     </div>
 
     <aside class="sidebar">
-
+<div class="box">
+  <h3>相关接口</h3>
+  <a href="/docs/api/ipc/index.html">IPC接口总览</a>
+  <a href="/docs/api/ipc/os_event_set.html">事件设置接口</a>
+  <a href="/docs/api/ipc/os_event_wait.html">事件等待接口</a>
+</div>
       <div class="box">
   <h3>文档路径</h3>
   <a href="/docs/modules/ipc/index.html">← IPC 模块首页</a>
@@ -404,7 +431,15 @@ struct event_control_block {
     </aside>
 
   </div>
+<section class="section">
+  <h2>常见问题</h2>
 
+  <p><strong>事件机制和信号量有什么区别？</strong></p>
+  <p>事件用于状态同步，信号量用于资源计数与访问控制。</p>
+
+  <p><strong>事件机制是否传递数据？</strong></p>
+  <p>事件仅传递状态信息，不直接承载数据内容。</p>
+</section>
   <footer class="footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
   </footer>

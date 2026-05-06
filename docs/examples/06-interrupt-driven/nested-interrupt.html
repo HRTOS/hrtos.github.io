@@ -135,6 +135,26 @@ body{
   </div>
 </section>
 
+<section class="section">
+  <h2>相关 API</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>os_enter_interrupt()</h3>
+      <p>进入中断上下文并保存执行状态。</p>
+      <p><a href="/docs/api/scheduler/index.html">查看 API →</a></p>
+    </div>
+
+    <div class="step">
+      <h3>os_exit_interrupt()</h3>
+      <p>退出中断并恢复调度状态。</p>
+      <p><a href="/docs/api/scheduler/index.html">查看 API →</a></p>
+    </div>
+
+  </div>
+</section>
+
 <!-- flow -->
 <section class="section">
   <h2>执行流程</h2>
@@ -181,7 +201,7 @@ body{
 /* 低优先级中断 */
 void ISR_LOW(void)
 {
-    os_enter_interrupt();
+    os_interrupt_enter();
 
     while(1)
     {
@@ -189,19 +209,50 @@ void ISR_LOW(void)
         os_nop();
     }
 
-    os_exit_interrupt();
+    os_interrupt_exit();
 }
 
 /* 高优先级中断 */
 void ISR_HIGH(void)
 {
-    os_enter_interrupt();
+    os_interrupt_enter();
 
     os_interrupt_flag_set();
 
-    os_exit_interrupt();
+    os_interrupt_exit();
 }
     </code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    嵌套中断机制使实时系统能够优先响应关键事件，
+    在保证高优先级任务及时性的同时维持系统整体可预测性。
+  </p>
+</section>
+
+<section class="section">
+  <h2>延伸阅读</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>中断模型</h3>
+      <p><a href="/docs/architecture/interrupt/interrupt-model.html">Interrupt Model</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断流程</h3>
+      <p><a href="/docs/architecture/interrupt/interrupt-flow.html">Interrupt Flow</a></p>
+    </div>
+
+    <div class="step">
+      <h3>中断延迟分析</h3>
+      <p><a href="/docs/architecture/interrupt/interrupt-latency.html">Interrupt Latency</a></p>
+    </div>
+
   </div>
 </section>
 

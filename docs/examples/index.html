@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>PAGE_TITLE | HRTOS Documentation</title>
-<meta id="page-description" name="description" content="">
+<title>HRTOS 示例系统 | RTOS核心机制实验平台</title>
+<meta name="description" content="HRTOS示例系统包含任务执行、调度系统、中断机制与内核行为分析，是RTOS核心原理学习与验证平台。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -224,7 +224,51 @@ a{
     <h1 id="hero-title"></h1>
     <p id="hero-intro"></p>
   </section>
+  
+  <section class="section">
+  <div class="section-header">
+    <h2>系统总览</h2>
+    <p>
+      本模块包含HRTOS示例系统的全部实验路径，覆盖任务执行、调度系统、
+      中断机制与内核行为分析，是理解RTOS核心运行逻辑的入口。
+    </p>
+  </div>
+</section>
 
+<section class="section">
+  <div class="section-header">
+    <h2>系统架构入口</h2>
+    <p>按RTOS核心机制划分的学习路径</p>
+  </div>
+
+  <div class="docs-grid">
+
+    <a class="doc-card" href="/docs/examples/01-task-execution/index.html">
+      <h3>任务执行系统</h3>
+      <p>任务生命周期、状态切换与执行模型</p>
+      <span class="doc-link">进入 →</span>
+    </a>
+
+    <a class="doc-card" href="/docs/examples/02-scheduling-engine/index.html">
+      <h3>调度引擎系统</h3>
+      <p>优先级调度、时间片与抢占机制</p>
+      <span class="doc-link">进入 →</span>
+    </a>
+
+    <a class="doc-card" href="/docs/examples/06-interrupt-driven/index.html">
+      <h3>中断驱动系统</h3>
+      <p>中断入口、嵌套中断与延迟分析</p>
+      <span class="doc-link">进入 →</span>
+    </a>
+
+    <a class="doc-card" href="/docs/examples/07-kernel-behavior/index.html">
+      <h3>内核行为系统</h3>
+      <p>完整调度链路与运行轨迹分析</p>
+      <span class="doc-link">进入 →</span>
+    </a>
+
+  </div>
+</section>
   <!-- main cards -->
   <section class="section">
     <div class="section-header">
@@ -233,6 +277,21 @@ a{
     </div>
 
     <div id="section-grid" class="docs-grid"></div>
+    <noscript>
+  <div class="docs-grid">
+
+    <a class="doc-card" href="/docs/examples/01-task-execution/index.html">
+      <h3>任务执行系统</h3>
+      <p>任务执行与生命周期模型</p>
+    </a>
+
+    <a class="doc-card" href="/docs/examples/02-scheduling-engine/index.html">
+      <h3>调度引擎系统</h3>
+      <p>调度策略与优先级控制</p>
+    </a>
+
+  </div>
+</noscript>
   </section>
 
   <!-- featured -->
@@ -244,7 +303,16 @@ a{
 
     <div id="featured-grid" class="docs-grid"></div>
   </section>
+<section class="section">
+  <div class="section-header">
+    <h2>学习路径</h2>
+    <p>建议按照以下顺序理解系统结构</p>
+  </div>
 
+  <div class="block">
+    Task Execution → Scheduling Engine → Interrupt System → Kernel Behavior
+  </div>
+</section>
   <footer class="site-footer">
     <p>© 2017–2026 HRTOS. Documentation for embedded real-time systems.</p>
   </footer>

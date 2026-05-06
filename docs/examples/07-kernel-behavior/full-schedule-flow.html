@@ -144,6 +144,14 @@ body{
   </div>
 </section>
 
+<section class="section">
+  <h2>内核决策模型</h2>
+
+  <div class="block">
+    Kernel Decision = Interrupt Context + Ready Queue + Priority Evaluation + Switch Condition
+  </div>
+</section>
+
 <!-- flow -->
 <section class="section">
   <h2>执行流程</h2>
@@ -173,6 +181,34 @@ body{
     <div class="step">
       <h3>5. 恢复执行</h3>
       <p>恢复目标任务上下文并跳转执行。</p>
+    </div>
+
+  </div>
+
+</section>
+<section class="section">
+  <h2>内核API执行链</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>os_save_context()</h3>
+      <p>保存当前任务寄存器与栈状态。</p>
+    </div>
+
+    <div class="step">
+      <h3>os_scheduler_run()</h3>
+      <p>调度器执行优先级计算与任务选择。</p>
+    </div>
+
+    <div class="step">
+      <h3>os_context_switch()</h3>
+      <p>执行任务切换。</p>
+    </div>
+
+    <div class="step">
+      <h3>os_restore_context()</h3>
+      <p>恢复目标任务执行状态。</p>
     </div>
 
   </div>
@@ -206,6 +242,15 @@ void schedule_flow_demo(void)
   </div>
 </section>
 
+<section class="section">
+  <h2>系统意义</h2>
+
+  <p>
+    内核调度流程是RTOS实时性的最终执行路径，
+    它决定系统在中断、调度与任务切换之间的整体响应效率与确定性。
+  </p>
+</section>
+
 <!-- related (LOCKED STRUCTURE) -->
 <section class="section">
   <h2>相关导航</h2>
@@ -234,7 +279,33 @@ void schedule_flow_demo(void)
 
   </div>
 </section>
+<section class="section">
+  <h2>跨模块关联</h2>
 
+  <div class="flow">
+
+    <div class="step">
+      <h3>中断驱动系统</h3>
+      <p><a href="/docs/examples/06-interrupt-driven/index.html">Interrupt Driven</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度引擎</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务执行模型</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+    </div>
+
+    <div class="step">
+      <h3>系统架构层</h3>
+      <p><a href="/docs/architecture/kernel/kernel-flow.html">Kernel Architecture</a></p>
+    </div>
+
+  </div>
+</section>
 <footer class="footer">
   © 2017–2026 HRTOS · Kernel Behavior Module
 </footer>

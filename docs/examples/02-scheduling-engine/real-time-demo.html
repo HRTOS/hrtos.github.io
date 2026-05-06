@@ -179,6 +179,13 @@ body{
   <div class="block">
     Real-Time Scheduling = 周期任务触发 + Deadline控制 + 确定性响应
   </div>
+  <p style="margin-top:14px;">
+实时调度API：
+<a href="/docs/api/scheduler/os_switch.html">os_switch</a> ·
+<a href="/docs/api/scheduler/os_dispatch_id.html">os_dispatch_id</a> ·
+<a href="/docs/api/time/os_wait1.html">os_wait1</a> ·
+<a href="/docs/api/time/os_timer_length.html">os_timer_length</a>
+</p>
 </section>
 
 <section class="section">
@@ -205,6 +212,10 @@ body{
       <h3>结果验证</h3>
       <p>验证任务响应时间是否满足实时要求。</p>
     </div>
+    <div class="step">
+  <h3>实时调度链路</h3>
+  <p>Tick触发 → Ready队列 → Deadline检查 → os_dispatch_id → os_switch → 执行</p>
+</div>
   </div>
 </section>
 
@@ -252,6 +263,11 @@ body{
     实时调度机制决定RTOS能否满足严格时间约束，
     是工业控制、嵌入式设备与关键系统的核心能力。
   </p>
+  <p style="margin-top:14px;">
+内核实现：
+<a href="/docs/modules/scheduler/real-time-scheduling.html">Real-Time Scheduler</a> ·
+<a href="/docs/system/scheduling-flow.html">Scheduling Flow</a>
+</p>
 </section>
 
 <section class="section">

@@ -309,6 +309,12 @@ enum task_state {
     TERMINATED
 };
         </div>
+        <p style="margin-top:12px;">
+  查看完整任务接口定义：
+  <a href="/docs/api/task/index.html" style="color:#7dd3fc;">
+    Task API Reference →
+  </a>
+</p>
       </section>
 
       <section class="section" id="flow">
@@ -346,7 +352,15 @@ TERMINATED
   CPU利用率与系统确定性。
 </p>
       </section>
+<section class="section">
+  <h2>常见问题</h2>
 
+  <p><strong>任务为什么会进入阻塞状态？</strong></p>
+  <p>通常由于等待资源、消息、事件或延时触发。</p>
+
+  <p><strong>阻塞态和挂起态有什么区别？</strong></p>
+  <p>阻塞通常由系统条件触发，挂起通常由用户或系统主动暂停。</p>
+</section>
     </div>
 
     <aside class="sidebar">
@@ -361,7 +375,7 @@ TERMINATED
 
       <div class="box">
         <h3>相关页面</h3>
-        <a href="/docs/modules/task/context-switch.html">上下文切换</a>
+        <a href="/docs/system/context-switch-flow.html">上下文切换</a>
         <a href="/docs/modules/scheduler/index.html">调度器</a>
         <a href="/docs/modules/ipc/index.html">IPC Communication</a>
       </div>
@@ -377,15 +391,7 @@ TERMINATED
       </div>
 
     </aside>
-<section class="section">
-  <h2>常见问题</h2>
 
-  <p><strong>任务为什么会进入阻塞状态？</strong></p>
-  <p>通常由于等待资源、消息、事件或延时触发。</p>
-
-  <p><strong>阻塞态和挂起态有什么区别？</strong></p>
-  <p>阻塞通常由系统条件触发，挂起通常由用户或系统主动暂停。</p>
-</section>
   </div>
 
   <footer class="footer">

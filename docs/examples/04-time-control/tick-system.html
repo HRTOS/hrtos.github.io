@@ -157,6 +157,17 @@ body{
   <div class="block">
     Tick = 周期性中断 + 时间基准 + 调度触发源
   </div>
+  <div class="block">
+Time Tick System = Hardware Timer Interrupt + Kernel Time Base + Scheduler Trigger + Delay Engine Driver
+</div>
+</section>
+
+<section class="section">
+  <h2>系统地位</h2>
+
+  <div class="block">
+    Tick is the root timing driver of RTOS. All scheduling, delay, timeout and synchronization are derived from it.
+  </div>
 </section>
 
 <!-- 核心作用 -->
@@ -184,6 +195,11 @@ body{
       <h3>时间片控制</h3>
       <p>支持 Round-Robin 等时间片轮转机制。</p>
     </div>
+
+    <div class="step">
+  <h3>系统驱动源</h3>
+  <p>所有任务调度行为依赖 Tick 触发。</p>
+</div>
 
   </div>
 </section>
@@ -267,6 +283,10 @@ void main(void)
     Tick System 是 RTOS 的时间核心，其频率直接影响实时性、CPU开销与调度精度。
     在 HRTOS 中，Tick 被优化为“最小中断路径”以降低系统延迟。
   </p>
+  <p>
+API 接口：
+<a href="/docs/api/tick/index.html">Tick System API</a>
+</p>
 </section>
 
 <!-- 相关导航（锁死结构） -->

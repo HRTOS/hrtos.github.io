@@ -186,6 +186,13 @@ body{
   <div class="block">
     Task State = Ready + Running + Blocked + Suspended
   </div>
+  <p style="margin-top:14px;">
+相关API：
+<a href="/docs/api/task/os_task.html">os_task</a> ·
+<a href="/docs/api/task/os_task_function.html">os_task_function</a> ·
+<a href="/docs/api/task/os_task_release.html">os_task_release</a> ·
+<a href="/docs/api/scheduler/os_switch.html">os_switch</a>
+</p>
 </section>
 
 <section class="section">
@@ -214,6 +221,15 @@ body{
     </div>
 
   </div>
+  <div class="block" style="margin-top:18px;">
+<strong>执行来源（内核触发链）</strong><br><br>
+
+task_create → TCB初始化<br>
+os_task_release → Ready队列插入<br>
+os_switch → 任务切换发生<br>
+Tick中断 → 调度触发源<br>
+IPC事件 → 状态变化驱动
+</div>
 </section>
 
 <section class="section">
@@ -251,7 +267,12 @@ void system_init(void)
     是任务生命周期与调度器协作的基础机制。
   </p>
 </section>
-
+<p style="margin-top:14px;">
+关联实验：
+<a href="/docs/examples/01-task-execution/create-task.html">创建任务</a> ·
+<a href="/docs/examples/01-task-execution/context-switch.html">上下文切换</a> ·
+<a href="/docs/examples/01-task-execution/priority-inheritance.html">优先级继承</a>
+</p>
 <section class="section">
   <h2>相关导航</h2>
 

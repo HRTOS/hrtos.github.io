@@ -284,7 +284,13 @@ a {
   <div class="layout">
 
     <div class="content">
-
+<section class="section" id="definition">
+  <h2>定义</h2>
+  <p>
+    Mutex（互斥锁）是RTOS中用于保护共享资源独占访问的同步机制，
+    具有所有权语义，并支持优先级继承以避免优先级反转。
+  </p>
+</section>
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
@@ -358,6 +364,12 @@ struct mutex {
     int priority_inherit;
 };
         </div>
+        <div class="note">
+  API Reference：
+  <a href="/api/ipc/os_mutex_init.html">os_mutex_init()</a> ·
+  <a href="/api/ipc/os_mutex_lock.html">os_mutex_lock()</a> ·
+  <a href="/api/ipc/os_mutex_unlock.html">os_mutex_unlock()</a>
+</div>
       </section>
 
       <section class="section" id="flow">
@@ -396,7 +408,13 @@ Semaphore：
     </div>
 
     <aside class="sidebar">
-
+<div class="box">
+  <h3>知识链路</h3>
+  <a href="/docs/modules/ipc/index.html">← IPC 模块首页</a>
+  <a href="/docs/modules/ipc/semaphore.html">信号量</a>
+  <a href="/docs/modules/ipc/event.html">事件机制</a>
+  <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
+</div>
       <div class="box">
         <h3>目录导航</h3>
         <a href="#overview">概述</a>

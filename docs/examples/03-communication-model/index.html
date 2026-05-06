@@ -177,6 +177,9 @@ body{
       通信模型描述RTOS中任务之间的数据交换与同步机制，
       包括邮箱、消息队列、互斥锁与信号量等核心通信方式。
     </p>
+    <div class="model-box">
+IPC Layer = System Call + Kernel Queue + Task Scheduling Interaction
+</div>
   </section>
 
   <!-- 模型说明 -->
@@ -187,6 +190,41 @@ body{
     </div>
   </section>
 
+  <section class="section">
+  <h2>通信API层</h2>
+
+  <div class="model-box">
+    HRTOS IPC System Call Interface Layer
+  </div>
+
+  <div class="grid">
+
+    <a class="card" href="/api/communication/mailbox.html">
+      <h3>Mailbox API</h3>
+      <p>单消息通信接口</p>
+      <span>查看 API →</span>
+    </a>
+
+    <a class="card" href="/api/communication/message-queue.html">
+      <h3>Message Queue API</h3>
+      <p>多消息缓存接口</p>
+      <span>查看 API →</span>
+    </a>
+
+    <a class="card" href="/api/communication/mutex.html">
+      <h3>Mutex API</h3>
+      <p>互斥访问控制接口</p>
+      <span>查看 API →</span>
+    </a>
+
+    <a class="card" href="/api/communication/semaphore.html">
+      <h3>Semaphore API</h3>
+      <p>资源计数同步接口</p>
+      <span>查看 API →</span>
+    </a>
+
+  </div>
+</section>
   <!-- 核心实验 -->
   <section class="section">
     <h2>核心实验</h2>

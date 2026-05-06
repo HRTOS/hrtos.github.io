@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>Memory Management | HRTOS Module Documentation</title>
+<title>内存管理 | HRTOS 模块文档</title>
 <meta name="description" content="HRTOS内存管理模块文档，涵盖内存分配、碎片管理、内存保护与栈管理等核心机制，构建实时系统资源管理基础。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
@@ -212,13 +212,13 @@ a{
   <nav class="breadcrumb">
     <a href="/docs/index.html">Docs</a> /
     <a href="/docs/modules/index.html">Modules</a> /
-    <span>Memory</span>
+    <span>内存管理</span>
   </nav>
 
   <section class="hero">
     <span class="hero-label">HRTOS Module</span>
 
-    <h1>Memory Management</h1>
+    <h1>内存管理（Memory Management）</h1>
 
     <p>
       内存管理模块定义RTOS中所有内存相关机制，
@@ -227,11 +227,25 @@ a{
     </p>
 
     <div class="meta">
-      <span class="tag">4 Topics</span>
-      <span class="tag">Kernel Memory</span>
-      <span class="tag">RTOS Core</span>
+      <span class="tag">4 个主题</span>
+<span class="tag">内核内存</span>
+<span class="tag">RTOS核心</span>
     </div>
   </section>
+
+<section class="section">
+  <h2>模块能力</h2>
+  <p>
+    HRTOS内存管理模块负责系统运行期间所有内存资源的生命周期管理，
+    包括任务栈空间分配、动态内存申请、固定块管理、碎片控制、
+    内存访问保护以及运行时安全检测。
+  </p>
+
+  <p>
+    在实时系统中，内存管理不仅影响系统可用资源，
+    还直接决定任务调度稳定性、上下文切换安全性与异常恢复能力。
+  </p>
+</section>
 
   <section class="section">
     <h2>概述</h2>
@@ -273,29 +287,75 @@ a{
 
     </div>
   </section>
+<section class="section">
+  <h2>相关接口</h2>
+  <p>
+    内存管理模块提供一组核心接口，
+    用于完成内存初始化、内存申请释放、栈监控与保护配置。
+  </p>
 
+  <div class="grid">
+
+    <a class="card" href="/docs/api/memory/index.html">
+      <h3>内存接口总览</h3>
+      <p>查看内存模块全部API与数据结构定义。</p>
+      <span>进入 →</span>
+    </a>
+
+    <a class="card" href="/docs/api/memory/os_task_stack.html">
+      <h3>任务栈接口</h3>
+      <p>任务栈初始化、使用率统计与溢出检测接口。</p>
+      <span>进入 →</span>
+    </a>
+
+  </div>
+</section>
   <section class="section">
     <h2>相关模块</h2>
 
     <div class="grid">
 
       <a class="card" href="/docs/modules/task/index.html">
-        <h3>Task Management</h3>
+        <h3>任务管理</h3>
         <p>任务调度与执行依赖内存与栈资源管理。</p>
         <span>查看 →</span>
       </a>
 
       <a class="card" href="/docs/modules/ipc/index.html">
-        <h3>IPC Communication</h3>
+        <h3>进程间通信</h3>
         <p>通信机制依赖内存缓冲与数据结构管理。</p>
         <span>查看 →</span>
       </a>
 
+
+      <a class="card" href="/docs/modules/system-view/index.html">
+  <h3>系统视图</h3>
+  <p>了解内存资源在系统运行过程中的整体位置与作用。</p>
+  <span>查看 →</span>
+</a>
+
+<a class="card" href="/docs/modules/kernel/index.html">
+  <h3>内核机制</h3>
+  <p>查看调度器、中断与内核资源管理机制。</p>
+  <span>查看 →</span>
+</a>
+
     </div>
   </section>
+<section class="section">
+  <h2>学习路径</h2>
+  <p>
+    推荐按以下顺序学习HRTOS内存系统：
+    内存分配 → 内存碎片 → 栈管理 → 内存保护。
+  </p>
 
+  <p>
+    完成内存模块后，可继续学习任务管理与IPC通信机制，
+    进一步理解实时系统中的资源协同关系。
+  </p>
+</section>
   <footer class="footer">
-    © 2017–2026 HRTOS. Documentation for embedded real-time systems.
+    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系.
   </footer>
 
 </main>

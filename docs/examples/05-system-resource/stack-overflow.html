@@ -126,6 +126,29 @@ body{
   </div>
 </section>
 
+<section class="section">
+  <h2>检测机制</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>栈水位检测</h3>
+      <p>通过填充模式检测栈使用边界。</p>
+    </div>
+
+    <div class="step">
+      <h3>溢出标记检测</h3>
+      <p>在栈尾设置保护字节（canary）进行校验。</p>
+    </div>
+
+    <div class="step">
+      <h3>运行时监控</h3>
+      <p>系统周期性检查任务栈使用情况。</p>
+    </div>
+
+  </div>
+</section>
+
 <!-- 代码区 -->
 <section class="section">
   <h2>演示代码</h2>
@@ -172,12 +195,58 @@ void main(void)
   </div>
 </section>
 
+<section class="section">
+  <h2>相关 API</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>任务创建（栈分配入口）</h3>
+      <p><a href="/docs/api/task/os_task.html">os_task()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务栈管理</h3>
+      <p><a href="/docs/api/memory/os_task_stack.html">os_task_stack()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>内存初始化</h3>
+      <p><a href="/docs/api/memory/os_memset.html">os_memset()</a></p>
+    </div>
+
+  </div>
+</section>
+
 <!-- 系统意义 -->
 <section class="section">
   <h2>系统意义</h2>
   <p>
     栈溢出是RTOS系统中最隐蔽的错误类型之一，会导致不可预测行为甚至系统崩溃。
   </p>
+</section>
+
+<section class="section">
+  <h2>关联资源问题</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>内存碎片</h3>
+      <p><a href="fragmentation.html">Memory Fragmentation</a></p>
+    </div>
+
+    <div class="step">
+      <h3>资源分配</h3>
+      <p><a href="allocation.html">Resource Allocation</a></p>
+    </div>
+
+    <div class="step">
+      <h3>内存模型</h3>
+      <p><a href="/docs/architecture/memory/memory-model.html">Memory Model</a></p>
+    </div>
+
+  </div>
 </section>
 
 <!-- 固定导航（锁死结构） -->

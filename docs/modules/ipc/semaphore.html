@@ -6,7 +6,7 @@
 
 <title>信号量（Semaphore） | HRTOS Documentation</title>
 <meta name="description" content="HRTOS信号量（Semaphore）用于任务同步与资源计数管理，是RTOS中基础的IPC同步机制之一。" />
-
+<link rel="canonical" href="https://hrtos.com/docs/modules/ipc/semaphore.html">
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
@@ -283,7 +283,13 @@ a {
   <div class="layout">
 
     <div class="content">
-
+<section class="section" id="definition">
+  <h2>定义</h2>
+  <p>
+    Semaphore（信号量）是RTOS中基于计数器的同步机制，
+    用于资源计数控制与任务同步触发，不具有资源所有权语义。
+  </p>
+</section>
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
@@ -378,6 +384,12 @@ struct semaphore {
     task_list_t wait_list;
 };
         </div>
+        <div class="note">
+  API Reference：
+  <a href="/api/ipc/os_semaphore_init.html">os_semaphore_init()</a> ·
+  <a href="/api/ipc/os_semaphore_wait.html">os_semaphore_wait()</a> ·
+  <a href="/api/ipc/os_semaphore_post.html">os_semaphore_post()</a>
+</div>
       </section>
 
       <section class="section" id="flow">
@@ -398,7 +410,13 @@ struct semaphore {
     </div>
 
     <aside class="sidebar">
-
+<div class="box">
+  <h3>知识链路</h3>
+  <a href="/docs/modules/ipc/index.html">← IPC 模块首页</a>
+  <a href="/docs/modules/ipc/mutex.html">互斥锁</a>
+  <a href="/docs/modules/ipc/event.html">事件机制</a>
+  <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
+</div>
       <div class="box">
         <h3>目录导航</h3>
         <a href="#overview">概述</a>

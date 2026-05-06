@@ -108,7 +108,10 @@ body{
 
 <section class="hero">
   <h1>定时器演示（Timer Demo）</h1>
-  <p>展示HRTOS定时器在系统节拍驱动下的周期触发与单次触发行为。</p>
+  <p>
+展示 HRTOS Timer 在 Tick System 驱动下的周期触发、单次触发、
+自动重装载与回调执行机制。
+</p>
 </section>
 
 <section class="section">
@@ -168,7 +171,37 @@ void main(void)
   <h2>系统意义</h2>
   <p>定时器是RTOS时间驱动调度的基础组件，用于任务周期控制与事件触发。</p>
 </section>
+<section class="section">
+  <h2>深入理解</h2>
 
+  <div class="flow">
+
+    <div class="step">
+      <h3>系统节拍机制</h3>
+      <p>
+        定时器依赖系统 Tick 递减计数。
+        <a href="tick-system.html">查看 Tick System →</a>
+      </p>
+    </div>
+
+    <div class="step">
+      <h3>延时与等待机制</h3>
+      <p>
+        理解 delay / wait 对定时行为的影响。
+        <a href="delay-vs-wait.html">查看 Delay vs Wait →</a>
+      </p>
+    </div>
+
+    <div class="step">
+      <h3>时间控制入口</h3>
+      <p>
+        返回时间控制实验总览。
+        <a href="/docs/examples/04-time-control/index.html">Time Control Index →</a>
+      </p>
+    </div>
+
+  </div>
+</section>
 <!-- 固定相关导航（严禁修改结构） -->
 <section class="section">
   <h2>相关导航</h2>
@@ -194,6 +227,11 @@ void main(void)
       <h3>任务生命周期</h3>
       <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
     </div>
+
+    <div class="step">
+  <h3>Timer Module</h3>
+  <p><a href="/docs/modules/time/index.html">Timer Module</a></p>
+</div>
 
   </div>
 </section>

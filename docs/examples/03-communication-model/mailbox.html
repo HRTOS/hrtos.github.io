@@ -175,8 +175,27 @@ body{
   <div class="block">
     Mailbox = 消息发送 + 邮箱缓存 + 消息接收 + 任务同步
   </div>
+  <p>
+Mailbox 是 HRTOS 通信模型（Communication Model）中的基础机制之一，用于实现任务间异步消息传递。
+</p>
 </section>
+<section class="section">
+  <h2>所属模型体系</h2>
 
+  <div class="flow">
+
+    <div class="step">
+      <h3>Communication Model</h3>
+      <p><a href="/docs/examples/03-communication-model/index.html">返回通信模型总览</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度依赖关系</h3>
+      <p>邮箱通信依赖调度器进行任务唤醒与切换。</p>
+    </div>
+
+  </div>
+</section>
 <section class="section">
   <h2>触发条件</h2>
   <p>邮箱通信通常由以下情况触发：</p>
@@ -276,6 +295,51 @@ void main(void)
     }
 }
     </code></pre>
+  </div>
+</section>
+<section class="section">
+  <h2>API 参考</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>邮箱初始化</h3>
+      <p><a href="/docs/api/mail/os_mail_init.html">os_mail_init()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>发送消息</h3>
+      <p><a href="/docs/api/mail/os_news_send1.html">os_news_send1()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>接收消息</h3>
+      <p><a href="/docs/api/mail/os_news_recv1.html">os_news_recv1()</a></p>
+    </div>
+
+  </div>
+</section>
+
+<section class="section">
+  <h2>与其他通信机制对比</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Message Queue</h3>
+      <p>支持多消息缓存与队列管理。</p>
+    </div>
+
+    <div class="step">
+      <h3>Event Flags</h3>
+      <p>适合状态触发型通信。</p>
+    </div>
+
+    <div class="step">
+      <h3>Semaphore</h3>
+      <p>偏向同步与资源控制。</p>
+    </div>
+
   </div>
 </section>
 

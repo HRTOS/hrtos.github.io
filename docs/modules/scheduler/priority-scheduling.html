@@ -314,9 +314,9 @@ a {
 
 
       <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
+  <h2>关键接口 / 结构</h2>
 
-        <div class="code">
+  <div class="code">
 os_task_set_priority()
 os_scheduler_run()
 os_task_yield()
@@ -326,8 +326,15 @@ struct task_control_block {
     uint8_t state;
     void* stack_ptr;
 };
-        </div>
-      </section>
+  </div>
+
+  <p>
+    相关接口文档：
+    <a href="/docs/api/index.html" style="color:#7dd3fc;">
+      HRTOS API Reference →
+    </a>
+  </p>
+</section>
 
       <section class="section" id="flow">
         <h2>运行流程</h2>

@@ -126,6 +126,24 @@ body{
   </div>
 </section>
 
+<section class="section">
+  <h2>碎片类型扩展</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>外部碎片</h3>
+      <p>空闲内存被切割成不连续的小块，无法满足大块申请。</p>
+    </div>
+
+    <div class="step">
+      <h3>内部碎片</h3>
+      <p>分配块大于实际需求，造成空间浪费。</p>
+    </div>
+
+  </div>
+</section>
+
 <!-- 代码区（必须） -->
 <section class="section">
   <h2>演示代码</h2>
@@ -174,7 +192,28 @@ void main(void)
     内存碎片是嵌入式RTOS长期运行稳定性的关键问题，直接影响系统可用性与实时性。
   </p>
 </section>
+<section class="section">
+  <h2>相关机制</h2>
 
+  <div class="flow">
+
+    <div class="step">
+      <h3>资源分配机制</h3>
+      <p><a href="allocation.html">Resource Allocation</a></p>
+    </div>
+
+    <div class="step">
+      <h3>栈溢出机制</h3>
+      <p><a href="stack-overflow.html">Stack Overflow</a></p>
+    </div>
+
+    <div class="step">
+      <h3>内存模型</h3>
+      <p><a href="/docs/architecture/memory/memory-model.html">Memory Model</a></p>
+    </div>
+
+  </div>
+</section>
 <!-- 固定导航（锁死结构） -->
 <section class="section">
   <h2>相关导航</h2>

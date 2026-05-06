@@ -321,6 +321,12 @@ struct task_context {
     uint32_t registers[16];
 };
         </div>
+        <p style="margin-top:12px;">
+  查看完整接口定义：
+  <a href="/docs/api/task/index.html" style="color:#7dd3fc;">
+    Task API Reference →
+  </a>
+</p>
       </section>
 
       <section class="section" id="flow">
@@ -339,7 +345,19 @@ struct task_context {
           并针对不同架构（ARM/RISC-V）进行优化以降低切换延迟。
         </p>
       </section>
+<section class="section" id="related">
+  <h2>相关阅读</h2>
+  <p>
+    继续学习任务切换相关机制，理解调度器、中断与执行流之间的关系。
+  </p>
 
+  <div class="link-list">
+    <a href="/docs/modules/scheduler/index.html">调度器模块</a>
+    <a href="/docs/system/scheduling-flow.html">调度流程</a>
+    <a href="/docs/system/interrupt-flow.html">中断流程</a>
+    <a href="/docs/modules/task/index.html">任务管理</a>
+  </div>
+</section>
     </div>
 
     <aside class="sidebar">
@@ -354,6 +372,7 @@ struct task_context {
 
       <div class="box">
         <h3>相关页面</h3>
+        <a href="/docs/system/execution-flow.html">任务执行流</a>
         <a href="/docs/modules/task/index.html">任务管理</a>
         <a href="/docs/modules/scheduler/index.html">调度器</a>
       </div>
@@ -369,19 +388,7 @@ struct task_context {
       </div>
 
     </aside>
-<section class="section" id="related">
-  <h2>相关阅读</h2>
-  <p>
-    继续学习任务切换相关机制，理解调度器、中断与执行流之间的关系。
-  </p>
 
-  <div class="link-list">
-    <a href="/docs/modules/scheduler/index.html">调度器模块</a>
-    <a href="/docs/system/scheduling-flow.html">调度流程</a>
-    <a href="/docs/system/interrupt-flow.html">中断流程</a>
-    <a href="/docs/modules/task/index.html">任务管理</a>
-  </div>
-</section>
   </div>
 
   <footer class="footer">

@@ -175,6 +175,13 @@ body{
   <div class="block">
     Round Robin = 固定时间片 + 时间片耗尽切换 + 同优先级公平调度
   </div>
+  <p style="margin-top:14px;">
+RR调度API：
+<a href="/docs/api/scheduler/os_switch.html">os_switch</a> ·
+<a href="/docs/api/scheduler/os_dispatch_id.html">os_dispatch_id</a> ·
+<a href="/docs/api/time/os_wait1.html">os_wait1</a> ·
+<a href="/docs/api/time/os_delay.html">os_delay</a>
+</p>
 </section>
 
 <section class="section">
@@ -201,6 +208,10 @@ body{
       <h3>循环执行</h3>
       <p>任务按照队列顺序持续轮转执行。</p>
     </div>
+    <div class="step">
+  <h3>RR调度链路</h3>
+  <p>Ready队列 → 时间片计数 → Tick中断 → os_dispatch_id → os_switch → 下一个任务</p>
+</div>
   </div>
 </section>
 
@@ -248,6 +259,11 @@ body{
     时间片轮转机制可以提升任务执行公平性，
     适用于同等级任务共享CPU资源的场景。
   </p>
+  <p style="margin-top:14px;">
+内核实现：
+<a href="/docs/modules/scheduler/round-robin.html">Round Robin Scheduler</a> ·
+<a href="/docs/system/scheduling-flow.html">Scheduling Flow</a>
+</p>
 </section>
 
 <section class="section">

@@ -177,6 +177,9 @@ body{
       系统资源模块用于描述RTOS对内存、栈空间与运行资源的管理机制，
       包括分配策略、碎片化控制与异常保护机制。
     </p>
+    <div class="model-box">
+  Resource Model = API Layer + Experiment Layer + Kernel Layer
+</div>  
   </section>
 
   <!-- 模型定义 -->
@@ -214,6 +217,34 @@ body{
 
     </div>
   </section>
+
+  <!-- API 绑定入口（必须新增） -->
+<section class="section">
+  <h2>API 接口映射</h2>
+  <p>系统资源模块与内核API一一对应，用于实验验证与真实系统调用对照。</p>
+
+  <div class="grid">
+
+    <a class="card" href="/docs/api/memory/os_mem_init.html">
+      <h3>内存初始化</h3>
+      <p>初始化系统内存管理器。</p>
+      <span>os_mem_init →</span>
+    </a>
+
+    <a class="card" href="/docs/api/memory/os_memset.html">
+      <h3>内存操作</h3>
+      <p>基础内存填充与管理接口。</p>
+      <span>os_memset →</span>
+    </a>
+
+    <a class="card" href="/docs/api/memory/os_task_stack.html">
+      <h3>任务栈管理</h3>
+      <p>任务栈分配与使用分析。</p>
+      <span>os_task_stack →</span>
+    </a>
+
+  </div>
+</section>
 
   <!-- 关联 -->
   <section class="section">

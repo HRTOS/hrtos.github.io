@@ -184,6 +184,8 @@ a {
   font-size: 0.92rem;
   color: #7dd3fc;
   line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* sidebar */
@@ -251,26 +253,27 @@ a {
 <main class="page">
 
   <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/memory/index.html">Memory</a> /
-    <span>Stack Management</span>
+    <a href="/docs/index.html">文档</a> /
+<a href="/docs/modules/index.html">模块</a> /
+<a href="/docs/modules/memory/index.html">内存管理</a> /
+<span>栈管理</span>
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
+    <span class="hero-label">HRTOS 模块文档</span>
 
     <h1>栈管理（Stack Management）</h1>
 
     <p>
-      栈管理机制用于任务运行时栈空间的分配、监控与保护，
-      是保证任务上下文切换正确性与系统稳定性的关键基础组件。
-    </p>
+  栈管理机制用于任务运行时栈空间的分配、监控与保护，
+  负责维护函数调用、局部变量与任务上下文数据，
+  是保障任务切换正确性与系统稳定性的核心基础组件。
+</p>
 
     <div class="meta">
-      <span class="tag">Memory</span>
-      <span class="tag">Task Runtime</span>
-      <span class="tag">Core Mechanism</span>
+      <span class="tag">内存管理</span>
+<span class="tag">任务运行时</span>
+<span class="tag">核心机制</span>
     </div>
   </section>
 
@@ -279,24 +282,46 @@ a {
     <div class="content">
 
       <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          栈（Stack）用于保存任务执行过程中的局部变量、函数调用信息与上下文数据。
-          在RTOS中，每个任务通常拥有独立栈空间。
-        </p>
-      </section>
+  <h2>概述</h2>
+
+  <p>
+    栈（Stack）用于保存任务执行过程中的局部变量、
+    函数返回地址、中断现场及上下文信息。
+  </p>
+
+  <p>
+    在RTOS中，每个任务通常拥有独立栈空间，
+    以避免任务之间的数据污染与运行干扰。
+  </p>
+
+  <div class="note">
+    栈空间不足可能导致栈溢出，
+    进而破坏任务状态或系统内核数据。
+  </div>
+</section>
 
       <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          系统在任务创建时分配固定栈空间，运行时通过栈指针SP进行压栈与出栈操作。
-          上下文切换时保存/恢复栈状态。
-        </p>
+  <h2>工作原理</h2>
 
-        <div class="note">
-          栈溢出是RTOS中最常见的系统性错误之一，可能导致不可预测行为。
-        </div>
-      </section>
+  <p>
+    系统在任务创建时分配固定栈空间，
+    运行期间通过栈指针（SP）执行压栈与出栈操作。
+  </p>
+
+  <div class="code">
+栈操作流程：
+1. 创建任务并分配栈
+2. 初始化栈顶指针
+3. 函数调用压栈
+4. 函数返回出栈
+5. 上下文切换保存/恢复栈状态
+  </div>
+
+  <div class="note">
+    栈溢出是RTOS中最常见的系统性错误之一，
+    可能导致不可预测行为。
+  </div>
+</section>
 
       <section class="section" id="interface">
         <h2>关键接口 / 结构</h2>
@@ -312,28 +337,62 @@ struct task_stack {
     uint32_t used;
 };
         </div>
+        <div class="note">
+  相关接口：
+  <br><br>
+  <a href="/docs/api/memory/os_task_stack.html">任务栈接口</a><br>
+  <a href="/docs/api/memory/index.html">内存接口总览</a>
+</div>
       </section>
 
       <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          任务创建时分配栈空间 → 运行时持续压栈/出栈 →
-          系统周期性检查栈水位 → 检测溢出风险并触发保护机制。
-        </p>
-      </section>
+  <h2>运行流程</h2>
+
+  <p>
+    任务创建后分配独立栈空间，
+    系统在运行期间持续维护栈增长与回收过程。
+  </p>
+
+  <div class="code">
+1. 分配任务栈
+2. 初始化任务上下文
+3. 任务运行压栈
+4. 上下文切换保存栈指针
+5. 恢复目标任务栈状态
+6. 周期性检查栈使用率
+  </div>
+
+  <p>
+    当检测到栈空间接近上限时，
+    系统可触发预警或保护机制。
+  </p>
+</section>
 
       <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          HRTOS通常结合栈水位标记（Watermark）与MPU保护机制，
-          实现栈溢出检测与运行时安全防护。
-        </p>
-      </section>
+  <h2>扩展说明</h2>
+
+  <p>
+    HRTOS通常结合栈水位标记（Watermark）
+    与MPU保护机制实现运行时栈安全检测。
+  </p>
+
+  <div class="code">
+推荐实践：
+- 为关键任务预留更大栈空间
+- 定期检测栈使用率
+- 启用栈溢出检查
+- 使用内存保护机制
+  </div>
+</section>
 
     </div>
 
     <aside class="sidebar">
-
+<div class="box">
+  <h3>相关接口</h3>
+  <a href="/docs/api/memory/os_task_stack.html">任务栈接口</a>
+  <a href="/docs/api/memory/index.html">内存接口总览</a>
+</div>
       <div class="box">
         <h3>目录导航</h3>
         <a href="#overview">概述</a>
@@ -350,12 +409,12 @@ struct task_stack {
 
       <div class="box">
         <h3>所属模块</h3>
-        <a href="/docs/modules/memory/index.html">Memory Management</a>
+        <a href="/docs/modules/memory/index.html">内存管理</a>
       </div>
 
       <div class="box">
         <h3>学习路径</h3>
-        <a href="/docs/modules/memory/index.html">Memory → Runtime Execution</a>
+        <a href="/docs/modules/memory/index.html">内存管理 → 栈运行机制 → 任务执行</a>
       </div>
 
     </aside>

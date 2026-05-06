@@ -179,6 +179,13 @@ body{
   <div class="block">
     Priority Scheduling = 优先级比较 + Ready队列扫描 + 高优先级任务抢占执行
   </div>
+  <p style="margin-top:14px;">
+调度API：
+<a href="/docs/api/scheduler/os_switch.html">os_switch</a> ·
+<a href="/docs/api/scheduler/os_dispatch_id.html">os_dispatch_id</a> ·
+<a href="/docs/api/task/os_task_ready.html">os_task_ready</a> ·
+<a href="/docs/api/task/os_task_state.html">os_task_state</a>
+</p>
 </section>
 
 <section class="section">
@@ -206,6 +213,10 @@ body{
       <p>保存当前上下文并切换到目标任务。</p>
     </div>
   </div>
+  <div class="step">
+  <h3>调度器核心链路</h3>
+  <p>Ready队列 → 优先级扫描 → os_dispatch_id → os_switch → 上下文切换</p>
+</div>
 </section>
 
 <section class="section">
@@ -252,6 +263,11 @@ body{
     优先级调度是RTOS实时性的核心保障机制，
     能确保关键任务优先获得CPU资源，提高系统响应能力。
   </p>
+  <p style="margin-top:14px;">
+内核实现：
+<a href="/docs/modules/scheduler/priority-scheduling.html">Priority Scheduling Kernel</a> ·
+<a href="/docs/system/scheduling-flow.html">Scheduling Flow</a>
+</p>
 </section>
 
 <section class="section">

@@ -160,6 +160,13 @@ body{
     <div class="block">
       创建任务 = TCB初始化 + 栈分配 + 优先级设置 + 加入就绪队列
     </div>
+    <p style="margin-top:14px;">
+核心API：
+<a href="/docs/api/task/os_task.html">os_task</a>
+<a href="/docs/api/task/os_task_function.html">os_task_function</a>
+<a href="/docs/api/task/os_task_ready.html">os_task_ready</a>
+<a href="/docs/api/scheduler/os_switch.html">os_switch</a>
+</p>
   </section>
 
   <!-- 流程 -->
@@ -187,6 +194,12 @@ body{
         <p>任务进入Ready状态等待调度。</p>
       </div>
     </div>
+    <p style="margin-top:14px;">
+调度关联：
+<a href="/docs/api/task/os_task.html">os_task</a>
+<a href="/docs/api/task/os_task_state.html">os_task_state</a>
+<a href="/docs/modules/task/lifecycle.html">task lifecycle</a>
+</p>
   </section>
 
   <!-- 代码区（已恢复 + 可复制） -->
@@ -265,7 +278,24 @@ void system_init(void)
 
   </div>
 </section>
+<section class="section">
+  <h2>系统关联链路</h2>
 
+  <p>
+    <a href="/docs/modules/task/index.html">Task模块</a> ·
+    <a href="/docs/modules/scheduler/index.html">调度器</a> ·
+    <a href="/docs/modules/time/tick-system.html">系统节拍</a> ·
+    <a href="/docs/system/context-switch-flow.html">上下文切换流程</a>
+  </p>
+
+  <p style="margin-top:12px;">
+    核心API入口：
+    <a href="/docs/api/task/os_task.html">os_task</a> ·
+    <a href="/docs/api/task/os_task_ready.html">os_task_ready</a> ·
+    <a href="/docs/api/task/os_task_function.html">os_task_function</a> ·
+    <a href="/docs/api/scheduler/os_switch.html">os_switch</a>
+  </p>
+</section>
   <footer class="footer">
     © 2017–2026 HRTOS · Task Creation Module
   </footer>

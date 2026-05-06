@@ -251,26 +251,27 @@ a {
 <main class="page">
 
   <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/memory/index.html">Memory</a> /
-    <span>Memory Protection</span>
+    <a href="/docs/index.html">文档</a> /
+<a href="/docs/modules/index.html">模块</a> /
+<a href="/docs/modules/memory/index.html">内存管理</a> /
+<span>内存保护</span>
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
+    <span class="hero-label">HRTOS 模块文档</span>
 
     <h1>内存保护（Memory Protection）</h1>
 
     <p>
-      内存保护机制用于实现任务隔离与访问控制，通过硬件MPU/MMU或软件策略，
-      防止非法内存访问并提升系统稳定性与安全性。
-    </p>
+  内存保护机制用于实现任务隔离与访问控制，
+  通过硬件 MPU/MMU 或软件策略限制任务访问范围，
+  防止非法读写、越界访问及内核数据破坏。
+</p>
 
     <div class="meta">
-      <span class="tag">Memory</span>
-      <span class="tag">Security</span>
-      <span class="tag">Isolation</span>
+      <span class="tag">内存管理</span>
+<span class="tag">系统安全</span>
+<span class="tag">任务隔离</span>
     </div>
   </section>
 
@@ -279,24 +280,56 @@ a {
     <div class="content">
 
       <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          内存保护（Memory Protection）是RTOS中用于防止任务越界访问、
-          破坏内核空间或其他任务数据的重要机制。
-        </p>
-      </section>
+  <h2>概述</h2>
 
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          系统通过MPU（Memory Protection Unit）或MMU（Memory Management Unit）
-          定义内存访问权限区域，对任务进行地址空间隔离。
-        </p>
+  <p>
+    内存保护（Memory Protection）用于防止任务越界访问、
+    非法修改内核空间或破坏其他任务数据。
+  </p>
 
-        <div class="note">
-          当任务访问未授权内存区域时，系统会触发异常处理（Fault Handler）。
-        </div>
-      </section>
+  <p>
+    在多任务实时系统中，
+    每个任务通常应仅访问自身数据区域及授权共享资源，
+    超出范围的访问需要被阻止或触发异常。
+  </p>
+
+  <div class="note">
+    内存保护是高可靠RTOS的重要组成部分，
+    常用于工业控制、车载系统及安全关键场景。
+  </div>
+</section>
+
+     <section class="section" id="mechanism">
+  <h2>工作原理</h2>
+
+  <p>
+    系统通过 MPU（Memory Protection Unit）
+    或 MMU（Memory Management Unit）
+    定义不同内存区域的访问权限。
+  </p>
+
+  <div class="code">
+权限控制：
+- 可读（Read）
+- 可写（Write）
+- 可执行（Execute）
+
+访问范围：
+- 用户任务空间
+- 内核空间
+- 共享资源区
+  </div>
+
+  <p>
+    任务切换时，系统会加载对应任务的访问配置，
+    实现动态权限切换。
+  </p>
+
+  <div class="note">
+    当任务访问未授权区域时，
+    系统通常触发 Fault Handler 进行异常处理。
+  </div>
+</section>
 
       <section class="section" id="interface">
         <h2>关键接口 / 结构</h2>
@@ -312,28 +345,62 @@ struct mpu_region {
     uint32_t permission;
 };
         </div>
+        <div class="note">
+  相关接口：
+  <br><br>
+  <a href="/docs/api/memory/index.html">内存接口总览</a><br>
+  <a href="/docs/api/memory/os_task_stack.html">任务栈接口</a><br>
+  <a href="/docs/api/memory/os_memset.html">内存填充接口</a>
+</div>
       </section>
 
       <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          任务切换时，系统重新加载对应任务的内存访问权限配置；
-          运行期间所有内存访问均由硬件单元进行权限校验。
-        </p>
-      </section>
+  <h2>运行流程</h2>
+
+  <p>
+    任务创建后，系统为其分配对应权限区域。
+  </p>
+
+  <div class="code">
+1. 初始化 MPU/MMU
+2. 配置任务权限区域
+3. 任务切换时加载配置
+4. 执行内存访问校验
+5. 异常访问触发 Fault Handler
+  </div>
+
+  <p>
+    所有运行期间内存访问均经过权限验证，
+    保证系统边界不被破坏。
+  </p>
+</section>
 
       <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          在高可靠系统中，内存保护通常与任务隔离、异常检测和安全启动机制联合使用，
-          构建完整的系统安全边界。
-        </p>
-      </section>
+  <h2>扩展说明</h2>
+
+  <p>
+    在高可靠系统中，
+    内存保护通常与任务隔离、异常检测和安全启动机制联合使用。
+  </p>
+
+  <div class="code">
+推荐实践：
+- 内核空间只读保护
+- 用户任务隔离
+- 栈边界检查
+- 异常访问日志记录
+  </div>
+</section>
 
     </div>
 
     <aside class="sidebar">
-
+<div class="box">
+  <h3>相关接口</h3>
+  <a href="/docs/api/memory/index.html">内存接口总览</a>
+  <a href="/docs/api/memory/os_task_stack.html">任务栈接口</a>
+  <a href="/docs/api/memory/os_memset.html">内存填充接口</a>
+</div>
       <div class="box">
         <h3>目录导航</h3>
         <a href="#overview">概述</a>
@@ -350,12 +417,12 @@ struct mpu_region {
 
       <div class="box">
         <h3>所属模块</h3>
-        <a href="/docs/modules/memory/index.html">Memory Management</a>
+        <a href="/docs/modules/memory/index.html">内存管理</a>
       </div>
 
       <div class="box">
         <h3>学习路径</h3>
-        <a href="/docs/modules/memory/index.html">Memory基础 → 系统安全层</a>
+        <a href="/docs/modules/memory/index.html">内存基础 → 任务隔离 → 系统安全</a>
       </div>
 
     </aside>

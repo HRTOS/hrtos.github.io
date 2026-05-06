@@ -176,6 +176,8 @@ a{
   font-size:0.92rem;
   color:#7dd3fc;
   line-height:1.65;
+  white-space: pre-wrap;
+word-break: break-word;
 }
 
 /* sidebar */
@@ -303,6 +305,13 @@ struct system_tick {
     uint32_t freq_hz;
 };
         </div>
+        <p>
+  相关接口文档：
+  <a href="/docs/modules/time/delay.html">任务延时</a> /
+  <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a> /
+  <a href="/docs/modules/task/state-model.html">任务状态模型</a> /
+  <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a>
+</p>
       </section>
 
       <section class="section" id="flow">
@@ -313,7 +322,16 @@ struct system_tick {
           触发调度决策（如需要）。
         </p>
       </section>
+<div class="note">
+  Tick事件可能导致延时任务到期恢复，
+  并触发任务状态从 Blocked 切换为 Ready。
+</div>
 
+<p>
+  深入理解：
+  <a href="/docs/modules/task/state-model.html">任务状态模型</a> /
+  <a href="/docs/modules/task/context-switch.html">上下文切换</a>
+</p>
       <section class="section" id="extension">
         <h2>扩展说明</h2>
         <p>
@@ -321,7 +339,31 @@ struct system_tick {
           在低功耗场景下可减少不必要的周期中断。
         </p>
       </section>
+<section class="section" id="related">
+  <h2>相关阅读</h2>
+  <p>
+    继续学习时间驱动调度与实时任务控制机制。
+  </p>
 
+  <div class="code">
+Time Module
+├─ Delay
+├─ Scheduler Tick
+└─ Timer
+
+Scheduler Module
+├─ Priority Scheduling
+├─ Round Robin
+└─ Real-Time Scheduling
+  </div>
+
+  <p>
+    推荐阅读：
+    <a href="/docs/modules/time/delay.html">任务延时</a> /
+    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a> /
+    <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
+  </p>
+</section>
     </div>
 
     <aside class="sidebar">
@@ -335,10 +377,13 @@ struct system_tick {
       </div>
 
       <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/time/delay.html">任务延时</a>
-        <a href="/docs/modules/scheduler/index.html">调度器</a>
-      </div>
+  <h3>相关页面</h3>
+  <a href="/docs/modules/time/delay.html">任务延时</a>
+  <a href="/docs/modules/time/index.html">时间管理</a>
+  <a href="/docs/modules/scheduler/index.html">调度器</a>
+  <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a>
+  <a href="/docs/modules/task/state-model.html">任务状态模型</a>
+</div>
 
       <div class="box">
         <h3>所属模块</h3>

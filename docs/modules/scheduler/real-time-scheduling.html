@@ -314,9 +314,9 @@ a {
       </section>
 
       <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
+  <h2>关键接口 / 结构</h2>
 
-        <div class="code">
+  <div class="code">
 os_sched_set_deadline()
 os_sched_register_task()
 os_sched_latency_control()
@@ -326,8 +326,16 @@ struct rt_task {
     uint32_t deadline;
     uint8_t priority;
 };
-        </div>
-      </section>
+  </div>
+
+  <p>
+    相关文档：
+    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a> /
+    <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a> /
+    <a href="/docs/modules/task/priority.html">任务优先级</a> /
+    <a href="/docs/system/scheduling-flow.html">调度流程</a>
+  </p>
+</section>
 
       <section class="section" id="flow">
         <h2>运行流程</h2>

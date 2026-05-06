@@ -188,6 +188,7 @@ a {
   font-size: 0.92rem;
   color: #7dd3fc;
   line-height: 1.65;
+  white-space: pre-wrap;
 }
 
 .sidebar {
@@ -272,9 +273,9 @@ a {
     </p>
 
     <div class="meta">
-      <span class="tag">Memory</span>
-      <span class="tag">RTOS Core</span>
-      <span class="tag">Resource Management</span>
+      <span class="tag">内存管理</span>
+<span class="tag">RTOS核心</span>
+<span class="tag">资源管理</span>
     </div>
   </section>
 
@@ -283,19 +284,43 @@ a {
     <div class="content">
 
       <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          内存分配（Memory Allocation）是RTOS内核中的基础资源管理机制，
-          用于为任务、队列、缓冲区等运行对象提供内存空间。
-        </p>
-      </section>
+  <h2>概述</h2>
+  <p>
+    内存分配（Memory Allocation）是RTOS内核中的基础资源管理机制，
+    用于为任务、消息队列、邮箱、缓冲区及其他系统对象提供运行时存储空间。
+  </p>
+
+  <p>
+    在实时系统中，内存管理不仅关注空间利用率，更强调分配与释放过程的确定性。
+    不可预测的分配延迟可能直接影响任务响应时间与系统实时性。
+  </p>
+
+  <div class="note">
+    HRTOS通常优先采用静态分配与内存池机制，以降低碎片化风险并提升可预测性。
+  </div>
+</section>
 
       <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          HRTOS通常采用固定块分配或内存池机制，避免传统动态分配带来的不可预测延迟。
-          系统根据请求大小从预分配内存池中分配对应块。
-        </p>
+  <h2>工作原理</h2>
+
+  <p>
+    HRTOS通常采用固定块分配或内存池机制，
+    避免传统动态分配带来的不可预测延迟。
+  </p>
+
+  <div class="code">
+1. 系统初始化内存池
+2. 建立空闲块链表
+3. 接收内存申请请求
+4. 查找可用块并分配
+5. 使用完成后回收至空闲链表
+  </div>
+
+  <div class="note">
+    在实时系统中，内存分配必须保证“时间确定性”，
+    避免碎片化、锁竞争与不可控延迟。
+  </div>
+</section>
 
         <div class="note">
           在实时系统中，内存分配必须保证“时间确定性”，避免碎片化与不可控延迟。
@@ -304,7 +329,10 @@ a {
 
       <section class="section" id="interface">
         <h2>关键接口 / 结构</h2>
-
+<p>
+  内存管理通常包含初始化、申请、释放与内存池维护等核心接口。
+  这些接口负责构建实时系统中的基础资源管理能力。
+</p>
         <div class="code">
 os_mem_init()
 os_malloc()
@@ -317,28 +345,60 @@ struct mem_pool {
     uint32_t free_blocks;
 };
         </div>
+        <div class="note">
+  相关API：
+  <br><br>
+  <a href="/docs/api/memory/os_task_stack.html">os_task_stack()</a><br>
+  <a href="/docs/api/memory/os_memset.html">os_memset()</a>
+</div>
       </section>
 
       <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          任务申请内存时，系统从内存池中查找可用块并分配；
-          释放时将内存块重新回收到空闲链表中。
-        </p>
-      </section>
+  <h2>运行流程</h2>
+
+  <p>
+    当任务申请内存时，系统首先检查空闲块链表，
+    若存在满足条件的内存块，则完成分配并更新元数据。
+  </p>
+
+  <p>
+    当任务释放内存时，对应块将被重新插入空闲链表，
+    供后续任务再次使用。
+  </p>
+
+  <div class="note">
+    查看具体实现接口：
+    <br><br>
+    <a href="/docs/api/memory/index.html">进入内存接口文档 →</a>
+  </div>
+</section>
 
       <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          HRTOS建议在关键实时路径中避免频繁动态分配，
-          优先使用静态分配或预分配内存池以保证实时性。
-        </p>
-      </section>
+  <h2>扩展说明</h2>
+
+  <p>
+    HRTOS建议在关键实时路径中避免频繁动态分配，
+    优先使用静态分配或预分配内存池。
+  </p>
+
+  <div class="code">
+推荐实践：
+- 系统启动阶段完成资源初始化
+- 运行阶段减少动态申请
+- 统一管理任务栈空间
+- 使用固定大小内存块
+  </div>
+</section>
 
     </div>
 
     <aside class="sidebar">
-
+<div class="box">
+  <h3>相关接口</h3>
+  <a href="/docs/api/memory/index.html">内存接口总览</a>
+  <a href="/docs/api/memory/os_task_stack.html">任务栈接口</a>
+  <a href="/docs/api/memory/os_memset.html">内存填充接口</a>
+</div>
       <div class="box">
         <h3>目录导航</h3>
         <a href="#overview">概述</a>
@@ -348,14 +408,15 @@ struct mem_pool {
       </div>
 
       <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/memory/allocation.html">堆管理</a>
-        <a href="/docs/modules/memory/fragmentation.html">内存池</a>
-      </div>
+  <h3>相关页面</h3>
+  <a href="/docs/modules/memory/fragmentation.html">内存碎片</a>
+  <a href="/docs/modules/memory/stack-management.html">栈管理</a>
+  <a href="/docs/modules/memory/memory-protection.html">内存保护</a>
+</div>
 
       <div class="box">
         <h3>所属模块</h3>
-        <a href="/docs/modules/memory/index.html">Memory Management</a>
+        <a href="/docs/modules/memory/index.html">内存管理</a>
       </div>
 
       <div class="box">

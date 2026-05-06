@@ -177,6 +177,13 @@ body{
   <div class="block">
     Priority Inheritance = 资源持有者临时提升至等待者最高优先级
   </div>
+  <p style="margin-top:14px;">
+相关API：
+<a href="/docs/api/ipc/os_mutex_lock.html">os_mutex_lock</a>
+<a href="/docs/api/ipc/os_mutex_unlock.html">os_mutex_unlock</a>
+<a href="/docs/api/ipc/os_sem_take.html">os_sem_take</a>
+<a href="/docs/api/ipc/os_sem_give.html">os_sem_give</a>
+</p>
 </section>
 
 <section class="section">
@@ -203,6 +210,12 @@ body{
       <p>任务释放锁后恢复原始优先级。</p>
     </div>
   </div>
+  <p style="margin-top:14px;">
+调度关联：
+<a href="/docs/api/scheduler/os_switch.html">os_switch</a>
+<a href="/docs/api/task/os_task_ready.html">os_task_ready</a>
+<a href="/docs/api/task/os_task_state.html">os_task_state</a>
+</p>
 </section>
 
 <section class="section">
@@ -239,6 +252,12 @@ void system_init(void)
     优先级继承是实时操作系统资源同步的重要机制，
     可以有效降低优先级反转带来的实时性风险。
   </p>
+  <p style="margin-top:12px;">
+内核机制：
+<a href="/docs/system/context-switch-flow.html">上下文切换</a> ·
+<a href="/docs/modules/scheduler/index.html">调度器模型</a> ·
+<a href="/docs/modules/ipc/mutex.html">互斥锁机制</a>
+</p>
 </section>
 
 <section class="section">

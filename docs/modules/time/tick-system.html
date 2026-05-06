@@ -176,6 +176,8 @@ a{
   font-size:0.92rem;
   color:#7dd3fc;
   line-height:1.65;
+  white-space: pre-wrap;
+word-break: break-word;
 }
 
 /* sidebar */
@@ -246,7 +248,7 @@ a{
     <a href="/docs/index.html">Docs</a> /
     <a href="/docs/modules/index.html">Modules</a> /
     <a href="/docs/modules/time/index.html">Time</a> /
-    <span>Tick System</span>
+    <span>系统节拍</span>
   </nav>
 
   <section class="hero">
@@ -303,6 +305,13 @@ struct tick_system {
     uint64_t tick_count;
 };
         </div>
+        <p>
+  相关接口文档：
+  <a href="/docs/modules/time/scheduler-tick.html">调度节拍</a> /
+  <a href="/docs/modules/time/delay.html">任务延时</a> /
+  <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a> /
+  <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
+</p>
       </section>
 
       <section class="section" id="flow">
@@ -312,6 +321,17 @@ struct tick_system {
           时间计数增加 → 更新延时/调度信息 →
           返回中断前状态。
         </p>
+        <div class="note">
+  Tick事件可能导致任务延时到期、
+  时间片耗尽或调度条件变化，
+  从而触发新的任务切换。
+</div>
+
+<p>
+  深入理解：
+  <a href="/docs/modules/task/state-model.html">任务状态模型</a> /
+  <a href="/docs/modules/task/context-switch.html">上下文切换</a>
+</p>
       </section>
 
       <section class="section" id="extension">
@@ -321,7 +341,31 @@ struct tick_system {
           在低功耗与高精度场景之间实现平衡优化。
         </p>
       </section>
+<section class="section" id="related">
+  <h2>相关阅读</h2>
+  <p>
+    继续学习时间驱动模型与实时调度机制。
+  </p>
 
+  <div class="code">
+Tick System
+├─ Scheduler Tick
+├─ Delay
+└─ Timer / Sleep
+
+Scheduler
+├─ Priority Scheduling
+├─ Round Robin
+└─ Real-Time Scheduling
+  </div>
+
+  <p>
+    推荐阅读：
+    <a href="/docs/modules/time/scheduler-tick.html">调度节拍</a> /
+    <a href="/docs/modules/time/delay.html">任务延时</a> /
+    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
+  </p>
+</section>
     </div>
 
     <aside class="sidebar">
@@ -335,10 +379,13 @@ struct tick_system {
       </div>
 
       <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/time/delay.html">任务延时</a>
-        <a href="/docs/modules/time/scheduler-tick.html">调度节拍</a>
-      </div>
+  <h3>相关页面</h3>
+  <a href="/docs/modules/time/delay.html">任务延时</a>
+  <a href="/docs/modules/time/scheduler-tick.html">调度节拍</a>
+  <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a>
+  <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
+  <a href="/docs/modules/task/state-model.html">任务状态模型</a>
+</div>
 
       <div class="box">
         <h3>所属模块</h3>

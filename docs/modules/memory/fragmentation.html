@@ -188,6 +188,7 @@ a {
   font-size: 0.92rem;
   color: #7dd3fc;
   line-height: 1.65;
+  white-space: pre-wrap;
 }
 
 .sidebar {
@@ -262,7 +263,7 @@ a {
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
+    <span class="hero-label">HRTOS 模块文档</span>
 
     <h1>内存碎片（Fragmentation）</h1>
 
@@ -272,9 +273,9 @@ a {
     </p>
 
     <div class="meta">
-      <span class="tag">Memory</span>
-      <span class="tag">RTOS Core</span>
-      <span class="tag">Performance</span>
+      <span class="tag">内存管理</span>
+<span class="tag">RTOS核心</span>
+<span class="tag">性能优化</span>
     </div>
   </section>
 
@@ -283,30 +284,60 @@ a {
     <div class="content">
 
       <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          内存碎片（Fragmentation）指在内存分配与释放过程中，
-          产生无法被有效利用的小块空闲内存区域。
-        </p>
-      </section>
+  <h2>概述</h2>
+  <p>
+    内存碎片（Fragmentation）指在内存分配与释放过程中，
+    产生无法被有效利用的小块空闲内存区域。
+  </p>
+
+  <p>
+    当系统持续执行动态内存申请与释放时，
+    空闲空间可能被切割为多个不连续区域，
+    导致虽然总剩余空间充足，但无法满足连续分配需求。
+  </p>
+
+  <div class="note">
+    在实时系统中，碎片问题不仅影响内存利用率，
+    还可能导致关键任务申请失败。
+  </div>
+</section>
 
       <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          碎片通常分为内部碎片与外部碎片：
-          内部碎片来自固定分配单元浪费空间，
-          外部碎片来自不连续空闲块无法合并使用。
-        </p>
+  <h2>工作原理</h2>
 
-        <div class="note">
-          在实时系统中，外部碎片比内部碎片更危险，因为它可能导致分配失败。
-        </div>
-      </section>
+  <p>
+    碎片通常分为内部碎片与外部碎片。
+  </p>
+
+  <div class="code">
+内部碎片：
+- 固定大小分配块造成空间浪费
+
+外部碎片：
+- 空闲块分散且不连续
+- 无法满足大块连续分配需求
+  </div>
+
+  <p>
+    内部碎片通常影响空间利用率，
+    外部碎片则直接影响系统稳定性与分配成功率。
+  </p>
+
+  <div class="note">
+    在实时系统中，外部碎片比内部碎片更危险，
+    因为它可能导致关键内存申请失败。
+  </div>
+</section>
 
       <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
+  <h2>关键接口 / 结构</h2>
 
-        <div class="code">
+  <p>
+    碎片控制通常涉及空闲块管理、块拆分与块合并等机制，
+    用于提升内存利用率并降低碎片累积风险。
+  </p>
+
+  <div class="code">
 memory_pool_defragment()
 memory_block_merge()
 memory_block_split()
@@ -315,24 +346,61 @@ struct free_block {
     uint32_t size;
     struct free_block* next;
 };
-        </div>
-      </section>
+  </div>
+
+  <div class="note">
+    相关接口：
+    <br><br>
+    <a href="/docs/api/memory/index.html">内存接口总览</a><br>
+    <a href="/docs/api/memory/os_memset.html">内存填充接口</a><br>
+    <a href="/docs/api/memory/os_task_stack.html">任务栈接口</a>
+  </div>
+</section>
 
       <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          内存频繁分配与释放会形成分散空闲块，
-          系统通过合并相邻空闲块或使用固定分区策略减少碎片影响。
-        </p>
-      </section>
+  <h2>运行流程</h2>
+
+  <p>
+    系统频繁进行动态内存分配与释放时，
+    空闲块会逐渐分散并形成不连续区域。
+  </p>
+
+  <div class="code">
+1. 申请内存块
+2. 释放部分块
+3. 形成空闲间隙
+4. 大块申请失败
+5. 触发合并或重新分配策略
+  </div>
+
+  <p>
+    系统通常通过合并相邻空闲块、
+    固定块分配或预分配策略降低碎片影响。
+  </p>
+</section>
 
       <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          HRTOS通常通过内存池、固定块分配和预分配策略来避免碎片问题，
-          保证实时系统的确定性行为。
-        </p>
-      </section>
+  <h2>扩展说明</h2>
+
+  <p>
+    HRTOS通常通过内存池、固定块分配和预分配策略
+    避免碎片问题，提升实时系统稳定性。
+  </p>
+
+  <div class="code">
+推荐实践：
+- 使用固定大小内存块
+- 避免频繁动态分配
+- 系统启动阶段完成初始化
+- 优先静态资源配置
+  </div>
+
+  <div class="note">
+    查看相关模块：
+    <br><br>
+    <a href="/docs/modules/memory/allocation.html">内存分配</a>
+  </div>
+</section>
 
     </div>
 
@@ -347,14 +415,15 @@ struct free_block {
       </div>
 
       <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/memory/allocation.html">内存分配</a>
-        <a href="/docs/modules/memory/fragmentation.html">内存池</a>
-      </div>
+  <h3>相关页面</h3>
+  <a href="/docs/modules/memory/allocation.html">内存分配</a>
+  <a href="/docs/modules/memory/stack-management.html">栈管理</a>
+  <a href="/docs/modules/memory/memory-protection.html">内存保护</a>
+</div>
 
       <div class="box">
         <h3>所属模块</h3>
-        <a href="/docs/modules/memory/index.html">Memory Management</a>
+        <a href="/docs/modules/memory/index.html">内存管理</a>
       </div>
 
       <div class="box">

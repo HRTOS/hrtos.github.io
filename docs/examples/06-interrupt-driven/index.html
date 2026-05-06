@@ -187,6 +187,34 @@ body{
     </div>
   </section>
 
+  <section class="section">
+  <h2>关键能力</h2>
+
+  <div class="grid">
+
+    <div class="card">
+      <h3>快速响应</h3>
+      <p>中断触发后快速进入ISR，降低系统响应延迟。</p>
+    </div>
+
+    <div class="card">
+      <h3>优先级抢占</h3>
+      <p>高优先级中断可抢占低优先级中断执行。</p>
+    </div>
+
+    <div class="card">
+      <h3>上下文保护</h3>
+      <p>保存与恢复CPU执行状态，保证任务连续性。</p>
+    </div>
+
+    <div class="card">
+      <h3>实时性评估</h3>
+      <p>通过延迟测试分析系统中断性能上限。</p>
+    </div>
+
+  </div>
+</section>
+
   <!-- 核心实验 -->
   <section class="section">
     <h2>核心实验</h2>
@@ -215,6 +243,26 @@ body{
     </div>
   </section>
 
+  <section class="section">
+  <h2>相关 API</h2>
+
+  <div class="grid">
+
+    <a class="card" href="/docs/api/scheduler/index.html">
+      <h3>Interrupt APIs</h3>
+      <p>查看中断上下文切换与调度相关接口。</p>
+      <span>查看 API →</span>
+    </a>
+
+    <a class="card" href="/docs/api/time/index.html">
+      <h3>Time APIs</h3>
+      <p>查看Tick与延迟测试相关接口。</p>
+      <span>查看 API →</span>
+    </a>
+
+  </div>
+</section>
+
   <!-- 关联 -->
   <section class="section">
     <h2>关联系统</h2>
@@ -235,7 +283,25 @@ body{
 
     </div>
   </section>
+<section class="section">
+  <h2>延伸阅读</h2>
 
+  <div class="grid">
+
+    <a class="card" href="/docs/architecture/interrupt/index.html">
+      <h3>中断架构</h3>
+      <p>查看HRTOS中断系统整体结构与设计模型。</p>
+      <span>查看 →</span>
+    </a>
+
+    <a class="card" href="/docs/architecture/interrupt/interrupt-latency.html">
+      <h3>中断延迟分析</h3>
+      <p>深入理解中断响应时间构成与影响因素。</p>
+      <span>查看 →</span>
+    </a>
+
+  </div>
+</section>
   <footer class="footer">
     © 2017–2026 HRTOS · Interrupt Driven System
   </footer>

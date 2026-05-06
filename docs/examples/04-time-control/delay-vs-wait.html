@@ -158,6 +158,9 @@ body{
     delay = 时间驱动阻塞（time-based blocking）<br/>
     wait = 事件驱动阻塞（event-based blocking）
   </div>
+  <div class="block">
+Time Control Model = Tick Scheduling + Time Blocking + Event Blocking + Wake-up Dispatch
+</div>
 </section>
 
 <!-- 核心区别 -->
@@ -252,6 +255,18 @@ void main(void)
 }
 </code></pre>
   </div>
+  <p>
+API 接口：
+<a href="/docs/api/time-control/index.html">Time Control API</a>
+</p>
+</section>
+
+<section class="section">
+  <h2>时间系统位置</h2>
+
+  <div class="block">
+    Time Control is the root driver of RTOS scheduling, communication and synchronization.
+  </div>
 </section>
 
 <!-- 系统意义 -->
@@ -261,8 +276,15 @@ void main(void)
     delay 适用于周期性控制任务，而 wait 更适用于事件驱动系统。
     在 HRTOS 中，wait 被优先优化用于提升实时响应能力。
   </p>
+  
 </section>
+<section class="section">
+  <h2>调度与时间关系</h2>
 
+  <div class="block">
+    Scheduler decisions are triggered by time tick or event wake-up.
+  </div>
+</section>
 <!-- 相关导航（锁死结构） -->
 <section class="section">
   <h2>相关导航</h2>
@@ -288,7 +310,10 @@ void main(void)
       <h3>任务生命周期</h3>
       <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
     </div>
-
+<div class="step">
+  <h3>时间控制系统</h3>
+  <p><a href="/docs/examples/04-time-control/index.html">Time Control</a></p>
+</div>
   </div>
 </section>
 

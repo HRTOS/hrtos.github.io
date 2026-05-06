@@ -186,8 +186,30 @@ body{
     <div class="model-box">
       Scheduler = Priority Policy + Run Queue + Context Switch Trigger + Preemption Control
     </div>
-  </section>
+    <section class="section">
+  <h2>调度器核心模型</h2>
 
+  <div class="model-box">
+    Scheduler Core = Ready队列管理 + 任务选择策略 + 上下文切换 + 抢占控制
+  </div>
+
+  <p>
+    调度引擎不执行任务本身，只负责决策“下一个运行谁”。
+    所有调度策略（Priority / RR / RT）都属于同一个调度器的不同策略分支。
+  </p>
+</section>
+  </section>
+<section class="section">
+  <h2>调度决策流程</h2>
+
+  <div class="model-box">
+    1. 扫描Ready队列 → 2. 计算优先级 → 3. 判断时间片 → 4. 触发切换
+  </div>
+
+  <p>
+    调度器每次触发（tick或事件）都会重新计算最优执行任务。
+  </p>
+</section>
   <!-- 核心实验 -->
   <section class="section">
     <h2>核心实验</h2>
@@ -221,7 +243,25 @@ body{
 
     </div>
   </section>
+<section class="section">
+  <h2>调度器 API</h2>
 
+  <div class="grid">
+
+    <a class="card" href="/docs/api/scheduler/index.html">
+      <h3>Scheduler API</h3>
+      <p>任务创建、调度启动、时间片与优先级控制接口。</p>
+      <span>查看 API →</span>
+    </a>
+
+    <a class="card" href="/docs/api/task/index.html">
+      <h3>Task API</h3>
+      <p>任务生命周期管理接口。</p>
+      <span>查看 API →</span>
+    </a>
+
+  </div>
+</section>
   <!-- 关联模块 -->
   <section class="section">
     <h2>关联模块</h2>

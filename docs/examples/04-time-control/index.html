@@ -174,9 +174,10 @@ body{
     <h1>时间控制</h1>
 
     <p>
-      时间控制模块用于描述RTOS中的时间管理机制，包括系统节拍（Tick）、任务延时、
-      定时器驱动与时间片调度，是实时系统运行的基础支撑。
-    </p>
+时间控制模块用于描述 RTOS 中的时间管理机制，包括 Tick System、
+Delay、Software Timer、Timeout 与 Scheduler Timing，
+是实时系统调度精度与响应能力的基础。
+</p>
   </section>
 
   <!-- 模型说明 -->
@@ -186,6 +187,34 @@ body{
       Time Control Model = Tick System + Delay Mechanism + Timer System + Scheduler Timing
     </div>
   </section>
+
+  <section class="section">
+  <h2>核心机制说明</h2>
+
+  <div class="grid">
+
+    <div class="card">
+      <h3>Tick 驱动</h3>
+      <p>系统通过周期性中断维护全局时间基准，并触发调度检查。</p>
+    </div>
+
+    <div class="card">
+      <h3>Delay 阻塞</h3>
+      <p>任务进入时间等待队列，等待 Tick 递减至恢复条件。</p>
+    </div>
+
+    <div class="card">
+      <h3>Timer 回调</h3>
+      <p>软件定时器基于 Tick 驱动执行回调逻辑与周期任务。</p>
+    </div>
+
+    <div class="card">
+      <h3>调度联动</h3>
+      <p>时间系统直接影响时间片轮转、超时唤醒与任务切换。</p>
+    </div>
+
+  </div>
+</section>
 
   <!-- 核心实验 -->
   <section class="section">
@@ -212,6 +241,12 @@ body{
         <span>进入实验 →</span>
       </a>
 
+      <a class="card" href="/docs/system/interrupt-flow.html">
+  <h3>Tick Interrupt Flow</h3>
+  <p>查看系统节拍中断如何驱动内核时间更新。</p>
+  <span>查看流程 →</span>
+</a>
+
     </div>
   </section>
 
@@ -235,7 +270,25 @@ body{
 
     </div>
   </section>
+<section class="section">
+  <h2>深入学习</h2>
 
+  <div class="grid">
+
+    <a class="card" href="/docs/modules/task/index.html">
+      <h3>Task Module</h3>
+      <p>查看任务阻塞、唤醒与延时状态切换机制。</p>
+      <span>查看模块 →</span>
+    </a>
+
+    <a class="card" href="/docs/modules/kernel/index.html">
+      <h3>Kernel Module</h3>
+      <p>理解时间控制在内核调度中的实现路径。</p>
+      <span>查看模块 →</span>
+    </a>
+
+  </div>
+</section>
   <footer class="footer">
     © 2017–2026 HRTOS · Time Control Module
   </footer>

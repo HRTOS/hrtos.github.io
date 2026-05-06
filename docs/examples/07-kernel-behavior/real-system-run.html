@@ -172,6 +172,39 @@ body{
   </section>
 
   <section class="section">
+  <h2>内核执行入口映射</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>os_task_create()</h3>
+      <p>创建任务并进入Ready队列</p>
+    </div>
+
+    <div class="step">
+      <h3>os_schedule_trigger()</h3>
+      <p>触发调度器执行</p>
+    </div>
+
+    <div class="step">
+      <h3>os_context_save()</h3>
+      <p>保存当前任务上下文</p>
+    </div>
+
+    <div class="step">
+      <h3>os_context_switch()</h3>
+      <p>执行任务切换逻辑</p>
+    </div>
+
+    <div class="step">
+      <h3>os_context_restore()</h3>
+      <p>恢复目标任务执行</p>
+    </div>
+
+  </div>
+</section>
+
+  <section class="section">
     <h2>系统运行流程</h2>
 
     <div class="flow">

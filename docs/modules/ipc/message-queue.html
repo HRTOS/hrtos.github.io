@@ -283,9 +283,11 @@ a {
     </div>
   </section>
 <section class="section" id="graph">
-  <h2>IPC关系图</h2>
+  <h2>IPC体系中的位置</h2>
   <p>
-    消息队列是HRTOS IPC体系的一部分，与信号量、互斥锁、邮箱机制共同构成任务通信基础。
+    Message Queue 属于 HRTOS IPC 数据通信类机制，
+    位于 Event（状态同步）与 Mailbox（轻量消息传递）之上，
+    提供更完整的数据缓冲与任务解耦能力。
   </p>
 </section>
   <div class="layout">
@@ -345,6 +347,13 @@ struct msg_queue {
     uint32_t tail;
 };
         </div>
+        <div class="note">
+  Implementation API:
+  <br>
+  <a href="/api/ipc/os_msg_queue_init/index.html">os_msg_queue_init()</a><br>
+  <a href="/api/ipc/os_msg_queue_send/index.html">os_msg_queue_send()</a><br>
+  <a href="/api/ipc/os_msg_queue_recv/index.html">os_msg_queue_recv()</a>
+</div>
       </section>
 
       <section class="section" id="flow">
@@ -354,12 +363,45 @@ struct msg_queue {
           接收任务从队列头部读取消息并触发处理逻辑。
         </p>
       </section>
+      <section class="section" id="blocking">
+  <h2>阻塞与超时机制</h2>
+  <p>
+    当消息队列为空时，接收任务可进入阻塞等待；
+    当队列已满时，发送任务可选择阻塞、超时返回或立即失败。
+    该机制可与调度器联动，实现高效任务同步。
+  </p>
+
+  <div class="note">
+    常见模式：blocking / timeout / non-blocking。
+  </div>
+</section>
 <section class="section" id="comparison">
   <h2>与其他IPC机制对比</h2>
   <p>
     相比信号量，消息队列支持结构化数据传递；
     相比互斥锁，它不用于资源独占，而用于数据通信。
   </p>
+</section>
+<section class="section" id="selection">
+  <h2>何时使用 Message Queue</h2>
+  <p>
+    当任务之间需要传递结构化数据、支持排队缓存或异步解耦时，
+    Message Queue 通常是更优选择。
+  </p>
+
+  <div class="code">
+Use Message Queue:
+- structured data transfer
+- async communication
+- producer / consumer model
+
+Use Mailbox:
+- small fixed-size data
+- low latency communication
+
+Use Event:
+- state synchronization only
+  </div>
 </section>
       <section class="section" id="extension">
         <h2>扩展说明</h2>
@@ -383,12 +425,15 @@ struct msg_queue {
 </div>
 
       <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
-      </div>
+  <h3>目录导航</h3>
+  <a href="#definition">定义</a>
+  <a href="#overview">概述</a>
+  <a href="#use-cases">典型应用</a>
+  <a href="#mechanism">工作原理</a>
+  <a href="#interface">关键接口</a>
+  <a href="#blocking">阻塞机制</a>
+  <a href="#comparison">机制对比</a>
+</div>
 
       <div class="box">
         <h3>相关页面</h3>

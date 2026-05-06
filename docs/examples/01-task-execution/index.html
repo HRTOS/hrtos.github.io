@@ -186,6 +186,13 @@ body{
     <div class="model-box">
       Task Execution Model = Task Lifecycle + State Transition + Context Switch + Priority Control
     </div>
+    <p style="margin-top:14px;">
+相关API：
+<a href="/docs/api/task/index.html">Task API</a> ·
+<a href="/docs/api/task/os_task.html">os_task</a> ·
+<a href="/docs/api/task/os_task_function.html">os_task_function</a> ·
+<a href="/docs/api/scheduler/os_switch.html">os_switch</a>
+</p>
   </section>
 
   <!-- 核心内容 -->
@@ -220,6 +227,14 @@ body{
       </a>
 
     </div>
+    <div class="model-box" style="margin-top:16px;">
+<strong>执行模型来源</strong><br><br>
+
+任务创建 → TCB初始化<br>
+状态模型 → Ready / Running / Blocked<br>
+上下文切换 → os_switch() + 寄存器保存<br>
+优先级控制 → 调度器动态决策
+</div>
   </section>
 
   <!-- 关联 -->
@@ -241,6 +256,12 @@ body{
       </a>
 
     </div>
+    <div style="margin-top:14px;">
+<strong>系统级视图：</strong><br><br>
+<a href="/docs/system/01-execution-flow.html">执行流模型</a> ·
+<a href="/docs/system/02-task-lifecycle.html">任务生命周期</a> ·
+<a href="/docs/system/04-scheduler-cycle.html">调度周期</a>
+</div>
   </section>
 
   <footer class="footer">

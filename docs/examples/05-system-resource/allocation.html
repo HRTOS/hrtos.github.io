@@ -115,8 +115,12 @@ body{
 <section class="section">
   <h2>机制定义</h2>
   <div class="step">
-    资源分配 = 申请 + 仲裁 + 锁定 + 释放
-  </div>
+  资源分配 = 申请 + 仲裁 + 锁定 + 释放
+  <p>
+    在多任务系统中，不同任务可能同时竞争 CPU、内存或外设资源，
+    系统必须通过统一分配策略保证资源利用率与实时响应能力。
+  </p>
+</div>
 </section>
 
 <!-- 分配流程 -->
@@ -146,20 +150,20 @@ body{
 
 void task_A(void)
 {
-    os_resource_request(0);   // 请求资源0
+    os_mutex_lock(0);
 
     os_news_send1(0, 0xA1);
 
-    os_resource_release(0);   // 释放资源
+    os_mutex_unlock(0);
 }
 
 void task_B(void)
 {
-    os_resource_request(0);   // 竞争同一资源
+    os_mutex_lock(0);
 
     os_wait1(5);
 
-    os_resource_release(0);
+    os_mutex_unlock(0);
 }
 
 void system_init(void)
@@ -167,7 +171,7 @@ void system_init(void)
     os_task((unsigned int)task_A, TASK_ID_A, 3, 0);
     os_task((unsigned int)task_B, TASK_ID_B, 2, 0);
 
-    os_resource_init(1);
+    os_mutex_init(0);
 }
 
 void main(void)
@@ -185,6 +189,29 @@ void main(void)
   </div>
 </section>
 
+<section class="section">
+  <h2>相关 API</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>互斥锁初始化</h3>
+      <p><a href="/docs/api/ipc/os_mutex_init.html">os_mutex_init()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>互斥锁加锁</h3>
+      <p><a href="/docs/api/ipc/os_mutex_lock.html">os_mutex_lock()</a></p>
+    </div>
+
+    <div class="step">
+      <h3>互斥锁解锁</h3>
+      <p><a href="/docs/api/ipc/os_mutex_unlock.html">os_mutex_unlock()</a></p>
+    </div>
+
+  </div>
+</section>
+
 <!-- 系统意义 -->
 <section class="section">
   <h2>系统意义</h2>
@@ -192,7 +219,21 @@ void main(void)
     资源分配机制保证多任务环境下资源使用的公平性与实时性，是RTOS稳定性的核心基础。
   </p>
 </section>
+<section class="section">
+  <h2>延伸阅读</h2>
 
+  <div class="flow">
+    <div class="step">
+      <h3>内存碎片问题</h3>
+      <p><a href="fragmentation.html">Memory Fragmentation</a></p>
+    </div>
+
+    <div class="step">
+      <h3>栈溢出演示</h3>
+      <p><a href="stack-overflow.html">Stack Overflow</a></p>
+    </div>
+  </div>
+</section>
 <!-- 固定导航（完全锁死，不允许改结构） -->
 <section class="section">
   <h2>相关导航</h2>
