@@ -210,8 +210,28 @@ typedef struct tcb {
   <a href="/docs/api/task/os_task_function.html">os_task_function</a> ·
   <a href="/docs/api/task/os_task.html">os_task</a> ·
   <a href="/docs/api/task/os_task_ready.html">os_task_release</a> ·
-  <a href="/docs/api/scheduler/os_switch.html">os_scheduling</a>
+  <a href="/docs/api/scheduler/os_scheduling.html">os_scheduling</a>
 </p>
+    <h3>上下文切换背景</h3>
+    <p>上下文切换是硬实时操作系统实现多任务并发的核心机制。在单核CPU环境下，多个任务通过快速切换共享CPU资源，产生并行执行的错觉。上下文切换确保每个任务在切换后能从正确的断点继续执行，不丢失执行状态。</p>
+    <p>实时系统需要上下文切换机制的原因在于，嵌入式应用通常包含多个并发任务，如传感器采样、数据处理、用户界面、网络通信等。这些任务需要在不同时间片内交替执行，通过上下文切换实现任务隔离与状态保护。</p>
+    <p>在汽车电子、工业控制、航空航天等典型应用中，上下文切换的延迟直接影响系统实时性。HRTOS通过优化寄存器保存路径与汇编实现，将切换延迟控制在微秒级，满足硬实时系统的响应要求。</p>
+    <h3>寄存器现场保存</h3>
+    <p>寄存器现场保存是上下文切换的第一步。HRTOS保存通用寄存器（R0-R15）、程序计数器（PC）、栈指针（SP）、状态寄存器（CPSR）等关键上下文信息。保存位置为任务TCB中的寄存器快照区域，确保切换后能准确恢复。</p>
+    <p>不同CPU架构的寄存器集合不同，HRTOS通过架构相关汇编代码实现最优保存路径。ARM Cortex-M架构支持硬件自动保存部分寄存器，HRTOS利用硬件特性减少软件保存开销。寄存器保存必须在中断禁用状态下完成，避免中断破坏上下文一致性。</p>
+    <p>寄存器保存的完整性直接影响任务切换的正确性。遗漏任何寄存器都可能导致任务恢复后执行错误。HRTOS通过寄存器保存清单与自动化测试确保所有必要寄存器都被正确保存。</p>
+    <h3>堆栈切换机制</h3>
+    <p>堆栈切换确保每个任务使用独立的栈空间。HRTOS为每个任务分配固定大小栈，栈指针保存在TCB中。切换时，系统更新CPU栈指针寄存器，使其指向目标任务栈顶。栈大小规划需考虑任务函数调用深度、局部变量使用量、中断栈需求等因素。</p>
+    <p>栈溢出是上下文切换的常见错误。当任务栈空间不足时，栈指针可能超出分配范围，导致数据损坏或系统崩溃。HRTOS提供栈溢出检测机制，在栈指针越界时触发异常。开发者需根据任务特性合理规划栈大小，避免溢出风险。</p>
+    <p>栈切换的原子性是关键要求。切换过程中必须确保栈指针更新与寄存器保存的原子性，避免中断破坏栈一致性。HRTOS通过临界区保护与汇编原子指令确保栈切换的安全性。</p>
+    <h3>任务控制块更新</h3>
+    <p>任务控制块（TCB）是任务在内核中的数据结构，包含栈指针、程序计数器、寄存器快照、状态标识、优先级等关键信息。上下文切换时，系统更新TCB中的状态字段，将当前任务状态从Running转换为Ready或Blocked。</p>
+    <p>TCB更新还包括时间片计数、等待时间、运行统计等维护信息。这些信息用于调度决策与性能分析。HRTOS的TCB设计紧凑高效，通过字段优化减少内存占用。</p>
+    <p>TCB的访问必须受保护，避免并发访问导致数据不一致。HRTOS通过自旋锁或关中断保护TCB访问，确保多核环境下的数据一致性。</p>
+    <h3>执行上下文恢复</h3>
+    <p>执行上下文恢复是上下文切换的最后步骤。系统从目标任务TCB中读取保存的寄存器值，写入CPU寄存器。恢复完成后，CPU跳转到任务断点继续执行。恢复操作必须原子性完成，避免中断破坏上下文一致性。</p>
+    <p>程序计数器恢复决定任务从何处继续执行。PC值保存在TCB中，通常指向任务函数入口或上次切换时的断点。对于首次运行的任务，PC指向任务函数入口；对于被切换的任务，PC指向断点指令。</p>
+    <p>状态寄存器恢复确保任务在正确的处理器模式下执行。ARM Cortex-M支持Thread模式与Handler模式，不同模式访问权限不同。HRTOS确保任务恢复时处于正确的处理器模式与中断配置。</p>
   </section>
 
   <!-- 触发机制 -->
@@ -249,6 +269,18 @@ typedef struct tcb {
 <a href="/docs/api/time/os_wait1.html">os_wait1</a>
 <a href="/docs/api/time/os_delay.html">os_delay</a>
 </p>
+    <h3>时间片耗尽触发</h3>
+    <p>时间片耗尽是周期性上下文切换的常见触发源。HRTOS为每个任务分配固定时间片，任务执行时时间片计数器递减。当时间片减至零时，调度器强制切换到下一个同优先级任务。时间片轮转确保同优先级任务公平分享CPU时间。</p>
+    <p>时间片大小影响系统吞吐量与响应延迟。时间片过大导致响应延迟增加，时间片过小增加切换开销。HRTOS支持动态时间片调整，根据任务特性优化调度性能。典型时间片设置为10ms至100ms。</p>
+    <h3>高优先级任务就绪触发</h3>
+    <p>高优先级任务就绪是抢占式调度的核心触发源。当高优先级任务从阻塞状态恢复或新创建时，如果其优先级高于当前运行任务，调度器立即触发抢占切换。抢占调度确保关键任务获得及时响应，满足实时性要求。</p>
+    <p>抢占切换的延迟直接影响系统实时性。HRTOS通过快速调度路径与优先级队列优化，将抢占延迟控制在微秒级。开发者需合理规划任务优先级，避免频繁抢占导致系统抖动。</p>
+    <h3>任务阻塞触发</h3>
+    <p>任务阻塞是主动释放CPU的触发源。任务通过等待信号量、消息队列、延时等系统调用进入阻塞状态。阻塞任务从运行队列移至等待队列，不占用CPU资源。调度器选择下一个就绪任务执行。</p>
+    <p>阻塞操作的效率影响系统吞吐量。HRTOS支持多级阻塞队列，按事件类型分类管理等待任务。阻塞条件满足后，任务快速恢复就绪状态，减少等待时间。</p>
+    <h3>中断返回调度触发</h3>
+    <p>中断返回调度是异步事件驱动的触发源。中断服务程序执行完成后，系统检查是否需要调度决策。如果中断导致高优先级任务就绪或当前任务被阻塞，触发任务切换。中断返回路径需优化，降低中断延迟。</p>
+    <p>中断优先级与任务优先级需协调配置。高优先级中断可能触发高优先级任务就绪，形成级联调度。HRTOS支持中断嵌套与中断底半部处理，平衡中断响应时间与任务调度开销。</p>
   </section>
 
   <!-- 执行流程 -->
@@ -301,6 +333,23 @@ typedef struct tcb {
 <a href="/docs/api/task/os_task_state.html">os_task_state</a>
 <a href="/docs/api/task/os_task_function.html">os_task_function</a>
 </p>
+    <h3>上下文保存详细流程</h3>
+    <p>上下文保存的第一步是关中断，确保保存过程不被打断。HRTOS通过关中断指令进入临界区，防止中断破坏寄存器现场。关中断时间需尽可能短，避免影响系统实时性。</p>
+    <p>寄存器保存顺序影响保存效率。HRTOS采用优化的保存顺序，先保存通用寄存器，再保存特殊寄存器如PC、SP、状态寄存器。ARM Cortex-M架构支持硬件自动保存部分寄存器，HRTOS利用硬件特性减少软件保存开销。</p>
+    <p>保存完成后，系统更新TCB中的状态字段，将当前任务状态从Running转换为Ready或Blocked。状态更新必须与寄存器保存原子性完成，避免状态不一致。HRTOS通过汇编原子指令确保状态更新的原子性。</p>
+    <h3>调度器选择流程</h3>
+    <p>调度器选择是上下文切换的核心决策步骤。调度器从就绪队列中选择最高优先级任务，或按时间片轮转选择下一个任务。调度算法直接影响系统实时性与公平性。</p>
+    <p>HRTOS调度器采用优先级队列实现，选择时间复杂度为O(1)。就绪队列按优先级排序，高优先级任务位于队列头部。调度器只需读取队列头部即可获得最高优先级任务，无需遍历整个队列。</p>
+    <p>调度器还需考虑时间片状态。如果当前任务时间片未耗尽且无更高优先级任务就绪，调度器可能选择继续运行当前任务。这种优化减少不必要的切换，提高系统效率。</p>
+    <h3>上下文恢复详细流程</h3>
+    <p>上下文恢复的第一步是从目标任务TCB读取保存的寄存器值。恢复顺序与保存顺序相反，先恢复特殊寄存器，再恢复通用寄存器。恢复过程同样需关中断，确保恢复过程不被打断。</p>
+    <p>栈指针恢复是恢复过程的关键步骤。系统更新CPU栈指针寄存器，使其指向目标任务栈顶。栈指针恢复后，局部变量与函数调用链正确指向目标任务栈空间。</p>
+    <p>程序计数器恢复决定任务从何处继续执行。PC值恢复后，CPU从指定地址取指执行。对于首次运行的任务，PC指向任务函数入口；对于被切换的任务，PC指向断点指令。</p>
+    <p>恢复完成后，系统开中断，允许中断响应。最后通过中断返回指令跳转到目标任务，完成上下文切换。整个过程在微秒级完成，满足硬实时系统的响应要求。</p>
+    <h3>中断返回流程</h3>
+    <p>中断返回是上下文切换的特殊形式。中断服务程序执行完成后，系统检查是否需要调度决策。如果需要，执行任务切换；否则直接返回被中断任务。</p>
+    <p>HRTOS优化中断返回路径，减少不必要的上下文保存。如果中断未导致调度需求，系统直接恢复被中断任务的上下文，跳过调度器选择步骤。这种优化显著降低中断延迟。</p>
+    <p>中断返回流程还需考虑中断嵌套。嵌套中断返回时，系统需逐层恢复中断上下文。HRTOS通过中断栈管理嵌套中断，确保每层中断正确返回。</p>
   </section>
 
   <!-- ===== 新增：演示代码（结构） ===== -->
@@ -408,45 +457,50 @@ void main(void)
       上下文切换是RTOS实现多任务并发的基础机制，其开销直接影响系统实时性。
       在HRTOS中，该机制被优化为最小寄存器保存路径，以降低中断延迟。
     </p>
+    <h3>多任务并发基础</h3>
+    <p>上下文切换是实现多任务并发的核心技术。在单核CPU环境下，多个任务通过快速切换共享CPU资源，产生并行执行的错觉。每个任务拥有独立的执行上下文，切换时保存当前状态，恢复目标任务状态，确保任务间互不干扰。</p>
+    <p>实时系统依赖上下文切换实现任务隔离与状态保护。汽车电子、工业控制等应用包含多个并发任务，如传感器采样、数据处理、用户界面、网络通信。这些任务通过上下文切换交替执行，满足系统功能需求。</p>
+    <h3>实时性影响分析</h3>
+    <p>上下文切换开销直接影响系统实时性。切换延迟包括寄存器保存、调度决策、寄存器恢复等步骤的耗时。切换延迟过大可能导致任务响应不及时，影响硬实时系统的确定性。</p>
+    <p>HRTOS通过多种优化降低切换延迟。寄存器保存路径采用汇编实现，利用硬件特性减少软件开销。调度器采用O(1)时间复杂度的优先级队列，快速选择目标任务。整体切换延迟控制在微秒级，满足硬实时系统要求。</p>
+    <h3>系统开销平衡</h3>
+    <p>上下文切换开销与系统实时性需平衡。切换频率过高增加CPU开销，切换频率过低影响响应延迟。HRTOS支持可配置的切换策略，根据应用需求调整切换频率与开销。</p>
+    <p>时间片大小影响切换频率。时间片过大减少切换次数但增加响应延迟，时间片过小增加切换次数但降低响应延迟。HRTOS支持动态时间片调整，根据任务特性优化切换策略。</p>
+    <h3>优先级调度支持</h3>
+    <p>上下文切换是实现优先级调度的关键机制。高优先级任务就绪时，系统通过上下文切换快速抢占CPU。抢占调度确保关键任务获得及时响应，满足实时性要求。</p>
+    <p>HRTOS支持抢占式调度与非抢占式调度。抢占式调度响应快但开销大，非抢占式调度开销小但响应慢。开发者可根据应用需求选择调度策略，平衡实时性与系统开销。</p>
+  <div class="block" style="margin-top:18px;">
+  <strong>核心实现模块</strong><br><br>
+  <a href="/docs/api/scheduler/os_switch.html">上下文切换内核</a> ·
+  <a href="/docs/api/scheduler/index.html">调度器核心</a> ·
+  <a href="/docs/api/task/os_task.html">任务控制块 TCB</a>
+</div>
+  
   </section>
-  <p style="margin-top:16px;">
-核心实现：
-<a href="/docs/api/scheduler/os_switch.html">上下文切换内核</a> ·
-<a href="/docs/api/scheduler/index.html">调度器核心</a> ·
-<a href="/docs/api/task/os_task.html">任务控制块 TCB</a>
-</p>
+  
   <section class="section">
-  <h2>相关导航</h2>
+  <h2>继续学习</h2>
 
   <div class="flow">
+    <div class="step">
+      <h3>任务执行模型</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+    </div>
 
     <div class="step">
-  <h3>返回任务执行模型</h3>
-  <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
-</div>
+      <h3>中断机制</h3>
+      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
+    </div>
 
-<p style="margin-top:16px;">
-调度相关 API：
-<a href="/docs/api/scheduler/os_switch.html">os_switch</a> ·
-<a href="/docs/api/scheduler/os_dispatch_id.html">os_dispatch_id</a> ·
-<a href="/docs/api/task/os_task_ready.html">os_task_ready</a>
-</p>
-
-<div class="step">
-  <h3>中断机制</h3>
-  <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
-</div>
-
-<div class="step">
-  <h3>任务生命周期</h3>
-  <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
-</div>
-
+    <div class="step">
+      <h3>任务生命周期</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+    </div>
   </div>
 </section>
-<script src="/header.js" defer></script>
+
 <section class="section">
-  <h2>上下文切换相关体系</h2>
+  <h2>内核关联模块</h2>
 
   <p>
     <a href="/docs/modules/task/index.html">Task Module</a> ·
@@ -455,15 +509,7 @@ void main(void)
     <a href="/docs/api/index.html">API Reference</a>
   </p>
 </section>
-<section class="section">
-  <h2>系统关联</h2>
 
-  <p>
-    <a href="/docs/modules/scheduler/index.html">Scheduler</a> ·
-    <a href="/docs/modules/time/tick-system.html">Tick System</a> ·
-    <a href="/docs/modules/task/index.html">Task Module</a>
-  </p>
-</section>
   <footer class="footer">
     © 2017–2026 HRTOS · Context Switch Module
   </footer>
@@ -492,5 +538,6 @@ document.addEventListener("click", function (e) {
   });
 });
 </script>
+<script src="/header.js" defer></script>
 </body>
 </html>

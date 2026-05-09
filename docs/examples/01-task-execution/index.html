@@ -180,11 +180,13 @@ body{
     </p>
   </section>
 
+
+
   <!-- 模型说明 -->
   <section class="section">
     <h2>执行模型定义</h2>
     <div class="model-box">
-      Task Execution Model = Task Lifecycle + State Transition + Context Switch + Priority Control
+      任务执行模型用于描述RTOS中任务从创建到运行、切换与终止的完整执行机制。
     </div>
     <p style="margin-top:14px;">
 相关API：
@@ -193,8 +195,24 @@ body{
 <a href="/docs/api/task/os_task_function.html">os_task_function</a> ·
 <a href="/docs/api/scheduler/os_switch.html">os_switch</a>
 </p>
+    
   </section>
+<!-- 学习路径（新增） -->
+<section class="section">
+  <h2>学习路径（推荐顺序）</h2>
 
+  <div class="model-box">
+    1. 任务创建（TCB初始化 + 栈分配）<br>
+    2. 任务状态模型（Ready / Running / Blocked）<br>
+    3. 上下文切换（os_switch + 寄存器保存）<br>
+    4. 调度引擎（优先级与选择逻辑）<br>
+    5. 优先级机制（抢占与继承）
+  </div>
+
+  <p style="margin-top:14px;">
+    建议按顺序学习，可逐步构建完整RTOS执行链路理解。
+  </p>
+</section>
   <!-- 核心内容 -->
   <section class="section">
     <h2>核心实验</h2>
@@ -235,7 +253,7 @@ body{
 上下文切换 → os_switch() + 寄存器保存<br>
 优先级控制 → 调度器动态决策
 </div>
-  </section>
+     </section>
 
   <!-- 关联 -->
   <section class="section">
@@ -262,7 +280,7 @@ body{
 <a href="/system-view/02-task-lifecycle.html">任务生命周期</a> ·
 <a href="/system-view/04-scheduler-cycle.html">调度周期</a>
 </div>
-  </section>
+    </section>
 
   <footer class="footer">
     © 2017–2026 HRTOS · Task Execution Model
