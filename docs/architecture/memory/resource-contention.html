@@ -126,6 +126,10 @@ h2 {
 <div class="en">
 Resource contention is not competition for resources, but divergence of execution paths in time space.
 </div>
+
+<p>
+换句话说，资源竞争描述的是多个执行流在同一时间窗口内争夺同一演化方向的能力。谁先获得资源，不仅改变结果顺序，也改变后续所有任务的可达时间。
+</p>
 </div>
 
 <!-- causal model -->
@@ -144,6 +148,10 @@ Resource contention is not competition for resources, but divergence of executio
 关键点：
 <b>竞争不是问题，延迟传播才是问题</b>
 </p>
+
+<p>
+延迟一旦进入因果链，就会沿着等待队列、优先级关系和共享对象所有权继续放大。因此真正需要建模的不是某一次阻塞，而是阻塞在任务图中的传播半径。
+</p>
 </div>
 
 <!-- resource types -->
@@ -158,6 +166,10 @@ Resource contention is not competition for resources, but divergence of executio
 
 <p><b>③ Synchronization（状态资源）</b></p>
 <p>Mutex / Semaphore 实际上是“时间阻断器”。</p>
+
+<p>
+三类资源虽然表现不同，但都会以时间形式暴露：CPU 竞争表现为得不到执行片段，内存竞争表现为访问等待，同步竞争表现为状态转移被暂停。RTOS 设计必须把它们统一换算成时间成本。
+</p>
 </div>
 
 <!-- timing impact -->
@@ -177,6 +189,10 @@ Resource contention is not competition for resources, but divergence of executio
 <p>
 结果不是“慢”，而是：
 <b>时间边界失效</b>
+</p>
+
+<p>
+很多现场问题之所以难查，是因为局部几十微秒的等待会在控制链后部变成毫秒级相位偏移。资源竞争真正危险的地方，就在于这种跨层放大效应。
 </p>
 </div>
 
@@ -204,6 +220,10 @@ T1 → R1 ← T2 → R2 ← T3
 问题不在链长，而在：
 <b>循环依赖 + 不可预测解锁点</b>
 </p>
+
+<p>
+把阻塞看成图而不是链，有助于识别隐藏热点，例如多个中优先级任务共同夹击高优先级控制任务，或者两个共享对象形成闭环依赖。
+</p>
 </div>
 
 <!-- priority inversion -->
@@ -227,6 +247,10 @@ T1 → R1 ← T2 → R2 ← T3
 ✔ 调度模型与执行模型解耦  
 ✔ 系统进入不可证明状态
 </p>
+
+<p>
+优先级继承和优先级天花板的价值，就在于把这类时间层级崩塌重新拉回可分析范围。它们不是性能优化手段，而是保证高优先级语义不被锁结构吞掉的控制机制。
+</p>
 </div>
 
 <!-- memory contention -->
@@ -247,6 +271,10 @@ T1 → R1 ← T2 → R2 ← T3
 这些因素导致：
 <b>同一函数执行时间变成随机变量</b>
 </p>
+
+<p>
+在高性能 MCU 或 SoC 上，Cache 着色、DMA 总线仲裁和共享 SRAM 端口冲突都可能比应用层锁更先触发抖动。因此资源竞争分析必须穿透 API，看到微架构层的真实争用。
+</p>
 </div>
 
 <!-- system implication -->
@@ -261,6 +289,10 @@ HRTOS 的目标不是“消除竞争”，而是：
 ✔ 将竞争转化为可建模延迟  
 ✔ 将不可预测性转化为上界函数  
 ✔ 将系统行为变为可证明集合
+</p>
+
+<p>
+所谓可控系统，并不是完全没有竞争，而是竞争的等待时间和传播范围都有上界，可以被纳入 response time analysis。能否建立这类上界，才是资源设计是否合格的分水岭。
 </p>
 </div>
 
@@ -299,6 +331,10 @@ Resource contention is not a problem to solve, but a structural mechanism that b
 </div>
 
 
+
+<p>
+因此处理资源竞争的关键不是“消灭所有共享”，而是为每一种共享建立明确所有权、等待边界和恢复策略。只有这样，竞争才能从随机扰动重新回到可建模事件。
+</p>
 </div>
 <section style="margin-top:42px;">
   <h2 style="font-size:22px;color:#cfe3ff;margin-bottom:18px;">相关阅读</h2>

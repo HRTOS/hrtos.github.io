@@ -154,6 +154,10 @@ RTOS 的核心不是调度“机制”，而是调度“可证明性”
 → 调度决策（Scheduler）
 → 执行控制（Kernel）
 </p>
+
+<p>
+这一层之所以被单独提出，是因为 RTOS 的价值不在于能把任务跑起来，而在于能提前证明哪些任务集绝不会错过时限。没有理论层，调度实现就只是一套经验性策略。
+</p>
 </div>
 <!-- core -->
 <div class="card card-core">
@@ -231,6 +235,10 @@ Pi = Priority（优先级）
 ❌ 系统不可调度（not schedulable）<br/>
 ❌ 不是“慢”，而是“理论失败”
 </p>
+
+<p>
+工程上常见误区是只看平均利用率。实际上，只要高优先级任务的释放模式、阻塞时间或中断干扰不可界定，即便总体利用率不高，任务集依然可能在最坏时刻失效。
+</p>
 </div>
 <section class="card card-core">
 <h2>系统关联模型</h2>
@@ -274,6 +282,10 @@ HRTOS 调度理论第一原则：
 <p>
 GPOS → maximize throughput<br/>
 RTOS → guarantee deadline
+</p>
+
+<p>
+Worst-case first 的意义在于把系统设计从“通常没问题”推进到“在最差组合下依然成立”。这也是安全认证、航空电子和工业控制必须采用形式化时序分析的根本原因。
 </p>
 </div>
 
@@ -320,6 +332,10 @@ RTOS → guarantee deadline
 
 <p>
 ❌ 调度理论失效
+</p>
+
+<p>
+在实践中，response time analysis 往往需要把中断干扰、临界区阻塞和通信唤醒一并纳入，而不是只计算纯任务执行时间。忽略任何一类干扰，都会让理论结果过于乐观。
 </p>
 </div>
 
@@ -435,6 +451,10 @@ Scheduling theory is a provable computational model under time constraints, not 
 
 <p>
 这些模块共同构成 HRTOS 的核心约束体系：<b>时间确定性（Temporal Determinism）</b>
+</p>
+
+<p>
+因此阅读调度理论时，最好同时对照中断、内存和资源竞争页面，因为它们分别提供了干扰源、执行边界和不可预测性来源，能够帮助把公式中的每一项映射回真实系统对象。
 </p>
 </section>
 </div>

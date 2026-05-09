@@ -150,18 +150,22 @@ a{color:inherit;text-decoration:none;}
     <div class="highlight">
       RTOS的本质不是“更快执行任务”，而是“确保任务不会在不可预测的时间点完成”。
       它把系统正确性的定义从“结果正确”扩展为“结果 + 时间都必须正确”。
+      换句话说，RTOS关注的不是平均速度，而是最坏情况下系统是否仍然按预期工作。
+      对电机控制、刹车执行、采样闭环这类场景来说，晚几十毫秒往往就不是“变慢”，而是“失效”。
     </div>
 
     <p>
       在普通操作系统中，时间是“统计结果”；  
       在RTOS中，时间是“硬约束变量”。
+      初学者常把“实时”理解为“越快越好”，这是最常见的误区之一。
+      实时系统完全可能运行在主频并不高的MCU上，因为关键不在峰值性能，而在于每一次响应是否都落在允许窗口内。
     </p>
   </section>
 
   <section class="section">
     <h2>二、系统正确性的重新定义</h2>
 
-    <p>RTOS引入了一个关键变化：系统正确性变为双维约束。</p>
+    <p>RTOS引入了一个关键变化：系统正确性变为双维约束。它要求开发者在设计功能逻辑时，同时给出任务的触发条件、执行预算和截止时间，而不是等系统跑起来之后再凭经验观察。</p>
 
     <div class="block">
 <p></p>
@@ -170,12 +174,17 @@ a{color:inherit;text-decoration:none;}
 时间约束：执行时间 ≤ 截止时间（Deadline）
 
 违反 → 系统级失效
+
+典型例子：
+采样任务 5 ms 周期，若 8 ms 才完成，
+即使计算值正确，也已经错过控制窗口
 </p>
     </div>
 
     <p>
       这意味着：  
       即使逻辑结果完全正确，只要超时，该结果在系统层面仍然无效。
+      很多新手只看串口日志里“输出正确”，却忽略了输出产生的时刻，这在实时工程里非常危险，因为错误常表现为偶发失步、抖动积累或控制品质下降。
     </p>
   </section>
 
@@ -185,15 +194,17 @@ a{color:inherit;text-decoration:none;}
     <p>
       RTOS的设计对象不是“程序执行”，而是“系统行为边界”。
       它本质上是一个约束求解器，而不是执行管理器。
+      因此不能把RTOS理解为“功能更少的Linux”或“体积更小的内核”，它首先是一套以时间边界为中心的设计方法。
     </p>
 
     <div class="card">
-      <strong>通用OS：</strong>优化平均性能（吞吐量 / 体验 / 公平性）<br><br>
-      <strong>RTOS：</strong>控制最坏情况（Worst Case Bound）
+      <strong>通用OS：</strong>优化平均性能（吞吐量 / 体验 / 公平性），接受短时间抖动<br><br>
+      <strong>RTOS：</strong>控制最坏情况（Worst Case Bound），优先消除不可预测路径
     </div>
 
     <p>
       两者的差异不是“能力强弱”，而是“优化目标方向完全相反”。
+      选择哪一种系统，取决于业务失败的代价是“变慢”还是“越界”。
     </p>
   </section>
 
@@ -204,6 +215,11 @@ a{color:inherit;text-decoration:none;}
   <a href="#">RTOS系统模型</a>
 
   系统 =（任务，调度器，中断，约束）
+
+  任务：承载功能与时序需求
+  调度器：决定何时运行谁
+  中断：把外部事件引入系统
+  约束：验证系统是否仍然可行
 
   约束：
   
@@ -216,6 +232,7 @@ a{color:inherit;text-decoration:none;}
 
     <p>
       RTOS所有设计（调度、中断、IPC）都只是为了满足上述约束集合。
+      工程实践里，先明确任务周期、事件来源和响应上界，再谈具体内核API选择，通常比一开始讨论用哪种消息队列更重要。
     </p>
   </section>
 
@@ -224,15 +241,18 @@ a{color:inherit;text-decoration:none;}
 
     <p>
       RTOS调度器不是“任务排序器”，而是“时间可行性判定器”。
+      它需要在任务集合中判断哪条执行路径最安全，而不是单纯偏爱“名字上最重要”的任务。
     </p>
 
     <div class="highlight">
       它每一次决策的本质是：
       在当前系统状态下，哪一个执行路径不会破坏任何时间约束？
+      同一优先级任务是否轮转、任务是否阻塞等待资源、是否存在中断唤醒，都会改变最终调度结果。
     </div>
 
     <p>
       因此，优先级只是表象，时间可行性才是核心决策逻辑。
+      真正成熟的RTOS开发，会把优先级设置与可调度性分析、最坏情况响应时间验证放在一起看。
     </p>
   </section>
 
@@ -242,13 +262,15 @@ a{color:inherit;text-decoration:none;}
     <p>
       在RTOS中，中断不是“事件机制”，而是“时间扰动入口”。
       每一个中断都会改变系统时间模型，因此必须被严格约束。
+      这也是为什么ISR通常只做最短路径处理，把大量工作延后给任务上下文完成。
     </p>
 
     <div class="card">
       中断必须满足三条约束：<br>
       • 上界延迟（Bounded Latency）<br>
       • 行为可预测（Deterministic Path）<br>
-      • 不破坏调度一致性
+      • 不破坏调度一致性<br><br>
+      常见实践：快速确认中断源、完成最小必要寄存器读写、唤醒后续任务而不是在ISR里堆复杂业务
     </div>
   </section>
 
@@ -257,10 +279,12 @@ a{color:inherit;text-decoration:none;}
 
     <div class="highlight">
       RTOS的最终目标不是“提高性能”，而是让系统行为进入“可证明状态”。
+      可证明并不意味着一切都要写成数学公式，而是关键路径有明确上界、可测试、可复现。
     </div>
 
     <p>
       可证明性意味着：系统的最坏情况可以被提前计算，而不是运行时观察。
+      对初学者来说，最容易忽视的是“偶尔成功”并不等于系统可靠，实时系统更在意最差那一次是否仍然合格。
     </p>
   </section>
 
@@ -275,12 +299,15 @@ a{color:inherit;text-decoration:none;}
 
     ∀ task → 完成时间 ≤ 截止时间<br>
     ∀ interrupt → 延迟 ≤ 上界<br>
-    ∀ schedule → 确定性执行
+    ∀ schedule → 确定性执行<br><br>
+    只有当任务执行时间、阻塞时间和中断延迟都被测量或估算后，
+    这些约束才真正具备工程意义
   </div>
 </div>
 
     <p>
       RTOS不是“软件类型”，而是一种“时间约束计算范式”。
+      因此学习RTOS不能停留在API记忆层面，还要逐步建立任务模型、时序预算和度量验证的意识。
     </p>
   </section>
 <section class="section">
@@ -288,6 +315,7 @@ a{color:inherit;text-decoration:none;}
 
   <div class="card">
     <p>
+      建议先建立定义层，再进入调度、中断和通信机制，这样更容易把零散知识串成系统视图。<br/><br/>
       👉 <a href="/docs/learn/what-is-rtos.html">什么是RTOS</a><br/>
       👉 <a href="/docs/learn/scheduling-basics.html">调度基础</a><br/>
       👉 <a href="/docs/learn/interrupt-basics.html">中断基础</a><br/>

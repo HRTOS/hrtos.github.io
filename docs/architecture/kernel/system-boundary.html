@@ -141,6 +141,10 @@ System = Kernel + Boundary + Environment
 <div class="en">
 System boundary defines the computable separation between kernel and environment, determining system validity.
 </div>
+
+<p>
+边界不是抽象修辞，而是系统能够被建模的前提。只要存在无法归入 Boundary 的执行路径，Kernel 对系统状态的控制就不再闭合，所谓“实时性”也就失去了统一判定标准。
+</p>
 </div>
 
 <!-- mathematical model -->
@@ -171,6 +175,10 @@ Ib = 不确定性边界（Uncertainty Bound）
 
 <p>
 👉 超出 B 的行为 = 非RTOS行为
+</p>
+
+<p>
+Tb、Rb、Ib 可以分别映射到截止时间、资源容量和不确定性来源清单。工程上做架构审查时，往往需要为每一项建立量化上界，否则边界集合只能停留在概念层，无法进入可验证设计流程。
 </p>
 </div>
 
@@ -203,6 +211,10 @@ Kernel = Boundary Enforcement Engine（边界执行器）
 <p>
 👉 防止系统行为突破可分析空间
 </p>
+
+<p>
+因此 Kernel 的首要职责不是提供更多服务，而是拒绝那些会破坏可分析空间的行为，例如无界阻塞、不可控动态分配和越权访问。它像一道主动收敛的控制闸门，而不是被动承载所有功能的容器。
+</p>
 </div>
 <section class="card card-meta">
 <h2>系统关系模型</h2>
@@ -215,6 +227,10 @@ Boundary = System Validity Condition
 
 <p>
 Scheduler 在 Boundary 内运行，而 Kernel 负责维持 Boundary 不被突破。
+</p>
+
+<p>
+这里最重要的区分是 Boundary 负责定义系统成立条件，Scheduler 只是在成立条件内进行最优选择。把这两个角色混为一谈，往往会把策略问题误当成理论问题，把边界问题误当成实现细节。
 </p>
 </section>
 <!-- scheduling domain -->
@@ -245,6 +261,10 @@ SD ⊆ Time × Tasks
 <p>
 ❌ Determinism collapse（确定性崩塌）
 </p>
+
+<p>
+调度域可以理解为 CPU 上被 Boundary 裁剪后的合法执行区域。只有进入该区域的任务、ISR 和共享对象，才配得上进入可调度性分析；域外行为即使偶然运行成功，也不属于可证明系统的一部分。
+</p>
 </div>
 
 <!-- irreversibility -->
@@ -273,6 +293,10 @@ SD ⊆ Time × Tasks
 这些不是 bug，而是：
 <b>边界不可逆破坏</b>
 </p>
+
+<p>
+不可逆性强调的是证明失效，而不是程序崩溃。系统可能继续运行，但一旦最坏情况模型被破坏，任何实时保证都失去法律效力和工程意义，后续观测到的“正常运行”只能被视作偶然样本。
+</p>
 </div>
 
 <!-- isolation -->
@@ -293,6 +317,10 @@ SD ⊆ Time × Tasks
 <p>
 目标不是“安全”，而是：
 <b>控制系统可分析空间</b>
+</p>
+
+<p>
+因此隔离机制的价值在于把复杂系统切成可分别证明的子空间，例如用 MPU 约束地址边界、用中断门控限制异步入口、用优先级天花板限制阻塞传播深度。隔离做得越清晰，边界条件越容易写成明确规则。
 </p>
 </div>
 
@@ -336,6 +364,10 @@ RTOS → GPOS = 从确定性系统 → 非确定性系统
 
 <p>
 没有边界 → 没有 RTOS
+</p>
+
+<p>
+对于硬实时项目，系统边界往往也是需求边界。只要需求方提出的功能会突破既有边界，团队就必须同步调整任务模型、资源预算和验证方法，而不是仅靠局部编码补丁去弥补架构前提的变化。
 </p>
 </div>
 
