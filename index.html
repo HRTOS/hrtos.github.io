@@ -964,24 +964,89 @@ pre.code .type{color:#f472b6; font-weight:600;}
         <span class="section-kicker">Kernel Path</span>
         <h3>一个核心示例，展示 HRTOS 的调度入口</h3>
         <p>保留最能代表系统本质的调度路径，其余接口说明、扩展示例与完整知识内容统一收敛到系统文档页面，避免首页被教程内容淹没。</p>
-        <pre class="code"><span class="comment">// RTOS 核心调度器（优先级抢占）</span>
-<span class="type">void</span> <span class="function">os_task_schedule</span>(<span class="type">void</span>)
+        <pre class="code"><span class="comment">// Example: Dual LED Task Demo</span>
+<span class="macro">#include</span> <span class="string">"hrtos.h"</span>
+
+<span class="comment">/*============================================================
+ * Example: Dual LED Task Demo
+ *------------------------------------------------------------
+ * Fast Task : 2 ticks toggle LED0 (high priority)
+ * Slow Task : 25 ticks toggle LED1 (low priority)
+ *===========================================================*/</span>
+
+
+<span class="comment">/*============================================================
+ * Task Configuration
+ *===========================================================*/</span>
+
+/* Fast LED Task */
+<span class="macro">#define</span> FAST_TASK_ID     1
+<span class="macro">#define</span> FAST_PRIORITY    7
+<span class="macro">#define</span> FAST_STACK       5
+<span class="macro">#define</span> FAST_DELAY       2
+
+/* Slow LED Task */
+<span class="macro">#define</span> SLOW_TASK_ID     2
+<span class="macro">#define</span> SLOW_PRIORITY    3
+<span class="macro">#define</span> SLOW_STACK       5
+<span class="macro">#define</span> SLOW_DELAY       25
+
+
+<span class="comment">/*============================================================
+ * Hardware Definition
+ *===========================================================*/</span>
+<span class="keyword">sbit</span> LED_FAST = P1^0;
+<span class="keyword">sbit</span> LED_SLOW = P1^1;
+
+
+<span class="comment">/*============================================================
+ * Task: Fast LED
+ *===========================================================*/</span>
+<span class="keyword">static</span> <span class="type">void</span> <span class="function">fast_led_task</span>(<span class="type">void</span>)
 {
-    uint8_t next;
-
-    <span class="macro">DISABLE_INT</span>();
-    next = os_find_highest_ready();
-
-    <span class="keyword">if</span>(next != current_task)
+    <span class="keyword">while</span> (1)
     {
-        os_save_context(current_task);
-        current_task = next;
-        os_restore_context(current_task);
+        LED_FAST = !LED_FAST;
+        <span class="function">os_delay</span>(FAST_DELAY);
     }
-
-    <span class="macro">ENABLE_INT</span>();
 }
-        </pre>
+
+
+<span class="comment">/*============================================================
+ * Task: Slow LED
+ *===========================================================*/</span>
+<span class="keyword">static</span> <span class="type">void</span> <span class="function">slow_led_task</span>(<span class="type">void</span>)
+{
+    <span class="keyword">while</span> (1)
+    {
+        LED_SLOW = !LED_SLOW;
+        <span class="function">os_delay</span>(SLOW_DELAY);
+    }
+}
+
+
+<span class="comment">/*============================================================
+ * Application Entry
+ *===========================================================*/</span>
+<span class="type">void</span> <span class="function">hrtos_main</span>(<span class="type">void</span>)
+{
+    <span class="comment">/* Create Fast Task */</span>
+    <span class="function">os_task_create</span>(
+        (<span class="type">unsigned int</span>)fast_led_task,
+        FAST_TASK_ID,
+        FAST_PRIORITY,
+        FAST_STACK
+    );
+
+    <span class="comment">/* Create Slow Task */</span>
+    <span class="function">os_task_create</span>(
+        (<span class="type">unsigned int</span>)slow_led_task,
+        SLOW_TASK_ID,
+        SLOW_PRIORITY,
+        SLOW_STACK
+    );
+}
+</pre>
         <p class="code-note">更多接口、任务模型、中断机制与完整示例请进入 <a href="/docs/index.html">系统文档</a>。</p>
       </div>
     </div>
@@ -994,7 +1059,7 @@ pre.code .type{color:#f472b6; font-weight:600;}
         <p>从文档、集成到下载入口，保持更克制、更清晰的产品叙事，让访问者首先记住 HRTOS 的系统能力与品牌定位。</p>
         <div class="cta-actions">
           <a class="btn primary" href="/docs/index.html">阅读文档</a>
-          <a class="btn" href="/docs/learn/index.html">学习 RTOS</a>
+          <a class="btn" href="/download/index.html">下载中心</a>
         </div>
       </div>
     </div>
