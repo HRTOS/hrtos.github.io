@@ -230,7 +230,7 @@ a {
   </p>
 
 <p>
-在 RTOS 中，一次通信并不会在“数据入队”时结束，而是会继续影响后续的唤醒、抢占和处理顺序。换句话说，通信流程既是一条数据路径，也是一条调度路径，二者必须同时被设计成有界链路。
+在 HRTOS 中，一次通信不仅完成数据传递，还可能直接触发任务状态变化与调度行为，因此通信流程本质上属于执行路径的一部分。
 </p>
 </section>
 
@@ -246,65 +246,94 @@ a {
   </div>
 
 <p>
-发送动作通常至少包含三个副作用：写入对象状态、更新等待队列以及触发可能的任务恢复。若接收方优先级更高，这个副作用还会继续演变为一次抢占，因此通信接口的实现不能只保证功能正确，还必须保证状态更新与调度触发之间没有模糊地带。
+发送任务通过通信接口更新通信对象状态，如果存在等待该对象的任务，则将其唤醒并进入就绪队列。系统随后根据优先级决定是否立即发生任务切换。
 </p>
 </section>
 
 <section class="section" id="interface">
-  <h2>关键接口 / 结构</h2>
+<h2>关键接口 / 结构</h2>
 
-  <div class="code">
-os_queue_send(queue, msg, timeout)       // 将消息发送到队列，可设超时等待<br>
-os_queue_receive(queue, msg, timeout)    // 从队列接收消息，阻塞或非阻塞<br>
-os_sem_take(sem, timeout)                // 获取信号量，控制任务同步<br>
-os_sem_give(sem)                         // 释放信号量，唤醒等待任务<br>
-os_event_set(event, mask)                // 设置事件标志，通知任务<br>
-os_event_wait(event, mask, timeout)      // 等待事件标志，支持超时
-  </div>
-  <p>
-    以上接口提供了 HRTOS IPC 的核心操作，可组合实现任务间复杂通信逻辑。
-  </p>
+<div class="code">
+/* ===== Event ===== */<br>
+os_event_init(u8 id)                 // 事件初始化<br>
+os_event_write(u8 id)               // 置位事件（ISR / Task）<br>
+os_event_wait(u8 id, u16 tick)      // 等待事件（阻塞）<br>
+os_event_query(u8 id)               // 查询事件状态<br>
+os_event_delete(u8 id)              // 删除事件<br>
+<br>
+/* ===== Mailbox ===== */<br>
+os_mailbox_init(u8 mid)             // 邮箱初始化<br>
+os_mailbox_send(u8 mid, u8 data)    // 发送数据<br>
+os_mailbox_receive(u8 mid)          // 接收数据<br>
+os_mailbox_query(u8 mid)            // 非阻塞查询<br>
+os_mailbox_clear(u8 mid)            // 清空邮箱<br>
+<br>
+/* ===== Message Queue ===== */<br>
+os_msgq_init(q, buf, size)          // 消息队列初始化<br>
+os_msgq_send(q, obj, data, nb)      // 发送消息<br>
+os_msgq_recv(q, obj, data, nb)      // 接收消息<br>
+os_msgq_clear(q)                    // 清空队列<br>
+<br>
+/* ===== Semaphore ===== */<br>
+os_sem_init(sid, init)              // 信号量初始化<br>
+os_sem_wait(sid)                    // P操作（获取）<br>
+os_sem_post(sid)                   // V操作（释放）<br>
+<br>
+/* ===== Mutex ===== */<br>
+os_mutex_init(mid)                  // 互斥锁初始化<br>
+os_mutex_lock(mid)                 // 加锁（支持优先级继承）<br>
+os_mutex_unlock(mid)               // 解锁<br>
+<br>
+/* ===== Wait Core ===== */<br>
+os_wait(type, obj, tick)          // 统一阻塞等待<br>
+wake_task(tid, flag)              // 唤醒任务<br>
+</div>
 
 <p>
-选用接口时，应同时考虑数据大小、等待语义和回压策略。短消息适合邮箱或固定长度队列，大块数据更适合共享缓冲区加事件通知，强同步场景则应优先使用信号量或互斥体，以避免把数据一致性和时序控制混在一个对象里。
+HRTOS 通信系统由事件、邮箱、消息队列、信号量与互斥锁组成，
+所有对象统一遵循“资源状态变化 → 唤醒等待任务 → 调度检查”的执行模型。
 </p>
+
+<ul>
+  <li>Event：轻量状态通知</li>
+  <li>Mailbox：固定单值通信</li>
+  <li>MsgQ：结构化数据流</li>
+  <li>Semaphore：计数同步</li>
+  <li>Mutex：互斥与优先级继承</li>
+</ul>
+
 </section>
 
 <section class="section" id="flow">
-  <h2>运行流程</h2>
-  <p>典型通信流程如下（任务间消息传递与同步示意）：</p>
+<h2>运行流程</h2>
 
 <div class="code">
-<a href="#taskA-generate" style="display:block;">[任务A] 生成数据</a>
-<span style="display:block;">↓</span>
-<a href="#taskA-write" style="display:block;">[任务A] 写入消息队列 / 设置事件标志</a>
-<span style="display:block;">↓</span>
-<a href="#scheduler" style="display:block;">[调度器] 检查任务优先级，决定是否切换任务</a>
-<span style="display:block;">↓</span>
-<a href="#taskB-wait" style="display:block;">[任务B] 等待或就绪，根据事件或队列状态唤醒</a>
-<span style="display:block;">↓</span>
-<a href="#taskB-read" style="display:block;">[任务B] 读取消息 / 响应事件</a>
-<span style="display:block;">↓</span>
-<a href="#taskB-finish" style="display:block;">[任务B] 完成数据处理并可能触发下一任务或事件</a>
+任务 / ISR 发起通信<br>
+│<br>
+▼<br>
+调用对应 IPC 接口（Event / Mailbox / MsgQ / Semaphore / Mutex）<br>
+│<br>
+▼<br>
+更新资源状态（写入 / 计数 / 缓冲区变更）<br>
+│<br>
+▼<br>
+检查等待队列（os_wait 统一阻塞链）<br>
+│<br>
+▼<br>
+唤醒目标任务（wake_task）<br>
+│<br>
+▼<br>
+标记调度请求（os_schedule_request）<br>
+│<br>
+▼<br>
+返回调度点（由调度器决定是否切换任务）<br>
 </div>
 
-  <p>
-    在此流程中：  
-    <ul>
-      <li>调度器负责根据任务优先级分配 CPU，保证高优先级任务及时响应。</li>
-      <li>通信机制维护数据完整性，防止消息丢失或竞争条件。</li>
-      <li>任务同步确保发送与接收顺序正确，避免状态不一致。</li>
-      <li>高级机制可支持超时等待、事件组合、广播通知等复杂场景。</li>
-    </ul>
-  </p>
-
-  <p>
-    通过这样的通信流程，HRTOS 能够在实时系统中保证任务间协作高效、安全，同时最大化响应性能。
-  </p>
-
 <p>
-从内核视角看，真正重要的不是“消息是否送到”，而是发送之后 ready set 是否发生变化、哪一个任务被解除阻塞、是否需要立即发生上下文切换。把这几个问题串起来，通信流程就能和调度流程自然对齐，而不是成为独立黑盒。
+通信操作不仅改变数据状态，同时会影响任务阻塞链与就绪队列。
+是否发生任务切换取决于优先级与调度策略。
 </p>
+
 </section>
 
 <section class="section" id="best-practice">

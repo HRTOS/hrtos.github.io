@@ -174,13 +174,13 @@ a{
   <nav class="breadcrumb">
     <a href="/docs/index.html">文档中心</a> /
     <a href="/docs/architecture/index.html">系统架构</a> /
-    <span>IPC 进程通信</span>
+    <span>IPC 任务通信</span>
   </nav>
 
   <section class="hero">
     <span class="hero-label">HRTOS 架构模块</span>
 
-    <h1>进程通信（IPC）</h1>
+    <h1>任务通信（IPC）</h1>
 
     <p>
       IPC（Inter-Process Communication）定义了任务之间的数据交换与同步机制，
@@ -197,13 +197,14 @@ a{
  <section class="section">
   <h2>模块概述</h2>
   <p>
-    IPC（Inter-Process Communication）模块是 HRTOS 系统中核心的任务协作层。  
+    IPC（Inter-Process Communication）模块是 HRTOS 系统中核心的任务协作层（任务通信层）。  
     它定义了任务之间如何交换数据、如何同步执行以及如何管理共享资源。  
     在实时系统中，IPC不仅仅是数据传输，它直接影响任务响应时间、调度顺序和系统稳定性。
+    
   </p>
 
   <div class="note">
-    核心目标：保证任务协作可预测、同步机制可靠、系统行为确定。
+    核心目标：保证任务协作可预测、同步机制可靠、系统行为确定。IPC = 数据传递 + 状态变化 + 调度触发
   </div>
 
 <p>
@@ -274,13 +275,13 @@ a{
     可通过以下页面深入理解每个 IPC 机制的实现和应用：
   </p>
   <div class="grid">
-    <a class="card" href="communication-flow.html">
+    <a class="card" href="/docs/architecture/ipc/communication-flow.html">
       <h3>通信流程</h3>
       <p>任务间消息传递、调度与同步完整路径解析。</p>
       <span>查看详情 →</span>
     </a>
 
-    <a class="card" href="ipc-model.html">
+    <a class="card" href="/docs/architecture/ipc/ipc-model.html">
       <h3>IPC模型</h3>
       <p>通信结构抽象、系统级组织方式与同步机制。</p>
       <span>查看详情 →</span>
