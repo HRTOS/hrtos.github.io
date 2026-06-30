@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>优先级模型 | HRTOS 架构文档</title>
-<meta name="description" content="HRTOS 调度器优先级模型，定义任务优先级结构、抢占规则与实时调度行为，用于保证系统确定性执行。" />
+<meta name="description" content="HRTOS 调度器优先级模型，定义任务优先级结构、抢占规则与实时调度行为。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -31,10 +31,7 @@ body{
   line-height:1.7;
 }
 
-a{
-  color:inherit;
-  text-decoration:none;
-}
+a{color:inherit;text-decoration:none}
 
 .page{
   width:min(1180px, calc(100% - 40px));
@@ -49,35 +46,16 @@ a{
   color:var(--muted);
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
-}
+.breadcrumb a{color:#7dd3fc}
 
 .hero{
   display:grid;
   gap:16px;
 }
 
-.hero-label{
-  display:inline-flex;
-  width:fit-content;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.22);
-  color:#bae6fd;
-  font-size:14px;
-}
+.hero h1{margin:0;font-size:42px}
 
-.hero h1{
-  margin:0;
-  font-size:42px;
-}
-
-.hero p{
-  margin:0;
-  max-width:860px;
-  color:var(--muted);
-}
+.hero p{margin:0;color:var(--muted);max-width:860px}
 
 .meta{
   display:flex;
@@ -94,23 +72,14 @@ a{
   background:rgba(15,23,42,.4);
 }
 
-.section{
-  display:grid;
-  gap:12px;
-}
+.section{display:grid;gap:12px}
 
-.section h2{
-  margin:0;
-  font-size:22px;
-}
+.section h2{margin:0;font-size:22px}
 
-.section p{
-  margin:0;
-  color:var(--muted);
-}
+.section p{margin:0;color:var(--muted)}
 
 .model{
-  padding:22px;
+  padding:20px;
   border-radius:10px;
   border:1px solid rgba(56,189,248,.18);
   background:rgba(15,23,42,.6);
@@ -133,16 +102,9 @@ a{
   background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
 }
 
-.card h3{
-  margin:0 0 10px;
-  font-size:18px;
-}
+.card h3{margin:0 0 10px;font-size:18px}
 
-.card p{
-  margin:0;
-  color:var(--muted);
-  font-size:14px;
-}
+.card p{margin:0;color:var(--muted);font-size:14px}
 
 .footer{
   text-align:center;
@@ -153,9 +115,7 @@ a{
 }
 
 @media(max-width:900px){
-  .grid{
-    grid-template-columns:1fr;
-  }
+  .grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -172,125 +132,57 @@ a{
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS 调度核心</span>
-
     <h1>优先级模型（Priority Model）</h1>
-
-    <p>
-      优先级模型定义任务在调度器中的执行顺序规则，是实现抢占式实时调度的核心机制，
-      直接决定系统响应时间与确定性。
-    </p>
+    <p>定义任务在调度器中的执行顺序规则，是抢占式实时调度的核心机制。</p>
 
     <div class="meta">
-      <span class="tag">Scheduler Core</span>
-      <span class="tag">Preemptive Model</span>
-      <span class="tag">RTOS Determinism</span>
+      <span class="tag">Preemptive Scheduling</span>
+      <span class="tag">RTOS Core</span>
+      <span class="tag">Deterministic Execution</span>
     </div>
   </section>
 
   <section class="section">
-    <h2>优先级结构模型</h2>
+    <h2>优先级层级模型</h2>
 
     <div class="model">
 
-<p><a href="#lvl-99">Level 99 : 硬实时（中断 / ISR / 内核关键路径）</a></p>
+<p><a href="#lvl-10">Level 10 : 硬实时 / 中断恢复路径</a></p>
 
-<p><a href="#lvl-80-98">Level 80-98 : 系统关键任务（调度控制 / 资源仲裁）</a></p>
+<p><a href="#lvl-9">Level 9  : ISR / 内核关键路径</a></p>
 
-<p><a href="#lvl-50-79">Level 50-79 : 高优先级用户任务（时间敏感执行）</a></p>
+<p><a href="#lvl-8">Level 8  : 高优先级实时任务</a></p>
 
-<p><a href="#lvl-20-49">Level 20-49 : 普通任务（尽力调度）</a></p>
+<p><a href="#lvl-1-7">Level 1-7: 普通任务（可抢占）</a></p>
 
-<p><a href="#lvl-1-19">Level 1-19 : 后台任务（低优先级执行）</a></p>
-
-<p><a href="#lvl-0">Level 0 : 空闲任务（系统空闲状态）</a></p>
+<p><a href="#lvl-0">Level 0  : Idle</a></p>
 
 <br/>
 
-<p><a href="#model-semantic-1">→ 每一层代表：执行优先级</a></p>
-<p><a href="#model-semantic-2">→ 每一层代表：抢占强度</a></p>
-<p><a href="#model-semantic-3">→ 每一层代表：延迟上界</a></p>
+<p>→ 层级含义：执行权 / 抢占强度 / 延迟上界</p>
 
 </div>
-  
-<p>
-这组层级并不是简单的数值分桶，而是把任务重要性、延迟上界和抢占权限绑定在一起的服务等级。越靠上的层级，越意味着更短的响应链和更严格的禁止阻塞规则，因此优先级表本身就是一张时间预算分配图。
-</p>
 
-<p>
-因此，优先级结构模型不应被理解为“越高越好”的线性排名，而应被理解为一张有限的时间资源分配图。高层级名额必须稀缺，因为它们对应的是更短的端到端预算和更严格的干扰控制要求；如果所有任务都被推到高位，优先级模型就会失去分层意义，只剩下频繁抢占和不可解释的抖动。
-</p>
-
-<ul>
-  <li>最高层级通常只留给中断尾部恢复路径和关键控制回路。</li>
-  <li>中间层级用于承接时间敏感但允许短暂等待的任务。</li>
-  <li>低层级更适合统计、维护、日志和后台通信等尽力而为型工作。</li>
-</ul>
-</section>
+    <p>
+      优先级不是排序，而是时间预算分配结构。
+      层级越高，允许的阻塞越少，响应上界越严格。
+    </p>
+  </section>
 
   <section class="section">
-  <h2>优先级语义模型</h2>
+    <h2>语义模型</h2>
 
-  <p>
-    在 HRTOS 中，优先级不仅是“执行顺序标记”，而是一个时间优先级函数：
-  </p>
+    <p>Priority = f(Deadline, Preemption, Blocking, System Load)</p>
 
-  <p>
-    Priority = f(Deadline, Preemption, Blocking, System Load)
-  </p>
+    <p>
+      优先级反映的是“时间约束强度”，而不是任务重要性。
+    </p>
 
-  <p>
-    也就是说，调度行为不是静态排序，而是动态时间决策过程。
-  </p>
+    <p>
+      静态优先级定义设计意图，运行时优先级反映实际执行权。
+    </p>
+  </section>
 
-  <p>
-    同一优先级并不意味着同等执行权，而是共享同一调度竞争域（Scheduling Contention Domain）。
-  </p>
-
-<p>
-工程上还需要区分“静态优先级”和“运行时有效优先级”。前者由设计期设定，后者会受到优先级继承、临界区屏蔽、中断阈值和系统负载影响。只有把这些动态因素纳入模型，优先级语义才与真实执行行为一致。
-</p>
-
-<p>
-优先级语义模型真正要回答的问题是：一个任务在任意时刻“为什么能抢占”或“为什么暂时不能抢占”。有时原因来自它的截止时间，有时来自资源锁继承，有时来自当前仍处于中断尾部的不可重入区域。把这些条件统一表达出来，才能避免配置表和运行时行为出现偏差。
-</p>
-
-<ul>
-  <li>静态优先级定义设计意图，运行时有效优先级反映真实执行权。</li>
-  <li>优先级继承用于修复资源占用造成的局部时间层级破坏。</li>
-  <li>中断阈值和临界区会暂时改变抢占时机，但不应长期改变优先级语义。</li>
-</ul>
-</section>
-<section class="section">
-  <h2>优先级的系统本质</h2>
-
-  <p>
-    在实时系统中，优先级不是分类，而是“抢占力（Preemption Force）”的表达。
-  </p>
-
-  <p>
-    高优先级任务的本质能力是：
-    <strong>打断系统当前执行路径的能力</strong>
-  </p>
-
-  <p>
-    因此优先级模型直接决定系统是否具备可预测性边界。
-  </p>
-
-<p>
-可以把优先级看成任务向系统申请 CPU 的硬约束合同：高优先级不是更“重要”，而是声明其延迟预算更短、被阻塞成本更高。合同一旦被低优先级任务或共享锁破坏，系统的时间层级就会整体失真。
-</p>
-
-<p>
-这种“合同”视角对于工程沟通特别重要。控制算法工程师、中间件工程师和驱动工程师都可能认为自己的任务很关键，但只有那些确实承担最短时间闭环、最强安全要求或最硬恢复时限的任务，才有资格获得更高优先级。否则优先级将不再表达系统真实的时间秩序，而只表达团队之间的主观偏好。
-</p>
-
-<ul>
-  <li>优先级的本质是时间承诺，不是主观重要性排名。</li>
-  <li>高优先级任务必须尽量短小，否则它本身会成为新的抖动源。</li>
-  <li>被提升优先级的任务必须能说清楚自身的预算依据和阻塞容忍度。</li>
-</ul>
-</section>
   <section class="section">
     <h2>核心机制</h2>
 
@@ -298,166 +190,61 @@ a{
 
       <div class="card">
         <h3>抢占机制</h3>
-        <p>高优先级任务可随时中断低优先级任务执行。</p>
+        <p>高优先级任务可中断低优先级任务。</p>
       </div>
 
       <div class="card">
-        <h3>优先级反转控制</h3>
-        <p>通过优先级继承机制避免系统阻塞。</p>
+        <h3>优先级继承</h3>
+        <p>避免锁导致的优先级反转。</p>
       </div>
 
       <div class="card">
-        <h3>实时任务保护</h3>
-        <p>保证高优先级任务延迟上界可控。</p>
+        <h3>实时保护</h3>
+        <p>保证关键任务响应上界。</p>
       </div>
 
       <div class="card">
-        <h3>调度公平性</h3>
-        <p>在同级任务间保持合理执行分配。</p>
+        <h3>同级调度</h3>
+        <p>同优先级任务公平执行。</p>
       </div>
 
     </div>
-  
-<p>
-这四类机制共同作用于同一个目标：既让高优先级任务能够及时抢占，又避免过度抢占把系统推入抖动放大区。优先级继承负责修复锁带来的局部失真，时间片负责在同级任务内维持公平，而实时任务保护则定义了哪些路径绝不允许被拖长。
-</p>
-<p>
-一个常见工程案例是通信协议栈与控制回路共存。协议任务可能计算量更大，但控制任务具有更短的截止时间，因此优先级布局必须围绕截止时间而不是 CPU 占用率来设计，否则系统会在高负载时出现看似偶发的控制抖动。
-</p>
-
-<p>
-从机制层面看，优先级模型的真正难点不是普通抢占，而是“何时允许例外”。优先级继承、优先级天花板、同级时间片和中断屏蔽都属于例外机制，它们必须被严格限制在可解释边界内。若例外过多，系统最终就会拥有一张优先级表和另一套真实执行秩序，两者完全脱钩。
-</p>
-
-<ul>
-  <li>优先级继承应该只在资源持有期间生效，结束后及时恢复。</li>
-  <li>同级公平不能伤害高优先级闭环任务的响应上界。</li>
-  <li>中断与任务优先级需要共同设计，防止入口和线程世界出现双重失配。</li>
-</ul>
-</section>
+  </section>
 
   <section class="section">
-  <h2>设计目标</h2>
+    <h2>设计目标</h2>
 
-  <p>
-    HRTOS 的设计目标定义的是系统行为边界，而不是功能特性。
-    所有执行行为必须在以下约束条件下成立：
-  </p>
+    <p>
+      可预测性 / 可抢占性 / 延迟上界控制 / 时间确定性
+    </p>
 
-  <p>
-    <strong>可预测性</strong>：任意任务执行路径在运行前可分析<br/>
-    <strong>实时响应</strong>：中断到任务执行的延迟具有可证明上界<br/>
-    <strong>抢占确定性</strong>：高优先级任务不会被语义级阻断<br/>
-    <strong>延迟上界控制</strong>：系统调度开销存在稳定 worst-case bound
-  </p>
+    <p>
+      高优先级必须稀缺，否则系统失去时间分层意义。
+    </p>
 
-  <p>
-    该目标体系定义了：
-    <strong>RTOS 与非实时系统的本质分界条件</strong>
-  </p>
+    <p>
+      每个高优先级任务必须提供明确截止时间与阻塞上界依据。
+    </p>
+  </section>
 
-<p>
-在安全关键项目中，优先级设计通常会和任务关键度、故障后果等级以及中断级别一起评审。这样做的目的不是让优先级表更复杂，而是保证每一个高优先级声明都能在工程上找到明确的时序依据。
-</p>
+  <section class="section">
+    <h2>系统关联</h2>
 
-<p>
-优先级设计还应避免“所有任务都想高优先级”的配置通胀。真正健康的模型会让高优先级层级保持稀缺，只把最短截止时间和最强控制闭环需求的任务放进去。
-</p>
+    <p>
+      Scheduler → Interrupt → Kernel 三者共同构成时间执行链。
+    </p>
 
-<p>
-当系统负载上升时，优先级模型能否保持原有层级语义，比单次抢占速度更重要。一个频繁失真的优先级表，会让所有后续 timing analysis 失去依据。
-</p>
+    <p>
+      优先级模型必须同时与中断优先级、锁策略和调度模型一致。
+    </p>
 
-<p>
-设计目标还要求优先级表可被长期维护。也就是说，随着产品功能增长，团队仍能用统一标准判断新任务应该落在哪一层，是否需要拆分为高低两部分，是否必须通过 IPC 或延迟处理把重负载迁出高优先级区。没有这套方法，优先级配置往往会在数个版本后失去一致性。
-</p>
+    <p>
+      否则“优先级配置”与“实际执行顺序”会发生偏移。
+    </p>
+  </section>
 
-<ul>
-  <li>高优先级层应保持稀缺并可审计，避免配置通胀。</li>
-  <li>每次新增任务都应附带截止时间、阻塞上界和抢占理由。</li>
-  <li>优先级设计应能支撑 tracing 结果解释，而不是只服务于配置阶段。</li>
-</ul>
-</section>
-<section class="section">
-  <h2>系统关联模型</h2>
-
-  <p>
-    优先级模型与以下系统模块强耦合：
-  </p>
-
-  <p>
-    <a href="/docs/architecture/scheduler/index.html"
-       style="color:#38bdf8; text-decoration:underline;">
-      调度器模型
-    </a>
-
-    <span style="color:#64748b;"> → </span>
-
-    <a href="/docs/architecture/interrupt/index.html"
-       style="color:#38bdf8; text-decoration:underline;">
-      中断系统
-    </a>
-
-    <span style="color:#64748b;"> → </span>
-
-    <a href="/docs/architecture/kernel/index.html"
-       style="color:#38bdf8; text-decoration:underline;">
-      内核控制层
-    </a>
-  </p>
-
-<p>
-从系统关系看，优先级模型位于中断入口和内核执行之间：中断负责制造就绪事件，优先级模型负责解释这些事件的时间意义，内核负责把解释结果变成实际抢占。三者任何一处脱节，都会让“高优先级”只停留在配置表上。
-</p>
-
-<p>
-在多中断源系统中，还需要确保任务优先级与中断优先级保持一致的时间语义。例如某任务依赖的中断如果被配置得过低，即使任务本身级别很高，它获得 CPU 的时刻仍可能被入口延迟拉长。
-</p>
-
-<p>
-换句话说，优先级表必须同时被配置工具、代码实现和测试场景共享，否则不同团队对“谁应该先运行”的理解会逐渐分裂。
-</p>
-
-<p>
-模块关系页还揭示了一个重要事实：优先级问题往往不是孤立故障，而是跨层故障。中断入口配置过低、内核临界区过长、IPC 持锁时间失控，都可能让表面上的优先级设置被掏空。因此优先级模型既要有配置视角，也要有执行链视角，才能真正指导调试和优化。
-</p>
-
-<ul>
-  <li>优先级模型需要和中断阈值、锁策略、调度策略联动评审。</li>
-  <li>高优先级任务的入口路径应尽量短，避免被外围模块拖慢。</li>
-  <li>优先级验证应覆盖中断、IPC 和资源竞争的组合场景，而不是只看任务列表。</li>
-</ul>
-
-<p>
-工程上还应特别警惕“表面优先级正确、实际抢占语义错误”的情形。最典型的例子是高优先级任务虽然配置正确，但其依赖的中断被放在较低层级，或者它频繁等待某个低优先级任务释放共享对象。此时优先级表并没有错，错的是围绕它的入口和资源关系没有共同遵守同一套时间层级。
-</p>
-
-<p>
-因此，优先级模型最好配套一张“依赖关系图”，把任务、中断、锁和关键通信对象一起纳入。这样在审查某个任务是否真的应该更高优先级时，团队看到的不只是它的函数逻辑，而是它整条进入 CPU 的路径是否配得上那个层级。只有路径和等级同时匹配，优先级表才具有真实意义。
-</p>
-
-<ul>
-  <li>优先级应与依赖路径共同审查，而不是只看任务代码重要性。</li>
-  <li>中断层级、锁策略和任务等级必须共同表达同一套时间秩序。</li>
-  <li>越高的优先级越要求其依赖链更短、更少阻塞、更容易解释。</li>
-</ul>
-
-<p>
-如果把优先级模型作为长期资产来维护，那么每一次配置调整都不应只是改一个数字，而应同步更新其时序依据、依赖路径和验证样例。只有这样，优先级才会始终表达系统真实的时间层级，而不会在多年演进后沦为难以解释的历史遗留表。
-</p>
-
-<ul>
-  <li>优先级变更应附带理由、预算变化和验证结果。</li>
-  <li>越关键的等级越需要稳定，不宜频繁承载临时性需求。</li>
-  <li>一张可解释的优先级表，本身就是实时系统的重要设计成果。</li>
-</ul>
-
-<p>
-也正因为如此，优先级模型的成熟度，往往能直接反映一个 RTOS 项目对时间秩序的掌控程度。
-</p>
-</section>
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的调度优先级模型。
+    © 2017–2026 HRTOS. Priority Model.
   </footer>
 
 </main>

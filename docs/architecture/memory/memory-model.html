@@ -186,172 +186,76 @@ a{
     <h1>内存模型（Memory Model）</h1>
 
     <p>
-      内存模型定义HRTOS在运行时如何管理任务、内核与资源之间的内存访问关系，
-      是保证实时性与确定性的关键基础。
+      内存模型定义任务、内核与资源之间的运行时内存访问结构。
+      用于约束运行时访问行为。
     </p>
 
     <div class="meta">
-      <span class="tag">Memory Core</span>
-      <span class="tag">Deterministic System</span>
-      <span class="tag">RTOS Architecture</span>
+      <span class="tag">Memory Model</span>
+      <span class="tag">Runtime Constraint</span>
+      <span class="tag">Kernel Interface</span>
     </div>
   </section>
-
-  <section class="section">
-    <h2>系统内存模型</h2>
-
-   <div class="model">
-  [ 系统内存模型 ]
-
-  <a href="/docs/modules/memory/stack-management.html">任务空间（Task Space）</a>
-  <a href="/docs/modules/memory/stack-management.html">- 任务A栈（Task A Stack）</a>
-  <a href="/docs/modules/memory/stack-management.html">- 任务B栈（Task B Stack）</a>
-  <a href="/docs/modules/memory/stack-management.html">- 任务C栈（Task C Stack）</a>
-
-  <a href="/docs/architecture/kernel/index.html">内核空间（Kernel Space）</a>
-  <a href="/docs/architecture/scheduler/index.html">- 调度器状态（Scheduler State）</a>
-  <a href="/docs/architecture/interrupt/index.html">- 中断上下文（Interrupt Context）</a>
-  <a href="/docs/architecture/kernel/kernel-structure.html">- 系统控制块（System Control Block）</a>
-
-  <a href="/docs/architecture/ipc/index.html">共享资源区（Shared Resource）</a>
-  <a href="/docs/modules/ipc/message-queue.html">- IPC缓冲区（IPC Buffer）</a>
-  <a href="/docs/modules/ipc/message-queue.html">- 消息队列（Message Queue）</a>
-  <a href="/docs/modules/ipc/semaphore.html">- 信号量对象（Semaphore Object）</a>
-
-  <a href="/docs/modules/memory/allocation.html">静态区域（Static Region）</a>
-  <a href="/docs/modules/memory/allocation.html">- 全局变量（Global Variables）</a>
-  <a href="/docs/modules/memory/allocation.html">- 系统配置（System Config）</a>
-
-  <a href="/docs/modules/memory/allocation.html">堆区域（Heap Region）</a>
-  <a href="/docs/modules/memory/allocation.html">- 动态分配池（Dynamic Allocation Pool）</a>
-  <a href="/docs/modules/memory/allocation.html">- 碎片控制区（Fragment Control Area）</a>
-</div>
-  
-<p>
-这张系统内存图的价值，在于把运行时所有关键对象都放进同一视野：任务栈承载执行现场，内核区承载调度状态，共享区承载跨任务协作，而静态区与堆区则分别承载稳定配置和受控弹性。只有整体看清这些关系，访问规则才不会沦为空洞口号。
-</p>
-
-<p>
-系统内存模型真正回答的是“对象如何在时间上生存”。任务栈随调度切换而活跃，内核控制块随系统全程存在，共享区在对象生产和消费之间传递状态，堆区则承载有限的弹性分配。理解这些生命周期，才能判断一个对象是否适合进入实时主路径，是否会在高负载下制造隐藏等待。
-</p>
-
-<ul>
-  <li>任务空间承载私有现场，必须保证切换和递归深度都可分析。</li>
-  <li>内核空间承载全局控制状态，必须避免被任务直接篡改。</li>
-  <li>共享区承载跨任务协作，必须配合同步语义而不是裸访问。</li>
-</ul>
-</section>
 <section class="section">
-  <h2>内存与内核的关系</h2>
+  <h2>系统内存模型定义</h2>
 
   <p>
-    内存模型直接约束 Kernel 的执行行为，包括调度、上下文切换与中断响应。
+    HRTOS 内存模型描述系统在运行时对任务、内核与资源的统一访问规则。
+    它不是静态布局定义，而是运行时行为约束集合。
   </p>
 
   <p>
-    Kernel 不仅使用内存执行任务，还通过内存隔离机制保证系统不会发生非确定性行为。
+    内存模型的核心作用是将“对象存在”转化为“对象如何被访问”，
+    并对访问路径施加确定性约束。
   </p>
 
   <p>
-    👉 Memory 是 Kernel 可执行性的边界条件
+    在实时系统中，内存访问本身即参与调度决策，因此必须纳入系统级设计。
   </p>
-
-<p>
-每一次系统调用、任务切换和中断进入，实际上都伴随一次权限与地址可见性的变化。内核之所以能够成为控制中心，是因为它掌握了这些变化的唯一合法入口，从而把“谁能访问哪里”变成可验证的系统规则。
-</p>
-
-<p>
-内存与内核的关系还体现在“恢复语义”上。只有当任务栈、控制块、等待对象和中断保存区都处于一致状态时，内核才有资格让任务继续执行。也就是说，内核不是简单“使用内存”，而是在每次状态迁移前验证这组内存对象是否仍然构成可恢复执行域。
-</p>
-
-<ul>
-  <li>任务切换依赖栈帧和保存区的一致性。</li>
-  <li>中断恢复依赖上下文镜像和返回地址的稳定性。</li>
-  <li>同步对象恢复依赖等待队列和共享缓冲区元数据的闭合状态。</li>
-</ul>
-</section>
-  <section class="section">
-    <h2>核心设计逻辑</h2>
-    <p>
-      内存模型的核心目标不是“最大利用率”，而是“访问可预测性与隔离性”。
-    </p>
-  
-<p>
-核心设计逻辑还应同时回答三个问题：对象由谁拥有、对象存活多久、访问它的时间成本是否有界。只要其中任意一个问题缺乏清晰答案，内存模型就会在系统高负载时暴露出隐性不确定性。
-</p>
-
-<p>
-进一步说，内存模型的设计逻辑必须天然兼容 tracing 和审计。对象所有权需要能被追踪，对象生命周期需要能被验证，访问成本需要能与调度预算对齐。如果一个对象只能“经验上认为安全”，却无法说明它的创建、迁移和释放何时发生，那么它通常不适合存在于硬实时关键链路。
-</p>
-
-<ul>
-  <li>所有权不清的对象容易演化为竞态条件和无界等待源。</li>
-  <li>生命周期不清的对象容易演化为悬空引用和恢复失败风险。</li>
-  <li>成本不清的对象容易演化为负载上升后的延迟尾部放大器。</li>
-</ul>
 </section>
 
 <section class="section">
-  <h2>内存访问规则（Memory Access Rules）</h2>
+  <h2>内存访问语义</h2>
 
   <p>
-    HRTOS 内存模型不仅定义结构，还定义访问约束。
-    所有运行行为必须遵循以下规则：
+    每一类内存区域都对应不同的访问语义与约束等级：
   </p>
+
+  <ul>
+    <li>Task Space：仅允许任务私有访问，由调度器切换控制</li>
+    <li>Kernel Space：系统唯一控制区，仅通过内核入口访问</li>
+    <li>Shared Memory：通过 IPC 机制进行受控访问</li>
+    <li>Heap Region：动态分配区，访问时间不可变但必须受限</li>
+  </ul>
 
   <p>
-    1. Task Space 不能直接访问 Kernel Space<br/>
-    2. Kernel 可访问所有区域，但不受任务调用<br/>
-    3. Shared Memory 必须通过 IPC 控制访问<br/>
-    4. Heap 分配必须保证时间上界可分析（Bounded Allocation）
+    这些语义共同构成系统“可执行边界”，用于约束非法路径传播。
   </p>
-
-  <p>
-    👉 任何违反访问规则的行为都会破坏系统确定性（Determinism）
-  </p>
-
-<p>
-在工程实现中，这些规则最好被封装为统一网关，而不是散落在各个调用点。例如共享内存只能经由 IPC 对象交互，堆分配只能在非关键路径进行，内核状态只能通过系统调用访问。统一入口越少，证明系统正确性的工作量越小。
-</p>
-
-<p>
-访问规则的核心思想不是“限制开发自由”，而是把所有关键访问行为纳入可重复验证的路径。只要共享区可以被任意任务直接修改，或堆对象可以在关键 ISR 中临时创建，系统就会把最难审计的行为放进最敏感的时间路径，最终导致设计文档与真实执行完全脱节。
-</p>
-
-<ul>
-  <li>共享区访问应通过同步对象或消息对象完成，而不是隐式共享。</li>
-  <li>关键路径应优先使用静态对象或固定容量对象，避免动态申请破坏上界。</li>
-  <li>内核状态访问应由统一入口保护，减少越权修改和半完成状态暴露。</li>
-</ul>
 </section>
 
-  <section class="section">
-    <h2>关键子系统</h2>
+<section class="section">
+  <h2>运行时约束模型</h2>
 
-    <div class="grid">
+  <p>
+    内存模型同时定义运行时约束条件，包括访问权限、生命周期与时序影响。
+  </p>
 
-      <div class="card">
-        <h3>任务内存模型</h3>
-        <p>每个任务拥有独立栈空间，避免执行冲突。</p>
-      </div>
+  <p>
+    所有对象必须满足以下条件才能进入实时路径：
+  </p>
 
-      <div class="card">
-        <h3>内核内存模型</h3>
-        <p>内核区与用户任务严格隔离，保证系统安全性。</p>
-      </div>
+  <ul>
+    <li>访问路径可追踪</li>
+    <li>生命周期可预测</li>
+    <li>分配与释放成本有界</li>
+    <li>跨任务访问必须显式同步</li>
+  </ul>
 
-      <div class="card">
-        <h3>共享内存模型</h3>
-        <p>用于 IPC 通信与任务间数据交换。</p>
-      </div>
+  <p>
+    该模型用于确保系统在高负载情况下仍保持确定性行为。
+  </p>
+</section>
 
-      <div class="card">
-        <h3>动态内存模型</h3>
-        <p>控制堆分配策略，避免不可预测延迟。</p>
-      </div>
-
-    </div>
-  </section>
 <section class="section">
   <h2>相关阅读</h2>
 
@@ -389,91 +293,9 @@ a{
 
     </div>
 
-<p>
-这四类子系统并不是孤立存在。任务栈决定切换安全，内核区决定控制语义，共享区决定协作边界，动态区决定弹性能力。真正的设计难点在于控制它们之间的交叉影响，例如通信高峰会不会挤压控制任务栈邻近区域，堆碎片会不会反向拖慢共享对象申请路径。
-</p>
 
-<ul>
-  <li>任务内存模型强调私有上下文不可互相污染。</li>
-  <li>内核内存模型强调关键状态必须拥有最高一致性要求。</li>
-  <li>共享与动态模型强调灵活性不能以破坏主路径上界为代价。</li>
-</ul>
   </section>
-  <section class="section">
-    <h2>设计目标</h2>
-    <p>
-      可预测性 / 隔离性 / 最小碎片化 / 实时访问延迟控制
-    </p>
   
-<p>
-设计目标中的“最小碎片化”并不是追求视觉上的整洁，而是为了避免分配路径复杂度随运行时间增长。对实时系统而言，O(1) 或者严格受限的分配成本，往往比绝对空间利用率更重要。
-</p>
-
-<p>
-因此，设计目标通常会直接转化为对象策略选择：对关键路径优先使用静态区和固定块内存池，对中低优先级柔性逻辑保留有限堆能力，对共享缓冲区采用明确生命周期管理。这样做不是保守，而是在保证扩展性的同时，明确哪些内存行为可以参与实时证明，哪些只能留在非关键域。
-</p>
-
-<ul>
-  <li>可预测性要求内存路径能与调度预算直接对齐。</li>
-  <li>隔离性要求错误和竞争不要跨区域快速扩散。</li>
-  <li>碎片控制要求系统长期运行后仍保持稳定访问成本。</li>
-</ul>
-</section>
-
-<section class="section">
-  <h2>系统意义</h2>
-
-  <p>
-    内存模型在 HRTOS 中不是资源管理问题，而是系统正确性的基础假设。
-  </p>
-
-  <p>
-    如果内存访问不可预测，则调度不可预测；
-    如果调度不可预测，则实时系统失效。
-  </p>
-
-  <p>
-    因此：
-    <strong>Memory Model = RTOS 可成立的前提条件</strong>
-  </p>
-
-<p>
-一个典型案例是工业网关同时运行协议栈和控制任务。若协议缓冲区与控制任务共享同一类动态堆，通信高峰就可能把控制路径的分配时间拉长；而一旦采用分区内存池和清晰的访问网关，系统就更容易同时保证吞吐和实时性。
-</p>
-
-<p>
-系统意义页最终强调的是：内存模型不是后台基础设施，而是 RTOS 证明链的一部分。调度理论、中断模型和 IPC 机制都默认存在一个稳定可解释的对象世界；只要内存世界开始失控，这些上层模型即使逻辑完整，也会因为底层访问时间和所有权语义漂移而逐步失效。
-</p>
-
-<ul>
-  <li>内存模型稳定时，其他模块的 timing analysis 才有现实基础。</li>
-  <li>内存模型失控时，最先受伤的通常是高优先级恢复路径和共享对象一致性。</li>
-  <li>系统长期稳定运行的前提，往往不是更快分配，而是更少意外。</li>
-</ul>
-
-<p>
-如果把内存模型放进完整系统关系里看，它实际上承担了“把时间语义落到物理对象上”的任务。调度器负责决定谁该运行，中断层负责决定何时进入，IPC 负责决定谁因谁被唤醒，而内存模型则负责保证这些决定对应的栈、缓冲区、控制块和共享对象都存在于一个可访问、可恢复、可隔离的现实空间里。
-</p>
-
-<p>
-这也是为什么成熟 RTOS 很少把内存设计视为单独子模块。内存模型一旦改变，调度预算、上下文恢复、共享资源竞争和中断尾部行为都可能随之变化。把这些影响提前写进模型页，团队在做功能扩展和平台迁移时就更容易知道哪些地方必须重新验证，而不是仅凭功能是否通过来判断系统是否仍然稳定。
-</p>
-
-<ul>
-  <li>内存模型是调度、中断和 IPC 的共同底板，而不是独立附件。</li>
-  <li>任何平台迁移都应重新审视对象放置、访问权限和共享区竞争模式。</li>
-  <li>对象世界越稳定，系统对时序异常的解释能力就越强。</li>
-</ul>
-
-<p>
-所以，一份高质量的内存模型文档，最终价值不在于把区域画得多完整，而在于它能让团队持续回答同一个问题：当前对象世界，是否仍然足以支撑 RTOS 对时间、恢复和隔离的全部承诺。
-</p>
-
-<p>
-只要这个问题还能被稳定回答，系统的实时基础就仍然站得住。
-</p>
-</section>
-
 
   <footer class="footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的内存模型体系。

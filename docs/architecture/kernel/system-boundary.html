@@ -4,88 +4,128 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>系统边界（System Boundary）| HRTOS Kernel</title>
+<title>系统边界（System Boundary）| HRTOS Architecture</title>
 <meta name="description" content="定义HRTOS内核与外部世界的边界模型：调度域、时间域、资源域与不确定性隔离">
 
-<meta name="page-role" content="architecture">
-<meta name="semantic-node" content="system-boundary">
-
-<link rel="stylesheet" href="/global.css">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-  line-height: 1.6;
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
 }
 
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
+a{
+  color:inherit;
+  text-decoration:none;
 }
 
-.nav a {
-  color: #9fb0c3;
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:40px;
 }
 
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
 }
 
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
+.breadcrumb a{
+  color:#7dd3fc;
 }
 
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
+.hero{
+  display:grid;
+  gap:16px;
 }
 
-.card-core {
-  border-left: 3px solid #4da3ff;
-  background: #0f1722;
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.22);
+  color:#bae6fd;
+  font-size:14px;
 }
 
-.card-boundary {
-  border-left: 3px solid #f59e0b;
+.hero h1{
+  margin:0;
+  font-size:42px;
 }
 
-.card-warning {
-  border-left: 3px solid #ef4444;
+.hero p{
+  margin:0;
+  max-width:820px;
+  color:var(--muted);
 }
 
-.card-meta {
-  border-left: 3px solid #9fb0c3;
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
 }
 
-h2 {
-  font-size: 20px;
-  color: #cfe3ff;
-  margin-bottom: 10px;
+.card{
+  display:grid;
+  gap:12px;
+  padding:24px 22px;
+  min-height:160px;
+  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  transition:.22s ease;
 }
 
-.en {
-  color: #9fb0c3;
-  font-size: 14px;
-  margin-top: 6px;
+.card:hover{
+  transform:translateY(-6px);
+  border-color:rgba(56,189,248,.38);
+}
+
+.card h3{
+  margin:0;
+  font-size:18px;
+}
+
+.card p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.section{
+  display:grid;
+  gap:12px;
+}
+
+.section h2{
+  margin:0;
+  font-size:22px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
 }
 
 .footer{
@@ -95,311 +135,120 @@ h2 {
   color:#8ea3be;
   font-size:14px;
 }
+
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 
-<body>
+<body data-header="docs">
 
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
-    <a href="/index.html">首页</a>
-    <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html">System</a>
-    <a href="/docs/index.html" style="color:#cfe3ff;">Docs</a>
-  </div>
-</div>
+<main class="page">
 
-<div class="container">
+  <nav class="breadcrumb">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/architecture/index.html">系统架构</a> /
+    <span>系统边界</span>
+  </nav>
 
-<h1>系统边界（System Boundary）</h1>
-<div class="sub">
-Kernel 的本质不是执行控制器，而是“可证明系统的边界生成器”
-</div>
+  <!-- HERO -->
+  <section class="hero">
+    <span class="hero-label">HRTOS Architecture Model</span>
+    <h1>系统边界（System Boundary Layer）</h1>
+    <p>定义 Kernel 与外部环境之间的可计算分割结构，用于约束实时系统的可执行范围。</p>
+  </section>
 
-<!-- core definition -->
-<div class="card card-core">
-<h2>1. 核心定义</h2>
 
-<p>
-系统边界（System Boundary）定义的是：内核系统与外部世界之间的可计算分割条件。
-</p>
 
-<p>
-形式化表达为：
-</p>
 
-<p>
-System = Kernel + Boundary + Environment
-</p>
 
-<p>
-其中：
-<b>Boundary 决定 Kernel 是否“可成立”</b>
-</p>
+<section class="section">
+  <h2>1. 边界模型定义</h2>
 
-<div class="en">
-System boundary defines the computable separation between kernel and environment, determining system validity.
-</div>
+  <p>系统边界定义 Kernel 与外部世界之间的可计算约束空间。</p>
 
-<p>
-边界不是抽象修辞，而是系统能够被建模的前提。只要存在无法归入 Boundary 的执行路径，Kernel 对系统状态的控制就不再闭合，所谓“实时性”也就失去了统一判定标准。
-</p>
-</div>
-
-<!-- mathematical model -->
-<div class="card card-boundary">
-<h2>2. 边界的数学抽象</h2>
-
-<p>
-系统边界可以抽象为约束集合：
-</p>
-
-<p>
-B = {Tb, Rb, Ib}
-</p>
-
-<p>
-Tb = 时间约束边界（Timing Bound）<br/>
-Rb = 资源约束边界（Resource Bound）<br/>
-Ib = 不确定性边界（Uncertainty Bound）
-</p>
-
-<p>
-系统成立条件：
-</p>
-
-<p>
-∀ event ∈ System → event ∈ B
-</p>
-
-<p>
-👉 超出 B 的行为 = 非RTOS行为
-</p>
-
-<p>
-Tb、Rb、Ib 可以分别映射到截止时间、资源容量和不确定性来源清单。工程上做架构审查时，往往需要为每一项建立量化上界，否则边界集合只能停留在概念层，无法进入可验证设计流程。
-</p>
-</div>
-
-<!-- kernel role -->
-<div class="card card-core">
-<h2>3. Kernel 的真实角色（关键转折点）</h2>
-<p>
-在RTOS语义中，Kernel不是系统组件，而是“边界执行器”。
-</p>
-<p>
-传统 OS：
-</p>
-
-<p>
-Kernel = 调度 + 管理 + 抽象
-</p>
-
-<p>
-HRTOS：
-</p>
-
-<p>
-Kernel = Boundary Enforcement Engine（边界执行器）
-</p>
-
-<p>
-它的任务不是“运行系统”，而是：
-</p>
-
-<p>
-👉 防止系统行为突破可分析空间
-</p>
-
-<p>
-因此 Kernel 的首要职责不是提供更多服务，而是拒绝那些会破坏可分析空间的行为，例如无界阻塞、不可控动态分配和越权访问。它像一道主动收敛的控制闸门，而不是被动承载所有功能的容器。
-</p>
-</div>
-<section class="card card-meta">
-<h2>系统关系模型</h2>
-
-<p>
-Kernel ≠ System  
-Scheduler ≠ Control  
-Boundary = System Validity Condition
-</p>
-
-<p>
-Scheduler 在 Boundary 内运行，而 Kernel 负责维持 Boundary 不被突破。
-</p>
-
-<p>
-这里最重要的区分是 Boundary 负责定义系统成立条件，Scheduler 只是在成立条件内进行最优选择。把这两个角色混为一谈，往往会把策略问题误当成理论问题，把边界问题误当成实现细节。
-</p>
-</section>
-<!-- scheduling domain -->
-<div class="card card-boundary">
-<h2>4. 调度域 = 时间边界投影</h2>
-
-<p>
-Scheduling Domain 是时间边界在 CPU 上的投影：
-</p>
-
-<p>
-SD ⊆ Time × Tasks
-</p>
-
-<p>
-调度器只能在 SD 内做决策：
-</p>
-
-<p>
-✔ 不允许未知执行路径<br/>
-✔ 不允许时间不可界定行为
-</p>
-
-<p>
-否则：
-</p>
-
-<p>
-❌ Determinism collapse（确定性崩塌）
-</p>
-
-<p>
-调度域可以理解为 CPU 上被 Boundary 裁剪后的合法执行区域。只有进入该区域的任务、ISR 和共享对象，才配得上进入可调度性分析；域外行为即使偶然运行成功，也不属于可证明系统的一部分。
-</p>
-</div>
-
-<!-- irreversibility -->
-<div class="card card-boundary">
-<h2>5. 不可逆性（Irreversibility）</h2>
-
-<p>
-系统边界具有一个关键特性：
-</p>
-
-<p>
-👉 一旦突破，无法恢复可证明性
-</p>
-
-<p>
-例如：
-</p>
-
-<p>
-• 动态内存导致时间漂移<br/>
-• cache miss 引入非确定路径<br/>
-• 中断嵌套破坏执行序列
-</p>
-
-<p>
-这些不是 bug，而是：
-<b>边界不可逆破坏</b>
-</p>
-
-<p>
-不可逆性强调的是证明失效，而不是程序崩溃。系统可能继续运行，但一旦最坏情况模型被破坏，任何实时保证都失去法律效力和工程意义，后续观测到的“正常运行”只能被视作偶然样本。
-</p>
-</div>
-
-<!-- isolation -->
-<div class="card card-boundary">
-<h2>6. 隔离机制 = 边界实现方式</h2>
-
-<p>
-系统边界通过以下机制实现：
-</p>
-
-<p>
-• Time isolation（时间隔离）<br/>
-• Memory isolation（内存隔离）<br/>
-• Interrupt gating（中断门控）<br/>
-• Priority ceiling（优先级封顶）
-</p>
-
-<p>
-目标不是“安全”，而是：
-<b>控制系统可分析空间</b>
-</p>
-
-<p>
-因此隔离机制的价值在于把复杂系统切成可分别证明的子空间，例如用 MPU 约束地址边界、用中断门控限制异步入口、用优先级天花板限制阻塞传播深度。隔离做得越清晰，边界条件越容易写成明确规则。
-</p>
-</div>
-
-<!-- failure -->
-<div class="card card-warning">
-<h2>7. 边界破坏 = RTOS → GPOS 退化</h2>
-
-<p>
-当边界失效时：
-</p>
-
-<p>
-• WCET 不再成立<br/>
-• 调度理论失效<br/>
-• 延迟无法界定<br/>
-• 系统变为“概率系统”
-</p>
-
-<p>
-本质变化：
-</p>
-
-<p>
-RTOS → GPOS = 从确定性系统 → 非确定性系统
-</p>
-</div>
-
-<!-- system meaning -->
-<div class="card card-core">
-<h2>8. 系统级意义</h2>
-
-<p>
-系统边界决定：
-</p>
-
-<p>
-✔ 系统是否可证明  
-✔ 系统是否属于 RTOS  
-✔ 系统是否可做 worst-case analysis
-</p>
-
-<p>
-没有边界 → 没有 RTOS
-</p>
-
-<p>
-对于硬实时项目，系统边界往往也是需求边界。只要需求方提出的功能会突破既有边界，团队就必须同步调整任务模型、资源预算和验证方法，而不是仅靠局部编码补丁去弥补架构前提的变化。
-</p>
-</div>
-
-<!-- meta -->
-<div class="card card-meta">
-<h2>语义总结</h2>
-
-<p>
-系统边界不是结构设计，而是：
-<b>RTOS 是否作为数学系统成立的必要条件</b>
-</p>
-
-<div class="en">
-System boundary is not architecture, but the necessary condition for RTOS to exist as a provable system.
-</div>
-</div>
-<!-- related links -->
-<div class="card card-meta">
-  <h2>相关架构链接</h2>
+  <p><b>B = {Tb, Rb, Ib}</b></p>
 
   <p>
-    <a href="/docs/architecture/kernel/kernel-flow.html">内核执行流程</a> ·
-    <a href="/docs/architecture/scheduler/index.html">调度器模型</a> ·
-    <a href="/docs/architecture/interrupt/index.html">中断架构</a> ·
-    <a href="/docs/architecture/ipc/index.html">IPC通信模型</a>
+    Tb = 时间约束<br/>
+    Rb = 资源约束<br/>
+    Ib = 不确定性约束
   </p>
-</div>
 </section>
-<footer class="footer">
-  © 2017–2026 HRTOS. 面向嵌入式实时系统的内核结构模型。
-</footer>
-</div>
 
+<section class="section">
+  <h2>2. Kernel 在边界中的角色</h2>
+
+  <p><b>Kernel = 边界执行单元</b></p>
+
+  <p>负责保证所有执行行为符合系统边界约束。</p>
+
+  <p><b>禁止：</b>无界阻塞 / 不确定动态分配 / 越权访问</p>
+</section>
+
+
+
+  <!-- 4 GRID -->
+    <section class="section">
+      <h2>3. 系统域结构</h2>
+
+      <div class="grid">
+
+        <div class="card">
+          <h3>调度域</h3>
+          <p>已注册任务 + ready/running 状态 + 优先级约束集合</p>
+        </div>
+
+        <div class="card">
+          <h3>时间域</h3>
+          <p>任务执行必须满足确定性时间约束（Tb）</p>
+        </div>
+
+        <div class="card">
+          <h3>资源域</h3>
+          <p>内存、CPU、外设资源的可控分配边界（Rb）</p>
+        </div>
+
+        <div class="card">
+          <h3>不确定性域</h3>
+          <p>对外部事件扰动的隔离与约束（Ib）</p>
+        </div>
+
+      </div>
+    </section>
+
+  <!-- 5 -->
+<section class="section">
+  <h2>4. 隔离机制</h2>
+
+  <p>
+    时间隔离 / 内存隔离 / 中断门控 / 优先级封顶
+  </p>
+</section>
+
+  <!-- 6 -->
+<section class="section">
+  <h2>5. 系统意义</h2>
+
+  <p>
+    没有系统边界，就没有可预测的 RTOS 行为。
+  </p>
+</section>
+
+  <!-- 7 -->
+ <section class="section">
+  <h2>6. 语义总结</h2>
+
+  <p><b>系统边界 = Kernel 可执行约束的上界</b></p>
+</section>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. 面向嵌入式实时系统的内核结构模型。
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
 </body>
 </html>

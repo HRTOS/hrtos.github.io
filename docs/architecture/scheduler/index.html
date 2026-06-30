@@ -49,9 +49,7 @@ a{
   color:var(--muted);
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
-}
+.breadcrumb a{ color:#7dd3fc; }
 
 .hero{
   display:grid;
@@ -159,9 +157,7 @@ a{
 }
 
 @media(max-width:900px){
-  .grid{
-    grid-template-columns:1fr;
-  }
+  .grid{ grid-template-columns:1fr; }
 }
 </style>
 </head>
@@ -178,45 +174,37 @@ a{
 
   <section class="hero">
     <span class="hero-label">HRTOS 架构模块</span>
-
     <h1>调度器（Scheduler）</h1>
 
     <p>
-      调度器负责决定系统中哪个任务在何时执行，是实时操作系统中实现确定性行为的核心组件。
+      调度器负责决定系统中哪个任务在何时执行，是实时系统时间控制的核心组件。
     </p>
 
     <div class="meta">
-  <span class="tag">Temporal Control System</span>
-  <span class="tag">Execution Decision Layer</span>
-  <span class="tag">Deterministic Scheduling Core</span>
-  <span class="tag">Interrupt → Kernel → Execution Path</span>
-</div>
+      <span class="tag">Time Control Core</span>
+      <span class="tag">Execution Decision Layer</span>
+      <span class="tag">Deterministic Scheduling</span>
+    </div>
   </section>
 
   <section class="section">
     <h2>模块概述</h2>
+
     <p>
-      调度器通过优先级体系、调度策略与可证明模型共同构成系统时间分配机制，
-      是实时系统确定性的核心来源。
+      调度器将任务集、时间约束与资源状态统一映射为执行决策，是系统确定性的关键来源。
     </p>
-  
-<p>
-从 RTOS 架构角度看，调度器不是一个“挑任务运行”的普通组件，而是把任务集、时间预算和资源状态折叠成单一执行选择的决策器。它的输出只有一个，却会影响整个系统后续所有状态迁移。
-</p>
-<p>
-因此调度器评价标准也不同于通用系统。这里更关注 release jitter、响应时间上界、阻塞传播和抢占一致性，而不是平均 CPU 利用率或吞吐量。只要这些指标可界定，系统才谈得上实时正确性。
-</p>
 
-<p>
-在很多项目中，调度器还是跨模块协商的语言中心。任务设计、IPC 配置、中断级别和内存预算最终都会以调度可行性为标准彼此校准。
-</p>
-</section>
-<section class="section">
-<h2>调度系统结构</h2>
+    <p>
+      其核心关注点是响应时间上界、阻塞传播与抢占一致性，而不是吞吐量或平均性能。
+    </p>
 
-<p>
-调度器不是单体模块，而是三层时间控制系统：
-</p>
+    <p>
+      调度器同时也是系统各模块的时间约束中心：任务设计、IPC、中断与内存模型都需与其对齐。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>调度系统结构</h2>
 
 <div class="card" style="font-family:Consolas, monospace; color:#7dd3fc;">
 
@@ -232,113 +220,57 @@ a{
 
 </div>
 
-<p>
-该链路构成完整 RTOS 时间闭环系统。
-</p>
+    <p>
+      三层结构分别描述：可调度性边界、运行时决策逻辑与优先级抢占关系。
+    </p>
+  </section>
 
-<p>
-三层结构的意义在于把“能不能调度”“应该怎么调度”“谁优先调度”拆成不同问题。理论层负责给出可行性边界，模型层负责描述运行时决策流程，优先级层负责定义不同任务的抢占关系，这样才能避免把理论假设和工程实现混在一起。
-</p>
-<p>
-在项目实践里，很多调度问题都不是算法本身错误，而是三层模型没有闭合。例如理论上任务集可调度，但中断入口过长；或者优先级设置合理，但运行时通信唤醒链路不稳定。这些问题都需要回到完整结构上联合分析。
-</p>
+  <section class="section">
+    <h2>系统意义</h2>
 
-<p>
-也正因为如此，调度器文档应同时服务设计、实现和验证三类角色：架构师用它定义任务集，内核开发者用它实现决策链，测试与验证人员用它构造最坏情况场景。
-</p>
-</section>
+    <p>
+      调度器定义系统是否具备时间确定性，是 RTOS 的时间中枢。
+    </p>
+
+    <p>
+      它不仅决定任务执行顺序，也决定系统是否仍然满足实时约束。
+    </p>
+
+    <p>
+      一旦调度模型失效，系统将从确定性系统退化为概率性行为系统。
+    </p>
+  </section>
+
   <section class="section">
     <h2>核心模型</h2>
 
     <div class="grid">
 
-  <a class="card" href="priority-model.html">
-    <h3>优先级控制层</h3>
-    <p>决定任务执行权重与抢占关系，是调度决策基础。</p>
-    <span>进入控制层 →</span>
-  </a>
+      <a class="card" href="priority-model.html">
+        <h3>优先级控制层</h3>
+        <p>定义任务抢占与执行权重。</p>
+        <span>进入 →</span>
+      </a>
 
-  <a class="card" href="scheduling-model.html">
-    <h3>执行调度层</h3>
-    <p>定义任务选择与切换机制，是运行时决策核心。</p>
-    <span>进入执行层 →</span>
-  </a>
+      <a class="card" href="scheduling-model.html">
+        <h3>执行调度层</h3>
+        <p>定义运行时任务选择机制。</p>
+        <span>进入 →</span>
+      </a>
 
-  <a class="card" href="scheduling-theory.html">
-    <h3>理论证明层</h3>
-    <p>基于 WCET 与时间约束，定义系统可调度性边界。</p>
-    <span>进入理论层 →</span>
-  </a>
+      <a class="card" href="scheduling-theory.html">
+        <h3>理论证明层</h3>
+        <p>基于时间约束定义可调度性边界。</p>
+        <span>进入 →</span>
+      </a>
 
-</div>
-  
-<p>
-理解这三个页面时，可以把它们对应到同一条执行链：调度理论给出任务集是否合法，调度模型描述合法任务集如何在运行时更新，优先级模型决定更新时谁先获得 CPU。三者合并后，才是完整的 HRTOS 调度器。
-</p>
+    </div>
+  </section>
 
-<p>
-对应到工程活动上，理论层常用于需求和验证阶段，模型层常用于内核实现与 tracing 分析，优先级层则直接服务于任务配置与系统调优。把三者分开管理，可以避免配置、实现和验证相互污染。
-</p>
-</section>
 
-  <section class="section">
-<h2>系统意义</h2>
-
-<p>
-调度器是 HRTOS 的“时间决策内核”，它不只是选择任务，而是：
-</p>
-
-<p>
-<b>定义系统在时间维度上是否成立</b>
-</p>
-
-<p>
-其本质作用：
-</p>
-
-<p>
-✔ 构建时间可证明性（Time Provability）<br/>
-✔ 控制系统执行路径收敛性<br/>
-✔ 决定 RTOS / non-RTOS 边界
-</p>
-
-<p>
-调度器决定的其实不是“下一个任务是谁”，而是“当前系统是否还能维持既定的时间秩序”。一旦高优先级任务无法及时被放入 CPU，延迟就会沿着控制链向上传播，最终表现为控制回路失步、采样抖动或通信超时。
-</p>
-<p>
-典型工程案例是多轴运动控制：采样任务、轨迹规划任务和总线发送任务需要共享 CPU，但它们对时延容忍度完全不同。只有调度器先定义清晰的时间层级，再通过优先级与唤醒策略落地，整个控制周期才不会出现链式积压。
-</p>
-<p>
-这也是为什么调度器常被视为 RTOS 的时间内核。它虽然不直接操作外设，却决定外设事件是否能够在正确时刻影响任务执行，其设计质量直接决定系统的确定性边界。
-</p>
-
-<p>
-因此调度器的价值不仅在运行时，也在设计期。只要调度器模型清晰，团队就能在编码之前预估哪些任务组合可行、哪些通信模式会放大阻塞、哪些中断策略会突破预算。
-</p>
-
-<p>
-在需求变更频繁的项目里，调度器模型还是最重要的容量边界提醒器。只要新增任务、缩短周期或引入新的同步链路，第一件事就应该回到调度器重新计算最坏情况预算。
-</p>
-
-<p>
-所有新增功能最终都要向这套时间秩序交付解释。
-</p>
-
-<p>
-没有这种解释能力，调度器就只能在事后被动救火，而无法在设计期主动约束系统复杂度。
-</p>
-
-<p>
-这正是调度器能够成为 RTOS 时间中枢的原因。
-</p>
-
-<p>
-也是评估系统扩展是否仍然可调度的第一道关口。
-</p>
-</section>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的调度器架构体系。
+    © 2017–2026 HRTOS. 调度器架构体系。
   </footer>
 
 </main>
