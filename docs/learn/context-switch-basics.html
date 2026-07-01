@@ -118,8 +118,7 @@ a{
   color:#7dd3fc;
   font-size:14px;
   line-height:1.8;
-
-    white-space: pre-wrap;
+  white-space: pre-wrap;
   word-break: break-word;
 }
 
@@ -189,14 +188,8 @@ a{
       <span class="tag">Deterministic Execution</span>
     </div>
   </section>
-<div class="meta">
-  <span class="tag">内核核心机制</span>
-  <span class="tag">实时调度</span>
-  <span class="tag">执行模型</span>
-  <span class="tag">确定性系统</span>
-</div>
 
-<div class="block" style="margin-top:16px;">
+  <div class="block" style="margin-top:16px;">
 本页面属于 HRTOS 学习体系中的 <b>内核执行层</b>。
 
 学习路径结构：
@@ -207,10 +200,10 @@ WHY层（为什么需要实时系统）
 
 当前章节：
 <b>上下文切换 = 实时系统最底层执行原语</b>
-</div>
+  </div>
+
   <section class="section">
     <h2>一、什么是上下文切换</h2>
-
     <p>
       上下文切换是指CPU从一个任务切换到另一个任务执行时，
       将当前任务的运行状态完整保存，并恢复目标任务运行状态的过程。
@@ -220,22 +213,19 @@ WHY层（为什么需要实时系统）
     <p>
       在RTOS中，每一个任务都被视为一个独立的执行流，它拥有自己的寄存器状态、栈空间以及执行指针。
       当系统发生切换时，这些状态必须被严格保存，否则任务将无法从正确位置继续执行。
-      这不是一次普通函数跳转，而是对完整执行现场的封存与恢复。
     </p>
   </section>
 
   <section class="section">
     <h2>二、为什么需要上下文切换</h2>
-
     <p>
       单核CPU在同一时刻只能执行一个任务，但实际系统往往需要多个任务“并发运行”。
-      这种并发并不是物理同时执行，而是通过快速切换实现的“时间片交错执行”。
+      这种并发是通过快速切换实现的时间片交错执行。
     </p>
 
     <p>
-      上下文切换的本质作用是：在多个任务之间复用同一颗CPU，同时保证每个任务的执行连续性。
-      如果没有上下文切换，多任务系统将无法成立。
-      从应用视角看像“同时运行”，从内核视角其实是按策略快速切换的结果。
+      上下文切换的本质作用是：在多个任务之间复用CPU，同时保证执行连续性。
+      如果没有它，多任务系统无法成立。
     </p>
   </section>
 
@@ -243,232 +233,135 @@ WHY层（为什么需要实时系统）
     <h2>三、上下文包含哪些内容</h2>
 
     <div class="grid">
-
       <div class="card">
         <h3>通用寄存器</h3>
-        <p>保存运算临时数据，是任务执行的核心状态载体。任何遗漏都可能让恢复后的计算结果悄悄错误。</p>
+        <p>保存运算临时数据，是任务执行核心状态。</p>
       </div>
 
       <div class="card">
         <h3>程序计数器（PC）</h3>
-        <p>记录下一条执行指令地址，决定任务从哪里继续运行。它相当于执行流在时间轴上的“书签”。</p>
+        <p>记录下一条执行指令地址。</p>
       </div>
 
       <div class="card">
         <h3>栈指针（SP）</h3>
-        <p>指向当前任务栈空间，是函数调用链的基础。栈损坏往往会让切换问题表现得最隐蔽、最难查。</p>
+        <p>指向任务栈空间，是函数调用基础。</p>
       </div>
 
       <div class="card">
         <h3>状态寄存器（PSR）</h3>
-        <p>记录中断状态、条件标志与执行模式。它决定恢复后CPU是否还能回到原来的执行环境。</p>
+        <p>记录中断状态与执行模式。</p>
       </div>
-
     </div>
-
-    <p>
-      在更复杂的处理器（如ARM Cortex-M/F系列）中，还可能包含FPU寄存器、SIMD寄存器等扩展上下文。
-      是否保存这些内容，取决于系统是否启用对应硬件单元。
-    </p>
   </section>
 
   <section class="section">
     <h2>四、上下文切换完整流程</h2>
 
     <div class="block">
-[ 上下文切换流程 ]
-
-1. 进入中断或调度点
-2. 保存当前任务CPU寄存器
-3. 保存程序计数器PC
-4. 保存栈指针SP
-5. 保存任务控制块TCB状态
-6. 调度器选择下一个任务
-7. 恢复目标任务SP
+1. 进入调度点
+2. 保存CPU寄存器
+3. 保存PC
+4. 保存SP
+5. 保存TCB状态
+6. 选择下一个任务
+7. 恢复SP
 8. 恢复PC与寄存器
-9. 返回执行目标任务
+9. 返回执行
     </div>
-
-    <p>
-      这个过程在RTOS中必须严格可控，因为每一步都会引入延迟。
-      对实时系统而言，切换过程本身也是“时间开销的一部分”。
-      很多MCU会借助专门异常把切换放到受控时机执行，以减少路径分叉带来的不确定性。
-    </p>
   </section>
-<section class="section">
-  <h2>上下文切换在系统中的位置</h2>
 
-  <div class="block">
-[ 系统执行模型 ]
-
-中断触发层   ─────────┐
-                     ↓
-             调度决策层（Scheduler）
-                     ↓
-             上下文切换引擎（当前页）
-                     ↓
-             任务执行流（Task Execution）
-                     ↓
-             硬件执行层（CPU）
-</div>
-
-<p>
-上下文切换不是独立概念，而是 RTOS 执行链中的“核心枢纽层”。
-它连接了调度决策与实际执行。
-理解这层位置后，就不会再把调度决策、上下文切换和中断处理混成同一件事。
-</p>
-</section>
   <section class="section">
-    <h2>五、上下文切换的触发方式</h2>
+    <h2>五、触发方式</h2>
 
     <div class="grid">
-
       <div class="card">
         <h3>时间片到期</h3>
-        <p>系统定时器触发调度，是最常见的切换来源。它保证同类任务之间存在可管理的轮转机会。</p>
+        <p>定时器触发调度。</p>
       </div>
 
       <div class="card">
-        <h3>高优先级任务唤醒</h3>
-        <p>更高优先级任务就绪时立即抢占当前任务。这是抢占式实时响应成立的关键触发条件。</p>
+        <h3>高优先级唤醒</h3>
+        <p>高优先级任务抢占。</p>
       </div>
 
       <div class="card">
-        <h3>阻塞与等待</h3>
-        <p>任务进入等待状态（如信号量、队列）。一旦任务自己放弃CPU，系统就必须立刻寻找替代执行者。</p>
+        <h3>任务阻塞</h3>
+        <p>任务主动放弃CPU。</p>
       </div>
 
       <div class="card">
-        <h3>中断触发调度</h3>
-        <p>外设中断可能导致任务优先级变化。很多“突然切换”实际上都是由中断在背后触发的。</p>
+        <h3>中断触发</h3>
+        <p>中断导致调度变化。</p>
       </div>
-
     </div>
   </section>
 
   <section class="section">
-    <h2>六、上下文切换的代价</h2>
+    <h2>六、代价与影响</h2>
 
     <p>
-      上下文切换并不是“免费操作”，它本身会消耗CPU周期。
-      在实时系统中，这个开销通常包括寄存器保存、内存访问以及缓存失效。
+      上下文切换包含寄存器保存、栈切换、TCB访问与缓存失效等开销。
+      切换越频繁，系统有效执行时间越少。
     </p>
 
     <div class="block">
-典型开销组成：
-
+典型开销：
 - 寄存器保存/恢复
-- 栈切换访问
+- 栈访问
 - TCB读写
-- Cache miss（缓存失效）
-- Pipeline flush（流水线刷新）
+- Cache miss
     </div>
-
-    <p>
-      切换频率越高，系统有效执行时间越少，因此RTOS设计中必须控制任务粒度与调度频率。
-    </p>
   </section>
 
   <section class="section">
-    <h2>七、实时系统中的关键影响</h2>
+    <h2>七、本质总结</h2>
 
     <p>
-      上下文切换对RTOS的最大影响不是性能，而是“确定性破坏风险”。
-      如果切换时间不可预测，就会导致整个实时模型失效。
+      上下文切换本质是执行状态的迁移机制。
+      RTOS通过它实现多任务时间复用，并保证系统可预测性。
     </p>
 
-    <p>
-      因此RTOS设计要求：
-      上下文切换必须具有上界（Worst Case Bound），并且在任何情况下都不能超出该范围。
-      所以我们真正关心的是最大切换时延，而不是平均切换速度。
-    </p>
+    <div class="block">
+核心：
+状态保存 + 调度决策 + 状态恢复
+
+目标：
+- 不丢状态
+- 可预测
+- 有上界
+    </div>
   </section>
 
   <section class="section">
-    <h2>八、优化策略</h2>
+    <h2>系统关联路径</h2>
 
     <div class="grid">
 
-      <div class="card">
-        <h3>减少切换频率</h3>
-        <p>通过任务合并与合理优先级设计降低调度次数。能批处理的工作尽量批处理，不要把系统切得过碎。</p>
-      </div>
+      <a class="card" href="/system-view/04-scheduler-cycle.html">
+        <h3>上游：调度器</h3>
+        <p>决定何时发生切换</p>
+      </a>
 
-      <div class="card">
-        <h3>最小上下文保存</h3>
-        <p>只保存必要寄存器，避免无意义开销。保存集设计越清晰，最坏情况分析就越稳定。</p>
-      </div>
+      <a class="card" href="/system-view/01-execution-flow.html">
+        <h3>同层：执行流</h3>
+        <p>任务执行路径模型</p>
+      </a>
 
-      <div class="card">
-        <h3>惰性FPU保存</h3>
-        <p>仅在任务使用FPU时才保存扩展寄存器。这样能在保证正确性的前提下显著减小切换成本。</p>
-      </div>
-
-      <div class="card">
-        <h3>快速中断路径</h3>
-        <p>优化ISR路径减少调度延迟。因为很多上下文切换都发生在中断尾部，这一层越短越好。</p>
-      </div>
+      <a class="card" href="/docs/architecture/interrupt/interrupt-flow.html">
+        <h3>下游：中断</h3>
+        <p>切换主要触发来源</p>
+      </a>
 
     </div>
   </section>
 
-  <section class="section">
-    <h2>九、本质总结</h2>
-
-    <p>
-      上下文切换的本质不是“任务切换”，而是“执行现场的时间迁移”。
-      RTOS通过严格控制这个过程，使系统在多任务环境中仍然保持时间可预测性。
-      对应用开发者来说，减少不必要的阻塞和频繁唤醒，其实就是在主动减少切换压力。
-    </p>
-
-    <div class="block">
-上下文切换 = 状态保存 + 调度决策 + 状态恢复
-
-核心目标：
-- 不丢状态
-- 不破坏时间模型
-- 可预测开销
-- 工程上让高频任务短小、让低频任务批处理
-    </div>
-  </section>
-<section class="section">
-  <h2>系统关联路径</h2>
-
-  <div class="grid">
-
-    <!-- 上游 -->
-    <a class="card" href="/system-view/04-scheduler-cycle.html">
-      <h3>上游：调度器决策</h3>
-      <p>
-        上下文切换由调度器触发，决定“谁获得CPU”，只有先理解调度条件，切换时机才会真正清楚
-      </p>
-    </a>
-
-    <!-- 同层 -->
-    <a class="card" href="/system-view/01-execution-flow.html">
-      <h3>同层：执行流模型</h3>
-      <p>
-        描述任务从触发到执行的完整路径结构，帮助理解切换为何只是链路中的一个环节
-      </p>
-    </a>
-
-    <!-- 下游 -->
-    <a class="card" href="/docs/architecture/interrupt/interrupt-flow.html">
-      <h3>下游：中断与抢占</h3>
-      <p>
-        上下文切换发生的主要触发机制之一，很多最关键的切换都来自中断返回阶段
-      </p>
-    </a>
-
-  </div>
-</section>
   <footer class="footer">
   © 2017–2026 HRTOS · 内核执行层 · 上下文切换机制
-
   <div style="margin-top:8px;color:#64748b;font-size:12px;">
-    实时系统执行模型的一部分 · Kernel Execution Architecture
+    Kernel Execution Architecture
   </div>
-</footer>
+  </footer>
 
 </main>
 

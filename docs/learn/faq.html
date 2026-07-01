@@ -45,8 +45,7 @@ h1{
   border:1px solid rgba(148,163,184,.18);
   border-radius:12px;
   background:rgba(15,23,42,.6);
-
-    white-space: pre-wrap;
+  white-space: pre-wrap;
   word-break: break-word;
 }
 
@@ -70,11 +69,6 @@ h1{
   color:#bae6fd;
 }
 
-.hint{
-  color:#94a3b8;
-  font-size:13px;
-}
-
 hr{
   border:none;
   border-top:1px solid rgba(148,163,184,.12);
@@ -94,17 +88,17 @@ footer{
 <body>
 
 <main class="page" data-header="docs">
+
 <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/learn/index.html">学习模块</a> /
-    <span>常见问题</span>
-  </nav>
+  <a href="/docs/index.html">文档中心</a> /
+  <a href="/docs/learn/index.html">学习模块</a> /
+  <span>常见问题</span>
+</nav>
 
 <h1>RTOS 常见误解（认知纠偏系统）</h1>
 
 <p class="intro">
-这一页不是FAQ集合，而是对RTOS认知结构的系统性纠偏。
-核心目标：把“错误理解”还原为“设计约束的真实来源”。
+这一页用于统一纠正RTOS的基础认知偏差，从系统约束角度重新理解实时系统。
 </p>
 
 <hr>
@@ -116,21 +110,10 @@ footer{
 <div class="a">
 RTOS 与 Linux 不在同一维度。
 
-Linux 的设计目标是：
-→ 通用性 + 吞吐量 + 平均性能
+Linux：通用性 + 吞吐量 + 平均性能  
+RTOS：时间确定性 + 最坏情况可控
 
-RTOS 的设计目标是：
-→ 时间确定性 + 最坏情况可控
-
-因此 RTOS 并不是“轻量版 Linux”，
-而是“约束模型完全不同的系统类型”。
-
-<br><br>
-
-关键差异在于：
-
-<strong>Linux允许不可预测性存在</strong><br>
-<strong>RTOS要求不可预测性被消除</strong>
+RTOS不是Linux的轻量版本，而是不同设计目标的系统模型。
 </div>
 <div class="tag">结构性误解</div>
 </div>
@@ -138,21 +121,11 @@ RTOS 的设计目标是：
 <div class="block">
 <div class="q">误解2：RTOS只是实时性更高</div>
 <div class="a">
-“实时性更高”是错误表述。
+RTOS的核心不是“更快”，而是：
 
-RTOS的本质不是“更快”，而是：
+→ 所有操作必须具有时间上界（Bounded Latency）
 
-→ 所有执行行为必须有时间上界（Bounded Latency）
-
-即：
-系统不仅要快，还必须“可证明不会慢到失控”。
-
-<br><br>
-
-在RTOS中：
-
-延迟 ≠ 性能问题<br>
-延迟 = 正确性的一部分
+延迟在RTOS中属于系统正确性的一部分，而不是性能问题。
 </div>
 <div class="tag">时间模型误解</div>
 </div>
@@ -160,20 +133,11 @@ RTOS的本质不是“更快”，而是：
 <div class="block">
 <div class="q">误解3：RTOS只是任务更多更复杂</div>
 <div class="a">
-RTOS的复杂性不来自任务数量，而来自：
+复杂性来源不是任务数量，而是：
 
 → 时间约束之间的耦合关系
 
-问题不在“有多少任务”，
-而在：
-
-这些任务在最坏情况下是否仍满足时间约束。
-
-<br><br>
-
-因此RTOS复杂度本质是：
-
-<strong>时间可证明复杂度（Temporal Proof Complexity）</strong>
+关键问题是最坏情况下是否仍满足时间约束。
 </div>
 <div class="tag">系统结构误解</div>
 </div>
@@ -181,25 +145,11 @@ RTOS的复杂性不来自任务数量，而来自：
 <div class="block">
 <div class="q">误解4：RTOS一定更快</div>
 <div class="a">
-RTOS通常不会追求最快。
+RTOS不追求最快，而是控制：
 
-它优化的是：
+→ Worst Case Execution Time（WCET）
 
-→ 最坏情况执行时间（WCET）
-
-而不是平均性能。
-
-<br><br>
-
-因此RTOS可能：
-
-- 吞吐量更低
-- CPU利用率更保守
-- 但时间边界可预测
-
-<br>
-
-<strong>核心不是更快，而是不会失控。</strong>
+可能牺牲吞吐量，但换取时间边界确定性。
 </div>
 <div class="tag">性能误解</div>
 </div>
@@ -207,28 +157,9 @@ RTOS通常不会追求最快。
 <div class="block">
 <div class="q">误解5：RTOS只是工业领域用的系统</div>
 <div class="a">
-RTOS不是行业分类，而是系统约束模型。
+RTOS不是行业，而是约束模型：
 
-它存在于所有需要：
-
-- 可预测控制
-- 确定性响应
-- 时间约束执行
-
-的系统中。
-
-例如：
-
-- 汽车控制
-- 飞控系统
-- 工业控制
-- 机器人控制
-
-<br>
-
-本质是：
-
-<strong>只要“时间影响正确性”，RTOS模型就成立</strong>
+只要系统存在“时间影响正确性”，RTOS模型就成立。
 </div>
 <div class="tag">应用误解</div>
 </div>
@@ -236,76 +167,35 @@ RTOS不是行业分类，而是系统约束模型。
 <div class="block">
 <div class="q">总结：RTOS的真实定义</div>
 <div class="a">
-RTOS不是一种操作系统实现，而是一种系统设计约束：
+RTOS是一种系统约束模型：
 
-<br>
+→ 所有执行行为必须满足可证明的时间边界
 
-<strong>所有执行行为必须满足可证明的时间边界</strong>
-
-<br>
-
-因此RTOS的核心不是“功能”，而是：
-
-→ 时间是否可建模  
-→ 行为是否可预测  
-→ 最坏情况是否可控制
+核心关注：
+- 时间是否可建模
+- 行为是否可预测
+- 最坏情况是否可控制
 </div>
 </div>
+
 <section class="section">
   <h2>延伸阅读</h2>
 
   <div class="block">
-    <div class="q">继续理解这个问题的下一步路径：</div>
+    <div class="q">相关学习路径</div>
 
     <div class="a">
       → <a href="/why/02-why-general-os-fails.html" style="color:#7dd3fc;">通用操作系统为什么无法满足实时需求</a><br>
-
       → <a href="/why/03-determinism-constraint.html" style="color:#7dd3fc;">确定性约束（Determinism Constraint）</a><br>
-
-      → <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;">调度周期与系统行为模型</a>
-
-      <br><br>
-
-      阅读这些页面时，建议不要只停留在“名词解释”，而要重点回答四个问题：
-      第一，通用操作系统为什么会在最坏情况下失控；
-      第二，哪些执行路径会引入不可预测延迟；
-      第三，约束应该在设计期如何表达，而不是运行后再猜测；
-      第四，工程上如何通过测量、限界和简化路径把不确定性收敛。
+      → <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;">调度周期与系统模型</a>
 
       <br><br>
 
-      如果你是初学者，推荐采用“问题背景 → 确定性约束 → 调度周期”这个顺序，
-      先理解为什么实时问题会出现，再理解系统要消除什么，最后再进入具体执行链。
-      如果你已经有嵌入式经验，也可以反向阅读：带着自己项目中的任务周期、中断延迟和阻塞时间去对照，
-      看看现有设计到底缺的是概念模型、调度策略，还是工程验证方法。
-
-      <br><br>
-
-      还可以带着五个常见误判去读：
-      是否把“更快”误当成“实时”；
-      是否只看平均延迟而忽略最坏情况；
-      是否忽视了中断、锁和等待队列带来的阻塞；
-      是否把复杂业务塞进ISR；
-      是否从来没有为关键任务写出明确的时间预算。
-      这五个问题几乎覆盖了初学者最容易踩到的大部分坑。
-
-      <br><br>
-
-      如果你正在做自己的小型RTOS实验，还可以把每一页的内容都落成一张表：
-      任务名是什么、周期是多少、最长允许延迟是多少、最坏情况下会被谁阻塞、发生中断时是否会触发更高优先级任务。
-      当这些问题能够被明确写下来时，很多原本抽象的“实时性”概念就会立刻变得具体。
-    </div>
-
-    <div style="margin-top:10px;color:#94a3b8;font-size:13px;">
-      建议按顺序阅读，可以建立完整实时系统认知链路。
-      一个实用的自检方法是：每读完一页，就回到自己的系统列出任务周期、最大允许延迟、哪些代码必须在ISR里完成、哪些工作必须下放到任务上下文。
-      当你开始能用这些问题审视自己的代码时，FAQ里的“误解”才真正变成了工程判断力。
-      更进一步，如果你能把这些检查点整理成自己的项目评审清单，那么FAQ就不只是阅读材料，而会变成一套长期可复用的实时系统思考框架。
-      这也是学习RTOS最有效的方式之一：不是只会复述定义，而是能在评审任务设计、中断处理和同步机制时，第一时间指出哪里可能破坏时间边界。
-      当你能稳定地提出这些问题时，说明你已经开始从“会读文档”进入“会做实时系统设计”的阶段，这也是认知升级的真正标志。
+      建议阅读顺序：问题背景 → 确定性约束 → 调度周期。
     </div>
   </div>
 </section>
+
 </div>
 
 <footer>
