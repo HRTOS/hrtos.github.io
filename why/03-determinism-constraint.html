@@ -4,93 +4,125 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>03 确定性约束（Determinism Constraint）| HRTOS Why Layer</title>
+<title>03 确定性约束（Determinism Constraint） | HRTOS Why Layer</title>
 <meta name="description" content="定义实时系统的核心约束：确定性（Determinism），以及它如何成为系统设计的第一原则">
 
 <meta name="page-role" content="why-layer">
 <meta name="semantic-node" content="determinism-constraint">
 
-
-
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-  line-height: 1.6;
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
 }
 
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
+a{color:#7dd3fc;text-decoration:none}
+a:hover{color:var(--accent)}
+
+/* NAV */
+.nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 22px;
+  border-bottom:1px solid var(--border);
+  background:rgba(15,23,42,.92);
 }
 
-.nav a {
-  color: #9fb0c3;
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
+.nav-left{
+  font-weight:600;
 }
 
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
+.nav-right a{
+  margin-left:14px;
+  color:var(--muted);
+  font-size:14px;
 }
 
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
+.nav-right a.active{
+  color:var(--text);
 }
 
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
+/* layout */
+.container{
+  max-width:980px;
+  margin:0 auto;
+  padding:60px 22px;
 }
 
-.card-definition {
-  border-left: 3px solid #4da3ff;
-  background: #0f1722;
+/* hero */
+h1{
+  font-size:clamp(2rem,4vw,3.2rem);
+  margin:0 0 10px;
 }
 
-.card-core {
-  border-left: 3px solid #f59e0b;
+.sub{
+  color:var(--muted);
+  margin-bottom:40px;
 }
 
-.card-meta {
-  border-left: 3px solid #9fb0c3;
-  opacity: 0.95;
+/* card */
+.card{
+  background:rgba(30,41,59,.55);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px 22px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
 }
 
-h2 {
-  font-size: 20px;
-  color: #cfe3ff;
-  margin-bottom: 10px;
+.card h2{
+  margin:0 0 10px;
+  font-size:18px;
+  color:#dbeafe;
 }
 
-.en {
-  color: #9fb0c3;
-  font-size: 14px;
-  margin-top: 6px;
+.card p{
+  margin:8px 0;
+  color:var(--muted);
 }
+
+.card-accent{
+  border-left:3px solid var(--accent);
+}
+
+.card-warning{
+  border-left:3px solid #f59e0b;
+}
+
+.card-danger{
+  border-left:3px solid #ef4444;
+}
+
+/* footer */
 .site-footer{
-      text-align:center;
-      border-top:1px solid rgba(148,163,184,.14);
-      padding-top:12px;
-      color:#8ea3be;
-      font-size:.95rem;
-    }
+  margin-top:60px;
+  border-top:1px solid var(--border);
+  padding:24px 0;
+  text-align:center;   /* ✅ 居中修复 */
+  color:var(--muted);
+  font-size:14px;
+}
+
+.site-footer a{
+  color:#7dd3fc;
+  margin:0 10px;
+}
 </style>
 </head>
 
@@ -98,10 +130,11 @@ h2 {
 
 <!-- NAV -->
 <div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
+  <div class="nav-left">HRTOS</div>
+
+  <div class="nav-right">
     <a href="/index.html">首页</a>
-    <a href="/why/index.html" style="color:#cfe3ff;">Why</a>
+    <a href="/why/index.html" class="active">Why</a>
     <a href="/system-view/index.html">系统</a>
     <a href="/docs/index.html">文档</a>
   </div>
@@ -109,160 +142,104 @@ h2 {
 
 <div class="container">
 
-  <h1>3. 确定性约束（Determinism Constraint）</h1>
-  <div class="sub">
-    实时系统的第一原则：所有行为必须可预测
-  </div>
+  <h1>03 确定性约束（Determinism Constraint）</h1>
+  <div class="sub">实时系统的第一原则：系统行为必须可预测</div>
 
   <!-- definition -->
-  <div class="card card-definition">
+  <div class="card card-accent">
     <h2>核心定义</h2>
     <p>
-      确定性（Determinism）指系统在给定输入、状态与环境条件完全相同的情况下，
-      必须产生<strong>完全一致的执行行为与时间结果</strong>。
+      确定性指：在相同输入、状态与环境条件下，系统必须产生完全一致的执行结果与时间行为。
     </p>
-
     <p>
-      这里的一致性不仅指计算输出，还包括：
-      调度顺序、中断响应时刻、上下文切换路径与执行延迟。
-    </p>
-
-    <div class="en">
-      Determinism requires identical inputs and states to produce identical execution behavior and timing outcomes.
-    </div>
-  </div>
-
-  <!-- core rule -->
-  <div class="card card-core">
-    <h2>为什么它是“第一约束”</h2>
-    <p>
-      在实时系统中，确定性不是优化目标，而是系统成立的前提条件。
-    </p>
-
-    <p>
-      一旦系统行为无法被预测，即使平均性能再高，也无法用于控制类任务。
+      一致性不仅包括计算结果，还包括执行路径、调度顺序、中断时刻与延迟边界。
     </p>
   </div>
 
-  <!-- core behavior -->
-  <div class="card card-core">
-    <h2>确定性约束的实际含义</h2>
+  <!-- first principle -->
+  <div class="card card-warning">
+    <h2>为什么是第一原则</h2>
     <p>
-      系统必须满足两个层面的“固定性”：
+      确定性不是优化目标，而是系统成立的前提条件。
     </p>
-
     <p>
-      • 行为路径固定（Execution Path Determinism）<br>
-      • 时间边界固定（Timing Bound Determinism）
+      如果行为不可预测，系统就无法用于任何控制类任务。
     </p>
+  </div>
 
+  <!-- meaning -->
+  <div class="card">
+    <h2>约束的真实含义</h2>
+    <p>确定性必须同时满足两个维度：</p>
     <p>
-      缺少任意一项，都意味着系统无法进入强实时领域。
+      • 执行路径确定性<br>
+      • 时间边界确定性
+    </p>
+    <p>
+      缺少任何一个，系统都无法进入强实时领域。
     </p>
   </div>
 
   <!-- contrast -->
-  <div class="card">
-    <h2>与非实时系统的本质差异</h2>
-
+  <div class="card card-danger">
+    <h2>与通用系统的差异</h2>
     <p>
-      通用系统允许：
-      <br>• 调度顺序变化
-      <br>• 执行路径变化
-      <br>• 延迟波动（jitter）
+      通用系统允许：调度变化、执行路径变化、延迟抖动。
     </p>
-
     <p>
-      实时系统不允许这些“变化”，因为变化本身就是风险来源。
+      实时系统不允许这些变化，因为变化本身就是不确定性来源。
     </p>
   </div>
 
-  <!-- deeper view -->
+  <!-- levels -->
   <div class="card">
     <h2>确定性的三个层级</h2>
-
     <p>
-      1. 逻辑确定性：输出结果固定<br>
-      2. 调度确定性：执行顺序固定<br>
-      3. 时间确定性：执行时间上界固定
-    </p>
-
-    <p>
-      RTOS的目标是同时约束这三者，而不是仅优化其中之一。
+      1. 逻辑确定性（结果固定）<br>
+      2. 调度确定性（顺序固定）<br>
+      3. 时间确定性（上界固定）
     </p>
   </div>
 
-  <!-- system implication -->
+  <!-- impact -->
   <div class="card">
-    <h2>对系统设计的直接影响</h2>
-
+    <h2>系统设计影响</h2>
     <p>
-      为了满足确定性，系统必须牺牲：
-      <br>• 部分吞吐量
-      <br>• 动态优化空间
-      <br>• 某些复杂调度策略
+      为保证确定性，系统必须限制动态优化空间与非确定性路径。
     </p>
-
     <p>
-      换取的是：行为可预测性与时间可证明性。
+      换取的是：可预测性与时间可证明性。
     </p>
   </div>
 
-  <!-- meta -->
-  <div class="card card-meta">
-    <h2>语义总结</h2>
+  <!-- mapping -->
+  <div class="card card-accent">
+    <h2>系统映射关系</h2>
     <p>
-      确定性约束本质上定义了实时系统的边界：
-      系统是否可以被“时间建模”，决定它是否属于RT系统。
+      确定性 → 执行流（Execution Flow）<br>
+      确定性 → 调度循环（Scheduler Cycle）<br>
+      确定性 → 时间系统（Time System）
     </p>
-
-    <div class="en">
-      Determinism defines whether a system can be time-modeled, which determines whether it qualifies as a real-time system.
-    </div>
   </div>
-<div class="card" style="border-left:3px solid #38bdf8;">
-  <h2>知识图谱（Knowledge Graph）</h2>
 
-  <p>
-    当前节点：<b>确定性约束</b>
-  </p>
-
-  <p>
-    上游原因：
-    <a href="/why/01-real-time-problem.html" style="color:#7dd3fc;">实时问题的本质</a>,
-    <a href="/why/02-why-general-os-fails.html" style="color:#7dd3fc;">通用OS限制</a>
-  </p>
-
-  <p>
-    同层概念：
-    <a href="/why/03-determinism-constraint.html" style="color:#7dd3fc;">确定性约束</a>
-  </p>
-
-  <p>
-    下游系统映射：
-    <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;">执行流模型</a>,
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;">调度循环</a>,
-    <a href="/system-view/06-time-system.html" style="color:#7dd3fc;">时间系统</a>
-  </p>
 </div>
-<footer class="site-footer">
-  <div style="margin-bottom:10px;">
-    © 2017–2026 HRTOS · WHY Layer
-  </div>
 
-  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:800px;margin:0 auto;">
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div>© 2017–2026 HRTOS · WHY Layer</div>
+
+  <div style="margin-top:10px; max-width:820px; margin-left:auto; margin-right:auto;">
     WHY 层用于定义实时系统成立的前提条件，包括时间确定性、调度约束与系统不可变规则。<br>
     本层不描述实现细节，而是定义系统“为什么必须这样设计”。
   </div>
 
-  <div style="margin-top:14px;font-size:13px;">
-    <a href="/why/index.html" style="color:#7dd3fc;margin-right:12px;">WHY 首页</a>
-    <a href="/why/01-real-time-problem.html" style="color:#7dd3fc;margin-right:12px;">实时问题</a>
-    <a href="/why/02-why-general-os-fails.html" style="color:#7dd3fc;margin-right:12px;">GPOS局限</a>
-    <a href="/system-view/index.html" style="color:#7dd3fc;">System View →</a>
+  <div style="margin-top:14px;">
+    <a href="/why/index.html">WHY 首页</a>
+    <a href="/why/01-real-time-problem.html">实时问题</a>
+    <a href="/why/02-why-general-os-fails.html">GPOS局限</a>
+    <a href="/system-view/index.html">System View →</a>
   </div>
 </footer>
-</div>
 
 </body>
 </html>

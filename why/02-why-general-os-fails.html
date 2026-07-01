@@ -5,251 +5,253 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>02 通用操作系统为什么无法满足实时需求 | HRTOS Why Layer</title>
-<meta name="description" content="解释通用操作系统在实时系统中的局限性，包括非确定性调度、公平性设计与延迟不可预测问题">
+<meta name="description" content="解释通用操作系统在实时系统中的结构性局限，包括非确定性调度、执行路径不可预测与时间抖动问题">
 
 <meta name="page-role" content="why-layer">
 <meta name="semantic-node" content="general-os-failure">
 
-
-
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-  line-height: 1.6;
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --surface-hover:rgba(30,41,59,.92);
+  --border:rgba(148,163,184,.18);
+  --border-strong:rgba(56,189,248,.38);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
 }
 
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
+a{color:inherit;text-decoration:none}
+
+.page{
+  width:min(1100px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
 }
 
-.nav a {
-  color: #9fb0c3;
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
+/* NAV */
+.nav{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  height:56px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 20px;
+  background:rgba(15,23,42,.85);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  z-index:100;
 }
 
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
+.nav a{
+  margin-left:14px;
+  font-size:14px;
+  color:var(--muted);
 }
 
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
+.nav a.active{color:#cfe3ff}
+
+/* HERO */
+.hero{
+  margin-top:30px;
+  margin-bottom:42px;
 }
 
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
+.hero h1{
+  font-size:clamp(2rem,4vw,3.4rem);
+  margin:0;
 }
 
-.card-definition {
-  border-left: 3px solid #4da3ff;
-  background: #0f1722;
+.hero p{
+  margin-top:10px;
+  color:var(--muted);
+  max-width:860px;
 }
 
-.card-failure {
-  border-left: 3px solid #ef4444;
+/* SECTION */
+.section{
+  margin-bottom:26px;
 }
 
-.card-meta {
-  border-left: 3px solid #9fb0c3;
-  opacity: 0.95;
+.section h2{
+  font-size:1.3rem;
+  margin:0 0 12px 0;
+  color:#dbeafe;
 }
 
-h2 {
-  font-size: 20px;
-  color: #cfe3ff;
-  margin-bottom: 10px;
+/* CARD */
+.card{
+  background:linear-gradient(180deg, rgba(30,41,59,.75), rgba(15,23,42,.92));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px 22px;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
 }
 
-.en {
-  color: #9fb0c3;
-  font-size: 14px;
-  margin-top: 6px;
+.card h3{
+  margin:0 0 8px 0;
+  color:#f8fafc;
 }
+
+.card p{
+  margin:8px 0;
+  color:var(--muted);
+}
+
+/* variants */
+.card-danger{
+  border-left:3px solid #ef4444;
+}
+
+.card-info{
+  border-left:3px solid var(--accent);
+}
+
+/* footer */
 .site-footer{
-      text-align:center;
-      border-top:1px solid rgba(148,163,184,.14);
-      padding-top:12px;
-      color:#8ea3be;
-      font-size:.95rem;
-    }
+  text-align:center;
+  border-top:1px solid var(--border);
+  padding-top:18px;
+  color:var(--muted);
+  font-size:14px;
+  margin-top:40px;
+}
+
+.site-footer a{
+  color:#7dd3fc;
+  margin:0 10px;
+}
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
+<!-- NAV（保留结构，不改） -->
 <div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
+  <div style="font-weight:600;color:#e2e8f0;">HRTOS</div>
   <div>
     <a href="/index.html">首页</a>
-    <a href="/why/index.html" style="color:#cfe3ff;">Why</a>
+    <a href="/why/index.html" class="active">Why</a>
     <a href="/system-view/index.html">系统</a>
     <a href="/docs/index.html">文档</a>
   </div>
 </div>
 
-<div class="container">
+<main class="page">
 
-  <h1>2. 通用操作系统为什么无法满足实时需求</h1>
-  <div class="sub">
-    Linux / Windows 在实时场景中的结构性限制
-  </div>
+  <!-- HERO -->
+  <section class="hero">
+    <h1>02 通用操作系统为什么无法满足实时需求</h1>
+    <p>GPOS 在设计目标上与 RTOS 完全不同，本质差异来自“优化目标”而不是“实现质量”。</p>
+  </section>
 
-  <!-- definition -->
-  <div class="card card-definition">
+  <!-- core contradiction -->
+  <section class="section">
     <h2>核心矛盾</h2>
-    <p>
-      通用操作系统（GPOS）的设计出发点是“平均性能最优”，
-      而实时系统要求的是“最坏情况可控”。
-    </p>
 
-    <p>
-      这意味着 GPOS 并不是“做得不够好”，而是“优化目标完全不同”。
-    </p>
-
-    <div class="en">
-      GPOS is optimized for average performance, while real-time systems require worst-case predictability.
+    <div class="card card-info">
+      <h3>设计目标差异</h3>
+      <p>
+        通用操作系统（Linux / Windows）优化的是平均性能、公平性与吞吐量。
+      </p>
+      <p>
+        实时系统优化的是最坏情况确定性（Worst-case determinism）。
+      </p>
     </div>
-  </div>
+  </section>
 
-  <!-- failure 1 -->
-  <div class="card card-failure">
-    <h2>1. 调度路径不可预测</h2>
-    <p>
-      通用系统采用复杂调度算法（如 CFS、优先级动态调整等），
-      目的是提高整体公平性与CPU利用率。
-    </p>
+  <!-- failure points -->
+  <section class="section">
+    <h2>结构性失败点</h2>
 
-    <p>
-      但结果是：同一任务在不同时间点执行，其调度延迟可能完全不同。
-    </p>
-  </div>
-
-  <!-- failure 2 -->
-  <div class="card card-failure">
-    <h2>2. 内核路径长度不确定</h2>
-    <p>
-      在 GPOS 中，一个简单系统调用可能触发：
-      锁竞争 / 页调度 / 中断嵌套 / 内存回收等复杂路径。
-    </p>
-
-    <p>
-      这些路径的存在，使得最坏执行时间（WCET）难以建模。
-    </p>
-  </div>
-
-  <!-- failure 3 -->
-  <div class="card card-failure">
-    <h2>3. 中断与抢占的不稳定性</h2>
-    <p>
-      中断可能被延迟、屏蔽或重新排序执行，
-      内核临界区也可能导致不可预测的暂停时间。
-    </p>
-
-    <p>
-      在实时系统中，这种“不可控暂停”本身就是错误来源。
-    </p>
-  </div>
-
-  <!-- failure 4 -->
-  <div class="card card-failure">
-    <h2>4. 资源共享导致时间抖动</h2>
-    <p>
-      CPU cache、内存、IO 都是共享资源，
-      在多任务竞争下会产生抖动（jitter）。
-    </p>
-
-    <p>
-      即使平均性能优秀，也无法保证每一次执行的时间边界。
-    </p>
-  </div>
-
-  <!-- structural reason -->
-  <div class="card">
-    <h2>根本原因（结构层）</h2>
-    <p>
-      GPOS 的核心目标是：
-      <br>• 提高吞吐量
-      <br>• 提高系统利用率
-      <br>• 提供公平性
-    </p>
-
-    <p>
-      RTOS 的核心目标是：
-      <br>• 保证时间上界
-      <br>• 消除不可预测路径
-      <br>• 控制最坏情况
-    </p>
-  </div>
-
-  <!-- meta -->
-  <div class="card card-meta">
-    <h2>语义总结</h2>
-    <p>
-      通用操作系统的失败点不在性能，而在“无法定义时间上界”，
-      这使其无法作为严格实时系统的基础。
-    </p>
-
-    <div class="en">
-      The limitation is not performance, but the inability to define and guarantee timing upper bounds.
+    <div class="card card-danger">
+      <h3>1. 调度不可预测</h3>
+      <p>复杂调度策略（CFS / 动态优先级）导致任务延迟具有统计波动性。</p>
     </div>
-  </div>
-<div class="card">
-<h2>与 HRTOS System View 的对应关系</h2>
 
-<p>
-通用操作系统的问题，本质上可以在 HRTOS 的系统模型中找到对应解释：
-</p>
+    <div class="card card-danger">
+      <h3>2. 执行路径不确定</h3>
+      <p>系统调用可能触发锁竞争、内存回收、页调度等不可控路径。</p>
+    </div>
 
-<p>
-• 调度不可预测 → <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;">Scheduler Cycle（调度循环）</a><br>
-• 执行路径不确定 → <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;">Execution Flow（执行流）</a><br>
-• 中断延迟不可控 → <a href="/system-view/03-interrupt-flow.html" style="color:#7dd3fc;">Interrupt Flow（中断流）</a><br>
-• 时间抖动来源 → <a href="/system-view/06-time-system.html" style="color:#7dd3fc;">Time System（时间系统）</a><br>
-• 内存不可预测 → <a href="/system-view/05-memory-view.html" style="color:#7dd3fc;">Memory View（内存视图）</a><br>
-</p>
+    <div class="card card-danger">
+      <h3>3. 中断延迟不可控</h3>
+      <p>内核临界区与中断屏蔽机制导致响应时间无法严格界定。</p>
+    </div>
 
-<p>
-👉 这些问题并不是实现缺陷，而是系统结构层的必然结果。
-</p>
-</div>
+    <div class="card card-danger">
+      <h3>4. 资源竞争导致抖动</h3>
+      <p>CPU / cache / memory contention 导致执行时间波动（jitter）。</p>
+    </div>
+  </section>
+
+  <!-- root reason -->
+  <section class="section">
+    <h2>根本原因</h2>
+
+    <div class="card">
+      <p>
+        GPOS 的设计目标是：吞吐量 + 公平性 + 平均性能最优。
+      </p>
+
+      <p>
+        RTOS 的设计目标是：时间上界 + 可预测性 + 最坏情况约束。
+      </p>
+    </div>
+  </section>
+
+  <!-- conclusion -->
+  <section class="section">
+    <h2>结论</h2>
+
+    <div class="card card-info">
+      <p>
+        问题不在“性能不足”，而在“无法建立时间上界模型”。
+      </p>
+
+      <p>
+        没有时间确定性，就无法构建实时系统。
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<!-- FOOTER（按你要求：不改内容） -->
 <footer class="site-footer">
   <div style="margin-bottom:10px;">
     © 2017–2026 HRTOS · WHY Layer
   </div>
 
-  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:800px;margin:0 auto;">
+  <div style="font-size:13px;line-height:1.8;max-width:800px;margin:0 auto;">
     WHY 层用于定义实时系统成立的前提条件，包括时间确定性、调度约束与系统不可变规则。<br>
     本层不描述实现细节，而是定义系统“为什么必须这样设计”。
   </div>
 
   <div style="margin-top:14px;font-size:13px;">
-    <a href="/why/index.html" style="color:#7dd3fc;margin-right:12px;">WHY 首页</a>
-    <a href="/why/01-real-time-problem.html" style="color:#7dd3fc;margin-right:12px;">实时问题</a>
-    <a href="/why/02-why-general-os-fails.html" style="color:#7dd3fc;margin-right:12px;">GPOS局限</a>
-    <a href="/system-view/index.html" style="color:#7dd3fc;">System View →</a>
+    <a href="/why/index.html">WHY 首页</a>
+    <a href="/why/01-real-time-problem.html">实时问题</a>
+    <a href="/why/02-why-general-os-fails.html">GPOS局限</a>
+    <a href="/system-view/index.html">System View →</a>
   </div>
 </footer>
-</div>
 
 </body>
 </html>

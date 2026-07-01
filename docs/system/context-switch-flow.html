@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>上下文切换流程（Context Switch Flow） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS上下文切换流程说明，包括任务切换触发条件、寄存器保存与恢复、调度器执行路径与中断切换机制。" />
+<meta name="description" content="HRTOS上下文切换流程说明，包括任务切换触发条件、状态保存与恢复机制、调度执行路径与中断切换行为。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -71,14 +71,8 @@ a{
   color:#7dd3fc;
 }
 
-.breadcrumb a:hover{
-  color:var(--accent);
-}
-
 /* hero */
-.hero{
-  margin-bottom:56px;
-}
+.hero{margin-bottom:56px;}
 
 .hero-label{
   display:inline-block;
@@ -94,15 +88,9 @@ a{
   margin:0 0 16px;
   font-size:clamp(2.3rem,5vw,4rem);
   line-height:1.08;
-  font-weight:700;
 }
 
-.hero p{
-  margin:0;
-  max-width:760px;
-  color:var(--muted);
-  font-size:1rem;
-}
+.hero p{color:var(--muted);max-width:760px}
 
 .meta{
   display:flex;
@@ -125,13 +113,9 @@ a{
   display:grid;
   grid-template-columns:minmax(0,1fr) 280px;
   gap:28px;
-  align-items:start;
 }
 
-.content{
-  display:grid;
-  gap:22px;
-}
+.content{display:grid;gap:22px;}
 
 .section{
   display:grid;
@@ -146,44 +130,32 @@ a{
 .section h2{
   margin:0;
   font-size:1.35rem;
-  line-height:1.3;
   border-left:3px solid var(--accent);
   padding-left:12px;
 }
 
-.section p{
-  margin:0;
-  color:var(--muted);
-  font-size:0.96rem;
-}
-
-.note{
-  padding:14px 16px;
-  border-left:3px solid var(--accent);
-  border-radius:8px;
-  background:rgba(15,23,42,.6);
-  color:var(--muted);
-  font-size:0.94rem;
-}
+.section p{color:var(--muted);margin:0}
 
 .code{
   background:#020617;
   border:1px solid rgba(56,189,248,.14);
   border-radius:8px;
   padding:16px;
-  overflow-x:auto;
   font-family:Consolas,monospace;
-  font-size:0.92rem;
   color:#7dd3fc;
-  line-height:1.65;
-  white-space: pre-line;
+  white-space:pre-line;
+}
+
+.note{
+  padding:14px 16px;
+  border-left:3px solid var(--accent);
+  background:rgba(15,23,42,.6);
+  color:var(--muted);
+  border-radius:8px;
 }
 
 /* sidebar */
-.sidebar{
-  display:grid;
-  gap:16px;
-}
+.sidebar{display:grid;gap:16px;}
 
 .box{
   padding:18px 16px;
@@ -192,20 +164,12 @@ a{
   background:rgba(30,41,59,.56);
 }
 
-.box h3{
-  margin:0 0 12px;
-  font-size:1rem;
-}
+.box h3{margin:0 0 12px}
 
 .box a{
   display:block;
   color:#7dd3fc;
-  font-size:0.92rem;
   margin-bottom:8px;
-}
-
-.box a:hover{
-  color:var(--accent);
 }
 
 /* footer */
@@ -214,27 +178,10 @@ a{
   padding-top:18px;
   border-top:1px solid rgba(148,163,184,.14);
   color:#8ea3be;
-  font-size:0.9rem;
 }
 
 @media(max-width:980px){
   .layout{grid-template-columns:1fr;}
-}
-
-@media(max-width:640px){
-  .page{
-    width:min(100% - 24px,1180px);
-    padding-top:84px;
-  }
-
-  .section{
-    padding:20px 18px;
-  }
-
-  .hero p,
-  .section p{
-    font-size:0.95rem;
-  }
 }
 </style>
 </head>
@@ -250,19 +197,19 @@ a{
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
+    <span class="hero-label">System / Kernel Mechanism</span>
 
     <h1>上下文切换流程（Context Switch Flow）</h1>
 
     <p>
-      上下文切换是RTOS在多任务环境中保存与恢复任务执行状态的核心机制，
-      决定系统多任务并发能力与实时响应性能。
+      上下文切换是RTOS实现多任务并发的核心机制，用于在任务切换时保存当前执行状态并恢复目标任务状态。
     </p>
 
     <div class="meta">
       <span class="tag">System</span>
+      <span class="tag">Kernel Mechanism</span>
       <span class="tag">Context Switch</span>
-      <span class="tag">Kernel Core</span>
+      <span class="tag">Real-Time</span>
     </div>
   </section>
 
@@ -273,186 +220,118 @@ a{
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
-          上下文切换指CPU从一个任务切换到另一个任务时，
-          保存当前任务寄存器状态并恢复目标任务状态的过程。
+          上下文切换是CPU在不同任务之间切换执行时，
+          保存当前任务状态并恢复目标任务状态的过程。
         </p>
       </section>
 
       <section class="section" id="mechanism">
-        <h2>工作原理</h2>
+        <h2>工作机制</h2>
         <p>
-          当发生调度事件（如时间片结束、任务阻塞或高优先级任务就绪）时，
-          内核触发上下文切换流程。
+          当系统发生调度事件时，内核触发上下文切换流程，
+          完成任务状态的保存与恢复。
         </p>
 
         <div class="note">
-          切换开销直接影响系统实时性，因此必须尽可能优化保存与恢复路径。
+          上下文切换开销直接影响系统实时性，是RTOS核心性能指标之一。
         </div>
       </section>
 
-<section class="section" id="trigger">
-  <h2>切换触发条件</h2>
-  <p>
-    HRTOS在以下情况下会触发上下文切换：
-  </p>
-
-  <div class="code">
-1. 时间片耗尽（Tick Expire）
-2. 当前任务主动让出CPU（Yield）
-3. 任务进入阻塞状态
-4. 更高优先级任务就绪
-5. 中断退出后触发调度
-  </div>
-
-  <div class="note">
-    高优先级任务抢占是实时系统响应能力的重要保障。
-  </div>
-</section>
-
-
-<section class="section" id="execution-path">
-  <h2>执行路径</h2>
-
- <div class="code">
-中断触发 / 主动让出CPU
-    ↓
-进入调度器
-    ↓
-保存当前任务上下文
-    ↓
-更新就绪队列
-    ↓
-选择最高优先级任务
-    ↓
-恢复目标任务上下文
-    ↓
-返回任务继续执行
-</div>
-
-  <p>
-    上下文切换本质上是任务状态保存与恢复流程，
-    同时伴随调度器重新选择最高优先级可运行任务。
-  </p>
-</section>
-
-      <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
+      <section class="section" id="trigger">
+        <h2>触发条件</h2>
 
         <div class="code">
-os_schedule()
-os_context_switch()
-
-struct context {
-    uint32_t sp;
-    uint32_t pc;
-    uint32_t regs[16];
-};
-
-struct task_control_block {
-    struct context ctx;
-};
+1. 时间片结束
+2. 任务主动让出CPU
+3. 任务进入阻塞状态
+4. 高优先级任务就绪
+5. 中断触发调度
         </div>
       </section>
 
-<section class="section" id="register-save">
-  <h2>寄存器保存与恢复</h2>
+      <section class="section" id="execution-path">
+        <h2>执行流程</h2>
 
-  <p>
-    切换过程中，CPU需要将当前任务寄存器状态保存到任务控制块（TCB），
-    并恢复下一个任务的寄存器上下文。
-  </p>
+        <div class="code">
+触发调度
+↓
+进入调度器
+↓
+保存任务状态
+↓
+选择最高优先级任务
+↓
+恢复目标任务状态
+↓
+继续执行
+        </div>
 
-  <div class="code">
-R0 - R12
-SP
-LR
-PC
-xPSR
-  </div>
-
-  <div class="note">
-    保存寄存器数量越多，上下文切换开销越高。
-  </div>
-</section>
-
-
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
         <p>
-          触发调度 → 保存当前任务上下文 →
-          选择下一个任务 → 恢复目标任务上下文 →
-          返回用户态继续执行。
+          本质是“状态保存 + 状态恢复”的调度过程。
         </p>
       </section>
 
-<section class="section" id="performance">
-  <h2>性能影响因素</h2>
+      <section class="section" id="register-save">
+        <h2>状态保存与恢复</h2>
 
-  <p>
-    上下文切换延迟受以下因素影响：
-  </p>
+        <p>
+          系统在切换过程中需要保存当前任务运行状态，
+          并在恢复时重新加载目标任务状态。
+        </p>
 
-  <div class="code">
-1. CPU寄存器数量
-2. 调度器复杂度
-3. 中断嵌套深度
-4. 栈保存开销
-5. Cache影响
-  </div>
+        <div class="code">
+通用寄存器
+程序计数器 PC
+栈指针 SP
+状态寄存器
+        </div>
 
-  <p>
-    HRTOS通过精简调度路径与优化寄存器保存策略降低切换延迟。
-  </p>
-</section>
+        <div class="note">
+          保存内容越多，上下文切换开销越高。
+        </div>
+      </section>
 
+      <section class="section" id="performance">
+        <h2>性能影响因素</h2>
+
+        <div class="code">
+1. 保存状态数量
+2. 调度复杂度
+3. 中断嵌套
+4. 栈操作开销
+5. CPU执行效率
+        </div>
+
+        <p>
+          HRTOS通过精简调度路径与状态保存策略降低切换延迟。
+        </p>
+      </section>
 
       <section class="section" id="extension">
-        <h2>扩展说明</h2>
+        <h2>机制说明</h2>
         <p>
-          HRTOS支持硬件中断触发切换与软件调度切换两种模式，
-          并针对不同架构优化寄存器保存策略。
+          支持基于中断与调度器触发的两种上下文切换路径，
+          以满足实时系统响应需求。
         </p>
       </section>
-<section class="section" id="related">
-  <h2>相关阅读</h2>
 
-  <a href="/docs/system/scheduling-flow.html">调度流程</a><br>
-<a href="/docs/system/interrupt-flow.html">中断流程</a><br>
-<a href="/docs/modules/task/state-model.html">任务状态模型</a><br>
-<a href="/docs/architecture/kernel/kernel-flow.html">内核执行流程</a><br>
-<a href="/docs/modules/task/context-switch.html">任务上下文切换</a><br>
-<a href="/docs/architecture/scheduler/scheduling-model.html">调度模型</a>
-</section>
     </div>
 
     <aside class="sidebar">
 
       <div class="box">
-  <h3>目录导航</h3>
-  <a href="#overview">概述</a>
-  <a href="#mechanism">工作原理</a>
-  <a href="#trigger">触发条件</a>
-  <a href="#execution-path">执行路径</a>
-  <a href="#interface">关键接口</a>
-  <a href="#register-save">寄存器保存</a>
-  <a href="#flow">运行流程</a>
-  <a href="#performance">性能分析</a>
-</div>
-
-      <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/task/context-switch.html">任务上下文切换</a>
-        <a href="/docs/modules/scheduler/index.html">调度器</a>
+        <h3>目录</h3>
+        <a href="#overview">概述</a>
+        <a href="#mechanism">机制</a>
+        <a href="#trigger">触发条件</a>
+        <a href="#execution-path">执行流程</a>
+        <a href="#register-save">状态保存</a>
+        <a href="#performance">性能分析</a>
       </div>
 
       <div class="box">
-        <h3>所属模块</h3>
+        <h3>层级</h3>
         <a href="/docs/system/index.html">System</a>
-      </div>
-
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/system/index.html">System → 内核执行路径</a>
       </div>
 
     </aside>
@@ -460,7 +339,7 @@ xPSR
   </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
+    © 2017–2026 HRTOS. System-level documentation.
   </footer>
 
 </main>

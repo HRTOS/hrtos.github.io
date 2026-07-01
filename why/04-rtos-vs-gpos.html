@@ -4,97 +4,143 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>04 RTOS vs GPOS | HRTOS Why Layer</title>
-<meta name="description" content="对比实时操作系统与通用操作系统的核心差异：确定性 vs 吞吐量">
-
-<meta name="page-role" content="why-layer">
-<meta name="semantic-node" content="rtos-vs-gpos">
-
-
+<title>RTOS vs GPOS | HRTOS Why Layer</title>
+<meta name="description" content="RTOS 与 GPOS 的结构性差异分析">
 
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-  line-height: 1.6;
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
 }
 
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
+/* ===== 全局容器（关键修复）===== */
+.container{
+  max-width:920px;
+  margin:0 auto;
+  padding:0 20px;
 }
 
-.nav a {
-  color: #9fb0c3;
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
+/* ===== NAV（彻底防溢出版本）===== */
+.nav{
+  width:100%;
+  border-bottom:1px solid var(--border);
+  background:rgba(15,23,42,.9);
 }
 
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
+.nav-inner{
+  max-width:920px;
+  margin:0 auto;
+  padding:14px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
+.nav-left{
+  font-weight:700;
+  white-space:nowrap;
 }
 
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
+.nav a{
+  color:var(--muted);
+  text-decoration:none;
+  margin-left:14px;
+  font-size:14px;
 }
 
-.card-definition {
-  border-left: 3px solid #4da3ff;
-  background: #0f1722;
+.nav a.active{
+  color:var(--text);
 }
 
-.card-rtos {
-  border-left: 3px solid #22c55e;
+/* ===== 页面主体 ===== */
+.page{
+  padding:40px 0 60px;
 }
 
-.card-gpos {
-  border-left: 3px solid #ef4444;
+h1{
+  font-size:clamp(1.8rem,3vw,2.6rem);
+  margin:20px 0 10px;
 }
 
-.card-meta {
-  border-left: 3px solid #9fb0c3;
-  opacity: 0.95;
+.sub{
+  color:var(--muted);
+  margin-bottom:28px;
 }
 
-h2 {
-  font-size: 20px;
-  color: #cfe3ff;
-  margin-bottom: 10px;
+/* ===== block ===== */
+.block{
+  background:#111823;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:18px;
+  margin-bottom:14px;
 }
 
-.en {
-  color: #9fb0c3;
-  font-size: 14px;
-  margin-top: 6px;
+.block h2{
+  margin:0 0 10px;
+  font-size:18px;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
 }
-.site-footer{
-      text-align:center;
-      border-top:1px solid rgba(148,163,184,.14);
-      padding-top:12px;
-      color:#8ea3be;
-      font-size:.95rem;
-    }
+
+.block p{
+  margin:8px 0;
+  color:var(--muted);
+}
+
+/* ===== grid 自动防爆 ===== */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:14px;
+}
+
+/* ===== tag ===== */
+.tag{
+  display:inline-block;
+  font-size:12px;
+  padding:3px 10px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+
+/* ===== footer（彻底居中修复）===== */
+footer{
+  border-top:1px solid var(--border);
+  margin-top:40px;
+  padding:24px 0;
+  text-align:center;
+  color:var(--muted);
+}
+
+footer a{
+  color:#7dd3fc;
+  text-decoration:none;
+  margin:0 8px;
+  font-size:13px;
+}
+
+.footer-text{
+  max-width:760px;
+  margin:10px auto 0;
+  font-size:13px;
+  line-height:1.7;
+}
 </style>
 </head>
 
@@ -102,137 +148,81 @@ h2 {
 
 <!-- NAV -->
 <div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
+  <div class="nav-inner">
+    <div class="nav-left">HRTOS</div>
+    <div>
+      <a href="/index.html">首页</a>
+      <a href="/why/index.html" class="active">Why</a>
+      <a href="/system-view/index.html">系统</a>
+      <a href="/docs/index.html">文档</a>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="container page">
+
+<h1>RTOS vs GPOS</h1>
+<div class="sub">实时系统与通用操作系统的结构性分界</div>
+
+<div class="block">
+<h2>核心定义</h2>
+<p>RTOS：确定性优先</p>
+<p>GPOS：吞吐量优先</p>
+</div>
+
+<div class="block">
+<h2>系统目标</h2>
+
+<div class="grid">
   <div>
-    <a href="/index.html">首页</a>
-    <a href="/why/index.html" style="color:#cfe3ff;">Why</a>
-    <a href="/system-view/index.html">系统</a>
-    <a href="/docs/index.html">文档</a>
+    <span class="tag">RTOS</span>
+    <p>最坏情况可预测</p>
+    <p>时间是约束变量</p>
+  </div>
+
+  <div>
+    <span class="tag">GPOS</span>
+    <p>平均性能优化</p>
+    <p>时间是统计结果</p>
   </div>
 </div>
-
-<div class="container">
-
-  <h1>4. RTOS vs GPOS</h1>
-  <div class="sub">
-    实时系统与通用操作系统的本质分界线
-  </div>
-
-  <!-- definition -->
-  <div class="card card-definition">
-    <h2>核心对比定义</h2>
-    <p>
-      RTOS（Real-Time Operating System）与 GPOS（General-Purpose Operating System）的根本区别，不在实现方式，而在设计目标。
-    </p>
-
-    <p>
-      一个以“时间确定性”为核心，一个以“资源利用率”为核心。
-    </p>
-  </div>
-
-  <!-- RTOS -->
-  <div class="card card-rtos">
-    <h2>RTOS（实时操作系统）</h2>
-
-    <p>
-      核心目标：确定性（Determinism）
-    </p>
-
-    <p>
-      所有设计围绕“任务必须在可预测时间内完成”展开。
-    </p>
-
-    <p>
-      评价标准：最大延迟（Worst-case latency）
-    </p>
-
-    <div class="en">
-      RTOS is designed around determinism and worst-case timing guarantees.
-    </div>
-  </div>
-
-  <!-- GPOS -->
-  <div class="card card-gpos">
-    <h2>GPOS（通用操作系统）</h2>
-
-    <p>
-      核心目标：吞吐量与公平性（Throughput & Fairness）
-    </p>
-
-    <p>
-      任务调度允许动态变化，以提高整体资源利用率。
-    </p>
-
-    <p>
-      评价标准：平均性能（Average performance）
-    </p>
-
-    <div class="en">
-      GPOS is optimized for throughput and fairness, not deterministic timing.
-    </div>
-  </div>
-
-  <!-- contrast -->
-  <div class="card">
-    <h2>结构性冲突</h2>
-
-    <p>
-      RTOS 追求“可预测的最坏情况”，GPOS 追求“整体最优的平均情况”。
-    </p>
-
-    <p>
-      这两种目标在系统设计层面是不可兼容的。
-    </p>
-  </div>
-
-  <!-- meta -->
-  <div class="card card-meta">
-    <h2>语义总结</h2>
-    <p>
-      RTOS 与 GPOS 的差异不是性能差异，而是系统设计哲学的分裂。
-    </p>
-
-    <div class="en">
-      The difference between RTOS and GPOS is not performance, but a divergence in system design philosophy.
-    </div>
-  </div>
-<div class="card" style="border-left:3px solid #38bdf8;">
-  <h2>相关阅读（Why → System 对照）</h2>
-
-  <p>
-    <b>Why 层基础概念：</b><br>
-    • <a href="/why/01-real-time-problem.html" style="color:#7dd3fc;">实时问题的本质</a><br>
-    • <a href="/why/03-determinism-constraint.html" style="color:#7dd3fc;">确定性约束（Determinism）</a>
-  </p>
-
-  <p>
-    <b>系统层映射（RTOS结构实现）：</b><br>
-    • <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;">执行流模型（Execution Flow）</a><br>
-    • <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;">调度循环（Scheduler Cycle）</a><br>
-    • <a href="/system-view/06-time-system.html" style="color:#7dd3fc;">时间系统（Time System）</a>
-  </p>
-
-  <p style="color:#9fb0c3;font-size:13px;">
-    说明：RTOS vs GPOS 的本质差异，在 System View 中体现为“是否可建立时间上界模型”。
-  </p>
 </div>
-<footer class="site-footer">
-  <div style="margin-bottom:10px;">
-    © 2017–2026 HRTOS · WHY Layer
-  </div>
 
-  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:800px;margin:0 auto;">
+<div class="block">
+<h2>结构冲突</h2>
+<p>一个控制“边界”，一个优化“平均值”</p>
+</div>
+
+<div class="block">
+<h2>失败定义</h2>
+<p>RTOS：超时 = 错误</p>
+<p>GPOS：超时 = 波动</p>
+</div>
+
+<div class="block">
+<h2>System View 映射</h2>
+<p>
+执行流模型 / 调度循环模型 / 中断响应模型 / 时间约束系统
+</p>
+</div>
+
+<footer>
+  <div>© 2017–2026 HRTOS · WHY Layer</div>
+
+  <div class="footer-text">
     WHY 层用于定义实时系统成立的前提条件，包括时间确定性、调度约束与系统不可变规则。<br>
     本层不描述实现细节，而是定义系统“为什么必须这样设计”。
   </div>
 
-  <div style="margin-top:14px;font-size:13px;">
-    <a href="/why/index.html" style="color:#7dd3fc;margin-right:12px;">WHY 首页</a>
-    <a href="/why/01-real-time-problem.html" style="color:#7dd3fc;margin-right:12px;">实时问题</a>
-    <a href="/why/02-why-general-os-fails.html" style="color:#7dd3fc;margin-right:12px;">GPOS局限</a>
-    <a href="/system-view/index.html" style="color:#7dd3fc;">System View →</a>
+  <div style="margin-top:10px;">
+    <a href="/why/index.html">WHY 首页</a>
+    <a href="/why/01-real-time-problem.html">实时问题</a>
+    <a href="/why/02-why-general-os-fails.html">GPOS局限</a>
+    <a href="/system-view/index.html">System View →</a>
   </div>
 </footer>
+
 </div>
 
 </body>

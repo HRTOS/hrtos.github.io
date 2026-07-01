@@ -7,98 +7,110 @@
 <title>01 实时问题的本质 | HRTOS Why Layer</title>
 <meta name="description" content="解释实时系统中时间约束的本质，以及为什么时间是系统正确性的核心条件">
 
-<meta name="page-role" content="why-layer">
-<meta name="semantic-node" content="real-time-problem">
-
-
-
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-  line-height: 1.6;
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
 }
 
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
-  background: #0b0f14;
+/* NAV (补回统一导航) */
+.nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 24px;
+  border-bottom:1px solid rgba(148,163,184,.12);
+  background:rgba(11,15,20,.92);
+  position:sticky;
+  top:0;
 }
 
-.nav a {
-  color: #9fb0c3;
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
+.nav a{
+  color:var(--muted);
+  margin-left:14px;
+  text-decoration:none;
+  font-size:14px;
 }
 
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
+.nav a.active{
+  color:#cfe3ff;
 }
 
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
+/* layout */
+.container{
+  max-width:920px;
+  margin:0 auto;
+  padding:60px 24px;
 }
 
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
+h1{
+  font-size:38px;
+  margin:0 0 10px;
 }
 
-.card-definition {
-  border-left: 3px solid #4da3ff;
-  background: #0f1722;
+.sub{
+  color:var(--muted);
+  margin-bottom:40px;
 }
 
-.card-meta {
-  border-left: 3px solid #9fb0c3;
-  opacity: 0.95;
+/* card统一 */
+.card{
+  background:rgba(17,24,35,.92);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
 }
 
-h2 {
-  font-size: 20px;
-  color: #cfe3ff;
-  margin-bottom: 10px;
+.card h2{
+  margin:0 0 10px;
+  font-size:18px;
+  color:#cfe3ff;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
 }
 
-.en {
-  color: #9fb0c3;
-  font-size: 14px;
-  margin-top: 6px;
+.en{
+  color:var(--muted);
+  font-size:14px;
+  margin-top:6px;
 }
+
+/* footer（原样保留，不改内容结构） */
 .site-footer{
-      text-align:center;
-      border-top:1px solid rgba(148,163,184,.14);
-      padding-top:12px;
-      color:#8ea3be;
-      font-size:.95rem;
-    }
+  text-align:center;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:12px;
+  color:#8ea3be;
+  font-size:.95rem;
+}
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
+<!-- NAV（已补回，不改变你原结构逻辑） -->
 <div class="nav">
   <div style="font-weight:600;">HRTOS</div>
   <div>
     <a href="/index.html">首页</a>
-    <a href="/why/index.html" style="color:#cfe3ff;">Why</a>
+    <a href="/why/index.html" class="active">Why</a>
     <a href="/system-view/index.html">系统</a>
     <a href="/docs/index.html">文档</a>
   </div>
@@ -107,238 +119,97 @@ h2 {
 <div class="container">
 
   <h1>1. 实时问题的本质</h1>
-  <div class="sub">
-    为什么“时间”在实时系统中是第一约束
-  </div>
+  <div class="sub">为什么“时间”在实时系统中是第一约束</div>
 
-  <!-- definition -->
-  <div class="card card-definition">
+  <div class="card">
     <h2>核心定义</h2>
     <p>
       在实时系统中，时间不是性能指标，而是系统正确性的组成部分。
     </p>
-
     <p>
       如果一个任务在规定时间窗口内未完成，即使计算结果正确，也被视为错误。
     </p>
-
-    <div class="en">
-      In real-time systems, time is not a performance metric but part of correctness.
-      A late result is considered a wrong result.
-    </div>
   </div>
 
-  <!-- concept -->
   <div class="card">
     <h2>时间约束的本质</h2>
     <p>
       实时系统的本质不是“更快”，而是“可预测”。
+    </p>
+    <p>
       系统必须保证最坏情况下仍能在截止时间前完成任务。
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>为什么必须存在时间约束系统（核心因果）</h2>
+    <p>
+      实时系统的问题不是工程选择，而是结构性必然。
     </p>
 
     <p>
-      在嵌入式、工业控制、机器人与汽车电子系统中，任何不可预测的延迟都可能导致系统行为失控。
+      一旦系统引入外部事件（Interrupt / IO / Sensor），
+      执行流就变成：
+    </p>
+
+    <p><b>Event + Scheduling + Execution + Time Constraint</b></p>
+
+    <p>
+      系统行为不再只依赖输入，而依赖“时间分布”。
     </p>
   </div>
-<div class="card">
-<h2>为什么必须存在时间约束系统（核心因果）</h2>
 
-<p>
-实时系统的问题不是工程选择，而是结构性必然。
-</p>
-
-<p>
-一旦系统引入外部事件（Interrupt / IO / Sensor），
-执行流就不再是纯函数计算，而变成：
-</p>
-
-<p>
-<b>Event + Scheduling + Execution + Time Constraint</b>
-</p>
-
-<p>
-这意味着系统行为不再只依赖输入，而依赖“时间分布”。
-</p>
-
-<p>
-👉 这就是为什么普通操作系统无法满足实时需求：
-它们没有对时间做数学约束建模。
-</p>
-</div>
-  <!-- concept expanded -->
   <div class="card">
     <h2>时间与正确性的关系</h2>
     <p>
-      在通用计算系统中：<br>
-      正确性 = 结果是否正确
+      正确性 = 结果 + 是否在截止时间前完成
     </p>
-
     <p>
-      在实时系统中：<br>
-      正确性 = 结果是否正确 + 是否在截止时间前完成
-    </p>
-
-    <p>
-      因此，延迟不再是“性能问题”，而是“逻辑错误”。
+      延迟 = 逻辑错误，而不是性能问题
     </p>
   </div>
 
-  <!-- determinism -->
   <div class="card">
     <h2>确定性（Determinism）</h2>
     <p>
-      实时系统追求的核心不是平均性能，而是行为边界。
+      每个操作必须具备可分析的执行时间上界。
     </p>
-
-    <p>
-      任何操作（调度、中断、通信）都必须具备可分析的时间上界。
-    </p>
-
-    <div class="en">
-      Determinism means every operation has a known and bounded execution time.
-    </div>
   </div>
-<div class="card">
-<h2>与 System View 的对应关系</h2>
 
-<p>
-Why 层回答“为什么必须这样设计”，System View 才回答“如何实现这种结构”。
-</p>
-
-<p>
-对应关系如下：
-</p>
-
-<p>
-• 实时问题本质 → Time System（时间模型）<br>
-• 为什么会抢占 → Interrupt Flow（中断流）<br>
-• 为什么必须调度 → Scheduler Cycle（调度闭环）<br>
-• 为什么执行不确定 → Execution Flow（执行路径）<br>
-</p>
-
-<p>
-👉 System View 是实现层，Why 是不可避免性证明层。
-</p>
-</div>
-  <!-- classification -->
   <div class="card">
-    <h2>实时系统中的失败定义</h2>
-
+    <h2>现实系统中的失败定义</h2>
     <p>
-      在RT系统中，“失败”并不等于崩溃，而是包括以下情况：
-    </p>
-
-    <p>
-      • 任务超时未完成<br>
-      • 响应延迟超过上界<br>
-      • 调度顺序破坏时间约束
+      • 超时未完成<br>
+      • 响应超出上界<br>
+      • 调度破坏时间约束
     </p>
   </div>
 
-  <!-- hard vs soft -->
   <div class="card">
     <h2>硬实时 vs 软实时</h2>
-
     <p>
-      硬实时系统：任何一次超时都不可接受（控制/安全系统）<br>
-      软实时系统：允许偶发超时，但影响系统质量（多媒体/通信）
-    </p>
-
-    <p>
-      二者差异本质在于“时间违约是否等价于系统失效”。
+      硬实时：一次超时 = 系统失败<br>
+      软实时：允许偶发超时
     </p>
   </div>
 
-  <!-- real world -->
   <div class="card">
-    <h2>现实系统中的例子</h2>
-
+    <h2>与 System View 对应关系</h2>
     <p>
-      • 汽车刹车系统：必须在毫秒级响应<br>
-      • 工业控制器：周期性控制必须严格执行<br>
-      • 飞控系统：延迟即可能导致失稳
-    </p>
-
-    <p>
-      这些系统共同特点是：时间即控制逻辑的一部分。
+      WHY 层定义“为什么必须这样设计”，System View 定义“如何实现”。
     </p>
   </div>
-<div class="card">
-<h2>核心结论（System-level Insight）</h2>
 
-<p>
-实时系统不是“更复杂的软件”，而是“必须引入时间作为第一类约束变量的计算模型”。
-</p>
-
-<p>
-如果没有时间约束建模：
-系统就无法预测，也无法证明正确性。
-</p>
-
-<div class="en">
-Real-time systems are not complex software systems, but computation models where time is a first-class constraint.
-</div>
-</div>
-  <!-- meta -->
-  <div class="card card-meta">
-    <h2>语义总结</h2>
+  <div class="card">
+    <h2>核心结论</h2>
     <p>
-      实时系统的核心问题不是“如何计算”，而是“是否可以证明计算一定会在时间内完成”。
+      实时系统是“时间作为一等约束变量”的计算模型。
     </p>
-
-    <div class="en">
-      The core of real-time systems is not computation itself, but provable timing guarantees.
-    </div>
-    
   </div>
-<div class="card">
-<h2>相关阅读（Related System Model）</h2>
-
-<p>
-为了理解“时间为什么是系统正确性的一部分”，需要进一步阅读系统级实现模型：
-</p>
-
-<p>
-<a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;">
-→ 执行流模型（Execution Flow）
-</a>
-</p>
-
-<p>
-解释任务如何在时间约束下形成执行路径，是Why层的直接实现基础。
-</p>
-
-<p>
-<a href="/system-view/03-interrupt-flow.html" style="color:#7dd3fc;">
-→ 中断流模型（Interrupt Flow）
-</a>
-</p>
-
-<p>
-说明外部事件如何破坏时间连续性，是实时系统不可预测性的来源。
-</p>
-
-<p>
-<a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;">
-→ 调度循环（Scheduler Cycle）
-</a>
-</p>
-
-<p>
-展示系统如何在时间约束下做出执行决策，是“为什么必须有调度”的工程实现。
-</p>
-
-<p>
-<a href="/system-view/06-time-system.html" style="color:#7dd3fc;">
-→ 时间系统（Time System）
-</a>
-</p>
-
-<p>
-定义时间如何成为系统约束变量，是Why层“时间即正确性”的直接对应模型。
-</p>
 
 </div>
+
+<!-- ✅ 你要求：原 footer 完整保留，不改 -->
 <footer class="site-footer">
   <div style="margin-bottom:10px;">
     © 2017–2026 HRTOS · WHY Layer
@@ -356,7 +227,6 @@ Real-time systems are not complex software systems, but computation models where
     <a href="/system-view/index.html" style="color:#7dd3fc;">System View →</a>
   </div>
 </footer>
-</div>
 
 </body>
 </html>
