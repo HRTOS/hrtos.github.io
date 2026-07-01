@@ -32,10 +32,7 @@ body {
   line-height: 1.75;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+a { color: inherit; text-decoration: none; }
 
 .page {
   width: min(1180px, calc(100% - 40px));
@@ -50,9 +47,7 @@ a {
   color: var(--muted);
 }
 
-.breadcrumb a {
-  color: #7dd3fc;
-}
+.breadcrumb a { color: #7dd3fc; }
 
 .hero {
   display: grid;
@@ -109,11 +104,7 @@ a {
   display: grid;
   gap: 12px;
   padding: 24px 22px;
-  background: linear-gradient(
-    180deg,
-    rgba(30,41,59,.72),
-    rgba(15,23,42,.92)
-  );
+  background: linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -126,10 +117,7 @@ a {
   padding-left: 12px;
 }
 
-.section p {
-  margin: 0;
-  color: var(--muted);
-}
+.section p { margin: 0; color: var(--muted); }
 
 .note {
   padding: 14px 16px;
@@ -182,9 +170,7 @@ a {
 }
 
 @media (max-width: 980px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
+  .layout { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -205,7 +191,7 @@ a {
     <h1>中断模型（Interrupt Model）</h1>
 
     <p>
-      中断模型描述 HRTOS 如何接收中断请求、执行中断服务程序（ISR），以及在中断结束后恢复或切换任务。
+      描述 HRTOS 如何接收中断请求、执行 ISR，并在中断结束后恢复或切换任务。
     </p>
 
     <div class="meta">
@@ -220,117 +206,82 @@ a {
     <div class="content">
 
       <section class="section" id="overview">
-  <h2>概述</h2>
-  <p>
-    中断模型是实时操作系统（RTOS）中用于处理异步事件的核心机制，它定义了系统如何接收外部事件，并在不破坏实时性的前提下完成响应与恢复。
-  </p>
-  <p>
-    在 HRTOS 中，外部事件可能来自定时器、串口、GPIO 等硬件设备。当事件发生时，中断控制器负责将中断请求发送到 CPU，并根据预设优先级进行仲裁。系统随后跳转到对应的中断服务程序（ISR），在最短时间内处理事件。
-  </p>
-  <p>
-    中断模型的设计目标包括：
-  </p>
-  <ul>
-    <li>保证关键事件可以及时响应，最大限度降低中断延迟。</li>
-    <li>维持系统整体确定性，防止高优先级任务被长时间阻塞。</li>
-    <li>支持中断嵌套与优先级抢占，以提高系统响应灵活性。</li>
-    <li>与任务调度机制无缝配合，确保任务恢复或切换的顺畅。</li>
-  </ul>
-  <p>
-    理解中断模型是掌握 HRTOS 架构的第一步，它不仅影响系统的实时性能，也关系到任务调度、资源管理和系统稳定性。
-  </p>
+        <h2>概述</h2>
 
+        <p>
+          中断模型用于处理异步事件，定义系统如何响应外部输入并保持实时性。
+        </p>
 
-</section>
+        <p>
+          事件通常来自定时器、GPIO、串口等外设，中断控制器按优先级仲裁并触发 ISR。
+        </p>
+
+        <ul>
+          <li>保证实时响应能力</li>
+          <li>维持系统执行确定性</li>
+          <li>支持中断嵌套与优先级抢占</li>
+          <li>与调度系统协同运行</li>
+        </ul>
+      </section>
 
       <section class="section" id="mechanism">
-  <h2>工作原理</h2>
-  <p>
-    在 HRTOS 中，中断工作流程主要包括事件检测、中断请求、优先级仲裁、ISR 执行和任务恢复。具体步骤如下：
-  </p>
-  <ol>
-    <li><strong>事件产生：</strong>外部硬件（如定时器、串口或 GPIO）产生中断信号。</li>
-    <li><strong>中断请求：</strong>中断信号送入 CPU 或中断控制器，触发硬件中断逻辑。</li>
-    <li><strong>优先级仲裁：</strong>中断控制器根据预设的优先级判断哪个中断先被处理，高优先级事件可抢占低优先级 ISR。</li>
-    <li><strong>ISR 执行：</strong>CPU 根据中断向量跳转至对应 ISR，保存上下文并开始处理中断逻辑。</li>
-    <li><strong>任务恢复/切换：</strong>ISR 执行完成后，CPU 根据调度器判断是否需要恢复被打断任务或切换到高优先级任务。</li>
-  </ol>
-  <p>
-    通过这一机制，HRTOS 能保证系统在处理异步事件时的实时性和稳定性。中断的快速响应和正确的任务切换对于系统性能至关重要。
-  </p>
+        <h2>工作原理</h2>
 
-  <div class="note">
-    中断模型的核心目标是确保异步事件能够被及时响应，同时维持系统整体确定性。合理设计中断优先级和调度策略，可最大化系统响应效率。
-  </div>
+        <ol>
+          <li>外设产生中断请求</li>
+          <li>CPU 接收并进行优先级仲裁</li>
+          <li>保存上下文并进入 ISR</li>
+          <li>执行中断处理逻辑</li>
+          <li>退出 ISR 并触发调度判断</li>
+        </ol>
 
+        <p>
+          ISR 执行结束后由调度器决定恢复当前任务或切换到更高优先级任务。
+        </p>
+      </section>
 
-</section>
+      <section class="section" id="interface">
+        <h2>关键结构</h2>
 
+        <p>
+          中断模型由中断源、入口、ISR、内核通知与退出机制组成。
+        </p>
 
-<section class="section" id="interface">
-  <h2>关键结构</h2>
+        <div class="code">
+Interrupt Source  <span style="color:#94a3b8;">// 外设触发中断</span><br>
+Interrupt Entry   <span style="color:#94a3b8;">// CPU进入ISR</span><br>
+ISR Handler       <span style="color:#94a3b8;">// 中断处理逻辑</span><br>
+Kernel Notify     <span style="color:#94a3b8;">// 通知内核更新状态</span><br>
+Interrupt Exit    <span style="color:#94a3b8;">// 恢复或切换任务</span>
+</div>
 
-  <p>
-    HRTOS 中断模型主要由中断源、CPU 中断入口、中断服务程序（ISR）以及中断退出机制组成，共同完成中断请求的接收、处理和任务恢复。
-  </p>
-
-  <div class="code">
-Interrupt Source      // 中断源，产生中断请求（定时器、GPIO、串口等）<br>
-Interrupt Entry       // CPU 根据中断向量进入对应 ISR<br>
-ISR Handler           // 中断服务程序，完成事件处理<br>
-Kernel Notify         // ISR 通知内核更新系统状态<br>
-Interrupt Exit        // 中断退出，恢复任务或切换到新的任务
-  </div>
-
-  <p>
-    各组成部分职责明确，共同构成 HRTOS 的中断处理框架。其中，中断源负责产生异步事件，CPU 根据中断向量进入对应的 ISR，ISR 完成必要的数据处理，并根据需要通知内核更新系统状态。中断结束后，系统恢复原任务运行，或切换到新的就绪任务。
-  </p>
-
-  <ul>
-    <li>中断源负责产生异步事件。</li>
-    <li>CPU 根据中断向量进入对应的中断服务程序。</li>
-    <li>ISR 负责完成最小必要的中断处理。</li>
-    <li>内核根据 ISR 的处理结果更新系统状态。</li>
-    <li>中断退出后恢复原任务，或切换到更高优先级任务。</li>
-  </ul>
-
-</section>
+        <p>
+          各模块职责清晰，构成完整中断处理链路。
+        </p>
+      </section>
 
       <section class="section" id="flow">
-  <h2>运行流程</h2>
+        <h2>运行流程</h2>
 
-  <div class="code">
-<a>外部事件产生</a>        // 由定时器、GPIO、串口等产生事件<br>
-<a>中断请求</a>            // 中断信号送入 CPU 或中断控制器<br>
-<a>优先级仲裁</a>          // 中断控制器根据优先级决定处理顺序<br>
-<a>ISR执行</a>            // 跳转至 ISR，执行中断服务程序<br>
-<a>调度判断</a>            // ISR结束后触发调度器判断是否切换任务<br>
-<a>恢复任务或切换任务</a>  // 将 CPU 控制权返回到原任务或高优先级任务
-  </div>
-
-  <p>
-    上述流程展示了 HRTOS 中断从事件产生到 ISR 执行再到任务恢复的完整路径。
-  </p>
-
-</section>
+        <div class="code">
+外部事件 → 中断请求 → 优先级仲裁 → ISR执行 → 调度判断 → 任务恢复/切换
+        </div>
+      </section>
 
       <section class="section" id="extension">
-  <h2>扩展说明</h2>
-  <p>
-    HRTOS 支持多种高级中断机制，用于提升系统对复杂场景的响应能力：
-  </p>
-  <ul>
-    <li><strong>中断嵌套：</strong>允许高优先级中断打断正在执行的低优先级 ISR，从而确保紧急事件能够立即响应。</li>
-    <li><strong>优先级抢占：</strong>系统可根据任务和中断优先级动态调整 CPU 控制权，保证高优先级任务优先执行。</li>
-    <li><strong>软中断：</strong>通过软件触发中断，可以在内核中灵活调度异步事件，而不依赖硬件中断信号。</li>
-    <li><strong>延迟处理机制：</strong>对于非紧急中断或耗时操作，可以延迟处理，避免阻塞关键任务执行。</li>
-  </ul>
-  <p>
-    这些机制共同组成 HRTOS 的中断模型，使系统能够在保证实时性的同时安全地处理异步事件。
-  </p>
+        <h2>扩展说明</h2>
 
+        <ul>
+          <li><strong>中断嵌套：</strong>高优先级可抢占低优先级 ISR</li>
+          <li><strong>优先级控制：</strong>保证关键事件优先执行</li>
+          <li><strong>软中断：</strong>支持软件触发异步事件</li>
+          <li><strong>延迟处理：</strong>降低 ISR 执行负载</li>
+        </ul>
 
-</section>
+        <p>
+          这些机制用于在实时性与系统开销之间取得平衡。
+        </p>
+      </section>
 
     </div>
 
@@ -355,18 +306,6 @@ Interrupt Exit        // 中断退出，恢复任务或切换到新的任务
         <h3>所属模块</h3>
         <a href="/docs/architecture/index.html">系统架构模块</a>
       </div>
-
-      <div class="box">
-  <h3>学习路径</h3>
-  <a href="/docs/learn/what-is-rtos.html">RTOS 基础概念</a>
-  <a href="/docs/learn/real-time-systems.html">实时系统原理</a>
-  <a href="/docs/learn/context-switch-basics.html">上下文切换基础</a>
-  <a href="/docs/learn/interrupt-basics.html">中断基础</a>
-  <a href="/docs/architecture/interrupt/index.html">中断架构概览</a>
-  <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程</a>
-  <a href="/docs/architecture/interrupt/interrupt-latency.html">中断延迟分析</a>
-  <a href="/docs/architecture/interrupt/interrupt-model.html">中断模型</a>
-</div>
 
     </aside>
 

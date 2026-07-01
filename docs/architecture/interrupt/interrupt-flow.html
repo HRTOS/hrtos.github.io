@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>HRTOS 中断流程（Interrupt Flow） | ISR 执行与调度概览</title>
-<meta name="description" content="HRTOS 中断流程详解，包括中断触发、CPU上下文保存、ISR执行、嵌套中断处理及调度影响，帮助开发者理解实时系统事件响应机制。" />
+<meta name="description" content="HRTOS 中断流程详解，包括中断触发、CPU上下文保存、ISR执行、嵌套中断处理及调度影响。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -13,10 +13,7 @@
 :root {
   --bg: #0f172a;
   --surface: rgba(15, 23, 42, 0.72);
-  --surface-card: rgba(30, 41, 59, 0.72);
-  --surface-hover: rgba(30, 64, 175, 0.18);
   --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.36);
   --text: #e2e8f0;
   --muted: #94a3b8;
   --accent: #38bdf8;
@@ -36,10 +33,7 @@ body {
   line-height: 1.75;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+a { color: inherit; text-decoration: none; }
 
 .page {
   width: min(1180px, calc(100% - 40px));
@@ -54,9 +48,7 @@ a {
   color: var(--muted);
 }
 
-.breadcrumb a {
-  color: #7dd3fc;
-}
+.breadcrumb a { color: #7dd3fc; }
 
 .hero {
   display: grid;
@@ -113,11 +105,7 @@ a {
   display: grid;
   gap: 12px;
   padding: 24px 22px;
-  background: linear-gradient(
-    180deg,
-    rgba(30,41,59,.72),
-    rgba(15,23,42,.92)
-  );
+  background: linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -130,10 +118,7 @@ a {
   padding-left: 12px;
 }
 
-.section p {
-  margin: 0;
-  color: var(--muted);
-}
+.section p { margin: 0; color: var(--muted); }
 
 .note {
   padding: 14px 16px;
@@ -151,6 +136,7 @@ a {
   font-family: Consolas, monospace;
   color: #7dd3fc;
   line-height: 1.65;
+  white-space: pre-line;
 }
 
 .sidebar {
@@ -186,9 +172,7 @@ a {
 }
 
 @media (max-width: 980px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
+  .layout { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -209,7 +193,7 @@ a {
     <h1>中断流程（Interrupt Flow）</h1>
 
     <p>
-      中断流程定义了外部事件如何打断当前执行路径，并将控制权转移到中断服务程序（ISR）中处理。
+      定义外部事件打断任务执行并切换到 ISR 的完整处理路径。
     </p>
 
     <div class="meta">
@@ -224,110 +208,95 @@ a {
     <div class="content">
 
       <section class="section" id="overview">
-  <h2>概述</h2>
-  <p>
-    中断是实时操作系统响应异步事件的核心机制，允许 CPU 在任意时刻打断当前任务执行，并转向执行中断服务程序（ISR）。常见中断来源包括定时器、串口、GPIO、DMA 以及硬件异常。
-  </p>
-  <p>
-    HRTOS 中断体系支持优先级嵌套、中断屏蔽与延迟最小化设计，确保高实时性和系统可预测性。通过合理设计 ISR 与调度器的交互，系统能够快速响应外部事件，同时维持任务执行的确定性。
-  </p>
-  <p>
-    开发者可参考 <a href="/docs/architecture/kernel/index.html">内核结构</a> 了解中断与调度器的协作，或通过 <a href="/system-view/03-interrupt-flow.html">系统中断流模型</a> 可视化中断执行流程。
-  </p>
-
-
-</section>
+        <h2>概述</h2>
+        <p>
+          中断用于响应异步事件，使 CPU 在任意时刻暂停当前任务并进入 ISR。
+        </p>
+        <p>
+          常见来源包括定时器、GPIO、串口、DMA 等硬件或系统异常。
+        </p>
+        <p>
+          HRTOS 支持优先级嵌套与中断屏蔽，保证实时响应与执行确定性。
+        </p>
+      </section>
 
       <section class="section" id="mechanism">
-  <h2>工作原理</h2>
+        <h2>工作原理</h2>
 
-  <p>
-    中断是实时操作系统（RTOS）中响应异步事件的核心机制。其基本原理是：当外部或内部事件触发中断信号时，CPU 会暂停当前任务的执行，保存当前上下文（寄存器、程序计数器等），并跳转至对应的 <strong>中断服务程序（ISR）</strong> 进行处理。ISR 执行完毕后，系统根据中断优先级和调度策略恢复原任务或切换到高优先级任务。
-  </p>
+        <p>
+          当中断触发时，CPU 保存当前上下文并跳转 ISR；执行完成后由调度器决定恢复或切换任务。
+        </p>
 
-  <h3>中断分类与触发</h3>
-  <p>
-    中断通常分为 <strong>外部中断</strong>（如 GPIO 输入、外设事件）和 <strong>内部中断</strong>（如定时器、软件异常）。RTOS 会根据中断号将其映射到相应的 ISR，并维护中断向量表。
-  </p>
+        <h3>中断分类</h3>
+        <p>
+          分为外部中断（GPIO / 外设）与内部中断（定时器 / 异常），通过向量表映射 ISR。
+        </p>
 
-  <h3>上下文保存与恢复</h3>
-  <p>
-    在 ISR 执行之前，CPU 需要保存当前任务的上下文，包括通用寄存器、程序计数器、状态寄存器等，以确保中断处理完成后能够准确恢复任务执行。上下文保存通常由硬件自动完成，也可以通过 RTOS 内核扩展实现更高效率。
-  </p>
+        <h3>上下文保存</h3>
+        <p>
+          ISR 进入前保存寄存器与状态信息，通常由硬件完成，RTOS 可扩展优化路径。
+        </p>
 
-  <h3>中断嵌套与优先级</h3>
-  <p>
-    高级 RTOS 支持 <strong>中断嵌套</strong> 和 <strong>优先级管理</strong>：低优先级 ISR 在执行时可以被高优先级 ISR 打断，从而保证关键事件的实时响应。嵌套深度需控制在安全范围内，以防栈溢出或系统不可预测。
-  </p>
+        <h3>嵌套与优先级</h3>
+        <p>
+          支持高优先级中断打断低优先级 ISR，但需限制嵌套深度以避免栈风险。
+        </p>
 
-  <h3>中断屏蔽与延迟处理</h3>
-  <p>
-    为了保护临界区和保证数据一致性，RTOS 提供 <strong>中断屏蔽</strong>（禁止部分或全部中断）机制。同时，对于不需要立即处理的事件，可以使用 <strong>延迟处理</strong>（Deferred / Bottom Half）策略，将耗时操作推迟到任务上下文中执行，减小 ISR 执行时间，提高系统可预测性。
-  </p>
+        <h3>屏蔽与延迟处理</h3>
+        <p>
+          临界区可屏蔽中断；非关键逻辑可延迟到任务上下文执行（Bottom Half）。
+        </p>
 
-  <h3>与调度器的关系</h3>
-  <p>
-    中断执行结束后，ISR 会调用 <a href="/docs/architecture/kernel/kernel-flow.html">内核调度器</a> 检查是否有高优先级任务就绪。如果有，则发生任务切换；否则继续执行原任务。这种机制确保实时任务能够快速响应外部事件。
-  </p>
+        <h3>与调度器关系</h3>
+        <p>
+          ISR 结束后触发调度检查，若有更高优先级任务则立即切换，否则恢复当前任务。
+        </p>
 
-  <div class="note">
-    ISR 应尽量短小且可预测，避免在 ISR 中执行复杂计算或阻塞操作，以减少中断延迟并提升系统确定性。
-  </div>
-
-
-</section>
+        <div class="note">
+          ISR 应保持短小、确定，不建议执行复杂计算或阻塞操作。
+        </div>
+      </section>
 
       <section class="section" id="interface">
-  <h2>关键接口 / 结构</h2>
+        <h2>关键接口 / 结构</h2>
 
-  <div class="code">
-  <p>os_enter_critical()      // 进入临界区</p>
-  <p>os_exit_critical()       // 恢复中断</p>
-  <p>os_in_isr()              // 判断当前是否位于中断上下文</p>
-  <p>os_interrupt_id()        // 获取当前中断编号</p>
-  <p>os_interrupt_exit()      // ISR 执行完成调用，恢复上下文并触发调度器检查</p>
-</div>
+        <div class="code">
+os_enter_critical()   // 进入临界区
+os_exit_critical()    // 恢复中断
+os_in_isr()           // 判断ISR上下文
+os_interrupt_id()     // 获取中断编号
+os_interrupt_exit()   // ISR退出并触发调度
+        </div>
 
-  <div class="note">
-    在 ISR 中避免调用耗时操作或阻塞函数，确保中断处理快速可预测。合理设置 ISR 优先级，可减少中断延迟并防止优先级反转。
-  </div>
+        <p>
+          这些接口的重点不是“能做什么”，而是“在哪个阶段使用”。
+        </p>
 
-  <p>
-这些接口的意义不只是“能调用什么”，更在于“应该在哪个阶段调用什么”。例如 <code>os_enter_critical()、os_exit_critical()</code> 只适合保护极短的关键窗口，<code>os_interrupt_id()</code> 更强调优先级与入口职责的匹配，而 <code>os_interrupt_exit() </code> 则是 ISR 世界向调度世界交接控制权的关键边界。
-  </p>
-
-  <ul>
-    <li>接口必须保持轻量，避免在中断上下文中引入额外复杂度。</li>
-    <li>注册阶段应明确每个 ISR 的优先级意义和后续唤醒责任。</li>
-    <li>退出阶段应优先保证状态闭合，再决定是否触发重调度。</li>
-  </ul>
-</section>
+        <ul>
+          <li>临界区仅保护极短窗口</li>
+          <li>ISR 内保持逻辑轻量</li>
+          <li>退出阶段负责调度触发与状态闭合</li>
+        </ul>
+      </section>
 
       <section class="section" id="flow">
         <h2>运行流程</h2>
-        <p>
-          中断触发 → 保存CPU上下文 → 执行ISR → 可选嵌套中断处理 → ISR退出 → 调度器检查 → 恢复任务或切换任务
-        </p>
-      
-
-</section>
+        <div class="code">
+中断触发 → 保存上下文 → 执行 ISR →（可嵌套）→ ISR退出 → 调度检查 → 任务恢复/切换
+        </div>
+      </section>
 
       <section class="section" id="extension">
-  <h2>扩展说明</h2>
-  <p>
-    高级中断系统通常提供更多功能，以提高实时性和系统可预测性，包括：
-  </p>
-  <ul>
-    <li><strong>优先级嵌套：</strong>允许高优先级中断打断低优先级中断，保证关键任务优先响应。详细模型请参考 
-      <a href="interrupt-model.html">中断模型</a> 页面。
-    </li>
-    <li><strong>中断屏蔽与屏蔽寄存器：</strong>支持在关键代码段暂时屏蔽某些中断，防止被打断造成数据不一致。</li>
-    <li><strong>延迟处理：</strong>对于低优先级或非关键任务中断，可延迟执行 ISR，以降低系统开销并优化响应时间。</li>
-    <li><strong>中断向量管理：</strong>通过中断向量表快速定位对应 ISR，支持动态注册与卸载，提高系统灵活性。</li>
-    <li><strong>嵌套中断限制：</strong>在 HRTOS 中可以配置最大2层嵌套，防止 ISR 过度嵌套导致栈溢出或延迟不可控。</li>
-  </ul>
-  
-</section>
+        <h2>扩展说明</h2>
+
+        <ul>
+          <li><strong>优先级嵌套：</strong>高优先级中断可抢占低优先级 ISR</li>
+          <li><strong>中断屏蔽：</strong>保护关键代码段数据一致性</li>
+          <li><strong>延迟处理：</strong>将复杂逻辑移出 ISR</li>
+          <li><strong>向量管理：</strong>快速定位 ISR，支持动态注册</li>
+          <li><strong>嵌套限制：</strong>通常限制 1~2 层防止栈溢出</li>
+        </ul>
+      </section>
 
     </div>
 
@@ -347,25 +316,12 @@ a {
         <a href="/docs/system/scheduling-flow.html">调度循环</a>
         <a href="/docs/modules/task/index.html">任务管理</a>
         <a href="/docs/architecture/interrupt/interrupt-model.html">中断模型</a>
-<a href="/docs/architecture/interrupt/interrupt-latency.html">中断延迟</a>
       </div>
 
       <div class="box">
         <h3>所属模块</h3>
         <a href="/docs/architecture/index.html">系统架构模块</a>
       </div>
-
-      <div class="box">
-  <h3>学习路径</h3>
-  <a href="/docs/learn/what-is-rtos.html">RTOS 基础概念</a>
-  <a href="/docs/learn/real-time-systems.html">实时系统原理</a>
-  <a href="/docs/learn/context-switch-basics.html">上下文切换基础</a>
-  <a href="/docs/learn/interrupt-basics.html">中断基础</a>
-  <a href="/docs/architecture/interrupt/index.html">中断架构概览</a>
-  <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程</a>
-  <a href="/docs/architecture/interrupt/interrupt-latency.html">中断延迟分析</a>
-  <a href="/docs/architecture/interrupt/interrupt-model.html">中断模型</a>
-</div>
 
     </aside>
 

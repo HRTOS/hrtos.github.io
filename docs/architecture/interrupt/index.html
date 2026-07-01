@@ -242,30 +242,6 @@ a{
 
 </section>
 
-<section class="section">
-  <h2>架构组成</h2>
-
-  <p>
-    HRTOS 中断架构由以下几个核心组成部分构成：
-  </p>
-
-<p class="code" style="font-family:Consolas,monospace;color:#7dd3fc;line-height:2;">
-中断源<br>
-↓<br>
-中断控制器<br>
-↓<br>
-中断服务程序（ISR）<br>
-↓<br>
-调度接口<br>
-↓<br>
-内核
-</p>
-
-  <p>
-    每个组成部分承担独立职责，共同完成中断请求的管理与处理。各组成部分的设计思想将在后续专题中分别介绍。
-  </p>
-
-</section>
 
 
   <section class="section">
@@ -303,31 +279,6 @@ a{
 
 </section>
 
-  <section class="section">
-    <h2>相关主题</h2>
-
-    <div class="grid">
-
-      <a class="card" href="/docs/architecture/scheduler/index.html">
-        <h3>调度器架构</h3>
-        <p>
-          学习任务调度、优先级抢占与运行循环模型。
-        </p>
-        <span>进入模块 →</span>
-      </a>
-
-      <a class="card" href="/system-view/03-interrupt-flow.html">
-        <h3>系统中断流模型</h3>
-        <p>
-          从系统视角理解中断在整体执行路径中的位置。
-        </p>
-        <span>查看模型 →</span>
-      </a>
-
-    </div>
-  
-
-</section>
 
   <footer class="footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的技术文档。

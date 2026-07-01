@@ -32,10 +32,7 @@ body {
   line-height: 1.75;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+a { color: inherit; text-decoration: none; }
 
 .page {
   width: min(1180px, calc(100% - 40px));
@@ -50,9 +47,7 @@ a {
   color: var(--muted);
 }
 
-.breadcrumb a {
-  color: #7dd3fc;
-}
+.breadcrumb a { color: #7dd3fc; }
 
 .hero {
   display: grid;
@@ -109,11 +104,7 @@ a {
   display: grid;
   gap: 12px;
   padding: 24px 22px;
-  background: linear-gradient(
-    180deg,
-    rgba(30,41,59,.72),
-    rgba(15,23,42,.92)
-  );
+  background: linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -147,15 +138,7 @@ a {
   font-family: Consolas, monospace;
   color: #7dd3fc;
   line-height: 1.65;
-  white-space: normal;
-}
-
-.note{
-  padding:14px 16px;
-  border-left:3px solid var(--accent);
-  border-radius:8px;
-  background:rgba(15,23,42,.6);
-  color:var(--muted);
+  white-space: pre-line;
 }
 
 .sidebar {
@@ -191,9 +174,7 @@ a {
 }
 
 @media (max-width: 980px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
+  .layout { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -214,7 +195,7 @@ a {
     <h1>IPC模型（Inter-Process Communication Model）</h1>
 
     <p>
-      IPC模型定义系统中任务之间通信与同步的整体结构，包括数据传递方式、同步机制与系统级抽象关系。
+      定义任务间通信与同步结构，包括数据传递方式与调度协作关系。
     </p>
 
     <div class="meta">
@@ -229,136 +210,87 @@ a {
     <div class="content">
 
       <section class="section" id="overview">
-  <h2>概述</h2>
-  <p>
-    在 HRTOS 中，任务之间不能直接共享执行状态或资源，必须通过 IPC（Inter-Process Communication，进程间通信）机制完成数据交换与同步控制。
-  </p>
-  <p>
-    IPC 机制为任务提供了受控的通信通道，包括消息队列、信号量、事件组、邮箱和共享内存等。通过这些机制，任务可以安全地传递信息、协调执行顺序，并保证系统的实时性和确定性。
-  </p>
-  <div class="note">
-    IPC 的核心价值不仅在于“传输数据”，更在于“保证任务间的同步与执行顺序”，防止竞态条件和数据不一致。
-  </div>
+        <h2>概述</h2>
+        <p>
+          在 HRTOS 中，任务之间不能直接访问彼此状态，必须通过 IPC 机制完成通信或同步。
+        </p>
+        <p>
+          IPC 提供消息队列、信号量、事件组等机制，用于任务间数据交换与执行协调。
+        </p>
+        <div class="note">
+          IPC 的核心不仅是数据传输，更是任务执行顺序与同步控制。
+        </div>
+      </section>
 
-<p>
-从系统关系上看，IPC 模型其实把运行时交互拆成了两条并行路径：数据路径负责承载有效载荷，控制路径负责传递同步语义。只有这两条路径同时受控，任务间协作才既高效又确定。
-</p>
-</section>
+      <section class="section" id="mechanism">
+        <h2>工作机制</h2>
 
-        <section class="section" id="mechanism">
-  <h2>工作原理</h2>
-  <p>
-    在 HRTOS 中，IPC 模型将任务间通信抽象为三类核心机制：
-  </p>
+        <div class="code">
+消息传递：队列 / 邮箱（异步通信）
+同步机制：信号量 / 互斥锁（执行控制）
+资源控制：共享内存 + 同步保护
+        </div>
 
-  <div class="code">
-    <a href="#message-passing" style="display:block;">消息传递（Message Passing）  
-      <span style="color:#94a3b8; display:block; margin-left:12px;">任务通过队列、邮箱等方式交换数据，适合异步和有序通信</span>
-    </a>
-    <a href="#synchronization" style="display:block;">同步机制（Synchronization）  
-      <span style="color:#94a3b8; display:block; margin-left:12px;">通过信号量、互斥锁等方式控制任务执行顺序，防止竞态条件</span>
-    </a>
-    <a href="#shared-resource" style="display:block;">共享资源控制（Shared Resource Control）  
-      <span style="color:#94a3b8; display:block; margin-left:12px;">任务访问共享内存或外设时使用同步策略，保证数据一致性</span>
-    </a>
-  </div>
-
-  <div class="note">
-    IPC 的核心目标不是“单纯传输数据”，而是“协调任务执行顺序、保证系统确定性”。  
-    高级机制可实现优先级继承、阻塞队列和事件组合，提高实时系统的可靠性。
-  </div>
-
-<p>
-进一步细分时，IPC 还可以覆盖一对一通信、一对多广播以及请求-响应三类模式。不同模式对应不同的等待集合和恢复路径，因此在建模时不能只关心对象名称，还要明确任务之间究竟形成了怎样的依赖图。
-</p>
-</section>
+        <p>
+          IPC 用于协调任务执行顺序，避免竞态与不确定行为发生。
+        </p>
+      </section>
 
       <section class="section" id="interface">
-  <h2>关键结构</h2>
+        <h2>关键结构</h2>
 
-  <div class="code">
-    <a href="#message-queue" style="display:block;">消息队列（Message Queue）  
-      <span style="color:#94a3b8; display:block; margin-left:12px;">用于任务间异步消息传递，保证顺序和完整性</span>
-    </a>
-    <a href="#semaphore" style="display:block;">信号量（Semaphore）  
-      <span style="color:#94a3b8; display:block; margin-left:12px;">用于任务同步和互斥控制，防止资源冲突</span>
-    </a>
-    <a href="#event-group" style="display:block;">事件组（Event Group）  
-      <span style="color:#94a3b8; display:block; margin-left:12px;">支持事件组合通知和多任务唤醒</span>
-    </a>
-    <a href="#mailbox" style="display:block;">邮箱（Mailbox）  
-      <span style="color:#94a3b8; display:block; margin-left:12px;">发送固定大小消息给特定任务，常用于快速通信</span>
-    </a>
-    <a href="#shared-memory" style="display:block;">共享内存（Shared Memory）  
-      <span style="color:#94a3b8; display:block; margin-left:12px;">多任务直接访问共享数据区，需要配合同步机制</span>
-    </a>
-  </div>
+        <div class="code">
+消息队列：任务间数据通道
+信号量：资源互斥与同步控制
+事件组：多事件组合触发
+邮箱：定向消息通信
+共享内存：高速共享（需同步保护）
+        </div>
 
-<p>
-选择哪一种结构，取决于数据粒度、所有权转移方式和阻塞容忍度。消息队列适合封装完整消息，事件组适合携带状态位，信号量适合表达资源可用性，而共享内存只有在配合同步语义时，才适合进入关键实时路径。
-</p>
-</section>
+        <p>
+          不同机制对应不同粒度的通信与实时性需求。
+        </p>
+      </section>
 
       <section class="section" id="flow">
-  <h2>运行模型</h2>
-  <p>典型任务间通信流程如下：</p>
+        <h2>运行模型</h2>
 
-  <div class="code">
-    <a href="#taskA-send" style="display:block;">[任务A] 生成数据</a>
-    <span style="display:block;">↓</span>
-    <a href="#taskA-ipc" style="display:block;">[任务A] 写入消息队列 / 设置事件标志</a>
-    <span style="display:block;">↓</span>
-    <a href="#scheduler" style="display:block;">[调度器] 检查任务优先级，决定是否切换任务</a>
-    <span style="display:block;">↓</span>
-    <a href="#taskB-wait" style="display:block;">[任务B] 等待或就绪，根据事件或队列状态唤醒</a>
-    <span style="display:block;">↓</span>
-    <a href="#taskB-receive" style="display:block;">[任务B] 读取消息 / 响应事件</a>
-    <span style="display:block;">↓</span>
-    <a href="#taskB-finish" style="display:block;">[任务B] 完成数据处理并可能触发下一任务或事件</a>
-  </div>
+        <div class="code">
+任务A生成数据
+→ 写入IPC对象
+→ 调度器切换任务
+→ 任务B被唤醒
+→ 读取数据并处理
+        </div>
 
-  <p>
-    运行模型中，IPC机制负责数据传递与任务同步，调度器根据优先级分配 CPU 时间，确保关键任务得到及时响应。  
-    高级模型支持超时等待、优先级继承和多任务广播，保证系统整体确定性。
-  </p>
-
-<p>
-在严格实时场景中，任务被唤醒的那一刻其实也意味着时间预算的转移。发送方完成一次通信，不只是交出了数据，还交出了下一段执行责任；因此 IPC 运行模型需要把“谁发送了什么”与“谁因此获得 CPU 机会”同时建模。
-</p>
-</section>
+        <p>
+          IPC 触发任务唤醒，由调度器决定执行顺序与时机。
+        </p>
+      </section>
 
       <section class="section" id="extension">
-  <h2>扩展说明</h2>
-  <p>
-    高级 IPC 模型在基础通信机制之上，引入了多种增强特性以适应复杂实时系统的需求：
-  </p>
-  <ul>
-    <li><strong>优先级继承（Priority Inheritance）：</strong>防止高优先级任务因低优先级任务持有资源而阻塞，保证关键任务及时响应。</li>
-    <li><strong>阻塞队列（Blocking Queue）：</strong>当通信资源不可用时，任务可挂起等待，避免忙等待浪费 CPU。</li>
-    <li><strong>超时机制（Timeout）：</strong>任务在等待通信事件时可设定超时，避免死锁或长时间阻塞。</li>
-    <li><strong>多任务广播（Broadcast）：</strong>一个任务可以将事件通知多个任务，支持多消费者场景，提高系统灵活性。</li>
-  </ul>
-  <div class="note">
-    这些扩展机制确保 IPC 在多任务、高负载和实时性要求严格的环境下仍能稳定可靠运行。
-  </div>
+        <h2>扩展机制</h2>
 
-<p>
-工程上常见的增强方案包括优先级继承互斥锁、零拷贝环形缓冲区和静态消息池。前者用于控制阻塞反转，后两者用于降低动态分配带来的抖动；它们的共同目标不是追求更高吞吐，而是让通信高峰下的最坏路径依然可分析。
-</p>
+        <div class="code">
+优先级继承：避免优先级反转
+阻塞队列：资源不可用时挂起
+超时机制：避免死锁等待
+广播通知：多任务同步唤醒
+        </div>
 
-<p>
-抽象层次也要适度。对象种类过多会增加认知和验证成本，对硬实时路径而言，少量语义明确、边界清晰的通信原语通常比功能复杂的大一统接口更可靠。
-</p>
-</section>
+        <p>
+          扩展机制用于提升实时性与系统稳定性。
+        </p>
+      </section>
 
     </div>
 
     <aside class="sidebar">
 
       <div class="box">
-        <h3>目录导航</h3>
+        <h3>目录</h3>
         <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
+        <a href="#mechanism">工作机制</a>
         <a href="#interface">关键结构</a>
         <a href="#flow">运行模型</a>
       </div>
@@ -369,20 +301,6 @@ a {
         <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
         <a href="/docs/modules/ipc/semaphore.html">信号量</a>
       </div>
-
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/architecture/ipc/index.html">IPC 架构模块</a>
-      </div>
-
-      <div class="box">
-  <h3>学习路径</h3>
-  <a href="/docs/learn/ipc-basics.html">IPC 基础概念</a> <!-- 消息队列、信号量、事件概念 -->
-  <a href="/docs/modules/ipc/message-queue.html">消息队列实践</a> <!-- 队列使用、注意事项 -->
-  <a href="/docs/modules/ipc/semaphore.html">信号量与同步</a> <!-- 互斥、同步控制 -->
-  <a href="/docs/modules/ipc/event.html">事件组应用</a> <!-- 事件通知、任务唤醒 -->
-  <a href="/docs/learn/ipc-basics.html">通信最佳实践</a> <!-- 实时系统中常见问题和优化 -->
-</div>
 
     </aside>
 
