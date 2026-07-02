@@ -10,103 +10,110 @@
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="interrupt-flow">
 
-
-
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-  line-height: 1.6;
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
 }
 
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
-  background: #0f172a; /* 使用主色调的深蓝 */
+/* NAV */
+.nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 24px;
+  border-bottom:1px solid rgba(148,163,184,.12);
+  background:rgba(11,15,20,.92);
+  position:sticky;
+  top:0;
 }
 
-.nav a {
-  color: #38bdf8; /* 主色调浅蓝色 */
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
+.nav a{
+  color:var(--muted);
+  margin-left:14px;
+  text-decoration:none;
+  font-size:14px;
 }
 
-.nav a:hover {
-  color: #2563eb; /* 更深的蓝色用于 hover 效果 */
+.nav a.active{
+  color:#cfe3ff;
 }
 
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
+/* layout */
+.container{
+  max-width:920px;
+  margin:0 auto;
+  padding:60px 24px;
 }
 
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
+h1{
+  font-size:38px;
+  margin:0 0 10px;
 }
+
+.sub{
+  color:var(--muted);
+  margin-bottom:40px;
+}
+
+/* card */
+.card{
+  background:rgba(17,24,35,.92);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
+}
+
+.card h2{
+  margin:0 0 10px;
+  font-size:18px;
+  color:#cfe3ff;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
+}
+
+.en{
+  color:var(--muted);
+  font-size:14px;
+  margin-top:6px;
+}
+
 /* footer */
 .site-footer{
   text-align:center;
   border-top:1px solid rgba(148,163,184,.14);
-  padding-top:12px;
+  padding:18px 12px;
   color:#8ea3be;
   font-size:.95rem;
-}
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
-}
-
-.card-core {
-  border-left: 3px solid #4da3ff;
-  background: #0f1722;
-}
-
-.card-interrupt {
-  border-left: 3px solid #ef4444;
-}
-
-.card-meta {
-  border-left: 3px solid #9fb0c3;
-}
-
-h2 {
-  font-size: 20px;
-  color: #cfe3ff;
-  margin-bottom: 10px;
-}
-
-.en {
-  color: #9fb0c3;
-  font-size: 14px;
-  margin-top: 6px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
 <div class="nav">
   <div style="font-weight:600;">HRTOS</div>
   <div>
     <a href="/index.html">首页</a>
     <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/system-view/index.html" class="active">System</a>
     <a href="/docs/index.html">Docs</a>
   </div>
 </div>
@@ -114,187 +121,113 @@ h2 {
 <div class="container">
 
   <h1>3. 中断流模型（Interrupt Flow）</h1>
-  <div class="sub">
-    系统如何被外部事件打断并重新组织执行路径（Execution Recomposition）
-  </div>
+  <div class="sub">外部事件如何打断执行流并重构系统调度路径</div>
 
-  <!-- core -->
-  <div class="card card-core">
+  <div class="card">
     <h2>核心定义</h2>
-
     <p>
-      中断流（Interrupt Flow）描述的是：外部或硬件事件如何打断当前执行流，并触发系统重新进入可调度状态。
+      中断流描述外部事件如何打断当前执行流，并触发系统重新进入调度状态。
     </p>
-
     <p>
-      在 HRTOS 中，中断不只是“异常响应机制”，而是<strong>时间系统的一部分</strong>，直接参与调度路径构建。
+      在 HRTOS 中，中断不是异常机制，而是时间模型的一部分。
     </p>
-
-    <p>
-      每一次中断都会改变系统的“时间连续性”，因此必须被纳入确定性分析模型。
-    </p>
-
     <div class="en">
-      Interrupt flow is not an exception mechanism, but a core component of the system's timing model.
+      Interrupt flow is part of the timing model, not an exception mechanism.
     </div>
   </div>
 
-  <!-- trigger -->
-  <div class="card card-interrupt">
-    <h2>1. 中断触发（Interrupt Trigger）</h2>
-
+  <div class="card">
+    <h2>1. 中断触发</h2>
     <p>
-      中断来源包括：Timer、外设IO、通信接口、错误检测、异常事件等。
+      来源包括 Timer、IO、通信接口与异常事件。
     </p>
-
     <p>
-      在实时系统中，中断触发必须满足两个条件：
-    </p>
-
-    <p>
-      • 可预测（Predictable）<br>
-      • 可界定上界（Bounded frequency）
-    </p>
-
-    <p>
-      否则系统无法进行 Worst-Case Latency 分析。
+      必须满足：可预测 + 有界频率，否则无法进行实时分析。
     </p>
   </div>
 
-  <!-- response -->
-  <div class="card card-interrupt">
-    <h2>2. 中断响应（Interrupt Response）</h2>
-
+  <div class="card">
+    <h2>2. 中断响应</h2>
     <p>
-      CPU 会立即保存当前执行上下文，并进入 ISR（Interrupt Service Routine）。
+      CPU进入ISR并保存上下文。
     </p>
-
     <p>
-      响应延迟由三部分组成：
+      响应延迟由：硬件延迟 + 屏蔽窗口 + 上下文保存构成。
     </p>
-
     <p>
-      • 硬件延迟（IRQ propagation）<br>
-      • 内核屏蔽窗口（Interrupt masking window）<br>
-      • 上下文保存时间（Context save time）
-    </p>
-
-    <p>
-      RTOS设计的关键目标之一，就是最小化并界定该延迟的上界。
+      RTOS核心目标是界定该延迟上界。
     </p>
   </div>
 
-  <!-- nesting -->
-  <div class="card card-interrupt">
-    <h2>3. 中断嵌套（Interrupt Nesting）</h2>
-
+  <div class="card">
+    <h2>3. 中断嵌套</h2>
     <p>
-      高优先级中断可以抢占低优先级 ISR，从而形成“中断嵌套链”。
+      高优先级中断可抢占低优先级ISR，形成嵌套链。
     </p>
-
     <p>
-      但嵌套深度必须受到严格控制，否则会引入“时间不可终止风险”。
+      嵌套深度必须有界，否则系统失去可分析性。
     </p>
-
-    <p>
-      在 HRTOS 中，中断嵌套必须满足：
-    </p>
-
     <p>
       Nesting Depth ≤ Bounded Constant
     </p>
+  </div>
 
+  <div class="card">
+    <h2>4. 与调度的关系</h2>
     <p>
-      否则系统将失去可分析性（Analysability）。
+      中断可以直接触发调度器重新选择任务。
+    </p>
+    <p>
+      在抢占式RTOS中，中断是调度事件源。
     </p>
   </div>
 
-  <!-- scheduling interaction -->
-  <div class="card card-interrupt">
-    <h2>4. 中断与调度的关系</h2>
-
+  <div class="card">
+    <h2>5. 执行恢复</h2>
     <p>
-      中断不仅影响当前任务执行，还可能触发调度器重新选择任务。
+      ISR结束后可能返回原任务或触发重新调度。
     </p>
-
     <p>
-      因此可以将中断视为“调度触发器（Scheduling Trigger）”。
-    </p>
-
-    <p>
-      在抢占式RTOS中，中断 = 调度事件源。
+      高优先级事件通常直接进入调度路径。
     </p>
   </div>
 
-  <!-- resume -->
-  <div class="card card-interrupt">
-    <h2>5. 执行恢复（Resume Execution）</h2>
-
-    <p>
-      ISR结束后，系统有两种路径：
-    </p>
-
-    <p>
-      • 返回原任务（Return to previous context）<br>
-      • 触发调度（Invoke scheduler）
-    </p>
-
-    <p>
-      在高优先级事件发生时，通常会直接进入重新调度路径。
-    </p>
-  </div>
-
-  <!-- system meaning -->
-  <div class="card card-meta">
+  <div class="card">
     <h2>语义总结</h2>
-
     <p>
-      中断流的本质是：系统执行时间被外部事件切割后重新构建为新的时间序列。
+      中断流的本质是：时间执行被切割后重新组合为新的执行序列。
     </p>
-
     <p>
-      它决定了RTOS是否能够维持“时间连续性与可预测性”的统一。
+      它决定系统是否能维持时间连续性与确定性。
     </p>
-
     <div class="en">
-      Interrupt flow defines how execution time is segmented and reconstructed under external events, ensuring timing determinism.
+      Interrupt flow reconstructs execution time under external events while preserving determinism.
     </div>
   </div>
-<!-- related reading -->
-<div class="card card-meta">
-  <h2>相关阅读（Related Reading）</h2>
 
-  <p><strong>上级入口</strong></p>
-  <p>
-    <a href="/system-view/index.html">System View 总览</a>
-  </p>
+  <div class="card">
+    <h2>相关阅读</h2>
 
-  <p><strong>上一篇（学习顺序）</strong></p>
-  <p>
-    <a href="/system-view/02-task-lifecycle.html">02 任务生命周期（Task Lifecycle）←</a>
-  </p>
+    <p><b>System View</b></p>
+    <p><a href="/system-view/index.html" style="color:#38bdf8;">返回总览</a></p>
 
-  <p><strong>下一篇（学习顺序）</strong></p>
-  <p>
-    <a href="/system-view/04-scheduler-cycle.html">04 调度器周期模型（Scheduler Cycle）→</a>
-  </p>
+    <p><b>上一篇</b></p>
+    <p><a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;">任务生命周期 ←</a></p>
 
-  <p><strong>同类型扩展（Interrupt / Timing 视角）</strong></p>
-  <p>
-    <a href="/system-view/01-execution-flow.html">执行流模型</a><br>
-    <a href="/system-view/07-deterministic-chain.html">确定性执行链</a>
-  </p>
+    <p><b>下一篇</b></p>
+    <p><a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度周期 →</a></p>
 
-  <p><strong>跨模块关联（系统级理解）</strong></p>
-  <p>
-    <a href="/docs/modules/task/context-switch.html">任务上下文切换（Context Switch）</a><br>
-    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度模型</a>
-  </p>
-</div>
-<footer class="site-footer">
-  <div style="margin-bottom:10px;">
-    © 2017–2026 HRTOS · SYSTEM VIEW
+    <p><b>扩展</b></p>
+    <p>
+      <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;">执行流模型</a><br>
+      <a href="/system-view/07-deterministic-chain.html" style="color:#38bdf8;">确定性执行链</a>
+    </p>
   </div>
+
+</div>
+
+<footer class="site-footer">
+  © 2017–2026 HRTOS · SYSTEM VIEW
 
   <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
     System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
@@ -302,14 +235,13 @@ h2 {
   </div>
 
   <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#7dd3fc;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#7dd3fc;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#7dd3fc;">← WHY Layer</a>
+    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
+    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
+    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
+    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
+    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
   </div>
 </footer>
-</div>
 
 </body>
 </html>

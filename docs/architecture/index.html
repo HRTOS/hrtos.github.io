@@ -273,6 +273,35 @@ HRTOS 将系统划分为以下核心架构模块：
 </p>
 
 </section>
+
+<section class="section">
+  <div class="section-header">
+    <h2>架构设计原则</h2>
+
+<div class="card">
+
+<p>
+HRTOS 架构的目标是构建一个可预测的实时系统结构，而不是追求最大吞吐量。
+</p>
+
+<p>核心设计原则：</p>
+
+<p style="color:#7dd3fc; line-height:2;">
+✔ 确定性执行<br>
+✔ 延迟可控<br>
+✔ 资源隔离<br>
+✔ 调度可预测<br>
+✔ 实时正确性
+</p>
+
+<p>
+所有架构设计都围绕“最坏情况可分析”这一目标展开。
+</p>
+
+</div>
+
+
+</section>
 <section class="section">
   <div class="section-header">
    <h2>架构层级模型</h2>
@@ -280,11 +309,11 @@ HRTOS 将系统划分为以下核心架构模块：
 <div class="card" style="font-family:Consolas, monospace; color:#7dd3fc;">
 中断层（Interrupt Layer）—— 事件入口<br>
 ↓<br>
+资源层（Memory + IPC Layer）—— 资源与通信管理<br>
+↓<br>
 调度层（Scheduler Layer）—— 任务选择<br>
 ↓<br>
 内核层（Kernel Layer）—— 上下文切换<br>
-↓<br>
-资源层（Memory + IPC Layer）—— 资源与通信管理<br>
 ↓<br>
 硬件层（Hardware）
 </div>
@@ -323,34 +352,7 @@ HRTOS 将系统划分为以下核心架构模块：
   
 
 </section>
-<section class="section">
-  <div class="section-header">
-    <h2>架构设计原则</h2>
 
-<div class="card">
-
-<p>
-HRTOS 架构的目标是构建一个可预测的实时系统结构，而不是追求最大吞吐量。
-</p>
-
-<p>核心设计原则：</p>
-
-<p style="color:#7dd3fc; line-height:2;">
-✔ 确定性执行<br>
-✔ 延迟可控<br>
-✔ 资源隔离<br>
-✔ 调度可预测<br>
-✔ 实时正确性
-</p>
-
-<p>
-所有架构设计都围绕“最坏情况可分析”这一目标展开。
-</p>
-
-</div>
-
-
-</section>
 
   <footer class="site-footer">
     <p>© 2017–2026 HRTOS. Documentation for embedded real-time systems.</p>

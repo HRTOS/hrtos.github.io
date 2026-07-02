@@ -10,90 +10,98 @@
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="memory-view">
 
-
-
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-  line-height: 1.6;
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
 }
 
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
-  background: #0f172a; /* 使用主色调的深蓝 */
+/* NAV */
+.nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 24px;
+  border-bottom:1px solid rgba(148,163,184,.12);
+  background:rgba(11,15,20,.92);
+  position:sticky;
+  top:0;
 }
 
-.nav a {
-  color: #38bdf8; /* 主色调浅蓝色 */
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
+.nav a{
+  color:var(--muted);
+  margin-left:14px;
+  text-decoration:none;
+  font-size:14px;
 }
 
-.nav a:hover {
-  color: #2563eb; /* 更深的蓝色用于 hover 效果 */
+.nav a.active{
+  color:#cfe3ff;
 }
 
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
+/* layout */
+.container{
+  max-width:920px;
+  margin:0 auto;
+  padding:60px 24px;
 }
 
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
+h1{
+  font-size:38px;
+  margin:0 0 10px;
 }
 
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
+.sub{
+  color:var(--muted);
+  margin-bottom:40px;
 }
 
-.card-core {
-  border-left: 3px solid #4da3ff;
-  background: #0f1722;
+/* card */
+.card{
+  background:rgba(17,24,35,.92);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
 }
 
-.card-mem {
-  border-left: 3px solid #a855f7;
+.card h2{
+  margin:0 0 10px;
+  font-size:18px;
+  color:#cfe3ff;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
 }
 
-.card-meta {
-  border-left: 3px solid #9fb0c3;
+.en{
+  color:var(--muted);
+  font-size:14px;
+  margin-top:6px;
 }
 
-h2 {
-  font-size: 20px;
-  color: #cfe3ff;
-  margin-bottom: 10px;
-}
 /* footer */
 .site-footer{
   text-align:center;
   border-top:1px solid rgba(148,163,184,.14);
-  padding-top:12px;
+  padding:18px 12px;
   color:#8ea3be;
   font-size:.95rem;
-}
-.en {
-  color: #9fb0c3;
-  font-size: 14px;
-  margin-top: 6px;
 }
 </style>
 </head>
@@ -105,7 +113,7 @@ h2 {
   <div>
     <a href="/index.html">首页</a>
     <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/system-view/index.html" class="active">System</a>
     <a href="/docs/index.html">Docs</a>
   </div>
 </div>
@@ -113,184 +121,131 @@ h2 {
 <div class="container">
 
   <h1>5. 内存视图（Memory View）</h1>
-  <div class="sub">
-    内存系统如何成为实时确定性的约束来源
-  </div>
+  <div class="sub">内存如何成为实时系统的时间约束来源</div>
 
-  <!-- core -->
-  <div class="card card-core">
+  <div class="card">
     <h2>核心定义</h2>
-
     <p>
-      内存视图描述的是：系统如何在运行过程中管理内存资源，并保证其行为不会破坏时间确定性。
+      内存视图描述系统如何管理内存资源，并保证其不会破坏时间确定性。
     </p>
-
     <p>
-      在 HRTOS 中，内存不再只是“存储空间”，而是参与系统执行时间构成的<strong>时间变量源</strong>。
+      在 HRTOS 中，内存不是静态资源，而是影响执行时间的时间变量源。
     </p>
-
-    <p>
-      任何不可预测的内存行为，都等价于不可预测的执行时间。
-    </p>
-
     <div class="en">
-      Memory is a timing-critical component that directly affects execution determinism.
+      Memory is a timing-related system variable, not just a storage resource.
     </div>
   </div>
 
-  <!-- allocation -->
-  <div class="card card-mem">
-    <h2>1. 内存分配（Allocation Model）</h2>
-
+  <div class="card">
+    <h2>1. 内存分配模型</h2>
     <p>
-      动态内存分配（malloc/free）在实时系统中是高风险操作，因为其执行时间不可界定。
+      动态内存分配（malloc/free）在RTOS中是不可控风险源。
     </p>
-
     <p>
-      HRTOS 中通常采用：
+      常见替代方案：
     </p>
-
     <p>
-      • 静态分配（Compile-time allocation）<br>
-      • 内存池（Memory Pool）<br>
-      • 固定块分配（Fixed block allocator）
+      • 静态分配<br>
+      • 内存池<br>
+      • 固定块分配
     </p>
-
     <p>
-      核心原则：Allocation time must be bounded.
+      核心原则：分配时间必须有界（Bounded Allocation Time）
     </p>
   </div>
 
-  <!-- fragmentation -->
-  <div class="card card-mem">
-    <h2>2. 内存碎片（Fragmentation Problem）</h2>
-
+  <div class="card">
+    <h2>2. 内存碎片问题</h2>
     <p>
-      动态分配会产生内存碎片，导致分配时间逐渐不可预测。
+      动态分配会产生碎片，导致分配时间逐渐不可预测。
     </p>
-
     <p>
-      这会引入“时间漂移效应（Timing Drift）”。
+      这会引入时间漂移问题（Timing Drift）。
     </p>
-
     <p>
-      在 RTOS 中，这是比“空间浪费”更严重的问题。
+      在实时系统中，这比空间浪费更严重。
     </p>
   </div>
 
-  <!-- cache -->
-  <div class="card card-mem">
-    <h2>3. Cache 与访问时间不确定性</h2>
-
+  <div class="card">
+    <h2>3. Cache与访问不确定性</h2>
     <p>
-      Cache 命中（Hit）与未命中（Miss）会导致访问时间差异数倍变化。
+      Cache命中/未命中会导致访问时间出现数量级差异。
     </p>
-
     <p>
-      因此内存访问不再是常量操作，而是随机变量。
+      内存访问因此变为随机变量，而非固定延迟操作。
     </p>
-
     <p>
-      RTOS 必须通过：
-    </p>
-
-    <p>
-      • Cache partitioning<br>
-      • Locking critical memory region<br>
-      • Worst-case analysis
+      需要通过缓存策略或最坏情况分析进行约束。
     </p>
   </div>
 
-  <!-- isolation -->
-  <div class="card card-mem">
-    <h2>4. 内存隔离（Memory Isolation）</h2>
-
+  <div class="card">
+    <h2>4. 内存隔离</h2>
     <p>
-      多任务系统中，任务之间必须具备严格的内存边界。
+      多任务系统必须保证任务之间内存边界清晰。
     </p>
-
     <p>
-      否则会产生：
+      否则会引入：
     </p>
-
     <p>
-      • 数据竞争（Data Race）<br>
-      • 时间干扰（Timing Interference）
+      • 数据竞争<br>
+      • 时间干扰
     </p>
-
     <p>
-      在 HRTOS 中，隔离不仅是安全问题，也是实时性问题。
+      隔离不仅是安全问题，也是实时性问题。
     </p>
   </div>
 
-  <!-- timing -->
-  <div class="card card-mem">
-    <h2>5. 内存与时间耦合关系</h2>
-
+  <div class="card">
+    <h2>5. 内存与时间耦合</h2>
     <p>
-      内存系统的不确定性最终会转化为任务执行时间的不确定性。
+      内存行为的不确定性最终会转化为执行时间不确定性。
     </p>
-
     <p>
-      因此可以建立核心关系：
+      关系链：
     </p>
-
     <p>
       Memory Behavior → Execution Time → System Determinism
     </p>
   </div>
 
-  <!-- system meaning -->
-  <div class="card card-meta">
+  <div class="card">
     <h2>语义总结</h2>
-
     <p>
-      在实时系统中，内存的本质不是“空间管理”，而是“时间约束管理”。
+      在实时系统中，内存不是空间资源，而是时间约束来源。
     </p>
-
     <p>
-      它是影响系统确定性的隐性核心变量。
+      它是影响系统确定性的隐性关键变量。
     </p>
-
     <div class="en">
-      Memory is not a space resource, but a hidden timing constraint in real-time systems.
+      Memory is a hidden timing constraint in real-time systems.
     </div>
   </div>
-<!-- related reading -->
-<div class="card card-meta">
-  <h2>相关阅读（Related Reading）</h2>
 
-  <p><strong>上级入口</strong></p>
-  <p>
-    <a href="/system-view/index.html">System View 总览</a>
-  </p>
+  <div class="card">
+    <h2>相关阅读</h2>
 
-  <p><strong>上一篇（学习顺序）</strong></p>
-  <p>
-    <a href="/system-view/04-scheduler-cycle.html">04 调度循环（Scheduler Cycle）←</a>
-  </p>
+    <p><b>System View</b></p>
+    <p><a href="/system-view/index.html" style="color:#38bdf8;">返回总览</a></p>
 
-  <p><strong>下一篇（学习顺序）</strong></p>
-  <p>
-    <a href="/system-view/06-time-system.html">06 时间系统模型（Time System）→</a>
-  </p>
+    <p><b>上一篇</b></p>
+    <p><a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度循环 ←</a></p>
 
-  <p><strong>同类型扩展（Memory / Resource 视角）</strong></p>
-  <p>
-    <a href="/system-view/01-execution-flow.html">执行流模型</a><br>
-    <a href="/system-view/02-task-lifecycle.html">任务生命周期</a>
-  </p>
+    <p><b>下一篇</b></p>
+    <p><a href="/system-view/06-time-system.html" style="color:#38bdf8;">时间系统 →</a></p>
 
-  <p><strong>跨模块关联（系统级理解）</strong></p>
-  <p>
-    <a href="/docs/modules/memory/stack-management.html">栈管理模型（Stack Management）</a><br>
-    <a href="/docs/modules/memory/fragmentation.html">内存碎片问题分析</a>
-  </p>
-</div>
-<footer class="site-footer">
-  <div style="margin-bottom:10px;">
-    © 2017–2026 HRTOS · SYSTEM VIEW
+    <p><b>扩展</b></p>
+    <p>
+      <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;">执行流模型</a><br>
+      <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;">任务生命周期</a>
+    </p>
   </div>
+
+</div>
+
+<footer class="site-footer">
+  © 2017–2026 HRTOS · SYSTEM VIEW
 
   <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
     System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
@@ -298,14 +253,13 @@ h2 {
   </div>
 
   <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#7dd3fc;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#7dd3fc;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#7dd3fc;">← WHY Layer</a>
+    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
+    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
+    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
+    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
+    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
   </div>
 </footer>
-</div>
 
 </body>
 </html>

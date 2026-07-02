@@ -12,16 +12,9 @@
 <style>
 :root{
   --bg:#0f172a;
-  --surface:rgba(15,23,42,.72);
-  --surface-hover:rgba(30,41,59,.92);
-  --border:rgba(148,163,184,.18);
-  --border-strong:rgba(56,189,248,.45);
   --text:#e2e8f0;
   --muted:#94a3b8;
   --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:8px;
-  color-scheme:dark;
 }
 
 *{box-sizing:border-box}
@@ -34,365 +27,292 @@ body{
   line-height:1.7;
 }
 
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background-image:
-    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
-  background-size:28px 28px;
-  opacity:.14;
-  mask-image:linear-gradient(to bottom,rgba(0,0,0,.65),transparent 90%);
-}
-
-a{color:inherit;text-decoration:none;}
-
-.page{
-  width:min(1180px,calc(100% - 40px));
-  margin:0 auto;
-  padding:104px 0 56px;
-  display:grid;
-  gap:56px;
-  position:relative;
-  z-index:1;
-}
-
-/* breadcrumb */
-.breadcrumb{
-  display:flex;
-  gap:8px;
-  color:var(--muted);
-  font-size:.92rem;
-  flex-wrap:wrap;
-}
-
-.breadcrumb a{color:#7dd3fc;}
-.breadcrumb a:hover{text-decoration:underline;}
-
-/* hero */
-.hero{
-  display:grid;
-  gap:18px;
-}
-
-.hero-label{
-  display:inline-flex;
-  width:fit-content;
-  padding:8px 14px;
-  border:1px solid rgba(56,189,248,.22);
-  border-radius:999px;
-  color:#bae6fd;
-  font-size:.92rem;
-  font-weight:600;
-}
-
-.hero h1{
-  margin:0;
-  font-size:clamp(2.3rem,5vw,4rem);
-}
-
-.hero p{
-  margin:0;
-  color:var(--muted);
-  max-width:860px;
-}
-
-/* section */
-.section{
-  display:grid;
-  gap:22px;
-}
-
-.section-header h2{
-  margin:0;
-  font-size:clamp(1.4rem,3vw,2rem);
-}
-
-.section-header p{
-  margin:0;
-  color:var(--muted);
-}
-
-/* grid */
-.docs-grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:20px;
-}
-
-/* card */
-.doc-card{
-  display:grid;
-  gap:10px;
-  padding:24px 22px;
-  min-height:160px;
-  background:linear-gradient(180deg,rgba(30,41,59,.78),rgba(15,23,42,.92));
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  transition:.2s;
-}
-
-.doc-card:hover{
-  transform:translateY(-6px);
-  border-color:var(--border-strong);
-  background:var(--surface-hover);
-}
-
-.doc-card h3{
-  margin:0;
-  color:#f8fafc;
-  font-size:1.1rem;
-}
-
-.doc-card p{
-  margin:0;
-  color:var(--muted);
-  font-size:.95rem;
-}
-
-.doc-link{
-  margin-top:auto;
-  color:#7dd3fc;
-  font-weight:600;
-}
-
-/* footer */
-.site-footer{
-  text-align:center;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding-top:12px;
-  color:#8ea3be;
-  font-size:.95rem;
-}
+/* NAV（统一成你第二版风格） */
 .nav {
   display: flex;
   justify-content: space-between;
   padding: 14px 24px;
   border-bottom: 1px solid #1e2a3a;
-  background: #0f172a; /* 使用主色调的深蓝 */
+  background: #0f172a;
 }
 
 .nav a {
-  color: #38bdf8; /* 主色调浅蓝色 */
+  color: #38bdf8;
   text-decoration: none;
   margin-left: 12px;
   font-size: 14px;
 }
 
 .nav a:hover {
-  color: #2563eb; /* 更深的蓝色用于 hover 效果 */
-}
-@media(max-width:980px){
-  .docs-grid{grid-template-columns:repeat(2,1fr);}
+  color: #2563eb;
 }
 
-@media(max-width:640px){
-  .docs-grid{grid-template-columns:1fr;}
-  .page{width:calc(100% - 28px);}
+.page{
+  width:min(1180px,calc(100% - 40px));
+  margin:0 auto;
+  padding:80px 0 60px;
+}
+
+.hero h1{
+  font-size:38px;
+  margin:0 0 10px;
+}
+
+.hero p{
+  color:var(--muted);
+  margin:0 0 30px;
+}
+
+/* section */
+.section{
+  margin-top:40px;
+}
+
+.section h2{
+  font-size:20px;
+  margin-bottom:10px;
+  color:#cfe3ff;
+}
+
+.section p{
+  color:var(--muted);
+}
+
+/* grid */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  margin-top:20px;
+}
+
+.card{
+  background:#111823;
+  border:1px solid #1e2a3a;
+  padding:18px;
+  border-radius:10px;
+  transition:.2s;
+}
+
+.card:hover{
+  border-color:rgba(56,189,248,.5);
+  transform:translateY(-4px);
+}
+
+.card a{
+  color:#7dd3fc;
+  font-weight:600;
+  text-decoration:none;
+}
+
+.card p{
+  font-size:14px;
+  color:var(--muted);
+}
+
+/* footer */
+footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid #1e2a3a;
+  text-align:center;
+  color:#8ea3be;
+  font-size:13px;
+}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:repeat(2,1fr);}
+}
+
+@media(max-width:600px){
+  .grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
 
-<body data-header="docs">
+<body>
 
-<main class="page">
-
-  <!-- breadcrumb -->
-  <div class="nav">
+<!-- NAV（统一版本） -->
+<div class="nav">
   <div style="font-weight:600;">HRTOS</div>
   <div>
     <a href="/index.html">首页</a>
-    <a href="/why/index.html" style="color:#cfe3ff;">Why</a>
-    <a href="/system-view/index.html">系统</a>
+    <a href="/why/index.html">Why</a>
+    <a href="/system-view/index.html" style="color:#cfe3ff;">系统</a>
     <a href="/docs/index.html">文档</a>
   </div>
 </div>
 
-  <!-- hero -->
-  <section class="hero">
-    <span class="hero-label">SYSTEM VIEW</span>
-    <h1>系统运行视图</h1>
+<div class="page">
+
+  <!-- HERO（压缩） -->
+  <div class="hero">
+    <h1>System View（系统运行视图）</h1>
     <p>
-      以可视化方式呈现 HRTOS 内核运行过程，包括任务调度、上下文切换、中断流、时间系统与确定性执行链。
+      描述 HRTOS 内核的运行结构：执行流、调度、中断、时间系统与确定性执行链。
     </p>
-  </section>
+  </div>
+
+  <!-- 核心说明（压缩但保留本质） -->
+  <div class="section">
+    <h2>系统模型概述</h2>
+    <p>
+      HRTOS 是一个以时间确定性为核心约束的实时系统模型，
+      所有行为必须映射到可分析的时间路径。
+    </p>
+    <p style="color:#94a3b8;">
+      Event → Interrupt → Scheduler → Execution → Time → Event
+    </p>
+  </div>
+<!-- RTOS KNOWLEDGE TREE -->
 <section class="section">
 
   <div class="section-header">
-    <h2>系统模型概述（System Model Overview）</h2>
-    <p>HRTOS 并不是传统意义上的操作系统，而是一个以“时间确定性”为核心约束的实时执行模型。</p>
+    <h2>RTOS 知识结构路径</h2>
+    <p>从时间约束系统出发的系统化学习路径（Learning Tree）</p>
   </div>
 
-  <div class="doc-card">
-    <h3>什么是 HRTOS System View</h3>
-    <p>
-      System View 描述的是 HRTOS 内核的完整运行结构，包括任务执行流（Execution Flow）、
-      中断响应机制（Interrupt Flow）、调度循环（Scheduler Cycle）、时间系统（Time System）
-      与内存约束模型（Memory Constraint Model）。
-    </p>
-    <p>
-      它不是代码级 API 文档，而是<strong>系统级运行语义模型（System-level Semantic Model）</strong>。
-    </p>
-  </div>
+  <div class="card">
 
-  <div class="doc-card">
-    <h3>核心设计原则</h3>
-    <p>
-      HRTOS 的所有运行行为都围绕三个核心约束：
-    </p>
-    <p>
-      • 时间确定性（Temporal Determinism）<br>
-      • 执行可预测性（Execution Predictability）<br>
-      • 系统可分析性（System Analysability）
-    </p>
-    <p>
-      任何调度、中断或内存行为，只要破坏其中任意一个条件，系统即失去实时性意义。
-    </p>
-  </div>
+    <h3>RTOS 学习总览</h3>
 
-  <div class="doc-card">
-    <h3>系统运行模型结构</h3>
-    <p>
-      HRTOS 的运行可以抽象为一个闭环因果系统：
+    <p style="color:#7dd3fc;font-weight:600;margin-bottom:8px;">
+      RTOS = 时间约束执行系统
     </p>
-    <p>
-      <b>Event → Interrupt → Scheduler → Execution → Memory → Time → Event</b>
-    </p>
-    <p>
-      这个闭环决定了系统不是“执行程序”，而是在持续维护一个可证明的时间状态空间。
-    </p>
-  </div>
 
-  <div class="doc-card">
-    <h3>与传统 RTOS 的区别</h3>
-    <p>
-      传统 RTOS 关注“任务调度效率”，而 HRTOS 关注：
-      <b>整个系统行为是否可被时间函数描述</b>。
+    <p style="margin-bottom:10px;">
+      以下结构用于建立从“理论 → 调度 → 中断 → 架构”的完整认知路径：
     </p>
-    <p>
-      即：不仅要“跑得快”，还必须“每次都可预测地跑”。
-    </p>
-  </div>
 
-  <div class="doc-card">
-    <h3>设计目标</h3>
-    <p>
-      System View 的目标是建立一个统一模型，用于解释：
-    </p>
-    <p>
-      ✔ 为什么任务会在某个时间点执行<br>
-      ✔ 为什么中断会改变调度路径<br>
-      ✔ 为什么内存影响实时性<br>
-      ✔ 为什么系统可以被数学化分析
-    </p>
+    <div style="color:#cbd5e1; line-height:1.9; font-size:14px;">
+
+      <div>
+        <b>1. 实时系统基础</b> →
+        <a href="/docs/learn/real-time-systems.html" style="color:#38bdf8;">Real-Time Model</a>
+      </div>
+
+      <div style="margin-left:14px;">
+        • 硬实时 / 软实时：理解超时后果
+      </div>
+
+      <div style="margin-left:14px;">
+        • 时间约束：deadline / period / jitter
+      </div>
+
+      <div style="margin-left:14px;">
+        • WCET / WCRT：最坏情况分析模型
+      </div>
+
+      <br>
+
+      <div>
+        <b>2. 调度系统</b> →
+        <a href="/docs/learn/scheduling-basics.html" style="color:#38bdf8;">Scheduling</a>
+      </div>
+
+      <div style="margin-left:14px;">
+        • <a href="/docs/learn/preemptive-vs-cooperative.html" style="color:#38bdf8;">抢占式调度</a>：内核控制 CPU
+      </div>
+
+      <div style="margin-left:14px;">
+        • <a href="/docs/learn/preemptive-vs-cooperative.html" style="color:#38bdf8;">协作式调度</a>：任务让出 CPU
+      </div>
+
+      <br>
+
+      <div>
+        <b>3. 中断系统</b> →
+        <a href="/docs/learn/interrupt-basics.html" style="color:#38bdf8;">Interrupt Model</a>
+      </div>
+
+      <div style="margin-left:14px;">
+        • 外部事件如何进入内核路径
+      </div>
+
+      <br>
+
+      <div>
+        <b>4. 内核架构</b> →
+        <a href="/docs/architecture/index.html" style="color:#38bdf8;">Kernel Design</a>
+      </div>
+
+      <div style="margin-left:14px;">
+        • 将机制统一回系统级结构理解
+      </div>
+
+    </div>
+
   </div>
 
 </section>
-  <!-- core flow -->
-  <section class="section">
-    <div class="section-header">
-      <h2>核心运行流程</h2>
-      <p>系统从任务执行到调度切换的完整运行路径</p>
+  <!-- 核心入口（不删减，只压缩展示） -->
+  <div class="section">
+    <h2>核心运行流程</h2>
+
+    <div class="grid">
+      <div class="card">
+        <a href="01-execution-flow.html">执行流模型</a>
+        <p>任务从触发到完成的时间路径</p>
+      </div>
+
+      <div class="card">
+        <a href="02-task-lifecycle.html">任务生命周期</a>
+        <p>状态转换：Ready / Running / Blocked</p>
+      </div>
+
+      <div class="card">
+        <a href="03-interrupt-flow.html">中断流模型</a>
+        <p>外部事件如何影响执行路径</p>
+      </div>
+
+      <div class="card">
+        <a href="04-scheduler-cycle.html">调度周期</a>
+        <p>CPU分配与调度决策循环</p>
+      </div>
+
+      <div class="card">
+        <a href="05-memory-view.html">内存视图</a>
+        <p>堆栈与系统资源分布</p>
+      </div>
+
+      <div class="card">
+        <a href="06-time-system.html">时间系统</a>
+        <p>Tick与时间约束模型</p>
+      </div>
+
+      <div class="card">
+        <a href="07-deterministic-chain.html">确定性因果链</a>
+        <p>完整时间因果函数模型</p>
+      </div>
     </div>
-
-    <div class="docs-grid">
-
-      <a class="doc-card" href="01-execution-flow.html">
-        <h3>执行流程</h3>
-        <p>系统从启动到任务执行的完整路径</p>
-        <span class="doc-link">查看</span>
-      </a>
-
-      <a class="doc-card" href="02-task-lifecycle.html">
-        <h3>任务生命周期</h3>
-        <p>任务创建、就绪、运行与退出过程</p>
-        <span class="doc-link">查看</span>
-      </a>
-
-      <a class="doc-card" href="03-interrupt-flow.html">
-        <h3>中断流程</h3>
-        <p>中断触发与内核响应机制</p>
-        <span class="doc-link">查看</span>
-      </a>
-
-      <a class="doc-card" href="04-scheduler-cycle.html">
-        <h3>调度周期</h3>
-        <p>调度器运行与任务切换周期</p>
-        <span class="doc-link">查看</span>
-      </a>
-
-      <a class="doc-card" href="05-memory-view.html">
-        <h3>内存视图</h3>
-        <p>堆栈、任务内存与系统资源布局</p>
-        <span class="doc-link">查看</span>
-      </a>
-
-      <a class="doc-card" href="06-time-system.html">
-        <h3>时间系统</h3>
-        <p>Tick系统与时间驱动机制</p>
-        <span class="doc-link">查看</span>
-      </a>
-
-      <a class="doc-card" href="07-deterministic-chain.html">
-        <h3>确定性链</h3>
-        <p>系统实时确定性执行路径</p>
-        <span class="doc-link">查看</span>
-      </a>
-
-    </div>
-  </section>
-
-  <!-- structure view -->
-  <section class="section">
-    <div class="section-header">
-      <h2>结构视图</h2>
-      <p>系统级运行结构与抽象模型</p>
-    </div>
-
-    <div class="docs-grid">
-
-      <a class="doc-card" href="system-diagram.html">
-        <h3>系统结构图</h3>
-        <p>HRTOS 内核结构与模块关系图</p>
-        <span class="doc-link">查看</span>
-      </a>
-
-      <a class="doc-card" href="summary.html">
-        <h3>系统总结</h3>
-        <p>System View 全局运行模型总结</p>
-        <span class="doc-link">查看</span>
-      </a>
-
-    </div>
-  </section>
-
-  <footer class="site-footer">
-  <div style="margin-bottom:10px;">
-    © 2017–2026 HRTOS · SYSTEM VIEW INDEX
   </div>
 
-  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:880px;margin:0 auto;">
-    System View 是 HRTOS 内核运行结构的入口层，用于组织系统执行流、调度模型、中断路径与内存结构。<br>
-    本页面不描述具体机制，而是提供系统运行模型的导航入口。
+  <!-- 结构入口 -->
+  <div class="section">
+    <h2>结构视图</h2>
+
+    <div class="grid">
+      <div class="card">
+        <a href="system-diagram.html">系统结构图</a>
+        <p>模块关系与系统结构</p>
+      </div>
+
+      <div class="card">
+        <a href="summary.html">系统总结</a>
+        <p>System View 全局模型</p>
+      </div>
+    </div>
   </div>
 
-  <div style="margin-top:14px;font-size:13px;">
-    <a href="/why/index.html" style="color:#7dd3fc;margin-right:12px;">WHY Layer</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;margin-right:12px;">执行流</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;margin-right:12px;">调度周期</a>
-    <a href="/system-view/03-interrupt-flow.html" style="color:#7dd3fc;margin-right:12px;">中断模型</a>
-    <a href="/system-view/05-memory-view.html" style="color:#7dd3fc;">内存模型</a>
-  </div>
+  <!-- footer -->
+  <footer>
+    © 2017–2026 HRTOS · SYSTEM VIEW
+    <br><br>
+    System View 是 HRTOS 内核运行结构入口层，包括执行流、调度周期、中断路径与内存约束。<br>
+    该层关注“系统如何运行”，而非“为什么这样设计”。
+  </footer>
 
-  <div style="margin-top:12px;font-size:12px;color:#6b7a90;">
-    System View → Execution Structure · Runtime Model · Kernel Behavior
-  </div>
-</footer>
+</div>
 
-</main>
-<script src="https://hrtos.com/header.js" defer></script>
 </body>
 </html>

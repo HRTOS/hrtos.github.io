@@ -10,50 +10,65 @@
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="deterministic-chain">
 
-
-
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-  line-height: 1.6;
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
 }
 
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
-  background: #0f172a; /* 使用主色调的深蓝 */
+/* NAV */
+.nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 24px;
+  border-bottom:1px solid rgba(148,163,184,.12);
+  background:rgba(11,15,20,.92);
+  position:sticky;
+  top:0;
 }
 
-.nav a {
-  color: #38bdf8; /* 主色调浅蓝色 */
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
+.nav a{
+  color:var(--muted);
+  margin-left:14px;
+  text-decoration:none;
+  font-size:14px;
 }
 
-.nav a:hover {
-  color: #2563eb; /* 更深的蓝色用于 hover 效果 */
+.nav a.active{
+  color:#cfe3ff;
 }
 
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
+/* layout */
+.container{
+  max-width:920px;
+  margin:0 auto;
+  padding:60px 24px;
 }
 
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
+h1{
+  font-size:38px;
+  margin:0 0 10px;
+}
+
+.sub{
+  color:var(--muted);
+  margin-bottom:40px;
 }
 /* footer */
 .site-footer{
@@ -63,41 +78,28 @@ h1 {
   color:#8ea3be;
   font-size:.95rem;
 }
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
+/* card */
+.card{
+  background:rgba(17,24,35,.92);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
 }
 
-.card-core {
-  border-left: 3px solid #4da3ff;
-  background: #0f1722;
+.card h2{
+  margin:0 0 10px;
+  font-size:18px;
+  color:#cfe3ff;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
 }
 
-.card-chain {
-  border-left: 3px solid #22c55e;
-}
-
-.card-failure {
-  border-left: 3px solid #ef4444;
-}
-
-.card-meta {
-  border-left: 3px solid #9fb0c3;
-}
-
-h2 {
-  font-size: 20px;
-  color: #cfe3ff;
-  margin-bottom: 10px;
-}
-
-.en {
-  color: #9fb0c3;
-  font-size: 14px;
-  margin-top: 6px;
+.en{
+  color:var(--muted);
+  font-size:14px;
+  margin-top:6px;
 }
 </style>
 </head>
@@ -110,217 +112,150 @@ h2 {
   <div>
     <a href="/index.html">首页</a>
     <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/system-view/index.html" class="active">System</a>
     <a href="/docs/index.html">Docs</a>
   </div>
 </div>
 
 <div class="container">
 
-  <h1>07 确定性因果链（Deterministic Chain）</h1>
-  <div class="sub">
-    从事件触发到系统输出的完整时间因果结构
-  </div>
+<h1>07 确定性因果链（Deterministic Chain）</h1>
+<div class="sub">从事件触发到结果输出的时间因果结构</div>
 
-  <!-- core definition -->
-  <div class="card card-core">
-    <h2>核心定义</h2>
-
-    <p>
-      确定性因果链（Deterministic Chain）描述的是：在 HRTOS 中，一个外部或内部事件如何经过一系列系统阶段，最终生成一个可预测的执行结果。
-    </p>
-
-    <p>
-      它不是“执行流程”，而是“时间 + 调度 + 中断 + 内存”共同构成的因果路径模型。
-    </p>
-
-    <div class="en">
-      A deterministic chain defines how events propagate through scheduling, interrupts and execution to produce predictable outcomes.
-    </div>
-  </div>
-
-  <!-- chain structure -->
-  <div class="card card-chain">
-    <h2>1. 因果链结构（Causal Pipeline）</h2>
-
-    <p>
-      一个完整的实时执行链可以抽象为以下顺序：
-    </p>
-
-    <p>
-      <b>Event Trigger → Interrupt → Scheduling Decision → Context Switch → Execution → Completion</b>
-    </p>
-
-    <p>
-      每一个阶段都是时间约束节点，而不是功能模块。
-    </p>
-
-    <p>
-      系统确定性 = 每个节点延迟上界的可证明性之和。
-    </p>
-  </div>
-
-  <!-- trigger -->
-  <div class="card card-chain">
-    <h2>2. 事件触发层（Event Layer）</h2>
-
-    <p>
-      事件来源包括：
-    </p>
-
-    <p>
-      • 外部中断（传感器 / IO）  
-      • 系统定时器（Tick）  
-      • 内部信号（任务间通信）
-    </p>
-
-    <p>
-      关键约束：事件必须可枚举，否则因果链无法建模。
-    </p>
-  </div>
-
-  <!-- scheduling -->
-  <div class="card card-chain">
-    <h2>3. 调度决策层（Decision Layer）</h2>
-
-    <p>
-      调度器在事件发生后执行唯一决策：
-    </p>
-
-    <p>
-      👉 谁在“下一时间片”获得 CPU
-    </p>
-
-    <p>
-      在确定性系统中，这个决策必须是：
-    </p>
-
-    <p>
-      ✔ 可重复  
-      ✔ 可分析  
-      ✔ 不依赖运行时随机状态
-    </p>
-  </div>
-
-  <!-- execution -->
-  <div class="card card-chain">
-    <h2>4. 执行层（Execution Layer）</h2>
-
-    <p>
-      执行阶段是因果链中“时间消耗最大”的部分。
-    </p>
-
-    <p>
-      它必须满足 WCET（Worst Case Execution Time）边界，否则整个链失效。
-    </p>
-
-    <p>
-      在 HRTOS 中：
-    </p>
-
-    <p>
-      ✔ 平均时间无意义  
-      ✔ 只有最坏路径有效
-    </p>
-  </div>
-
-  <!-- failure -->
-  <div class="card card-failure">
-    <h2>5. 确定性破坏点（Determinism Breakpoints）</h2>
-
-    <p>
-      以下任一因素都会破坏因果链：
-    </p>
-
-    <p>
-      • 不可预测调度（non-deterministic scheduler）  
-      • cache miss 抖动未建模  
-      • 动态内存分配  
-      • 未界定中断嵌套深度  
-      • 未约束锁竞争
-    </p>
-
-    <p>
-      一旦出现不可建模路径，系统就失去“可证明性”。
-    </p>
-  </div>
-
-  <!-- system implication -->
-  <div class="card card-chain">
-    <h2>6. 系统级意义</h2>
-
-    <p>
-      确定性因果链的意义不是描述系统，而是：
-    </p>
-
-    <p>
-      👉 把“操作系统行为”变成“可证明的时间函数”
-    </p>
-
-    <p>
-      即：
-    </p>
-
-    <p>
-      Input(Event) → F(t) → Output(Result)
-    </p>
-
-    <p>
-      其中 F(t) 必须是稳定的时间函数。
-    </p>
-  </div>
-
-  <!-- meta -->
-  <div class="card card-meta">
-    <h2>语义总结</h2>
-
-    <p>
-      确定性因果链的本质，是把操作系统从“执行系统”提升为“时间因果系统”。
-    </p>
-
-    <p>
-      它回答的问题不是“系统做了什么”，而是“系统为什么每次都能在同一时间结构中做出同样结果”。
-    </p>
-
-    <div class="en">
-      A deterministic chain transforms an operating system into a time-causal system with provable behavior.
-    </div>
-  </div>
-<!-- related reading -->
-<div class="card card-meta">
-  <h2>相关阅读（Related Reading）</h2>
-
-  <p><strong>上级入口</strong></p>
+<div class="card">
+  <h2>核心定义</h2>
   <p>
-    <a href="/system-view/index.html">System View 总览</a>
+    确定性因果链描述事件在 HRTOS 中如何经过中断、调度与执行路径，
+    最终生成可预测的系统输出。
   </p>
-
-  <p><strong>上一篇（学习顺序）</strong></p>
   <p>
-    <a href="/system-view/06-time-system.html">06 时间系统（Time System）←</a>
+    它不是流程图，而是“时间约束驱动的因果模型”。
   </p>
+  <div class="en">
+    A deterministic chain models how events become predictable outcomes through time-constrained system stages.
+  </div>
+</div>
 
-  <p><strong>下一步（体系扩展）</strong></p>
+<div class="card">
+  <h2>1. 因果链结构</h2>
   <p>
-    <a href="/docs/index.html">进入 Docs 体系（实现层）→</a>
+    完整链路：
   </p>
-
-  <p><strong>同类型扩展（系统因果 / 调度视角）</strong></p>
   <p>
-    <a href="/system-view/04-scheduler-cycle.html">调度循环模型</a><br>
-    <a href="/system-view/03-interrupt-flow.html">中断流模型</a>
+    Event → Interrupt → Scheduling → Context Switch → Execution → Result
   </p>
-
-  <p><strong>跨模块关联（系统实现层）</strong></p>
   <p>
-    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度模型</a><br>
-    <a href="/docs/modules/memory/memory-protection.html">内存保护机制</a>
+    每个节点都是时间约束点，而非功能模块。
   </p>
 </div>
-<footer class="site-footer">
-  <div style="margin-bottom:10px;">
-    © 2017–2026 HRTOS · SYSTEM VIEW
+
+<div class="card">
+  <h2>2. 事件层</h2>
+  <p>
+    事件来源：
+  </p>
+  <p>
+    • 外部中断（IO / 传感器）<br>
+    • Tick 定时器<br>
+    • 任务通信信号
+  </p>
+  <p>
+    要求：事件必须可枚举，否则无法建立确定性模型。
+  </p>
+</div>
+
+<div class="card">
+  <h2>3. 调度层</h2>
+  <p>
+    调度器只做一件事：
+  </p>
+  <p>
+    决定下一时刻 CPU 属于谁
+  </p>
+  <p>
+    要求：
+    ✔ 可重复<br>
+    ✔ 可分析<br>
+    ✔ 无随机依赖
+  </p>
+</div>
+
+<div class="card">
+  <h2>4. 执行层</h2>
+  <p>
+    执行是链路中主要耗时阶段。
+  </p>
+  <p>
+    必须满足 WCET 上界，否则因果链失效。
+  </p>
+  <p>
+    设计原则：只关心最坏情况，而非平均值。
+  </p>
+</div>
+
+<div class="card">
+  <h2>5. 破坏点</h2>
+  <p>
+    以下因素会破坏确定性：
+  </p>
+  <p>
+    • 非确定调度策略<br>
+    • cache miss 未建模<br>
+    • 动态内存分配<br>
+    • 不受控中断嵌套<br>
+    • 锁竞争不可界定
+  </p>
+</div>
+
+<div class="card">
+  <h2>6. 系统意义</h2>
+  <p>
+    因果链的目标不是描述执行，而是构造函数：
+  </p>
+  <p>
+    Input(Event) → F(t) → Output
+  </p>
+  <p>
+    其中 F(t) 必须稳定且可证明。
+  </p>
+</div>
+
+<div class="card">
+  <h2>语义总结</h2>
+  <p>
+    确定性因果链把操作系统从“执行系统”提升为“时间因果系统”。
+  </p>
+  <p>
+    系统正确性等价于：在相同时间结构下产生相同结果。
+  </p>
+  <div class="en">
+    A deterministic chain turns an OS into a provable time-causal system.
   </div>
+</div>
+
+<div class="card">
+  <h2>相关阅读</h2>
+
+  <p><b>上级</b></p>
+  <p><a href="/system-view/index.html" style="color:#38bdf8;">System View 总览</a></p>
+
+  <p><b>上一篇</b></p>
+  <p><a href="/system-view/06-time-system.html" style="color:#38bdf8;">06 时间系统 ←</a></p>
+
+  <p><b>下一篇</b></p>
+  <p><a href="/docs/index.html" style="color:#38bdf8;">Docs 体系 →</a></p>
+
+  <p><b>扩展</b></p>
+  <p>
+    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度循环模型</a><br>
+    <a href="/system-view/03-interrupt-flow.html" style="color:#38bdf8;">中断流模型</a>
+  </p>
+</div>
+
+</div>
+
+<footer class="site-footer">
+  © 2017–2026 HRTOS · SYSTEM VIEW
 
   <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
     System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
@@ -328,14 +263,13 @@ h2 {
   </div>
 
   <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#7dd3fc;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#7dd3fc;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#7dd3fc;">← WHY Layer</a>
+    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
+    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
+    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
+    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
+    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
   </div>
 </footer>
-</div>
 
 </body>
 </html>

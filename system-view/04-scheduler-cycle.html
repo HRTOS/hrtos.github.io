@@ -10,90 +10,98 @@
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="scheduler-cycle">
 
-
-
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-  line-height: 1.6;
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
 }
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
+}
+
+/* NAV */
+.nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 24px;
+  border-bottom:1px solid rgba(148,163,184,.12);
+  background:rgba(11,15,20,.92);
+  position:sticky;
+  top:0;
+}
+
+.nav a{
+  color:var(--muted);
+  margin-left:14px;
+  text-decoration:none;
+  font-size:14px;
+}
+
+.nav a.active{
+  color:#cfe3ff;
+}
+
+/* layout */
+.container{
+  max-width:920px;
+  margin:0 auto;
+  padding:60px 24px;
+}
+
+h1{
+  font-size:38px;
+  margin:0 0 10px;
+}
+
+.sub{
+  color:var(--muted);
+  margin-bottom:40px;
+}
+
+/* card */
+.card{
+  background:rgba(17,24,35,.92);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
+}
+
+.card h2{
+  margin:0 0 10px;
+  font-size:18px;
+  color:#cfe3ff;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
+}
+
+.en{
+  color:var(--muted);
+  font-size:14px;
+  margin-top:6px;
+}
+
 /* footer */
 .site-footer{
   text-align:center;
   border-top:1px solid rgba(148,163,184,.14);
-  padding-top:12px;
+  padding:18px 12px;
   color:#8ea3be;
   font-size:.95rem;
-}
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
-}
-
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
-  background: #0f172a; /* 使用主色调的深蓝 */
-}
-
-.nav a {
-  color: #38bdf8; /* 主色调浅蓝色 */
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
-}
-
-.nav a:hover {
-  color: #2563eb; /* 更深的蓝色用于 hover 效果 */
-}
-
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
-}
-
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
-}
-
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
-}
-
-.card-core {
-  border-left: 3px solid #4da3ff;
-  background: #0f1722;
-}
-
-.card-cycle {
-  border-left: 3px solid #f59e0b;
-}
-
-.card-meta {
-  border-left: 3px solid #9fb0c3;
-}
-
-h2 {
-  font-size: 20px;
-  color: #cfe3ff;
-  margin-bottom: 10px;
-}
-
-.en {
-  color: #9fb0c3;
-  font-size: 14px;
-  margin-top: 6px;
 }
 </style>
 </head>
@@ -105,7 +113,7 @@ h2 {
   <div>
     <a href="/index.html">首页</a>
     <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/system-view/index.html" class="active">System</a>
     <a href="/docs/index.html">Docs</a>
   </div>
 </div>
@@ -113,186 +121,126 @@ h2 {
 <div class="container">
 
   <h1>4. 调度循环（Scheduler Cycle）</h1>
-  <div class="sub">
-    系统如何在时间维度上持续做出“谁执行”的决策
-  </div>
+  <div class="sub">持续进行“任务执行 + 中断事件”的实时决策闭环</div>
 
-  <!-- core -->
-  <div class="card card-core">
+  <div class="card">
     <h2>核心定义</h2>
-
     <p>
-      调度循环（Scheduler Cycle）是 HRTOS 的核心控制闭环，用于在“任务执行流”和“中断事件流”之间持续进行决策更新。
+      调度循环是 HRTOS 的核心控制闭环，用于在任务执行流与中断事件流之间持续做出调度决策。
     </p>
-
     <p>
-      它不是一次性算法，而是一个<strong>持续运行的实时决策系统</strong>。
+      它不是一次性算法，而是持续运行的实时决策系统。
     </p>
-
-    <p>
-      每一次循环，都必须在有限时间内完成“可执行性判断 + 最优执行选择”。
-    </p>
-
     <div class="en">
-      The scheduler cycle is a continuous real-time decision loop balancing task execution and interrupt events.
+      Scheduler cycle is a continuously running real-time decision loop.
     </div>
   </div>
 
-  <!-- cycle step 1 -->
-  <div class="card card-cycle">
-    <h2>1. 系统状态采样（System State Sampling）</h2>
-
+  <div class="card">
+    <h2>1. 系统状态采样</h2>
     <p>
-      调度器首先获取当前系统状态快照：
+      调度器首先采样系统状态：
     </p>
-
     <p>
-      • 任务状态（Ready / Running / Blocked）<br>
-      • 中断标志位（Pending Interrupts）<br>
-      • 资源锁状态（Mutex / Semaphore）<br>
-      • 时间约束窗口（Deadlines）
+      任务状态 / 中断标志 / 资源锁 / 时间约束窗口
     </p>
-
     <p>
-      这是调度决策的输入空间。
+      用于构建当前决策输入空间。
     </p>
   </div>
 
-  <!-- cycle step 2 -->
-  <div class="card card-cycle">
-    <h2>2. 可执行集合构建（Ready Set Construction）</h2>
-
+  <div class="card">
+    <h2>2. 可执行集合构建</h2>
     <p>
-      从所有任务中筛选“当前可执行集合（Ready Set）”。
+      从所有任务中筛选当前可执行集合（Ready Set）。
     </p>
-
     <p>
-      条件包括：
-    </p>
-
-    <p>
-      • 不在阻塞状态<br>
-      • 满足资源依赖<br>
-      • 未超过调度屏障（Scheduling Barrier）
+      条件：非阻塞、资源满足、未违反调度约束。
     </p>
   </div>
 
-  <!-- cycle step 3 -->
-  <div class="card card-cycle">
-    <h2>3. 调度决策计算（Scheduling Decision）</h2>
-
+  <div class="card">
+    <h2>3. 调度决策计算</h2>
     <p>
-      调度器在 Ready Set 中选择“最优执行任务”。
+      在 Ready Set 中选择执行任务。
     </p>
-
     <p>
-      在 RTOS 中，“最优”不是性能意义，而是：
+      “最优”在 RTOS 中意味着：
     </p>
-
     <p>
       ✔ 满足时间约束<br>
       ✔ 满足优先级规则<br>
-      ✔ 不破坏系统确定性
+      ✔ 保持系统确定性
     </p>
-
     <p>
-      这是一个约束优化问题，而不是简单排序。
+      本质是约束决策问题，而非排序问题。
     </p>
   </div>
 
-  <!-- cycle step 4 -->
-  <div class="card card-cycle">
-    <h2>4. 上下文切换执行（Context Switch Execution）</h2>
-
+  <div class="card">
+    <h2>4. 上下文切换</h2>
     <p>
-      当前任务被暂停，系统保存 CPU 状态并切换到目标任务。
+      保存当前任务状态并切换执行目标任务。
     </p>
-
     <p>
-      切换过程必须满足：
-    </p>
-
-    <p>
-      • 时间上界可预测（Bounded Switch Time）<br>
-      • 不引入随机延迟<br>
-      • 不破坏中断一致性
+      必须满足：切换时间有界且可预测，不引入随机延迟。
     </p>
   </div>
 
-  <!-- cycle step 5 -->
-  <div class="card card-cycle">
-    <h2>5. 中断融合与再调度（Interrupt Fusion）</h2>
-
+  <div class="card">
+    <h2>5. 中断融合与再调度</h2>
     <p>
-      中断事件可能在任意时刻插入调度循环。
+      中断可能随时插入调度循环。
     </p>
-
     <p>
-      因此调度器必须具备：
+      调度器必须支持：
     </p>
-
     <p>
-      ✔ 中断感知能力<br>
-      ✔ 即时重新计算能力<br>
-      ✔ 可抢占决策能力
+      ✔ 中断感知<br>
+      ✔ 即时重计算<br>
+      ✔ 抢占式调度
     </p>
-
     <p>
-      这使调度循环成为“动态重计算系统”。
+      因此调度循环是动态重计算系统。
     </p>
   </div>
 
-  <!-- system meaning -->
-  <div class="card card-meta">
+  <div class="card">
     <h2>语义总结</h2>
-
     <p>
-      调度循环的本质不是“调度算法”，而是一个持续运行的实时决策闭环系统。
+      调度循环不是算法，而是持续运行的实时决策闭环。
     </p>
-
     <p>
-      它连接了任务执行流与中断流，是RTOS时间模型的核心控制器。
+      它连接执行流与中断流，是RTOS时间模型的核心控制器。
     </p>
-
     <div class="en">
-      The scheduler cycle is not an algorithm but a continuously running real-time decision loop that connects execution flow and interrupt flow.
+      The scheduler cycle is a real-time decision loop connecting execution and interrupt flows.
     </div>
   </div>
-<!-- related reading -->
-<div class="card card-meta">
-  <h2>相关阅读（Related Reading）</h2>
 
-  <p><strong>上级入口</strong></p>
-  <p>
-    <a href="/system-view/index.html">System View 总览</a>
-  </p>
+  <div class="card">
+    <h2>相关阅读</h2>
 
-  <p><strong>上一篇（学习顺序）</strong></p>
-  <p>
-    <a href="/system-view/03-interrupt-flow.html">03 中断流模型（Interrupt Flow）←</a>
-  </p>
+    <p><b>System View</b></p>
+    <p><a href="/system-view/index.html" style="color:#38bdf8;">返回总览</a></p>
 
-  <p><strong>下一篇（学习顺序）</strong></p>
-  <p>
-    <a href="/system-view/05-memory-view.html">05 内存视图模型（Memory View）→</a>
-  </p>
+    <p><b>上一篇</b></p>
+    <p><a href="/system-view/03-interrupt-flow.html" style="color:#38bdf8;">中断流模型 ←</a></p>
 
-  <p><strong>同类型扩展（调度 / 执行系统）</strong></p>
-  <p>
-    <a href="/system-view/01-execution-flow.html">执行流模型</a><br>
-    <a href="/system-view/02-task-lifecycle.html">任务生命周期</a>
-  </p>
+    <p><b>下一篇</b></p>
+    <p><a href="/system-view/05-memory-view.html" style="color:#38bdf8;">内存视图模型 →</a></p>
 
-  <p><strong>跨模块关联（系统级理解）</strong></p>
-  <p>
-    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度模型</a><br>
-    <a href="/docs/modules/task/context-switch.html">任务上下文切换（Context Switch）</a>
-  </p>
-</div>
-<footer class="site-footer">
-  <div style="margin-bottom:10px;">
-    © 2017–2026 HRTOS · SYSTEM VIEW
+    <p><b>扩展</b></p>
+    <p>
+      <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;">执行流模型</a><br>
+      <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;">任务生命周期</a>
+    </p>
   </div>
+
+</div>
+
+<footer class="site-footer">
+  © 2017–2026 HRTOS · SYSTEM VIEW
 
   <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
     System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
@@ -300,14 +248,13 @@ h2 {
   </div>
 
   <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#7dd3fc;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#7dd3fc;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#7dd3fc;">← WHY Layer</a>
+    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
+    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
+    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
+    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
+    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
   </div>
 </footer>
-</div>
 
 </body>
 </html>

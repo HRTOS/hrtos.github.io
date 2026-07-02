@@ -10,90 +10,98 @@
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="task-lifecycle">
 
-
-
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-  line-height: 1.6;
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
 }
 
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
-  background: #0f172a; /* 使用主色调的深蓝 */
+/* NAV */
+.nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 24px;
+  border-bottom:1px solid rgba(148,163,184,.12);
+  background:rgba(11,15,20,.92);
+  position:sticky;
+  top:0;
 }
 
-.nav a {
-  color: #38bdf8; /* 主色调浅蓝色 */
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
+.nav a{
+  color:var(--muted);
+  margin-left:14px;
+  text-decoration:none;
+  font-size:14px;
 }
 
-.nav a:hover {
-  color: #2563eb; /* 更深的蓝色用于 hover 效果 */
+.nav a.active{
+  color:#cfe3ff;
 }
 
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
+/* layout */
+.container{
+  max-width:920px;
+  margin:0 auto;
+  padding:60px 24px;
 }
 
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
+h1{
+  font-size:38px;
+  margin:0 0 10px;
 }
+
+.sub{
+  color:var(--muted);
+  margin-bottom:40px;
+}
+
+/* card */
+.card{
+  background:rgba(17,24,35,.92);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
+}
+
+.card h2{
+  margin:0 0 10px;
+  font-size:18px;
+  color:#cfe3ff;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
+}
+
+.en{
+  color:var(--muted);
+  font-size:14px;
+  margin-top:6px;
+}
+
 /* footer */
 .site-footer{
   text-align:center;
   border-top:1px solid rgba(148,163,184,.14);
-  padding-top:12px;
+  padding:18px 12px;
   color:#8ea3be;
   font-size:.95rem;
-}
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
-}
-
-.card-core {
-  border-left: 3px solid #4da3ff;
-  background: #0f1722;
-}
-
-.card-state {
-  border-left: 3px solid #22c55e;
-}
-
-.card-meta {
-  border-left: 3px solid #9fb0c3;
-}
-
-h2 {
-  font-size: 20px;
-  color: #cfe3ff;
-  margin-bottom: 10px;
-}
-
-.en {
-  color: #9fb0c3;
-  font-size: 14px;
-  margin-top: 6px;
 }
 </style>
 </head>
@@ -105,7 +113,7 @@ h2 {
   <div>
     <a href="/index.html">首页</a>
     <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/system-view/index.html" class="active">System</a>
     <a href="/docs/index.html">Docs</a>
   </div>
 </div>
@@ -113,229 +121,118 @@ h2 {
 <div class="container">
 
   <h1>2. 任务生命周期（Task Lifecycle）</h1>
-  <div class="sub">
-    任务在 HRTOS 中的完整状态流转模型（时间 + 调度 + 资源三维视角）
-  </div>
+  <div class="sub">任务在 HRTOS 中的时间驱动状态流转模型</div>
 
-  <!-- core -->
-  <div class="card card-core">
+  <div class="card">
     <h2>核心定义</h2>
-
     <p>
-      任务生命周期描述一个任务从“被系统引入”到“彻底退出系统”的完整状态变化过程。
+      任务生命周期描述任务从创建到终止的完整状态变化过程。
     </p>
-
     <p>
-      在 HRTOS 中，生命周期不是简单状态机，而是一个<strong>受时间约束的执行实体模型</strong>：
-      每一次状态切换都对应一次调度决策或系统事件。
+      在 HRTOS 中，它不仅是状态机，而是一个受时间约束的执行实体模型。
     </p>
-
-    <p>
-      因此，生命周期本质上是：任务在时间轴上的“存在形式变化过程”。
-    </p>
-
     <div class="en">
-      Task lifecycle is not only a state machine, but a time-constrained execution entity model.
+      Task lifecycle is a time-constrained execution entity model, not a simple state machine.
     </div>
   </div>
 
-  <!-- expanded model -->
-  <div class="card card-state">
-    <h2>生命周期的系统本质</h2>
-
+  <div class="card">
+    <h2>系统本质</h2>
     <p>
-      在通用系统中，任务状态用于“管理资源”；
-      在 HRTOS 中，任务状态用于“约束时间行为”。
+      在 HRTOS 中，状态的意义不是资源管理，而是时间约束管理。
     </p>
-
     <p>
-      状态变化的意义不是“逻辑切换”，而是：
-      <strong>是否进入新的时间约束区间</strong>。
-    </p>
-
-    <p>
-      每一个状态都隐含一个时间语义：
-      是否可调度、是否占用CPU、是否等待事件、是否破坏deadline。
+      每一次状态变化，本质都是一次时间语义切换：是否占用CPU、是否可调度、是否进入等待区间。
     </p>
   </div>
 
-  <!-- state 1 -->
-  <div class="card card-state">
+  <div class="card">
     <h2>1. 创建（Created）</h2>
-
-    <p>
-      任务被定义并分配控制块（TCB），但尚未参与调度体系。
-    </p>
-
-    <p>
-      此阶段的关键问题不是“是否存在”，而是：
-      <strong>是否进入系统时间模型</strong>。
-    </p>
+    <p>任务被初始化并分配TCB，但尚未进入调度体系。</p>
+    <p>关键点：是否进入系统时间模型。</p>
   </div>
 
-  <!-- state 2 -->
-  <div class="card card-state">
+  <div class="card">
     <h2>2. 就绪（Ready）</h2>
-
-    <p>
-      任务已具备执行条件，进入调度候选集合（Ready Queue）。
-    </p>
-
-    <p>
-      此时任务已经“进入时间竞争系统”，但尚未消耗CPU时间。
-    </p>
-
-    <p>
-      Ready状态的核心本质是：
-      <strong>等待时间被分配</strong>。
-    </p>
+    <p>任务进入就绪队列，具备执行条件但未获得CPU。</p>
+    <p>本质：等待时间分配。</p>
   </div>
 
-  <!-- state 3 -->
-  <div class="card card-state">
+  <div class="card">
     <h2>3. 运行（Running）</h2>
-
+    <p>任务获得CPU执行权，进入时间消耗阶段。</p>
     <p>
-      任务获得CPU执行权，进入真实时间消耗阶段。
-    </p>
-
-    <p>
-      在该阶段，系统必须同时满足：
-      <br>• 可抢占性（Preemptive Control）
-      <br>• WCET约束（Worst-case Execution Time）
-      <br>• 中断响应边界（Interrupt Latency Bound）
-    </p>
-
-    <p>
-      Running状态是唯一“消耗系统时间资源”的状态。
+      约束包括：抢占控制、WCET约束、中断延迟边界。
     </p>
   </div>
 
-  <!-- state 4 -->
-  <div class="card card-state">
+  <div class="card">
     <h2>4. 阻塞（Blocked）</h2>
-
-    <p>
-      任务因等待资源或事件而暂停执行。
-    </p>
-
-    <p>
-      阻塞不是“停止”，而是进入“不可调度但保留状态”的时间冻结区间。
-    </p>
-
-    <p>
-      在实时系统中，阻塞时间本身必须可分析，否则会污染整个调度模型。
-    </p>
+    <p>任务因资源或事件进入等待状态。</p>
+    <p>该状态本质是“时间冻结”，但仍属于系统时间模型的一部分。</p>
   </div>
 
-  <!-- state 5 -->
-  <div class="card card-state">
+  <div class="card">
     <h2>5. 终止（Terminated）</h2>
-
-    <p>
-      任务生命周期结束，系统释放其所有资源与调度信息。
-    </p>
-
-    <p>
-      关键点不是“结束执行”，而是：
-      <strong>是否完全退出时间模型</strong>。
-    </p>
+    <p>任务退出系统，释放资源并移出调度体系。</p>
+    <p>关键点：是否完全脱离时间模型。</p>
   </div>
 
-  <!-- transition model -->
-  <div class="card card-state">
-    <h2>状态转移本质</h2>
-
-    <p>
-      生命周期不是线性过程，而是事件驱动状态机：
-    </p>
-
+  <div class="card">
+    <h2>状态转移模型</h2>
     <p>
       Created → Ready → Running → Blocked → Ready → Running → Terminated
     </p>
-
     <p>
-      其中每一次跳转都由：
-      <br>• 中断（Interrupt）
-      <br>• 调度器（Scheduler）
-      <br>• 资源事件（Resource Event）
-      <br>共同驱动。
-    </p>
-
-    <p>
-      本质上，任务生命周期 = “时间驱动的状态图遍历过程”。
+      由三类事件驱动：中断、调度器、资源事件。
     </p>
   </div>
 
-  <!-- system meaning -->
-  <div class="card card-core">
+  <div class="card">
     <h2>系统级意义</h2>
-
     <p>
-      生命周期模型的意义不在于描述任务，而在于：
-      <strong>让系统可以预测任务行为在时间上的变化轨迹</strong>。
+      生命周期的核心作用是：让任务行为在时间上可预测。
     </p>
-
     <p>
-      如果生命周期不可预测，则调度分析（Scheduling Analysis）将失效。
+      若生命周期不可预测，则调度分析失效。
     </p>
-
     <div class="en">
-      Lifecycle modeling exists to make task behavior predictable over time.
+      Lifecycle modeling enables predictable temporal behavior of tasks.
     </div>
   </div>
 
-  <!-- meta -->
-  <div class="card card-meta">
+  <div class="card">
     <h2>语义总结</h2>
-
     <p>
-      任务生命周期的本质是：系统如何在时间维度上管理执行实体的存在与消失。
+      生命周期不是状态管理，而是时间资源分配模型。
     </p>
-
-    <p>
-      它不是“状态变化模型”，而是“时间资源分配模型”。
-    </p>
-
     <div class="en">
-      Task lifecycle is not a state model, but a time-resource allocation model.
+      Task lifecycle is a time-resource allocation model.
     </div>
   </div>
-<!-- related reading -->
-<div class="card card-meta">
-  <h2>相关阅读（Related Reading）</h2>
 
-  <p><strong>上级入口</strong></p>
-  <p>
-    <a href="/system-view/index.html">System View 总览</a>
-  </p>
+  <div class="card">
+    <h2>相关阅读</h2>
+    <p><b>System View</b></p>
+    <p><a href="/system-view/index.html" style="color:#38bdf8;">返回总览</a></p>
 
-  <p><strong>上一篇（学习顺序）</strong></p>
-  <p>
-    <a href="/system-view/01-execution-flow.html">01 执行流模型（Execution Flow）←</a>
-  </p>
+    <p><b>上一篇</b></p>
+    <p><a href="/system-view/01-execution-flow.html" style="color:#38bdf8;">执行流模型 ←</a></p>
 
-  <p><strong>下一篇（学习顺序）</strong></p>
-  <p>
-    <a href="/system-view/03-interrupt-flow.html">03 中断流模型（Interrupt Flow）→</a>
-  </p>
+    <p><b>下一篇</b></p>
+    <p><a href="/system-view/03-interrupt-flow.html" style="color:#38bdf8;">中断流模型 →</a></p>
 
-  <p><strong>同类型扩展（Task / Scheduling 视角）</strong></p>
-  <p>
-    <a href="/system-view/04-scheduler-cycle.html">调度器周期模型</a><br>
-    <a href="/system-view/07-deterministic-chain.html">确定性执行链</a>
-  </p>
-
-  <p><strong>跨模块关联（系统级理解）</strong></p>
-  <p>
-    <a href="/docs/modules/task/context-switch.html">任务上下文切换（Context Switch）</a><br>
-    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度模型</a>
-  </p>
-</div>
-<footer class="site-footer">
-  <div style="margin-bottom:10px;">
-    © 2017–2026 HRTOS · SYSTEM VIEW
+    <p><b>扩展</b></p>
+    <p>
+      <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度周期模型</a><br>
+      <a href="/system-view/07-deterministic-chain.html" style="color:#38bdf8;">确定性执行链</a>
+    </p>
   </div>
+
+</div>
+
+<footer class="site-footer">
+  © 2017–2026 HRTOS · SYSTEM VIEW
 
   <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
     System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
@@ -343,14 +240,13 @@ h2 {
   </div>
 
   <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#7dd3fc;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#7dd3fc;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#7dd3fc;">← WHY Layer</a>
+    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
+    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
+    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
+    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
+    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
   </div>
 </footer>
-</div>
 
 </body>
 </html>

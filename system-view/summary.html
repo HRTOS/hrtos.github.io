@@ -4,35 +4,71 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>System View Summary | Execution Flow Layer</title>
+<title>Execution Flow Layer | HRTOS System View</title>
 <meta name="description" content="描述HRTOS系统中的任务执行流、调度路径与时间触发机制">
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="execution-flow">
 
-
-
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0b0f14;
-  color: #e8eef5;
-  line-height: 1.6;
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
 }
 
-.container {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 60px 24px;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
-  background: #0f172a; /* 使用主色调的深蓝 */
+/* NAV */
+.nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 24px;
+  border-bottom:1px solid rgba(148,163,184,.12);
+  background:rgba(11,15,20,.92);
+  position:sticky;
+  top:0;
+}
+
+.nav a{
+  color:var(--muted);
+  margin-left:14px;
+  text-decoration:none;
+  font-size:14px;
+}
+
+.nav a.active{
+  color:#cfe3ff;
+}
+
+/* layout */
+.container{
+  max-width:920px;
+  margin:0 auto;
+  padding:60px 24px;
+}
+
+h1{
+  font-size:38px;
+  margin:0 0 10px;
+}
+
+.sub{
+  color:var(--muted);
+  margin-bottom:40px;
 }
 /* footer */
 .site-footer{
@@ -42,57 +78,28 @@ body {
   color:#8ea3be;
   font-size:.95rem;
 }
-.nav a {
-  color: #38bdf8; /* 主色调浅蓝色 */
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
+/* card */
+.card{
+  background:rgba(17,24,35,.92);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
 }
 
-.nav a:hover {
-  color: #2563eb; /* 更深的蓝色用于 hover 效果 */
-}
-h1 {
-  font-size: 38px;
-  margin-bottom: 10px;
-}
-
-.sub {
-  color: #9fb0c3;
-  margin-bottom: 40px;
+.card h2{
+  margin:0 0 10px;
+  font-size:18px;
+  color:#cfe3ff;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
 }
 
-.card {
-  background: #111823;
-  border: 1px solid #1e2a3a;
-  padding: 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
-}
-
-.card-core {
-  border-left: 3px solid #4da3ff;
-  background: #0f1722;
-}
-
-.card-flow {
-  border-left: 3px solid #22c55e;
-}
-
-.card-meta {
-  border-left: 3px solid #9fb0c3;
-}
-
-h2 {
-  font-size: 20px;
-  color: #cfe3ff;
-  margin-bottom: 10px;
-}
-
-.en {
-  color: #9fb0c3;
-  font-size: 14px;
-  margin-top: 6px;
+.en{
+  color:var(--muted);
+  font-size:14px;
+  margin-top:6px;
 }
 </style>
 </head>
@@ -104,7 +111,7 @@ h2 {
   <div>
     <a href="/index.html">首页</a>
     <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" style="color:#cfe3ff;">System</a>
+    <a href="/system-view/index.html" class="active">System</a>
     <a href="/docs/index.html">Docs</a>
   </div>
 </div>
@@ -112,127 +119,126 @@ h2 {
 <div class="container">
 
 <h1>执行流层总结（Execution Flow Layer Summary）</h1>
-<div class="sub">HRTOS执行层的时间因果路径与调度结构汇总</div>
+<div class="sub">时间驱动的任务执行路径与调度结构</div>
 
-<div class="card card-core">
-<h2>核心定义</h2>
-<p>
-执行流不仅描述“代码执行顺序”，而是描述**时间 + CPU + 调度器共同作用下的执行路径结构**。
-</p>
-<p>
-在RTOS中，一个执行流必须满足：可追踪（Traceable）、可预测（Predictable）、可分析（Analyzable）。
-</p>
-<div class="en">Execution flow is a deterministic path formed by time, CPU and scheduler interactions.</div>
+<div class="card">
+  <h2>核心定义</h2>
+  <p>
+    执行流不是“代码执行顺序”，而是时间、CPU与调度器共同构建的受控执行路径。
+  </p>
+  <p>
+    在 HRTOS 中，执行流必须可追踪、可预测、可分析。
+  </p>
+  <div class="en">
+    Execution flow is a deterministic, time-constrained execution path.
+  </div>
 </div>
 
-<div class="card card-flow">
-<h2>1. 触发源（Trigger Source）</h2>
-<p>执行流的起点来自三类事件：</p>
-<p>• 外部中断（IO / Sensor）</p>
-<p>• 定时器事件（Tick / Alarm）</p>
-<p>• 任务主动唤醒（Signal / IPC）</p>
+<div class="card">
+  <h2>1. 触发源</h2>
+  <p>执行流起点：</p>
+  <p>
+    • 外部中断（IO / Sensor）<br>
+    • Tick 定时器<br>
+    • 任务唤醒 / IPC 信号
+  </p>
 </div>
 
-<div class="card card-flow">
-<h2>2. 进入调度（Scheduling Entry）</h2>
-<p>
-触发事件不会直接执行任务，而是进入调度器队列，由系统统一决定执行顺序。
-</p>
+<div class="card">
+  <h2>2. 进入调度</h2>
+  <p>
+    所有触发事件不会直接执行任务，而是进入调度器统一排序。
+  </p>
+  <p>
+    系统决定“谁在下一时间片获得 CPU”。
+  </p>
 </div>
 
-<div class="card card-flow">
-<h2>3. 执行路径（Execution Path）</h2>
-<p>
-任务执行过程中可能发生：
-• 中断嵌套  
-• 抢占切换  
-• 调度重新计算  
-</p>
-<p>
-执行路径不是线性，而是“受控分支结构”。
-</p>
+<div class="card">
+  <h2>3. 执行路径</h2>
+  <p>
+    执行过程可能发生：
+  </p>
+  <p>
+    • 中断嵌套<br>
+    • 抢占切换<br>
+    • 再调度计算
+  </p>
+  <p>
+    执行流是“动态分支结构”，而非线性流程。
+  </p>
 </div>
 
-<div class="card card-flow">
-<h2>4. 终止与回收</h2>
-<p>
-任务结束后必须进入明确状态迁移：
-Running → Dead → Resource Release
-</p>
+<div class="card">
+  <h2>4. 生命周期终止</h2>
+  <p>
+    任务完成必须进入确定状态迁移：
+  </p>
+  <p>
+    Running → Dead → Resource Release
+  </p>
 </div>
 
-<div class="card card-meta">
-<h2>语义总结</h2>
-<p>
-执行流 = 时间约束下的状态机路径。
-</p>
-<div class="en">Execution flow is a time-constrained state machine path.</div>
+<div class="card">
+  <h2>语义总结</h2>
+  <p>
+    执行流 = 时间约束下的状态机路径。
+  </p>
+  <div class="en">
+    Execution flow is a time-constrained state machine path.
+  </div>
 </div>
-<div class="card card-meta">
-  <h2>System Context（系统关联关系）</h2>
+
+<div class="card">
+  <h2>系统关联结构</h2>
 
   <p>
-    Execution Flow 并不是独立模块，它位于 RTOS 时间模型的“执行层”，并受到调度、中断、时间与内存共同约束。
+    Execution Flow 位于 RTOS 执行层核心，其行为受多系统共同约束：
   </p>
 
-  <p><b>系统因果关系：</b></p>
   <p>
     Interrupt Flow → Scheduler Cycle → Execution Flow → Memory View → Time System → Deterministic Chain
   </p>
 
-  <br>
-
-  <p><b>Related System Modules（相关模块）</b></p>
+  <p><b>模块关系：</b></p>
 
   <p>
-    → <a href="/system-view/03-interrupt-flow.html">03 Interrupt Flow（中断流模型）</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">
-      外部事件如何打断执行流，是 Execution Flow 的上游驱动源
-    </span>
+    → <a href="/system-view/03-interrupt-flow.html" style="color:#38bdf8;">中断流模型</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">外部事件触发执行流入口</span>
   </p>
 
   <p>
-    → <a href="/system-view/04-scheduler-cycle.html">04 Scheduler Cycle（调度循环）</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">
-      决定 Execution Flow 在何时、由谁执行
-    </span>
+    → <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度循环</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">决定执行流的CPU分配</span>
   </p>
 
   <p>
-    → <a href="/system-view/02-task-lifecycle.html">02 Task Lifecycle（任务生命周期）</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">
-      Execution Flow 的状态基础（Ready / Running / Blocked）
-    </span>
+    → <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;">任务生命周期</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">执行流状态基础（Ready/Running/Blocked）</span>
   </p>
 
   <p>
-    → <a href="/system-view/05-memory-view.html">05 Memory View（内存视图）</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">
-      执行时间的不确定性来源之一（Cache / Allocation）
-    </span>
+    → <a href="/system-view/05-memory-view.html" style="color:#38bdf8;">内存视图</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">影响执行时间抖动来源</span>
   </p>
 
   <p>
-    → <a href="/system-view/06-time-system.html">06 Time System（时间系统）</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">
-      Execution Flow 的时间约束基准（Tick / WCET）
-    </span>
+    → <a href="/system-view/06-time-system.html" style="color:#38bdf8;">时间系统</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">执行流时间约束基准</span>
   </p>
 
   <p>
-    → <a href="/system-view/07-deterministic-chain.html">07 Deterministic Chain（确定性因果链）</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">
-      Execution Flow 的最终数学化表达（时间因果函数）
-    </span>
+    → <a href="/system-view/07-deterministic-chain.html" style="color:#38bdf8;">确定性因果链</a><br>
+    <span style="color:#9fb0c3;font-size:13px;">执行流的数学化表达</span>
   </p>
 
-  <br>
-
-  <p><b>System Position（系统定位）</b></p>
-  <p style="color:#9fb0c3;font-size:13px;">
-    Execution Flow = RTOS 执行层核心结构（Time-Driven Execution Path）
+  <p style="margin-top:10px;color:#9fb0c3;font-size:13px;">
+    System Position: Execution Flow = RTOS 执行层核心结构
   </p>
 </div>
+
+</div>
+
 <footer class="site-footer">
   <div style="margin-bottom:10px;">
     © 2017–2026 HRTOS · SYSTEM VIEW
@@ -244,13 +250,13 @@ Running → Dead → Resource Release
   </div>
 
   <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#7dd3fc;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#7dd3fc;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#7dd3fc;">← WHY Layer</a>
+    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
+    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
+    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
+    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
+    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
   </div>
 </footer>
-</div>
 
+</body>
 </html>
