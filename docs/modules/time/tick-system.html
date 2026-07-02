@@ -47,10 +47,7 @@ body::before{
   opacity:.14;
 }
 
-a{
-  color:inherit;
-  text-decoration:none;
-}
+a{color:inherit;text-decoration:none}
 
 .page{
   width:min(1180px, calc(100% - 40px));
@@ -66,19 +63,11 @@ a{
   font-size:.92rem;
   color:var(--muted);
 }
-
-.breadcrumb a{
-  color:#7dd3fc;
-}
-
-.breadcrumb a:hover{
-  color:var(--accent);
-}
+.breadcrumb a{color:#7dd3fc}
+.breadcrumb a:hover{color:var(--accent)}
 
 /* hero */
-.hero{
-  margin-bottom:56px;
-}
+.hero{margin-bottom:56px}
 
 .hero-label{
   display:inline-block;
@@ -101,7 +90,6 @@ a{
   margin:0;
   max-width:760px;
   color:var(--muted);
-  font-size:1rem;
 }
 
 .meta{
@@ -125,13 +113,9 @@ a{
   display:grid;
   grid-template-columns:minmax(0,1fr) 280px;
   gap:28px;
-  align-items:start;
 }
 
-.content{
-  display:grid;
-  gap:22px;
-}
+.content{display:grid;gap:22px}
 
 .section{
   display:grid;
@@ -139,14 +123,13 @@ a{
   padding:24px 22px;
   background:linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
   border:1px solid var(--border);
-  border-radius:var(--radius);
+  border-radius:10px;
   box-shadow:var(--shadow);
 }
 
 .section h2{
   margin:0;
   font-size:1.35rem;
-  line-height:1.3;
   border-left:3px solid var(--accent);
   padding-left:12px;
 }
@@ -154,7 +137,7 @@ a{
 .section p{
   margin:0;
   color:var(--muted);
-  font-size:0.96rem;
+  font-size:.96rem;
 }
 
 .note{
@@ -163,7 +146,7 @@ a{
   border-radius:8px;
   background:rgba(15,23,42,.6);
   color:var(--muted);
-  font-size:0.94rem;
+  font-size:.94rem;
 }
 
 .code{
@@ -171,43 +154,33 @@ a{
   border:1px solid rgba(56,189,248,.14);
   border-radius:8px;
   padding:16px;
-  overflow-x:auto;
   font-family:Consolas,monospace;
-  font-size:0.92rem;
+  font-size:.92rem;
   color:#7dd3fc;
-  line-height:1.65;
-  white-space: pre-wrap;
-word-break: break-word;
+  white-space:pre-wrap;
+  word-break:break-word;
 }
 
 /* sidebar */
-.sidebar{
-  display:grid;
-  gap:16px;
-}
+.sidebar{display:grid;gap:16px}
 
 .box{
   padding:18px 16px;
   border:1px solid var(--border);
-  border-radius:var(--radius);
+  border-radius:10px;
   background:rgba(30,41,59,.56);
 }
 
-.box h3{
-  margin:0 0 12px;
-  font-size:1rem;
-}
+.box h3{margin:0 0 12px;font-size:1rem}
 
 .box a{
   display:block;
   color:#7dd3fc;
-  font-size:0.92rem;
+  font-size:.92rem;
   margin-bottom:8px;
 }
 
-.box a:hover{
-  color:var(--accent);
-}
+.box a:hover{color:var(--accent)}
 
 /* footer */
 .footer{
@@ -215,27 +188,16 @@ word-break: break-word;
   padding-top:18px;
   border-top:1px solid rgba(148,163,184,.14);
   color:#8ea3be;
-  font-size:0.9rem;
+  font-size:.9rem;
 }
 
 @media(max-width:980px){
-  .layout{grid-template-columns:1fr;}
+  .layout{grid-template-columns:1fr}
 }
 
 @media(max-width:640px){
-  .page{
-    width:min(100% - 24px,1180px);
-    padding-top:84px;
-  }
-
-  .section{
-    padding:20px 18px;
-  }
-
-  .hero p,
-  .section p{
-    font-size:0.95rem;
-  }
+  .page{width:min(100% - 24px,1180px);padding-top:84px}
+  .section{padding:20px 18px}
 }
 </style>
 </head>
@@ -252,19 +214,19 @@ word-break: break-word;
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
+    <span class="hero-label">HRTOS Time Core</span>
 
     <h1>系统节拍（Tick System）</h1>
 
     <p>
-      系统节拍是实时操作系统的时间基准核心，
-      用于驱动任务调度、延时管理与系统时间推进。
+      Tick System是HRTOS时间驱动核心，用于提供统一时间基准，
+      支撑调度、延时、时间片与系统运行计数。
     </p>
 
     <div class="meta">
-      <span class="tag">Time</span>
-      <span class="tag">Tick System</span>
-      <span class="tag">Kernel Core</span>
+      <span class="tag">Tick</span>
+      <span class="tag">Timer ISR</span>
+      <span class="tag">Time Base</span>
     </div>
   </section>
 
@@ -275,192 +237,176 @@ word-break: break-word;
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
-          Tick System由硬件定时器周期性触发，
-          构成整个RTOS时间驱动的基础，是所有时间相关机制的源头。
+          Tick System由硬件定时器驱动，是RTOS时间体系的最底层来源。
         </p>
+
         <p>
-          系统节拍是实时操作系统的时间基准核心，用于驱动任务调度、延时管理与系统时间推进。Tick System是HRTOS的时间管理基石，负责维护全局时钟、驱动延时队列、管理时间片轮转、触发调度决策。所有时间相关机制，如任务延时、软件定时器、时间片轮转，都依赖于Tick System提供的时间基准。
+          在HRTOS中，系统时间并非“自然流动”，而是由固定周期Tick驱动推进，
+          所有延时、调度、定时器均依赖该机制。
         </p>
+
         <p>
-          Tick System的架构包括硬件定时器、中断服务程序、全局tick计数器、延时队列、定时器队列等组件。硬件定时器周期性产生中断，中断服务程序递增全局tick计数器，检查延时队列与定时器队列，更新时间片计数，触发调度决策。这些组件协同工作，构成了完整的时间驱动模型。
-        </p>
-        <p>
-          Tick System的稳定性直接决定RTOS的实时性上限与调度精度。Tick频率的选择影响时间精度与系统开销的平衡。HRTOS支持可配置的Tick频率，开发者可根据应用需求选择合适的精度与开销平衡。对于高精度实时系统，可采用更高的Tick频率；对于低功耗系统，可采用较低的Tick频率或Tickless模式。
+          Tick频率决定系统时间精度与中断开销之间的平衡，是实时系统核心参数之一。
         </p>
       </section>
 
       <section class="section" id="mechanism">
         <h2>工作原理</h2>
+
         <p>
-          系统通过固定频率的Tick中断推进全局时间，
-          并驱动延时队列更新、时间片轮转与调度决策。
+          每次硬件定时器中断触发，系统进入Tick ISR进行时间推进。
         </p>
 
         <div class="note">
-          Tick系统的稳定性直接决定RTOS的实时性上限与调度精度。
+          Tick ISR必须短小高效，否则会影响调度实时性。
         </div>
+
         <p>
-          Tick System的内部实现依赖于硬件定时器与中断服务程序。硬件定时器配置为周期性中断，中断频率由Tick频率决定。每次中断触发时，中断服务程序执行Tick处理逻辑，包括递增全局tick计数器、检查延时队列、更新时间片计数、处理定时器队列、触发调度决策。整个过程在临界区中执行，确保原子性。
+          ISR执行流程：递增系统tick → 更新延时队列 → 更新时间片 → 检查调度条件。
         </p>
+
         <p>
-          全局tick计数器是Tick System的核心数据结构，记录系统运行时间。tick计数器在每次Tick中断时递增，提供系统时间基准。HRTOS支持32位与64位tick计数器，满足不同应用需求。32位计数器可支持约497天的连续运行（假设1kHz Tick频率），64位计数器可支持数百万年的连续运行。
+          延时队列与时间片共享同一Tick基准，实现统一时间驱动模型。
         </p>
+
         <p>
-          延时队列管理是Tick System的核心功能。延时队列按到期时间排序，头部任务是最近到期的任务。Tick中断检查延时队列头部任务是否到期，如果到期则唤醒任务。这种机制确保了延时任务的精确唤醒。HRTOS采用优化的延时队列数据结构，在O(log n)时间内插入与移除延时条目。
-        </p>
-        <p>
-          时间片管理是Round Robin调度的核心功能。每个任务分配一个时间片，任务执行时时间片计数器递减。Tick中断负责递减时间片计数，检测时间片到期，触发调度决策。这种机制确保了同优先级任务的公平调度。HRTOS支持可配置的时间片大小，开发者可根据任务特性调整时间片。
+          Tick计数器可为16/32/64位，用于不同系统规模与运行周期需求。
         </p>
       </section>
 
       <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
+        <h2>关键接口 / 硬件层</h2>
 
         <div class="code">
-os_tick_start()
-os_tick_stop()
-os_tick_handler()
+extern char os_tick_config(u8 slice_count, u16 tick_value);
+extern void os_tick_get(u16 *high,u16 *low);
+extern u32 os_uptime_ms();
+extern void os_delay(u16 tick);
+extern void os_delay_ms(unsigned char ms);
 
-struct tick_system {
-    uint32_t freq_hz;
-    uint64_t tick_count;
-};
+extern u16 os_ms_to_tick(u16 ms);
+extern u16 os_sec_to_tick(u8 sec);
+
+/* Tick配置逻辑（关键实现） */
         </div>
+
         <p>
-  相关接口文档：
-  <a href="/docs/modules/time/scheduler-tick.html">调度节拍</a> /
-  <a href="/docs/modules/time/delay.html">任务延时</a> /
-  <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a> /
-  <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
-</p>
-        <p>
-          os_tick_start()用于启动Tick System，参数包括硬件定时器配置、Tick频率。该接口配置硬件定时器，设置中断优先级，注册Tick中断服务程序，启动全局tick计数器。启动成功返回0，失败返回错误码。该接口在系统启动时自动调用，开发者无需手动调用。
+          os_tick_config(slice_count, tick_value)：配置系统Tick周期与时间片。
+          slice_count表示时间片数量，tick_value为硬件计数周期。
         </p>
+
         <p>
-          os_tick_stop()用于停止Tick System，参数包括停止原因。该接口禁用硬件定时器中断，停止全局tick计数器递增。停止成功返回0，失败返回错误码。该接口通常用于系统关闭或Tickless模式切换场景。
+          其内部实现会重置计数器并配置定时器：
+          将tick_value转换为定时器重装值（65535 - tick_value + 1），
+          并写入T0寄存器。
         </p>
+
         <p>
-          os_tick_handler()是Tick中断服务程序，由硬件定时器中断自动调用。该接口递增全局tick计数器，检查延时队列，更新时间片计数，处理定时器队列，触发调度决策。该接口必须尽可能短，避免影响系统实时性。HRTOS提供优化的Tick处理逻辑，确保微秒级执行时间。
+          os_tick_get()用于读取当前系统tick（高低字节）。
         </p>
+
         <p>
-          tick_system结构体定义了Tick System的核心属性。freq_hz字段存储Tick频率，用于时间转换。tick_count字段存储全局tick计数器，记录系统运行时间。该结构体还可能包含时间片配置、延时队列指针、定时器队列指针等字段。结构体大小取决于配置，HRTOS通过优化字段布局减少内存占用。
+          os_uptime_ms()返回系统启动后的运行时间。
+        </p>
+
+        <p>
+          os_ms_to_tick / os_sec_to_tick用于时间单位转换。
         </p>
       </section>
 
       <section class="section" id="flow">
         <h2>运行流程</h2>
+
         <p>
-          硬件定时器触发 → Tick中断进入 →
-          时间计数增加 → 更新延时/调度信息 →
-          返回中断前状态。
+          Timer Interrupt → Tick ISR → Tick++ → Delay Check → Timeslice Update → Scheduler Trigger
         </p>
+
         <div class="note">
-  Tick事件可能导致任务延时到期、
-  时间片耗尽或调度条件变化，
-  从而触发新的任务切换。
-</div>
+          Tick驱动调度器运行，是整个RTOS的时间心跳。
+        </div>
 
-<p>
-  深入理解：
-  <a href="/docs/modules/task/state-model.html">任务状态模型</a> /
-  <a href="/docs/modules/task/context-switch.html">上下文切换</a>
-</p>
         <p>
-          完整的Tick System运行流程包括：硬件定时器周期性产生中断；中断服务程序保存上下文，进入临界区；递增全局tick计数器；检查延时队列头部任务是否到期；如果到期，将任务从延时队列移除，状态从BLOCKED转换为READY，插入就绪队列；更新当前运行任务的时间片计数；如果时间片到期，将任务状态从RUNNING转换为READY，插入就绪队列尾部；检查定时器队列头部定时器是否到期；如果到期，执行定时器回调或插入定时器任务；退出临界区，恢复上下文；如果需要调度，触发调度决策。
+          当Tick到达时，系统检查延时队列是否有任务到期，
+          同时更新当前任务时间片。
         </p>
+
         <p>
-          Tick System初始化流程包括：系统启动，调用os_tick_start()接口；配置硬件定时器，设置中断频率；设置中断优先级，确保实时性；注册Tick中断服务程序；初始化全局tick计数器为零；初始化延时队列、定时器队列；启动硬件定时器，开始产生中断。初始化成功后，Tick System开始工作，驱动整个时间管理系统。
-        </p>
-        <p>
-          Tickless模式切换流程包括：检测系统空闲状态，所有任务处于延时状态；计算最近任务到期时间；停止Tick中断，进入深度睡眠模式；配置硬件定时器在最近任务到期时唤醒；系统进入低功耗状态；硬件定时器到期，唤醒系统；恢复Tick中断，恢复正常运行；补偿睡眠期间丢失的tick计数。Tickless模式显著降低系统功耗，适用于电池供电的嵌入式设备。
+          若时间片耗尽或高优先级任务就绪，则触发调度切换。
         </p>
       </section>
 
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
+      <section class="section" id="implementation">
+        <h2>实现说明（核心逻辑）</h2>
+
+        <div class="code">
+char os_tick_config(u8 slice_count, u16 tick_value)
+{
+    if(tick_value == 0) return -1;
+
+    OS_TICK_COUNT_H = 0;
+    OS_TICK_COUNT_L = 0;
+    OS_TIME_ONCE = slice_count;
+
+    tick_value = 65535 - tick_value + 1;
+
+    if(tick_value <= 1000) return -1;
+
+    OS_T0_TH0 = tick_value >> 8;
+    OS_T0_TL0 = tick_value & 0xff;
+
+    return 0;
+}
+        </div>
+
         <p>
-          HRTOS支持Tickless模式与动态节拍调节，
-          在低功耗与高精度场景之间实现平衡优化。
+          Tick配置函数用于初始化硬件定时器与时间片系统，
+          是整个时间系统启动的关键入口。
         </p>
+
         <p>
-          Tickless模式是低功耗优化的重要特性。在系统空闲时，如果所有任务都处于延时状态，系统可以停止Tick中断，进入深度睡眠模式。硬件定时器配置为在最近任务到期时唤醒，避免不必要的周期中断。Tickless模式显著降低系统功耗，适用于电池供电的嵌入式设备。HRTOS提供自动Tickless模式切换，无需开发者手动干预。
-        </p>
-        <p>
-          动态节拍调节是性能优化的重要特性。系统可根据负载情况动态调整Tick频率，在性能与开销之间取得最佳平衡。高负载时提高Tick频率，提升时间精度与调度响应速度；低负载时降低Tick频率，减少系统开销。HRTOS提供动态Tick频率调整算法，自动适应系统负载变化。
-        </p>
-        <ul>
-          <li>模块职责：Tick System管理负责维护全局时钟，驱动延时队列，管理时间片，触发调度决策</li>
-          <li>内部机制：基于硬件定时器、中断服务程序、全局tick计数器、延时队列、定时器队列实现</li>
-          <li>状态迁移：任务在BLOCKED、READY、RUNNING状态间转换，由Tick中断与调度决策驱动</li>
-          <li>调用流程：timer_interrupt → tick_isr → tick_increment → delay_check → timeslice_update → timer_check → schedule_trigger</li>
-          <li>资源管理：全局tick计数器为共享资源需保护并发访问，延时队列为共享资源</li>
-          <li>工程案例：汽车电子ECU、工业控制系统、医疗设备控制器、航空航天系统</li>
-          <li>边界条件：Tick频率、中断优先级、队列容量、时间片配置、tick计数器溢出</li>
-          <li>错误场景：定时器配置失败、中断溢出、队列溢出、调度延迟过大、Tick漂移</li>
-          <li>异常处理：错误日志、告警机制、降级处理、系统重启、Tick同步</li>
-          <li>模块关系：与时间管理模块协作提供时间基准，与调度器模块协调调度决策</li>
-        </ul>
-        <p>
-          Tick System的性能优化是实时系统工程的重要环节。HRTOS采用优化的Tick处理逻辑，减少ISR执行时间。系统支持快速延时队列检查，在O(1)时间内检查到期任务。对于多核SMP系统，每个核心独立维护Tick计数器，避免核心间竞争。这些优化确保了Tick System的高效性，满足实时系统的性能要求。
-        </p>
-        <p>
-          对于功耗敏感的嵌入式系统，Tick System的使用会影响系统功耗管理。高Tick频率导致频繁中断，增加功耗。HRTOS提供智能功耗管理机制，支持Tickless模式，在系统空闲时停止Tick中断，进入深度睡眠模式。系统还支持动态Tick频率调整，根据系统负载自动调整Tick频率，平衡实时性与功耗。
+          错误条件包括tick_value为0或过小，避免中断频率异常。
         </p>
       </section>
-<section class="section" id="related">
-  <h2>相关阅读</h2>
-  <p>
-    继续学习时间驱动模型与实时调度机制。
-  </p>
 
-  <div class="code">
-Tick System
-├─ Scheduler Tick
-├─ Delay
-└─ Timer / Sleep
+      <section class="section" id="related">
+        <h2>相关阅读</h2>
 
-Scheduler
-├─ Priority Scheduling
-├─ Round Robin
-└─ Real-Time Scheduling
-  </div>
+        <div class="code">
+Time System（时间系统）
+├─ Tick System（系统节拍 / 时间基准）
+├─ Delay Mechanism（任务延时机制）
+└─ Timer System（软件定时器系统）
 
-  <p>
-    推荐阅读：
-    <a href="/docs/modules/time/scheduler-tick.html">调度节拍</a> /
-    <a href="/docs/modules/time/delay.html">任务延时</a> /
-    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
-  </p>
-</section>
+Scheduler（调度子系统）
+├─ Priority Scheduling（基于优先级调度）
+├─ Round Robin Scheduling（时间片轮转）
+└─ Real-Time Control（实时调度控制逻辑）
+        </div>
+
+        <p>
+          <a href="/docs/modules/time/scheduler-tick.html">调度节拍</a> /
+          <a href="/docs/modules/time/delay.html">任务延时</a> /
+          <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
+        </p>
+      </section>
+
     </div>
 
     <aside class="sidebar">
 
       <div class="box">
-        <h3>目录导航</h3>
+        <h3>目录</h3>
         <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
+        <a href="#mechanism">原理</a>
+        <a href="#interface">接口</a>
+        <a href="#flow">流程</a>
+        <a href="#implementation">实现</a>
       </div>
 
       <div class="box">
-  <h3>相关页面</h3>
-  <a href="/docs/modules/time/delay.html">任务延时</a>
-  <a href="/docs/modules/time/scheduler-tick.html">调度节拍</a>
-  <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a>
-  <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
-  <a href="/docs/modules/task/state-model.html">任务状态模型</a>
-</div>
-
-      <div class="box">
-        <h3>所属模块</h3>
+        <h3>模块</h3>
         <a href="/docs/modules/time/index.html">Time</a>
-      </div>
-
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/time/index.html">Time → 时间基准系统</a>
+        <a href="/docs/modules/scheduler/index.html">Scheduler</a>
       </div>
 
     </aside>
@@ -468,7 +414,7 @@ Scheduler
   </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
+    © 2017–2026 HRTOS. Embedded Real-Time Documentation.
   </footer>
 
 </main>

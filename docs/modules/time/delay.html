@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>任务延时（Delay） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS时间管理模块延时机制说明，包括任务延时、阻塞调度与系统节拍控制原理。" />
+<meta name="description" content="HRTOS时间管理模块延时机制说明，包括任务阻塞、Tick调度与唤醒机制。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -67,18 +67,11 @@ a{
   color:var(--muted);
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
-}
-
-.breadcrumb a:hover{
-  color:var(--accent);
-}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
 
 /* hero */
-.hero{
-  margin-bottom:56px;
-}
+.hero{ margin-bottom:56px; }
 
 .hero-label{
   display:inline-block;
@@ -133,6 +126,7 @@ a{
   gap:22px;
 }
 
+/* section (card style) */
 .section{
   display:grid;
   gap:12px;
@@ -146,7 +140,6 @@ a{
 .section h2{
   margin:0;
   font-size:1.35rem;
-  line-height:1.3;
   border-left:3px solid var(--accent);
   padding-left:12px;
 }
@@ -171,13 +164,12 @@ a{
   border:1px solid rgba(56,189,248,.14);
   border-radius:8px;
   padding:16px;
-  overflow-x:auto;
   font-family:Consolas,monospace;
   font-size:0.92rem;
   color:#7dd3fc;
   line-height:1.65;
-  white-space: pre-wrap;
-word-break: break-word;
+  white-space:pre-wrap;
+  word-break:break-word;
 }
 
 /* sidebar */
@@ -193,10 +185,7 @@ word-break: break-word;
   background:rgba(30,41,59,.56);
 }
 
-.box h3{
-  margin:0 0 12px;
-  font-size:1rem;
-}
+.box h3{ margin:0 0 12px; font-size:1rem; }
 
 .box a{
   display:block;
@@ -205,9 +194,7 @@ word-break: break-word;
   margin-bottom:8px;
 }
 
-.box a:hover{
-  color:var(--accent);
-}
+.box a:hover{ color:var(--accent); }
 
 /* footer */
 .footer{
@@ -223,19 +210,9 @@ word-break: break-word;
 }
 
 @media(max-width:640px){
-  .page{
-    width:min(100% - 24px,1180px);
-    padding-top:84px;
-  }
-
-  .section{
-    padding:20px 18px;
-  }
-
-  .hero p,
-  .section p{
-    font-size:0.95rem;
-  }
+  .page{ width:min(100% - 24px,1180px); padding-top:84px; }
+  .section{ padding:20px 18px; }
+  .hero p,.section p{ font-size:0.95rem; }
 }
 </style>
 </head>
@@ -253,12 +230,10 @@ word-break: break-word;
 
   <section class="hero">
     <span class="hero-label">HRTOS Documentation</span>
-
     <h1>任务延时（Delay）</h1>
-
     <p>
-      任务延时机制用于让任务在指定时间内进入阻塞状态，
-      是时间管理与调度控制的重要基础能力。
+      Delay用于将任务挂起指定Tick时间，由系统Tick驱动自动唤醒，
+      是RTOS时间管理与调度的基础机制。
     </p>
 
     <div class="meta">
@@ -275,42 +250,42 @@ word-break: break-word;
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
-          Delay机制允许任务主动暂停执行一段时间，
-          在时间到达后重新进入就绪队列等待调度。
+          Delay使任务进入阻塞态，在Tick到期后恢复READY，不占用CPU资源。
+          用于替代忙等待，实现任务级时间控制。
         </p>
+
         <p>
-          任务延时机制用于让任务在指定时间内进入阻塞状态，是时间管理与调度控制的重要基础能力。与忙等待不同，延时机制将任务从运行态转换为阻塞态，释放CPU资源供其他任务使用，提高系统利用率。延时机制由系统节拍（Tick）驱动，通过延时队列管理等待任务，确保定时精度与实时性。
+          系统以Tick为统一时间基准，通过延时队列管理所有等待任务，到期后统一唤醒。
         </p>
+
         <p>
-          延时机制分为相对延时与绝对延时两种模式。相对延时指定任务暂停的持续时间，如os_delay(100)表示暂停100毫秒。绝对延时指定任务唤醒的绝对时间点，如os_task_delay_until(target_tick)表示在指定tick值时唤醒。相对延时适用于周期性任务控制，绝对延时适用于精确时间同步场景。HRTOS支持两种模式，满足不同应用需求。
+          支持两种模式：相对延时（N ticks）与绝对延时（until tick）。
+          前者用于周期任务，后者用于时间同步。
         </p>
+
         <p>
-          延时机制的精度取决于系统节拍频率。节拍频率越高，延时精度越高，但系统开销也越大。HRTOS支持可配置的节拍频率，开发者可根据应用需求选择合适的精度与开销平衡。典型节拍频率包括1kHz（1ms精度）、10kHz（0.1ms精度）等。对于高精度延时需求，系统还支持硬件定时器直接唤醒，提供微秒级精度。
+          精度由Tick频率决定（1kHz~10kHz），频率越高精度越高，但中断开销增加。
         </p>
       </section>
 
       <section class="section" id="mechanism">
         <h2>工作原理</h2>
+
         <p>
-          当任务调用延时接口后，系统将其从运行态移出，
-          加入延时队列，由系统节拍（Tick）驱动计时，
-          到期后恢复为就绪状态。
+          任务调用Delay后进入BLOCKED状态并加入延时队列。
+          Tick ISR周期性检查并触发唤醒。
         </p>
 
         <div class="note">
-          延时操作不会占用CPU资源，是实现低功耗与任务节奏控制的关键机制。
+          Delay期间任务不参与调度，CPU用于其他READY任务执行。
         </div>
+
         <p>
-          延时机制的内部实现依赖于延时队列与系统节拍。延时队列是一个优先级队列，按到期时间排序，确保最早到期的任务位于队列头部。系统节拍是周期性中断，每次中断时递增全局tick计数器，并检查延时队列头部任务是否到期。如果到期，将任务从延时队列移除，状态从BLOCKED转换为READY，插入就绪队列，触发调度决策。
+          延时队列按expire_tick排序，Tick中断检查队首任务是否到期。
         </p>
+
         <p>
-          相对延时的实现流程包括：任务调用os_delay(ms)接口，系统将毫秒转换为tick数；计算到期时间 = 当前tick + 延时tick数；将任务状态从RUNNING转换为BLOCKED；创建延时条目（包含到期时间与任务指针），插入延时队列；触发调度器选择下一个任务执行。延时期间任务不占用CPU资源，系统可执行其他任务或进入低功耗模式。
-        </p>
-        <p>
-          绝对延时的实现流程包括：任务调用os_task_delay_until(target_tick)接口；检查目标tick值是否大于当前tick；如果是，将任务状态从RUNNING转换为BLOCKED；创建延时条目（包含目标tick与任务指针），插入延时队列；触发调度器选择下一个任务执行。绝对延时适用于需要精确时间同步的场景，如周期性任务在固定时间点执行。
-        </p>
-        <p>
-          延时到期唤醒流程包括：系统节拍中断触发；中断服务程序递增全局tick计数器；检查延时队列头部任务的到期时间；如果到期时间小于等于当前tick，将任务从延时队列移除；将任务状态从BLOCKED转换为READY；将任务插入就绪队列；如果被唤醒任务优先级高于当前运行任务，触发抢占调度。整个过程在中断上下文中快速完成，确保实时性。
+          到期后任务状态从 BLOCKED → READY，并可能触发抢占调度。
         </p>
       </section>
 
@@ -318,122 +293,56 @@ word-break: break-word;
   <h2>关键接口 / 结构</h2>
 
   <div class="code">
-os_delay(ms)
-os_sleep(ticks)
-os_task_delay_until()
+os_delay(u16 tick)
+os_delay_ms(u8 ms)
+os_ms_to_tick(u16 ms)
+os_sec_to_tick(u8 sec)
+os_tick_config(u8 slice_count, u16 tick_value)
+os_tick_get(u16 *high, u16 *low)
+os_uptime_ms()
 
-struct delay_entry {
-    uint32_t expire_tick;
-    task_t* task;
-};
+/* Tick 延时 / 时间转换 / 系统时间接口 */
   </div>
 
-  <p>
-    相关接口文档：
-    <a href="/docs/modules/time/index.html">时间管理</a> /
-    <a href="/docs/modules/scheduler/index.html">调度机制</a> /
-    <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a> /
-    <a href="/docs/modules/task/state-model.html">任务状态模型</a>
-  </p>
-  <p>
-    os_delay()用于相对延时，参数包括延时毫秒数。该接口将毫秒转换为tick数，计算到期时间，将任务状态从RUNNING转换为BLOCKED，插入延时队列。延时成功返回0，失败返回错误码。该接口适用于周期性任务控制、任务节拍调整等场景。
-  </p>
-  <p>
-    os_sleep()用于tick级延时，参数包括延时tick数。该接口直接使用tick作为延时单位，避免毫秒转换开销，适合对精度要求不高的场景。延时成功返回0，失败返回错误码。该接口通常用于简单的延时需求，如任务休眠一段时间。
-  </p>
-  <p>
-    os_task_delay_until()用于绝对延时，参数包括目标tick值。该接口检查目标tick值是否大于当前tick，如果是，将任务状态从RUNNING转换为BLOCKED，插入延时队列。延时成功返回0，失败返回错误码。该接口适用于需要精确时间同步的场景，如周期性任务在固定时间点执行。
-  </p>
-  <p>
-    delay_entry结构体定义了延时队列条目的核心属性。expire_tick字段存储任务到期时间（tick值）。task字段指向延时任务的任务控制块。该结构体还可能包含链表指针、优先级等字段。结构体大小取决于配置，HRTOS通过优化字段布局减少内存占用。
-  </p>
+  <p>os_delay：基于 tick 的任务延时，使任务进入阻塞态，由调度器在到期后唤醒。</p>
+
+  <p>os_delay_ms：忙等待延时函数，占用 CPU，不释放调度资源，仅用于短时硬件时序控制。</p>
+
+  <p>os_ms_to_tick：将毫秒转换为系统 tick，用于延时计算与时间换算。</p>
+
+  <p>os_sec_to_tick：将秒转换为 tick，用于较长周期任务控制。</p>
+
+  <p>os_tick_config：配置系统时钟节拍参数（时间片数量 + tick 长度）。</p>
+
+  <p>os_tick_get：获取当前系统 tick 计数（高低字节），用于时间基准读取。</p>
+
+  <p>os_uptime_ms：获取系统开机运行时间（毫秒）。</p>
 </section>
 
       <section class="section" id="flow">
         <h2>运行流程</h2>
+
         <p>
-          任务调用延时 → 进入阻塞态 →
-          加入延时队列 → Tick递增 →
-          到期 → 恢复就绪态。
+          RUNNING → BLOCKED → Delay Queue → Tick ISR → READY → Scheduler
         </p>
+
         <div class="note">
-  延时过程中任务状态将从 Running 切换为 Blocked，
-  到期后恢复为 Ready 状态重新参与调度。
-</div>
+          Tick中断统一唤醒到期任务并触发调度。
+        </div>
 
-<p>
-  深入理解：
-  <a href="/docs/modules/task/state-model.html">任务状态模型</a> /
-  <a href="/docs/modules/task/lifecycle.html">任务生命周期</a>
-</p>
         <p>
-          完整的延时流程包括：任务调用os_delay(ms)接口；系统将毫秒转换为tick数；计算到期时间 = 当前tick + 延时tick数；将任务状态从RUNNING转换为BLOCKED；创建延时条目（包含到期时间与任务指针），插入延时队列；触发调度器选择下一个任务执行；系统节拍中断周期性触发；中断服务程序递增全局tick计数器；检查延时队列头部任务是否到期；如果到期，将任务从延时队列移除；将任务状态从BLOCKED转换为READY；将任务插入就绪队列；如果被唤醒任务优先级高于当前运行任务，触发抢占调度。
+          流程：Delay → 计算expire_tick → 入队 → BLOCKED →
+          Tick递增 → 检查 → 唤醒 → READY → 调度。
         </p>
+
         <p>
-          相对延时与绝对延时的使用场景不同。相对延时适用于周期性任务控制，如传感器采样任务每100毫秒执行一次。任务在执行完成后调用os_delay(100)，确保下一次执行在100毫秒后。绝对延时适用于精确时间同步，如音频播放任务需要在固定时间点输出音频数据。任务调用os_task_delay_until(target_tick)，确保在指定tick值时唤醒，保证音频输出节奏稳定。
+          相对延时用于周期任务，绝对延时用于时间同步任务。
         </p>
+
         <p>
-          延时过程中的ISR使用注意事项包括：如果任务在中断服务程序中调用延时接口，系统可能无法立即触发调度决策，因为中断上下文中不允许调度。HRTOS提供中断安全版本的延时接口，将延时操作推迟到中断退出后执行。开发者应避免在ISR中长时间延时，影响系统实时性。
+          ISR中不建议阻塞调用，系统提供安全路径处理延时逻辑。
         </p>
       </section>
-
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          HRTOS支持精确延时与绝对时间延时两种模式，
-          可用于周期任务控制与实时节拍同步。
-        </p>
-        <p>
-          延时机制是周期性任务控制的基础。周期性任务需要在固定时间间隔内重复执行，如传感器采样、控制回路更新、数据采集等。任务在执行完成后调用相对延时接口，确保下一次执行在指定时间间隔后。HRTOS提供周期性任务配置工具，支持自动计算延时时间，避免手动计算误差。
-        </p>
-        <p>
-          延时机制还支持实时节拍同步。在音频播放、视频解码、网络通信等场景中，任务需要在固定时间点执行，保证数据输出的节奏稳定。绝对延时接口允许任务指定唤醒的绝对时间点，确保任务在精确时间执行。系统还支持硬件定时器直接唤醒，提供微秒级精度，满足高精度同步需求。
-        </p>
-        <ul>
-          <li>模块职责：延时机制管理负责任务延时控制，确保任务在指定时间后唤醒</li>
-          <li>内部机制：基于延时队列、系统节拍、优先级队列、到期检查实现，支持相对与绝对延时</li>
-          <li>状态迁移：任务在RUNNING、BLOCKED、READY状态间转换，由延时接口与节拍中断驱动</li>
-          <li>调用流程：delay_call → tick_convert → expire_calc → block → queue_insert → schedule_trigger → tick_isr → expire_check → wake</li>
-          <li>资源管理：延时队列为共享资源需保护并发访问，延时条目为任务私有资源</li>
-          <li>工程案例：传感器采样系统、音频播放器、视频解码器、网络协议栈</li>
-          <li>边界条件：节拍频率、延时范围、队列容量、中断延迟</li>
-          <li>错误场景：延时参数无效、队列溢出、节拍溢出、唤醒失败、延时精度不足</li>
-          <li>异常处理：参数校验、队列扩容、节拍回滚、告警机制、降级处理</li>
-          <li>模块关系：与时间管理模块协作提供节拍驱动，与调度器模块协调唤醒与调度</li>
-        </ul>
-        <p>
-          延时机制的性能优化是实时系统工程的重要环节。HRTOS采用优化的延时队列数据结构，在O(log n)时间内插入与移除延时条目。系统支持位图延时队列，在O(1)时间内检查到期任务。对于多核SMP系统，每个核心独立维护延时队列，避免核心间竞争。这些优化确保了延时机制的高效性，满足实时系统的性能要求。
-        </p>
-        <p>
-          对于功耗敏感的嵌入式系统，延时机制的使用会影响系统功耗管理。任务延时期间系统可进入低功耗模式，降低CPU频率或关闭部分外设，减少功耗。HRTOS提供智能功耗管理机制，在所有任务处于延时状态时自动进入低功耗模式，在任务到期时快速唤醒。系统还支持任务级功耗配置，允许开发者根据任务重要性选择功耗策略，平衡实时性与功耗。
-        </p>
-      </section>
-      <section class="section" id="related">
-  <h2>相关阅读</h2>
-  <p>
-    继续学习时间管理、任务调度与实时控制机制。
-  </p>
-
-  <div class="code">
-Time 模块
-├─ Tick 节拍机制
-├─ Delay 延时控制
-└─ 定时器 Timer
-
-Scheduler 模块
-├─ Real-Time Scheduling
-├─ Priority Scheduling
-└─ Round Robin
-  </div>
-
-  <p>
-    推荐阅读：
-    <a href="/docs/modules/time/index.html">时间管理模块</a> /
-    <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a> /
-    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a> /
-    <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a>
-  </p>
-</section>
 
     </div>
 
@@ -443,18 +352,17 @@ Scheduler 模块
         <h3>目录导航</h3>
         <a href="#overview">概述</a>
         <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
+        <a href="#interface">接口</a>
+        <a href="#flow">流程</a>
       </div>
 
       <div class="box">
-  <h3>相关页面</h3>
-  <a href="/docs/modules/time/index.html">时间管理</a>
-  <a href="/docs/modules/scheduler/index.html">调度机制</a>
-  <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
-  <a href="/docs/modules/task/state-model.html">任务状态模型</a>
-  <a href="/docs/modules/task/lifecycle.html">任务生命周期</a>
-</div>
+        <h3>相关页面</h3>
+        <a href="/docs/modules/time/index.html">时间管理</a>
+        <a href="/docs/modules/scheduler/index.html">调度机制</a>
+        <a href="/docs/modules/task/state-model.html">任务状态</a>
+        <a href="/docs/modules/task/lifecycle.html">生命周期</a>
+      </div>
 
       <div class="box">
         <h3>所属模块</h3>
@@ -463,7 +371,7 @@ Scheduler 模块
 
       <div class="box">
         <h3>学习路径</h3>
-        <a href="/docs/modules/time/index.html">Time → 节拍控制</a>
+        <a href="/docs/modules/time/index.html">Time → Tick</a>
       </div>
 
     </aside>

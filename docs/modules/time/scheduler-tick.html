@@ -76,9 +76,7 @@ a{
 }
 
 /* hero */
-.hero{
-  margin-bottom:56px;
-}
+.hero{ margin-bottom:56px; }
 
 .hero-label{
   display:inline-block;
@@ -133,6 +131,7 @@ a{
   gap:22px;
 }
 
+/* section */
 .section{
   display:grid;
   gap:12px;
@@ -146,7 +145,6 @@ a{
 .section h2{
   margin:0;
   font-size:1.35rem;
-  line-height:1.3;
   border-left:3px solid var(--accent);
   padding-left:12px;
 }
@@ -171,13 +169,12 @@ a{
   border:1px solid rgba(56,189,248,.14);
   border-radius:8px;
   padding:16px;
-  overflow-x:auto;
   font-family:Consolas,monospace;
   font-size:0.92rem;
   color:#7dd3fc;
   line-height:1.65;
-  white-space: pre-wrap;
-word-break: break-word;
+  white-space:pre-wrap;
+  word-break:break-word;
 }
 
 /* sidebar */
@@ -193,10 +190,7 @@ word-break: break-word;
   background:rgba(30,41,59,.56);
 }
 
-.box h3{
-  margin:0 0 12px;
-  font-size:1rem;
-}
+.box h3{ margin:0 0 12px; font-size:1rem; }
 
 .box a{
   display:block;
@@ -205,9 +199,7 @@ word-break: break-word;
   margin-bottom:8px;
 }
 
-.box a:hover{
-  color:var(--accent);
-}
+.box a:hover{ color:var(--accent); }
 
 /* footer */
 .footer{
@@ -227,15 +219,8 @@ word-break: break-word;
     width:min(100% - 24px,1180px);
     padding-top:84px;
   }
-
-  .section{
-    padding:20px 18px;
-  }
-
-  .hero p,
-  .section p{
-    font-size:0.95rem;
-  }
+  .section{ padding:20px 18px; }
+  .hero p,.section p{ font-size:0.95rem; }
 }
 </style>
 </head>
@@ -257,8 +242,8 @@ word-break: break-word;
     <h1>调度节拍（Scheduler Tick）</h1>
 
     <p>
-      调度节拍是RTOS时间管理的基础驱动机制，
-      通过周期性中断推动任务调度、延时更新与系统时间推进。
+      调度节拍是RTOS的时间驱动核心，通过硬件定时器周期性中断，
+      推动任务调度、延时更新与系统时间递增。
     </p>
 
     <div class="meta">
@@ -275,41 +260,37 @@ word-break: break-word;
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
-          Scheduler Tick由硬件定时器周期触发，
-          用于驱动系统时间递增与任务调度决策更新。
+          Scheduler Tick由硬件定时器周期触发，是系统时间的唯一来源。
+          它驱动延时队列更新、时间片递减与调度决策。
         </p>
+
         <p>
-          调度节拍是RTOS时间管理的基础驱动机制，通过周期性中断推动任务调度、延时更新与系统时间推进。Scheduler Tick是实时操作系统的核心组件，负责维护全局时钟、驱动延时队列、管理时间片轮转、触发调度决策。没有Scheduler Tick，系统无法感知时间流逝，无法实现延时机制，无法进行时间片轮转调度。
+          没有Tick，系统无法进行时间推进，也无法实现Delay与时间片轮转调度。
         </p>
+
         <p>
-          Scheduler Tick的频率是系统配置的关键参数。Tick频率越高，时间精度越高，调度延迟越低，但系统开销也越大。典型Tick频率包括1kHz（1ms精度）、10kHz（0.1ms精度）等。HRTOS支持可配置的Tick频率，开发者可根据应用需求选择合适的精度与开销平衡。对于高精度实时系统，可采用更高的Tick频率；对于低功耗系统，可采用较低的Tick频率。
-        </p>
-        <p>
-          Scheduler Tick的实现依赖于硬件定时器。硬件定时器周期性产生中断，中断服务程序（ISR）执行Tick处理逻辑。ISR的执行时间必须尽可能短，避免影响系统实时性。HRTOS采用优化的Tick处理逻辑，在微秒级完成Tick更新、延时队列检查、时间片管理、调度触发等操作，确保Tick开销最小。
+          Tick频率决定系统精度与开销的平衡（1kHz~10kHz典型范围）。
         </p>
       </section>
 
       <section class="section" id="mechanism">
         <h2>工作原理</h2>
+
         <p>
-          每次Tick中断触发时，系统会更新全局时钟，
-          检查延时队列与时间片状态，并在需要时触发调度器运行。
+          每次Tick中断触发时，系统递增全局tick计数器，
+          并依次执行延时队列检查、时间片更新与调度触发。
         </p>
 
         <div class="note">
-          Tick频率直接影响系统实时精度与调度开销之间的平衡。
+          Tick ISR必须短小高效，避免影响实时性。
         </div>
+
         <p>
-          Tick中断的内部实现包括多个关键步骤。首先，中断服务程序递增全局tick计数器，记录系统运行时间。然后，检查延时队列头部任务是否到期，如果到期则唤醒任务。接着，更新当前运行任务的时间片计数，如果时间片到期则触发调度。最后，检查定时器队列，处理软件定时器到期事件。整个过程在临界区中执行，确保原子性。
+          延时队列按expire_tick排序，到期任务从BLOCKED切换到READY。
         </p>
+
         <p>
-          延时队列检查是Tick处理的核心功能。延时队列按到期时间排序，头部任务是最近到期的任务。Tick中断检查头部任务的到期时间，如果到期时间小于等于当前tick，将任务从延时队列移除，状态从BLOCKED转换为READY，插入就绪队列。如果被唤醒任务优先级高于当前运行任务，触发抢占调度。这种机制确保了延时任务的精确唤醒。
-        </p>
-        <p>
-          时间片管理是Round Robin调度的核心功能。每个任务分配一个时间片，任务执行时时间片计数器递减。当时间片到期时，当前运行任务状态从RUNNING转换为READY，插入就绪队列尾部，调度器选择下一个任务执行。Tick中断负责递减时间片计数，检测时间片到期，触发调度决策。这种机制确保了同优先级任务的公平调度。
-        </p>
-        <p>
-          定时器队列处理是Tick处理的扩展功能。软件定时器按到期时间排序，Tick中断检查定时器队列头部定时器是否到期。如果到期，执行定时器回调函数，或将定时器任务插入就绪队列。定时器机制支持周期性定时器与一次性定时器，满足不同的定时需求。HRTOS提供丰富的定时器API，简化定时任务开发。
+          时间片递减用于Round Robin调度，同优先级任务公平切换。
         </p>
       </section>
 
@@ -317,119 +298,94 @@ word-break: break-word;
         <h2>关键接口 / 结构</h2>
 
         <div class="code">
-os_tick_init()
-os_tick_handler()
-os_time_update()
+extern char os_tick_config(u8 slice_count, u16 tick_value);
+extern void os_tick_get(u16 *high, u16 *low);
+extern u32 os_uptime_ms();
 
-struct system_tick {
-    uint32_t tick_count;
-    uint32_t freq_hz;
-};
+extern u16 os_ms_to_tick(u16 ms);
+extern u16 os_sec_to_tick(u8 sec);
+
+extern void os_delay(u16 tick);
+extern void os_delay_ms(unsigned char ms);
         </div>
+
         <p>
-  相关接口文档：
-  <a href="/docs/modules/time/delay.html">任务延时</a> /
-  <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a> /
-  <a href="/docs/modules/task/state-model.html">任务状态模型</a> /
-  <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a>
-</p>
-        <p>
-          os_tick_init()用于初始化Scheduler Tick，参数包括硬件定时器配置、Tick频率。该接口配置硬件定时器，设置中断优先级，注册Tick中断服务程序，初始化全局tick计数器。初始化成功返回0，失败返回错误码。该接口在系统启动时自动调用，开发者无需手动调用。
+          <b>os_tick_config</b>：初始化系统Tick，配置时间片数量与硬件定时器周期。
         </p>
+
+        <div class="note">
+          tick_value 会转换为 (65535 - tick_value + 1) 并写入定时器寄存器 OS_T0_TH0 / OS_T0_TL0。
+        </div>
+
         <p>
-          os_tick_handler()是Tick中断服务程序，由硬件定时器中断自动调用。该接口递增全局tick计数器，检查延时队列，更新时间片计数，处理定时器队列，触发调度决策。该接口必须尽可能短，避免影响系统实时性。HRTOS提供优化的Tick处理逻辑，确保微秒级执行时间。
+          初始化流程：清零tick计数 → 设置时间片 → 配置定时器 → 启动系统节拍。
         </p>
-        <p>
-          os_time_update()用于更新系统时间，参数包括时间增量。该接口递增全局tick计数器，更新系统时间戳。该接口通常由Tick中断服务程序调用，也可由其他时间更新机制调用。更新成功返回0，失败返回错误码。
-        </p>
-        <p>
-          system_tick结构体定义了系统Tick的核心属性。tick_count字段存储全局tick计数器，记录系统运行时间。freq_hz字段存储Tick频率，用于时间转换。该结构体还可能包含时间片配置、定时器队列指针等字段。结构体大小取决于配置，HRTOS通过优化字段布局减少内存占用。
-        </p>
+
+        <p><b>os_tick_get</b>：读取当前系统tick（高16位+低16位）。</p>
+
+        <p><b>os_uptime_ms</b>：返回系统运行时间（毫秒）。</p>
+
+        <p><b>os_ms_to_tick</b>：毫秒转换为tick。</p>
+
+        <p><b>os_sec_to_tick</b>：秒转换为tick。</p>
+
+        <p><b>os_delay</b>：tick级任务阻塞延时。</p>
+
+        <p><b>os_delay_ms</b>：忙等待延时（不参与调度）。</p>
       </section>
 
       <section class="section" id="flow">
         <h2>运行流程</h2>
-        <p>
-          硬件定时器中断 → Tick增加 →
-          更新延时队列 → 检查任务状态 →
-          触发调度决策（如需要）。
-        </p>
-        <div class="note">
-  Tick事件可能导致延时任务到期恢复，
-  并触发任务状态从 Blocked 切换为 Ready。
-</div>
 
-<p>
-  深入理解：
-  <a href="/docs/modules/task/state-model.html">任务状态模型</a> /
-  <a href="/docs/modules/task/context-switch.html">上下文切换</a>
-</p>
         <p>
-          完整的Tick处理流程包括：硬件定时器周期性产生中断；中断服务程序保存上下文，进入临界区；递增全局tick计数器；检查延时队列头部任务是否到期；如果到期，将任务从延时队列移除，状态从BLOCKED转换为READY，插入就绪队列；更新当前运行任务的时间片计数；如果时间片到期，将任务状态从RUNNING转换为READY，插入就绪队列尾部；检查定时器队列头部定时器是否到期；如果到期，执行定时器回调或插入定时器任务；退出临界区，恢复上下文；如果需要调度，触发调度决策。
+          Timer Interrupt → Tick++ → Delay Check → TimeSlice Update → Scheduler
         </p>
+
+        <div class="note">
+          Tick中断统一驱动系统时间与任务状态变化。
+        </div>
+
         <p>
-          延时任务唤醒流程包括：Tick中断检查延时队列头部任务的到期时间；如果到期时间小于等于当前tick，将任务从延时队列移除；将任务状态从BLOCKED转换为READY；将任务插入就绪队列；如果被唤醒任务优先级高于当前运行任务，设置调度标志；退出中断上下文后，调度器检测到调度标志，执行调度决策；保存当前任务上下文，加载目标任务上下文，跳转到目标任务执行。
-        </p>
-        <p>
-          时间片到期调度流程包括：Tick中断递减当前运行任务的时间片计数；如果时间片计数减至零，将任务状态从RUNNING转换为READY；将任务插入就绪队列尾部；设置调度标志；退出中断上下文后，调度器检测到调度标志，执行调度决策；从就绪队列头部选择下一个任务；保存当前任务上下文，加载目标任务上下文，跳转到目标任务执行。这种机制确保了同优先级任务的公平调度。
+          到期任务唤醒后进入READY队列，由调度器选择执行。
         </p>
       </section>
+
       <section class="section" id="extension">
         <h2>扩展说明</h2>
+
         <p>
-          HRTOS支持可配置Tick频率与Tickless模式，
-          在低功耗场景下可减少不必要的周期中断。
+          Tickless模式可在空闲时关闭周期中断以降低功耗。
         </p>
+
         <p>
-          Tickless模式是低功耗优化的重要特性。在系统空闲时，如果所有任务都处于延时状态，系统可以停止Tick中断，进入深度睡眠模式。硬件定时器配置为在最近任务到期时唤醒，避免不必要的周期中断。Tickless模式显著降低系统功耗，适用于电池供电的嵌入式设备。
+          Tick频率越高精度越高，但ISR开销也增加，需要权衡设计。
         </p>
-        <p>
-          Tick频率配置是系统性能与开销平衡的关键。高Tick频率提供高时间精度与低调度延迟，但增加系统开销。低Tick频率减少系统开销，但降低时间精度。HRTOS支持动态Tick频率调整，根据系统负载自动调整Tick频率，在性能与开销之间取得最佳平衡。
-        </p>
+
         <ul>
-          <li>模块职责：调度节拍管理负责维护全局时钟，驱动延时队列，管理时间片，触发调度决策</li>
-          <li>内部机制：基于硬件定时器、中断服务程序、全局tick计数器、延时队列、时间片管理实现</li>
-          <li>状态迁移：任务在BLOCKED、READY、RUNNING状态间转换，由Tick中断与调度决策驱动</li>
-          <li>调用流程：timer_interrupt → tick_isr → tick_increment → delay_check → timeslice_update → timer_check → schedule_trigger</li>
-          <li>资源管理：全局tick计数器为共享资源需保护并发访问，延时队列为共享资源</li>
-          <li>工程案例：汽车电子ECU、工业控制系统、医疗设备控制器、航空航天系统</li>
-          <li>边界条件：Tick频率、中断优先级、队列容量、时间片配置</li>
-          <li>错误场景：定时器配置失败、中断溢出、队列溢出、调度延迟过大、Tick漂移</li>
-          <li>异常处理：错误日志、告警机制、降级处理、系统重启、Tick同步</li>
-          <li>模块关系：与时间管理模块协作提供时间基准，与调度器模块协调调度决策</li>
+          <li>职责：系统时间基准</li>
+          <li>机制：硬件定时器 + ISR</li>
+          <li>驱动：Delay / Scheduler / Timer</li>
+          <li>优化：Tickless / 低开销ISR</li>
         </ul>
+      </section>
+
+      <section class="section" id="related">
+        <h2>相关阅读</h2>
+
+        <div class="code">
+Time System（时间系统）
+├─ Delay Mechanism（任务延时）
+├─ Scheduler Tick（系统节拍）
+└─ Timer System（软件定时器）
+        </div>
+
         <p>
-          调度节拍的性能优化是实时系统工程的重要环节。HRTOS采用优化的Tick处理逻辑，减少ISR执行时间。系统支持快速延时队列检查，在O(1)时间内检查到期任务。对于多核SMP系统，每个核心独立维护Tick计数器，避免核心间竞争。这些优化确保了调度节拍的高效性，满足实时系统的性能要求。
-        </p>
-        <p>
-          对于功耗敏感的嵌入式系统，调度节拍的使用会影响系统功耗管理。高Tick频率导致频繁中断，增加功耗。HRTOS提供智能功耗管理机制，支持Tickless模式，在系统空闲时停止Tick中断，进入深度睡眠模式。系统还支持动态Tick频率调整，根据系统负载自动调整Tick频率，平衡实时性与功耗。
+          <a href="/docs/modules/time/delay.html">任务延时</a> /
+          <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a> /
+          <a href="/docs/modules/task/state-model.html">任务状态模型</a>
         </p>
       </section>
-<section class="section" id="related">
-  <h2>相关阅读</h2>
-  <p>
-    继续学习时间驱动调度与实时任务控制机制。
-  </p>
 
-  <div class="code">
-Time Module
-├─ Delay
-├─ Scheduler Tick
-└─ Timer
-
-Scheduler Module
-├─ Priority Scheduling
-├─ Round Robin
-└─ Real-Time Scheduling
-  </div>
-
-  <p>
-    推荐阅读：
-    <a href="/docs/modules/time/delay.html">任务延时</a> /
-    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a> /
-    <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
-  </p>
-</section>
     </div>
 
     <aside class="sidebar">
@@ -443,13 +399,12 @@ Scheduler Module
       </div>
 
       <div class="box">
-  <h3>相关页面</h3>
-  <a href="/docs/modules/time/delay.html">任务延时</a>
-  <a href="/docs/modules/time/index.html">时间管理</a>
-  <a href="/docs/modules/scheduler/index.html">调度器</a>
-  <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a>
-  <a href="/docs/modules/task/state-model.html">任务状态模型</a>
-</div>
+        <h3>相关页面</h3>
+        <a href="/docs/modules/time/delay.html">任务延时</a>
+        <a href="/docs/modules/time/index.html">时间管理</a>
+        <a href="/docs/modules/scheduler/index.html">调度器</a>
+        <a href="/docs/modules/task/state-model.html">任务状态模型</a>
+      </div>
 
       <div class="box">
         <h3>所属模块</h3>
@@ -458,7 +413,7 @@ Scheduler Module
 
       <div class="box">
         <h3>学习路径</h3>
-        <a href="/docs/modules/time/index.html">Time → 时间驱动核心</a>
+        <a href="/docs/modules/time/index.html">Time → Tick核心</a>
       </div>
 
     </aside>
