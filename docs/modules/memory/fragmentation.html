@@ -5,253 +5,169 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>内存碎片（Fragmentation） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS内存碎片（Fragmentation）机制分析，包括内部碎片与外部碎片的产生原因及实时系统中的优化策略。" />
+<meta name="description" content="HRTOS基于bitmap的内存分配机制与碎片分析，包括连续块分配策略、栈空间增长模型与外部碎片产生原因。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root {
-  --bg: #0f172a;
-  --surface: rgba(15, 23, 42, 0.72);
-  --surface-card: rgba(30, 41, 59, 0.72);
-  --surface-hover: rgba(30, 64, 175, 0.18);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.36);
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
-  --radius: 10px;
-  color-scheme: dark;
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.16);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
 }
 
-* {
-  box-sizing: border-box;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-html {
-  scroll-behavior: smooth;
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:36px;
 }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Segoe UI", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
-  line-height: 1.75;
-  position: relative;
-  overflow-x: hidden;
+.breadcrumb{
+  color:var(--muted);
+  font-size:.92rem;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.14;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
+.breadcrumb a{color:#7dd3fc;}
+
+.hero h1{
+  margin:0 0 12px;
+  font-size:clamp(2.2rem,5vw,3.4rem);
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.hero p{
+  margin:0;
+  color:var(--muted);
+  max-width:900px;
 }
 
-.page {
-  width: min(1180px, calc(100% - 40px));
-  margin: 0 auto;
-  padding: 96px 0 56px;
-  display: grid;
-  gap: 40px;
-  position: relative;
-  z-index: 1;
+.tag{
+  display:inline-block;
+  margin-top:14px;
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  color:#bae6fd;
+  font-size:.85rem;
 }
 
-.breadcrumb {
-  font-size: 0.92rem;
-  color: var(--muted);
+/* layout */
+.layout{
+  display:grid;
+  grid-template-columns: 1fr 260px;
+  gap:28px;
+  align-items:stretch;
 }
 
-.breadcrumb a {
-  color: #7dd3fc;
+/* content */
+.content{
+  display:grid;
+  gap:22px;
 }
 
-.breadcrumb a:hover {
-  color: var(--accent);
+/* section */
+.section{
+  padding:22px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:rgba(30,41,59,.55);
+  box-shadow:var(--shadow);
 }
 
-.hero {
-  display: grid;
-  gap: 16px;
+.section h2{
+  margin:0 0 12px;
+  font-size:1.25rem;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
 }
 
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 0.9rem;
+.section p{
+  margin:0 0 10px;
+  color:var(--muted);
 }
 
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  line-height: 1.1;
-  font-weight: 700;
+.code{
+  margin-top:12px;
+  background:#020617;
+  border:1px solid rgba(56,189,248,.15);
+  padding:14px;
+  border-radius:8px;
+  font-family:Consolas,monospace;
+  font-size:.9rem;
+  color:#7dd3fc;
+  white-space:pre-wrap;
 }
 
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-  font-size: 1rem;
+.block{
+  margin-top:16px;
+  padding:14px;
+  border-left:3px solid #38bdf8;
+  background:rgba(15,23,42,.6);
+  border-radius:8px;
+  color:var(--muted);
 }
 
-.meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+/* sidebar */
+.sidebar{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  height:100%;
 }
 
-.tag {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  color: #bae6fd;
-  background: rgba(15,23,42,.42);
+.box{
+  flex:1;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(30,41,59,.5);
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 28px;
-  align-items: start;
+.box h3{
+  margin:0 0 10px;
+  font-size:0.95rem;
 }
 
-.content {
-  display: grid;
-  gap: 22px;
+.box a{
+  display:block;
+  margin-bottom:8px;
+  color:#7dd3fc;
+  font-size:0.9rem;
 }
 
-.section {
-  display: grid;
-  gap: 12px;
-  padding: 24px 22px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(30,41,59,.72),
-      rgba(15,23,42,.92)
-    );
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+.box a:hover{color:var(--accent);}
+
+.footer{
+  text-align:center;
+  color:#8ea3be;
+  font-size:.9rem;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:18px;
 }
 
-.section h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.3;
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
-}
-
-.section p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.96rem;
-}
-
-.note {
-  padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
-  font-size: 0.94rem;
-}
-
-.code {
-  background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
-  border-radius: 8px;
-  padding: 16px;
-  overflow-x: auto;
-  font-family: Consolas, monospace;
-  font-size: 0.92rem;
-  color: #7dd3fc;
-  line-height: 1.65;
-  white-space: pre-wrap;
-}
-
-.sidebar {
-  display: grid;
-  gap: 16px;
-}
-
-.box {
-  padding: 18px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: rgba(30,41,59,.56);
-}
-
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 1rem;
-}
-
-.box a {
-  display: block;
-  color: #7dd3fc;
-  font-size: 0.92rem;
-  margin-bottom: 8px;
-}
-
-.box a:hover {
-  color: var(--accent);
-}
-
-.footer {
-  text-align: center;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148,163,184,.14);
-  color: #8ea3be;
-  font-size: 0.9rem;
-}
-
-@media (max-width: 980px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .page {
-    width: min(100% - 24px, 1180px);
-    padding-top: 84px;
-  }
-
-  .section {
-    padding: 20px 18px;
-  }
-
-  .hero p,
-  .section p {
-    font-size: 0.95rem;
-  }
+@media(max-width:1000px){
+  .layout{grid-template-columns:1fr;}
 }
 </style>
 </head>
 
-<body data-header="docs">
+<body>
 
 <main class="page">
 
@@ -263,238 +179,150 @@ a {
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS 模块文档</span>
-
     <h1>内存碎片（Fragmentation）</h1>
-
     <p>
-      内存碎片是动态内存管理中常见的问题，会影响系统可用内存效率与实时性能，
-      在RTOS中需要通过特定分配策略进行控制与优化。
+      HRTOS采用基于Bitmap的连续块分配机制，通过固定粒度扫描与连续区间申请实现内存管理。
+      碎片问题主要来源于连续空间切割与栈增长不均衡。
     </p>
-
-    <div class="meta">
-      <span class="tag">内存管理</span>
-<span class="tag">RTOS核心</span>
-<span class="tag">性能优化</span>
-    </div>
+    <span class="tag">Bitmap Allocation Model</span>
   </section>
 
   <div class="layout">
 
+    <!-- CONTENT -->
     <div class="content">
 
       <section class="section" id="overview">
-  <h2>概述</h2>
-  <p>
-    内存碎片（Fragmentation）指在内存分配与释放过程中，
-    产生无法被有效利用的小块空闲内存区域。
-  </p>
+        <h2>① 分配模型概述</h2>
+        <p>
+          HRTOS内存管理以OS_MEMORY位图为核心，每一位表示一个最小分配单元。
+          分配过程本质是“连续bit段查找”。
+        </p>
 
-  <p>
-    当系统持续执行动态内存申请与释放时，
-    空闲空间可能被切割为多个不连续区域，
-    导致虽然总剩余空间充足，但无法满足连续分配需求。
-  </p>
+        <div class="code">
+单位粒度：2 bytes
+映射区域：OS_USER_RAM_INIT → OS_USER_RAM_EXIT
 
-  <div class="note">
-    在实时系统中，碎片问题不仅影响内存利用率，
-    还可能导致关键任务申请失败。
-  </div>
-  <p>
-    内存碎片分为内部碎片与外部碎片两种类型。内部碎片指已分配的内存块中未被实际使用的空间，通常由固定大小分配策略导致。外部碎片指分散在内存中的小块空闲区域，虽然总空闲空间足够，但因不连续而无法满足大块分配需求。在实时系统中，外部碎片比内部碎片更危险，因为它可能导致关键任务分配失败，影响系统稳定性。
-  </p>
-  <p>
-    碎片问题的严重性取决于分配策略与使用模式。传统的堆分配器（如malloc/free）采用最佳适配、首次适配等算法，虽然能提高空间利用率，但会产生大量外部碎片。固定块分配器（如内存池）通过牺牲一定的空间利用率换取确定性的分配时间，避免外部碎片问题。HRTOS默认采用固定块分配策略，从根本上消除外部碎片风险。
-  </p>
-  <p>
-    碎片累积是一个渐进过程，随着系统运行时间的增加，碎片程度逐渐加重。在长期运行的实时系统中，如果不采取有效措施，碎片最终会导致内存耗尽，即使系统仍有大量空闲空间。HRTOS提供碎片监控与检测机制，实时跟踪碎片程度，在碎片达到阈值时触发告警或自动整理，确保系统长期稳定运行。
-  </p>
-</section>
+OS_MEMORY[x] bit = 1 → 已占用
+OS_MEMORY[x] bit = 0 → 空闲
+        </div>
 
-      <section class="section" id="mechanism">
-  <h2>工作原理</h2>
+        <div class="block">
+          该模型天然避免指针碎片，但仍可能产生“连续区不足”的外部碎片问题。
+        </div>
+      </section>
 
-  <p>
-    碎片通常分为内部碎片与外部碎片。
-  </p>
+      <section class="section" id="alloc">
+        <h2>② 连续块分配过程（来自 os_task_create）</h2>
 
-  <div class="code">
-内部碎片：
-- 固定大小分配块造成空间浪费
+        <p>任务创建时，通过扫描bitmap寻找连续空闲块：</p>
 
-外部碎片：
-- 空闲块分散且不连续
-- 无法满足大块连续分配需求
-  </div>
+        <div class="code">
+for(i=0; i<total_blocks; i++){
+    if(bitmap[i] == 0) k++;
+    else k = 0;
 
-  <p>
-    内部碎片通常影响空间利用率，
-    外部碎片则直接影响系统稳定性与分配成功率。
-  </p>
+    if(k >= sd){
+        allocate();
+    }
+}
+        </div>
 
-  <div class="note">
-    在实时系统中，外部碎片比内部碎片更危险，
-    因为它可能导致关键内存申请失败。
-  </div>
-  <p>
-    内部碎片的产生源于固定块分配策略。当申请的内存大小小于块大小时，剩余空间成为内部碎片，无法被其他请求使用。例如，块大小为256字节，申请100字节，则产生156字节的内部碎片。内部碎片的浪费程度取决于块大小设计的合理性，HRTOS通过提供多级大小内存池平衡内部碎片与分配效率，开发者可根据实际需求选择合适的块大小。
-  </p>
-  <p>
-    外部碎片的产生源于变长分配策略。当系统频繁申请和释放不同大小的内存块时，空闲空间被切割为不连续的小块。即使总空闲空间足够，也无法满足大块连续分配需求。例如，系统有1000字节空闲空间，但分散为10个100字节的小块，无法满足500字节的连续分配请求。外部碎片是动态内存分配器的固有问题，只能通过优化分配策略减轻，无法完全消除。
-  </p>
-  <p>
-    碎片检测机制是HRTOS的重要功能，用于监控内存碎片程度。系统定期扫描空闲块链表，统计空闲块数量、最大连续空闲块大小、碎片率等指标。碎片率定义为（总空闲空间 - 最大连续空闲块大小）/ 总空闲空间，反映碎片化的严重程度。当碎片率超过阈值时，系统触发告警或自动整理，提醒开发者优化内存使用策略。
-  </p>
-</section>
+        <div class="block">
+          sd = stack深度（实际 +1）<br>
+          k = 连续空闲块计数<br>
+          找到连续区域后一次性标记占用
+        </div>
 
-      <section class="section" id="interface">
-  <h2>关键接口 / 结构</h2>
+        <p>
+          该机制决定：内存不是“随机碎片”，而是“连续段碎片（contiguous fragmentation）”。
+        </p>
+      </section>
 
-  <p>
-    碎片控制通常涉及空闲块管理、块拆分与块合并等机制，
-    用于提升内存利用率并降低碎片累积风险。
-  </p>
+      <section class="section" id="stack">
+        <h2>③ 栈空间增长与碎片来源</h2>
 
-  <div class="code">
-memory_pool_defragment()
-memory_block_merge()
-memory_block_split()
+        <div class="code">
+i = OS_USER_RAM_INIT + (index * 2) + 1
+SP = i
+OS_INSIDE_STACK_USE_MAXIMUM = i + sd * 2
+        </div>
 
-struct free_block {
-    uint32_t size;
-    struct free_block* next;
-};
-  </div>
+        <div class="block">
+          栈空间按任务创建顺序连续分配，不回收重排。
+          长期运行后会形成“尾部空洞”。
+        </div>
 
-  <div class="note">
-    相关接口：
-    <br><br>
-    <a href="/docs/api/memory/index.html">内存接口总览</a><br>
-    <a href="/docs/api/memory/os_memset.html">内存填充接口</a><br>
-    <a href="/docs/api/memory/os_task_stack.html">任务栈接口</a>
-  </div>
-  <p>
-    memory_pool_defragment()用于整理内存碎片，参数包括内存池指针。该接口扫描空闲块链表，合并相邻的空闲块，减少碎片数量。整理操作可能需要移动已分配的块，因此开销较大，通常在系统空闲时或碎片严重时手动触发。整理成功返回0，失败返回错误码。
-  </p>
-  <p>
-    memory_block_merge()用于合并相邻的空闲块，参数包括两个空闲块指针。该接口检查两个块是否相邻且都为空闲状态，如果是则合并为一个更大的块，更新链表指针。合并操作在释放内存时自动触发，确保空闲块尽可能大，减少碎片累积。合并成功返回合并后的块指针，失败返回NULL。
-  </p>
-  <p>
-    memory_block_split()用于拆分空闲块，参数包括空闲块指针、拆分大小。该接口检查块是否足够大，如果是则将块拆分为两个较小的块，一个用于分配，一个保留在空闲链表中。拆分操作在分配内存时自动触发，确保分配的块大小尽可能接近请求大小，减少内部碎片。拆分成功返回分配的块指针，失败返回NULL。
-  </p>
-  <p>
-    free_block结构体定义了空闲块的核心属性。size字段存储块的大小。next字段指向链表中的下一个空闲块。该结构体还可能包含前驱指针（双向链表）、标志字段（是否已合并）、统计信息等字段。结构体大小取决于配置，HRTOS通过优化字段布局减少内存开销。
-  </p>
-</section>
+        <p>
+          这类碎片属于外部碎片，但特点是：
+          <br>
+          - 不来自malloc/free<br>
+          - 来自任务生命周期分布不均<br>
+          - 不可自动压缩
+        </p>
+      </section>
 
-      <section class="section" id="flow">
-  <h2>运行流程</h2>
+      <section class="section" id="fragment">
+        <h2>④ 碎片形成机制</h2>
 
-  <p>
-    系统频繁进行动态内存分配与释放时，
-    空闲块会逐渐分散并形成不连续区域。
-  </p>
+        <p>HRTOS中的碎片主要来源：</p>
 
-  <div class="code">
-1. 申请内存块
-2. 释放部分块
-3. 形成空闲间隙
-4. 大块申请失败
-5. 触发合并或重新分配策略
-  </div>
+        <div class="code">
+1. bitmap连续段被切割
+2. task创建/删除不对称
+3. stack区域单向增长
+4. 高速任务与普通任务混合分配
+        </div>
 
-  <p>
-    系统通常通过合并相邻空闲块、
-    固定块分配或预分配策略降低碎片影响。
-  </p>
-  <p>
-    完整的碎片产生流程包括：任务申请内存块，系统从空闲链表中查找合适的块；如果使用变长分配策略，系统可能拆分较大的块以满足请求，产生内部碎片；任务释放内存块，系统将块插入空闲链表；如果释放的块与相邻空闲块相邻，系统自动合并这些块，减少外部碎片；随着时间推移，频繁的分配与释放导致空闲块分散，形成大量外部碎片。
-  </p>
-  <p>
-    完整的碎片整理流程包括：系统或开发者调用memory_pool_defragment()接口，内核扫描空闲块链表，识别相邻的空闲块；合并相邻的空闲块，减少碎片数量；如果需要移动已分配的块，系统复制数据到新位置，更新指针；更新空闲链表与元数据，完成整理。整理操作可能需要较长时间，通常在系统空闲时或碎片严重时触发。
-  </p>
-  <p>
-    碎片监控流程包括：系统定期或按需扫描空闲块链表，统计空闲块数量、最大连续空闲块大小、总空闲空间等指标；计算碎片率，判断是否超过阈值；如果超过阈值，系统触发告警或自动整理；记录碎片统计信息，供开发者分析内存使用情况。监控过程在后台执行，不影响系统实时性能。
-  </p>
-</section>
+        <div class="block">
+          特点：碎片不可“随机恢复”，只能通过重启或重建内存池消除。
+        </div>
+      </section>
 
-      <section class="section" id="extension">
-  <h2>扩展说明</h2>
+      <section class="section" id="opt">
+        <h2>⑤ 优化策略</h2>
 
-  <p>
-    HRTOS通常通过内存池、固定块分配和预分配策略
-    避免碎片问题，提升实时系统稳定性。
-  </p>
+        <div class="code">
+策略1：固定任务上限（OS_PROCESS_MAX）
+策略2：预分配栈深度（sd上限控制）
+策略3：高速任务独立区
+策略4：启动阶段集中创建任务
+        </div>
 
-  <div class="code">
-推荐实践：
-- 使用固定大小内存块
-- 避免频繁动态分配
-- 系统启动阶段完成初始化
-- 优先静态资源配置
-  </div>
+        <div class="block">
+          HRTOS核心思想：用“确定性分配”替代“动态整理”。
+        </div>
+      </section>
 
-  <div class="note">
-    查看相关模块：
-    <br><br>
-    <a href="/docs/modules/memory/allocation.html">内存分配</a>
-  </div>
-  <p>
-    固定块分配是HRTOS推荐的碎片避免策略。通过使用固定大小的内存块，系统彻底消除外部碎片风险，因为所有块大小相同，不存在无法满足的大块分配需求。内部碎片的浪费程度可以通过合理设计块大小来控制，HRTOS提供多级大小内存池，开发者可根据实际需求选择合适的块大小，平衡空间利用率与分配效率。
-  </p>
-  <p>
-    预分配策略是另一种有效的碎片避免方法。在系统启动阶段预先分配所有需要的内存资源，运行时不再申请或释放内存，从根本上避免碎片产生。预分配策略适用于资源需求确定的安全关键系统，具有最高的确定性与安全性。HRTOS支持静态配置，开发者可以在编译时确定所有内存需求，实现完全的预分配。
-  </p>
-  <p>
-    碎片整理是应对碎片的补救措施，但不应作为主要策略。整理操作开销较大，可能影响系统实时性能，且需要移动已分配的块，增加实现复杂度。HRTOS将碎片整理作为可选功能，仅在碎片严重时手动触发。开发者应优先采用固定块分配与预分配策略，从根本上避免碎片问题。
-  </p>
-  <ul>
-    <li>模块职责：碎片管理负责监控与控制内存碎片程度，确保系统长期稳定运行</li>
-    <li>内部机制：基于碎片检测、块合并、块拆分、碎片整理实现，支持自动与手动模式</li>
-    <li>状态迁移：内存块在ALLOCATED与FREE状态间切换，碎片程度随时间累积</li>
-    <li>调用流程：detect → merge/split → defragment → monitor</li>
-    <li>资源管理：空闲块链表为共享资源需保护并发访问，碎片统计为全局资源</li>
-    <li>工程案例：动态内存分配系统、长期运行服务器、内存池管理</li>
-    <li>边界条件：碎片率阈值、块大小限制、整理触发条件、监控周期</li>
-    <li>错误场景：碎片整理失败、内存移动错误、指针更新错误、碎片检测溢出</li>
-    <li>异常处理：整理回滚、错误恢复、告警机制、降级处理</li>
-    <li>模块关系：与内存分配模块协作管理空闲块，与监控模块协作统计碎片指标</li>
-  </ul>
-  <p>
-    碎片监控的性能优化是实时系统工程的重要环节。HRTOS采用增量扫描策略，仅扫描变化的部分，减少监控开销。碎片统计在后台线程中执行，避免阻塞关键任务。系统还支持按需监控，仅在怀疑碎片问题时触发扫描，平衡监控精度与性能开销。
-  </p>
-  <p>
-    对于功耗敏感的嵌入式系统，碎片整理的使用会影响系统功耗管理。整理操作可能需要较长时间，阻止系统进入低功耗模式。HRTOS提供碎片整理超时机制，当整理时间超过阈值时中止操作，避免影响功耗管理。系统还支持在整理失败时主动让出CPU，允许系统进入低功耗模式，平衡实时性与功耗。
-  </p>
-</section>
+      <section class="section">
+        <h2>⑥ 关键结论</h2>
+
+        <div class="block">
+          Bitmap模型不会产生传统malloc碎片<br>
+          但会产生“连续空间碎片”<br>
+          系统稳定性取决于任务创建顺序设计<br>
+          长期运行必须依赖静态规划
+        </div>
+      </section>
 
     </div>
 
+    <!-- SIDEBAR -->
     <aside class="sidebar">
 
       <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
+        <h3>碎片导航</h3>
+        <a href="#overview">分配模型</a>
+        <a href="#alloc">任务分配</a>
+        <a href="#stack">栈机制</a>
+        <a href="#fragment">碎片来源</a>
+        <a href="#opt">优化策略</a>
       </div>
 
       <div class="box">
-  <h3>相关页面</h3>
-  <a href="/docs/modules/memory/allocation.html">内存分配</a>
-  <a href="/docs/modules/memory/stack-management.html">栈管理</a>
-  <a href="/docs/modules/memory/memory-protection.html">内存保护</a>
-</div>
-
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/modules/memory/index.html">内存管理</a>
-      </div>
-
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/memory/index.html">Memory基础 → 内核内存管理</a>
+        <h3>相关模块</h3>
+        <a href="/docs/modules/memory/allocation.html">内存分配</a>
+        <a href="/docs/modules/task/index.html">任务系统</a>
       </div>
 
     </aside>
@@ -502,7 +330,7 @@ struct free_block {
   </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
+    © 2017–2026 HRTOS Kernel Memory Architecture
   </footer>
 
 </main>

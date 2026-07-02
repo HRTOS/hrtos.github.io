@@ -10,240 +10,143 @@
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
-:root {
-  --bg: #0f172a;
-  --surface: rgba(15, 23, 42, 0.72);
-  --surface-hover: rgba(30, 64, 175, 0.18);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.36);
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
-  --radius: 10px;
-  color-scheme: dark;
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.16);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
 }
 
-* { box-sizing: border-box; }
+*{box-sizing:border-box}
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height: 1.75;
-  overflow-x: hidden;
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.14;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
-}
+a{color:inherit;text-decoration:none}
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.page {
-  width: min(1180px, calc(100% - 40px));
-  margin: 0 auto;
-  padding: 96px 0 56px;
-  display: grid;
-  gap: 40px;
-  position: relative;
-  z-index: 1;
-}
-
-/* breadcrumb */
-.breadcrumb {
-  font-size: 0.92rem;
-  color: var(--muted);
-}
-
-.breadcrumb a {
-  color: #7dd3fc;
-}
-
-.breadcrumb a:hover {
-  color: var(--accent);
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:36px;
 }
 
 /* hero */
-.hero {
-  display: grid;
-  gap: 16px;
+.hero{display:grid;gap:12px}
+
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.22);
+  color:#bae6fd;
+  font-size:.9rem;
 }
 
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 0.9rem;
+.hero h1{
+  margin:0;
+  font-size:clamp(2.2rem,5vw,3.4rem);
+  line-height:1.1;
 }
 
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  line-height: 1.1;
-  font-weight: 700;
-}
-
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-  font-size: 1rem;
-}
-
-.meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.tag {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  color: #bae6fd;
-  background: rgba(15,23,42,.42);
-}
+.hero p{margin:0;color:var(--muted);max-width:820px}
 
 /* layout */
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 28px;
-  align-items: start;
+.layout{
+  display:grid;
+  grid-template-columns:1fr 280px;
+  gap:26px;
 }
 
-.content {
-  display: grid;
-  gap: 22px;
+.section{
+  padding:22px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
+  box-shadow:var(--shadow);
+  display:grid;
+  gap:10px;
 }
 
-.section {
-  display: grid;
-  gap: 12px;
-  padding: 24px 22px;
-  background: linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+.section h2{
+  margin:0;
+  font-size:1.3rem;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
 }
 
-.section h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.3;
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
+.section p{
+  margin:0;
+  color:var(--muted);
+  font-size:.95rem;
 }
 
-.section p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.96rem;
-}
-
-.note {
-  padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
-  font-size: 0.94rem;
-}
-
-.code {
+.code{
   background:#020617;
-  border:1px solid rgba(56,189,248,.14);
+  border:1px solid rgba(56,189,248,.12);
   border-radius:8px;
-  padding:16px;
-  overflow-x:auto;
+  padding:14px;
   font-family:Consolas,monospace;
-  font-size:0.92rem;
+  font-size:.9rem;
   color:#7dd3fc;
-  line-height:1.65;
+  white-space:pre-wrap;
+}
 
-  white-space: pre-wrap;
-  word-break: break-word;
+.note{
+  padding:12px 14px;
+  border-left:3px solid var(--accent);
+  background:rgba(15,23,42,.6);
+  color:var(--muted);
+  border-radius:6px;
+  font-size:.92rem;
 }
 
 /* sidebar */
-.sidebar {
-  display: grid;
-  gap: 16px;
+.sidebar{display:grid;gap:14px}
+
+.box{
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:rgba(30,41,59,.5);
 }
 
-.box {
-  padding: 18px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: rgba(30,41,59,.56);
-}
+.box h3{margin:0 0 10px;font-size:.95rem}
 
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 1rem;
-}
-
-.box a {
-  display: block;
-  color: #7dd3fc;
-  font-size: 0.92rem;
-  margin-bottom: 8px;
-}
-
-.box a:hover {
-  color: var(--accent);
+.box a{
+  display:block;
+  font-size:.9rem;
+  color:#7dd3fc;
+  margin-bottom:6px;
 }
 
 /* footer */
-.footer {
-  text-align: center;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148,163,184,.14);
-  color: #8ea3be;
-  font-size: 0.9rem;
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.12);
+  color:var(--muted);
+  font-size:.9rem;
 }
 
-@media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 640px) {
-  .page {
-    width: min(100% - 24px, 1180px);
-    padding-top: 84px;
-  }
-
-  .section {
-    padding: 20px 18px;
-  }
-
-  .hero p,
-  .section p {
-    font-size: 0.95rem;
-  }
+@media(max-width:980px){
+  .layout{grid-template-columns:1fr}
 }
 </style>
 </head>
 
-<body data-header="docs">
+<body>
 
 <main class="page">
 
@@ -255,20 +158,12 @@ a {
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
-
+    <span class="hero-label">HRTOS Scheduler</span>
     <h1>实时调度（Real-Time Scheduling）</h1>
-
     <p>
-      实时调度机制用于保证任务在严格时间约束下执行，
-      通过确定性调度策略确保系统响应时间可预测且满足实时性要求。
+      基于时间约束与任务优先级的确定性调度机制，
+      用于保证系统在截止时间内完成关键任务执行。
     </p>
-
-    <div class="meta">
-      <span class="tag">Scheduler</span>
-      <span class="tag">Real-Time</span>
-      <span class="tag">Deterministic</span>
-    </div>
   </section>
 
   <div class="layout">
@@ -278,184 +173,121 @@ a {
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
-          实时调度（Real-Time Scheduling）关注任务在截止时间（Deadline）前完成执行，
-          是实时操作系统区别于通用操作系统的核心特性之一。
+          实时调度用于保证任务在确定时间窗口内完成执行，是RTOS核心能力。
+          HRTOS采用优先级 + 时间约束联合调度模型。
         </p>
         <p>
-          实时调度机制用于保证任务在严格时间约束下执行，通过确定性调度策略确保系统响应时间可预测且满足实时性要求。与通用操作系统追求平均性能最优不同，实时系统的核心目标是"最坏情况可预测"，确保关键任务在任何情况下都能在截止时间前完成。
-        </p>
-        <p>
-          实时调度分为硬实时与软实时两种模式。硬实时要求任务必须在截止时间前完成，否则将导致系统失效或严重后果，如汽车刹车系统、飞行控制系统。软实时允许任务偶发延迟，但应尽量减少延迟频率与程度，如视频播放、音频处理。HRTOS支持两种模式，开发者可根据应用需求选择合适的实时保证级别。
-        </p>
-        <p>
-          实时调度的核心挑战在于可调度性分析与时间约束管理。系统需要在设计阶段验证任务集合是否可调度，即所有任务都能在截止时间前完成。常用的可调度性分析方法包括利用率测试、响应时间分析等。HRTOS提供可调度性分析工具，帮助开发者评估系统配置的合理性，避免运行时出现实时性违约。
+          支持硬实时与软实时任务：硬实时保证必须完成，软实时允许延迟但保证尽量执行。
         </p>
       </section>
-<section class="section" id="task-type">
-  <h2>实时任务分类</h2>
-  <p>
-    实时系统中的任务通常分为硬实时任务（Hard Real-Time）
-    与软实时任务（Soft Real-Time）。
-    硬实时任务必须在截止时间前完成，
-    否则将导致系统失效或严重后果。
-  </p>
 
-  <div class="code">
-硬实时任务（Hard Real-Time）
-    ↓
-必须满足截止时间
-
-软实时任务（Soft Real-Time）
-    ↓
-允许偶发延迟
-  </div>
-  <p>
-    硬实时任务对时间约束要求极其严格，任何违约都可能导致灾难性后果。典型应用包括汽车刹车系统、飞行控制系统、医疗生命支持设备等。硬实时任务通常具有明确的截止时间，系统必须提供100%的实时保证。HRTOS为硬实时任务提供最高优先级、最短中断延迟、确定性上下文切换等特性，确保任务在任何情况下都能按时完成。
-  </p>
-  <p>
-    软实时任务对时间约束要求相对宽松，允许偶发延迟但应尽量减少。典型应用包括视频播放、音频处理、网络通信等。软实时任务的目标是提供良好的用户体验，而非绝对的时间保证。HRTOS为软实时任务提供优先级管理、带宽控制、服务质量（QoS）机制，平衡实时性与系统资源利用率。
-  </p>
-  <p>
-    实时任务还可按周期性分为周期性任务、偶发性任务与非周期性任务。周期性任务按固定周期重复执行，如传感器采样、控制回路更新。偶发性任务随机到达，如中断处理、事件响应。非周期性任务仅执行一次，如系统初始化、配置更新。HRTOS支持多种任务类型，提供灵活的调度策略满足不同应用需求。
-  </p>
-</section>
       <section class="section" id="mechanism">
         <h2>工作原理</h2>
+
         <p>
-          调度器根据任务优先级、截止时间和系统负载进行决策，
-          在关键任务就绪时立即抢占CPU，保证时间确定性。
+          调度器维护就绪队列，根据优先级与任务状态选择执行对象。
         </p>
 
         <div class="note">
-          实时系统的核心目标不是"平均性能最优"，而是"最坏情况可预测"。
+          高优先级任务就绪时，将立即触发抢占调度。
         </div>
+
         <p>
-          实时调度的内部实现依赖于时间约束管理与优先级分配。每个任务具有周期、截止时间、执行时间等时间参数，调度器根据这些参数计算任务优先级。静态优先级调度（如RMS）在任务创建时分配优先级，运行期间不变。动态优先级调度（如EDF）在运行时根据截止时间动态调整优先级，确保截止时间最近的任务优先执行。
+          实时性依赖最坏执行时间控制与抢占式内核设计。
         </p>
-        <p>
-          可调度性分析是实时调度的核心机制。系统在设计阶段通过利用率测试验证任务集合是否可调度。对于周期性任务，利用率定义为总执行时间与总周期之比。如果利用率低于阈值（如RMS为n(2^(1/n)-1)），则系统可调度。HRTOS提供可调度性分析工具，帮助开发者评估系统配置，避免运行时出现实时性违约。
-        </p>
-        <p>
-          时间确定性保证是实时调度的关键特性。系统通过最坏情况执行时间（WCET）分析、中断延迟控制、上下文切换优化等机制，确保任务响应时间可预测。HRTOS采用优化的上下文切换机制，减少寄存器保存与恢复开销。系统还支持延迟测量工具，实时监控任务响应时间，及时发现性能瓶颈。
-        </p>
+      </section>
+
+      <section class="section" id="rules">
+        <h2>调度规则</h2>
+
+        <div class="code">
+1. 高优先级任务优先执行
+2. 同优先级任务轮转执行
+3. 低优先级任务仅在空闲时运行
+4. 新任务就绪可触发抢占
+        </div>
+
       </section>
 
       <section class="section" id="interface">
-  <h2>关键接口 / 结构</h2>
+        <h2>关键接口 / 结构</h2>
 
-  <div class="code">
-os_sched_set_deadline()
-os_sched_register_task()
-os_sched_latency_control()
-
-struct rt_task {
-    uint32_t period;
-    uint32_t deadline;
-    uint8_t priority;
-};
-  </div>
-
-  <p>
-    相关文档：
-    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a> /
-    <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a> /
-    <a href="/docs/modules/task/priority.html">任务优先级</a> /
-    <a href="/docs/system/scheduling-flow.html">调度流程</a>
-  </p>
-  <p>
-    os_sched_set_deadline()用于设置任务截止时间，参数包括任务控制块指针、截止时间。该接口更新任务的截止时间字段，如果采用动态优先级调度（如EDF），系统自动调整任务优先级。设置成功返回0，失败返回错误码。该接口在临界区中执行，确保截止时间更新的原子性。
-  </p>
-  <p>
-    os_sched_register_task()用于注册实时任务，参数包括任务控制块指针、周期、截止时间、执行时间。该接口将任务添加到实时调度器，初始化时间参数，计算初始优先级。注册成功返回0，失败返回错误码。该接口在任务创建时自动调用，开发者无需手动调用。
-  </p>
-  <p>
-    os_sched_latency_control()用于控制调度延迟，参数包括最大延迟阈值。该接口配置调度器的延迟控制机制，确保任务响应时间不超过阈值。如果检测到延迟超过阈值，系统触发告警或采取纠正措施。控制成功返回0，失败返回错误码。
-  </p>
-  <p>
-    rt_task结构体定义了实时任务的核心属性。period字段存储任务周期。deadline字段存储任务截止时间。priority字段存储任务优先级。该结构体还可能包含执行时间、最坏情况执行时间、统计信息等字段。结构体大小取决于配置，HRTOS通过优化字段布局减少内存占用。
-  </p>
-</section>
-
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
         <div class="code">
-任务进入系统
-    ↓
-注册周期与截止时间
-    ↓
-调度器分析优先级
-    ↓
-选择可执行任务
-    ↓
-开始实时执行
-</div>
+/* 状态控制 */
+os_task_suspend(id)
+os_task_resume(id)
+os_task_exit()
+os_task_delete(id)
+
+/* 调度控制 */
+os_task_set_priority(id, pr)
+os_task_get_priority(id)
+os_task_set_next(id)
+
+/* 查询 */
+os_task_get_state(id)
+os_task_self()
+os_task_is_valid(id)
+
+/* CPU控制 */
+os_task_yield()
+os_task_suspend_self()
+
+/* 任务创建锁 */
+os_lock()
+os_unlock()
+os_lock_query()
+        </div>
+
         <p>
-          完整的实时调度流程包括：任务创建时调用os_sched_register_task()注册实时任务，提供周期、截止时间、执行时间等参数；调度器初始化任务时间参数，计算初始优先级；任务进入就绪状态，调度器检查就绪队列，选择最高优先级任务；如果采用动态优先级调度（如EDF），调度器根据截止时间动态调整优先级；任务执行，调度器监控任务执行时间，确保不超过截止时间；任务完成或阻塞，调度器选择下一个任务执行。
-        </p>
-        <p>
-          动态优先级调度流程包括：调度器定期扫描就绪任务，计算每个任务的截止时间；根据截止时间调整任务优先级，截止时间最近的任务优先级最高；更新就绪队列，确保优先级顺序正确；触发调度决策，选择最高优先级任务执行。这种机制确保了截止时间紧迫的任务优先执行，提高了系统利用率。
-        </p>
-        <p>
-          延迟监控流程包括：调度器实时监控任务响应时间，记录任务就绪时间、开始执行时间、完成时间；计算任务响应时间，与截止时间比较；如果响应时间超过截止时间，系统触发告警，记录违约信息；根据配置决定行为：终止任务、降低优先级或继续执行。这种监控机制帮助开发者及时发现性能瓶颈，优化系统配置。
+          接口覆盖任务生命周期管理、优先级调整、调度触发与资源同步控制。
         </p>
       </section>
 
-<section class="section" id="algorithms">
-  <h2>经典实时调度算法</h2>
-  <p>
-    常见实时调度算法包括固定优先级调度与动态优先级调度。
-    不同算法适用于不同实时任务模型。
-  </p>
+      <section class="section" id="flow">
+        <h2>运行流程</h2>
 
-  <div class="code">
-RMS（Rate Monotonic Scheduling）
-    ↓
-周期越短，优先级越高
+        <div class="code">
+task ready
+  ↓
+scheduler scan
+  ↓
+priority compare
+  ↓
+preempt decision
+  ↓
+context switch
+  ↓
+task execute
+        </div>
 
-EDF（Earliest Deadline First）
-    ↓
-截止时间越近，优先级越高
-  </div>
-  <p>
-    RMS（Rate Monotonic Scheduling）是最优的固定优先级调度算法，适用于周期性任务。RMS根据任务周期分配优先级，周期越短，优先级越高。RMS的可调度性条件是利用率U ≤ n(2^(1/n)-1)，其中n为任务数量。当任务利用率低于此阈值时，系统可保证所有任务在截止时间前完成。RMS实现简单，开销小，是实时系统的首选算法。
-  </p>
-  <p>
-    EDF（Earliest Deadline First）是最优的动态优先级调度算法，适用于周期性与偶发性任务。EDF根据任务截止时间动态调整优先级，截止时间最近的任务优先级最高。EDF的可调度性条件是利用率U ≤ 1，比RMS更宽松，可支持更高的任务利用率。EDF实现复杂，需要频繁调整优先级，开销较大，但能提供更高的系统利用率。
-  </p>
-  <p>
-    除了RMS与EDF，还有其他实时调度算法。DM（Deadline Monotonic）根据绝对截止时间分配优先级，适用于截止时间不等于周期的任务。LLF（Least Laxity First）根据松弛度分配优先级，松弛度越小，优先级越高。这些算法各有特点，适用于不同的应用场景。HRTOS支持多种调度算法，开发者可根据任务特性选择合适的策略。
-  </p>
-</section>
+        <p>
+          调度在任务就绪、中断唤醒或优先级变化时触发，执行延迟为微秒级。
+        </p>
+      </section>
+
+      <section class="section" id="inversion">
+        <h2>优先级反转</h2>
+
+        <p>
+          低优先级任务持锁 + 高优先级等待 + 中优先级运行，会导致反转问题。
+        </p>
+
+        <div class="note">
+          HRTOS通过优先级继承与锁机制缓解该问题。
+        </div>
+
+      </section>
 
       <section class="section" id="extension">
         <h2>扩展说明</h2>
+
         <p>
-          HRTOS可结合Rate Monotonic Scheduling（RMS）或Earliest Deadline First（EDF）
-          实现不同实时调度策略。
+          调度性能依赖优先级队列结构与抢占效率。
         </p>
+
         <p>
-          可调度性分析是实时系统工程的关键环节。系统需要在设计阶段验证任务集合是否可调度，避免运行时出现实时性违约。HRTOS提供可调度性分析工具，支持利用率测试、响应时间分析、模拟仿真等方法。开发者可通过工具评估不同调度策略的性能，选择最适合应用的算法。
-        </p>
-        <p>
-          混合调度策略适用于复杂的实时系统场景。系统可同时支持硬实时任务与软实时任务，采用不同的调度策略。硬实时任务采用固定优先级调度（如RMS），确保绝对的时间保证。软实时任务采用动态优先级调度（如EDF），提供更高的系统利用率。这种混合策略平衡了实时性与资源利用率，适用于多媒体、通信等应用。
-        </p>
-        <ul>
-          <li>模块职责：实时调度管理负责基于时间约束的调度决策，确保任务在截止时间前完成</li>
-          <li>内部机制：基于时间参数管理、可调度性分析、优先级分配、延迟监控实现，支持静态与动态调度</li>
-          <li>状态迁移：任务在READY、RUNNING、BLOCKED状态间切换，由时间约束与调度决策驱动</li>
-          <li>调用流程：task_register → time_init → priority_calc → sched_decision → task_exec → latency_monitor</li>
-          <li>资源管理：时间参数为任务私有资源，就绪队列为共享资源需保护并发访问</li>
-          <li>工程案例：汽车电子ECU、工业控制系统、医疗设备控制器、航空航天系统</li>
-          <li>边界条件：周期范围、截止时间范围、利用率阈值、调度延迟</li>
-          <li>错误场景：实时性违约、优先级配置冲突、任务饥饿、调度延迟过大、可调度性不足</li>
-          <li>异常处理：违约告警、优先级调整、任务终止、降级处理、系统重启</li>
-          <li>模块关系：与任务管理模块协作管理任务状态，与同步模块协调资源访问</li>
-        </ul>
-        <p>
-          实时调度的性能优化是实时系统工程的重要环节。HRTOS采用优化的调度算法，减少调度决策开销。系统支持位图优先级算法，在O(1)时间内找到最高优先级任务。对于动态优先级调度，系统采用优先级队列数据结构，在O(log n)时间内调整优先级。这些优化确保了调度的高效性，满足实时系统的性能要求。
-        </p>
-        <p>
-          对于功耗敏感的嵌入式系统，实时调度的使用会影响系统功耗管理。高优先级任务的频繁执行可能导致系统无法进入低功耗模式。HRTOS提供智能功耗管理机制，在系统空闲时自动降低CPU频率或进入低功耗模式，在高优先级任务就绪时快速唤醒。系统还支持任务级功耗配置，允许开发者根据任务重要性选择功耗策略，平衡实时性与功耗。
+          HRTOS通过位图调度 + O(1)查找机制优化实时性表现。
         </p>
       </section>
 
@@ -464,32 +296,20 @@ EDF（Earliest Deadline First）
     <aside class="sidebar">
 
       <div class="box">
-        <h3>目录导航</h3>
+        <h3>目录</h3>
         <a href="#overview">概述</a>
-        <a href="#task-type">任务分类</a>
         <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#algorithms">调度算法</a>
-        <a href="#flow">运行流程</a>
+        <a href="#rules">调度规则</a>
+        <a href="#interface">接口</a>
+        <a href="#flow">流程</a>
+        <a href="#inversion">反转问题</a>
       </div>
 
       <div class="box">
-  <h3>相关页面</h3>
-  <a href="/docs/modules/scheduler/index.html">调度器总览</a>
-  <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
-  <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a>
-  <a href="/docs/system/scheduling-flow.html">调度流程</a>
-  <a href="/docs/architecture/scheduler/scheduling-model.html">调度模型</a>
-</div>
-
-      <div class="box">
-        <h3>所属模块</h3>
+        <h3>相关模块</h3>
         <a href="/docs/modules/scheduler/index.html">Scheduler</a>
-      </div>
-
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/scheduler/index.html">Scheduler → 实时调度体系</a>
+        <a href="/docs/modules/task/index.html">Task</a>
+        <a href="/docs/modules/ipc/index.html">IPC</a>
       </div>
 
     </aside>
@@ -497,11 +317,10 @@ EDF（Earliest Deadline First）
   </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
+    © 2017–2026 HRTOS. Real-Time System Documentation.
   </footer>
 
 </main>
-
 <script src="https://hrtos.com/header.js"></script>
 </body>
 </html>

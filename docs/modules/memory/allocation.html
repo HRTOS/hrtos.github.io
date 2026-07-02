@@ -4,254 +4,171 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>内存分配（Memory Allocation） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS内存分配机制（Memory Allocation）用于动态与静态内存管理，支持实时系统中的确定性内存使用与资源控制。" />
+<title>内核内存映射（Memory Map） | HRTOS Documentation</title>
+<meta name="description" content="HRTOS内核内存映射结构，包含BIT标志区、DATA寄存器区、STACK堆栈区、IDATA调度区与XDATA全局池的完整布局说明。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root {
-  --bg: #0f172a;
-  --surface: rgba(15, 23, 42, 0.72);
-  --surface-card: rgba(30, 41, 59, 0.72);
-  --surface-hover: rgba(30, 64, 175, 0.18);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.36);
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
-  --radius: 10px;
-  color-scheme: dark;
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.16);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
 }
 
-* {
-  box-sizing: border-box;
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-html {
-  scroll-behavior: smooth;
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:36px;
 }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Segoe UI", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
-  line-height: 1.75;
-  position: relative;
-  overflow-x: hidden;
+.breadcrumb{
+  color:var(--muted);
+  font-size:.92rem;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.14;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
+.breadcrumb a{color:#7dd3fc;}
+
+.hero h1{
+  margin:0 0 12px;
+  font-size:clamp(2.2rem,5vw,3.4rem);
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.hero p{
+  margin:0;
+  color:var(--muted);
+  max-width:900px;
 }
 
-.page {
-  width: min(1180px, calc(100% - 40px));
-  margin: 0 auto;
-  padding: 96px 0 56px;
-  display: grid;
-  gap: 40px;
-  position: relative;
-  z-index: 1;
+.tag{
+  display:inline-block;
+  margin-top:14px;
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  color:#bae6fd;
+  font-size:.85rem;
 }
 
-.breadcrumb {
-  font-size: 0.92rem;
-  color: var(--muted);
+/* layout */
+.layout{
+  display:grid;
+  grid-template-columns: 1fr 260px;
+  gap:28px;
+  align-items:stretch; /* 关键：强制左右等高 */
 }
 
-.breadcrumb a {
-  color: #7dd3fc;
+/* content */
+.content{
+  display:grid;
+  gap:22px;
 }
 
-.breadcrumb a:hover {
-  color: var(--accent);
+/* section */
+.section{
+  padding:22px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:rgba(30,41,59,.55);
+  box-shadow:var(--shadow);
 }
 
-.hero {
-  display: grid;
-  gap: 16px;
+.section h2{
+  margin:0 0 12px;
+  font-size:1.25rem;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
 }
 
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 0.9rem;
+.section p{
+  margin:0 0 10px;
+  color:var(--muted);
 }
 
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  line-height: 1.1;
-  font-weight: 700;
+.code{
+  margin-top:12px;
+  background:#020617;
+  border:1px solid rgba(56,189,248,.15);
+  padding:14px;
+  border-radius:8px;
+  font-family:Consolas,monospace;
+  font-size:.9rem;
+  color:#7dd3fc;
+  white-space:pre-wrap;
 }
 
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-  font-size: 1rem;
+.block{
+  margin-top:16px;
+  padding:14px;
+  border-left:3px solid #38bdf8;
+  background:rgba(15,23,42,.6);
+  border-radius:8px;
+  color:var(--muted);
 }
 
-.meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+/* sidebar —— 核心修复 */
+.sidebar{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  height:100%;
 }
 
-.tag {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  color: #bae6fd;
-  background: rgba(15,23,42,.42);
+.box{
+  flex:1; /* 关键：自动铺满高度 */
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(30,41,59,.5);
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 28px;
-  align-items: start;
+.box h3{
+  margin:0 0 10px;
+  font-size:0.95rem;
 }
 
-.content {
-  display: grid;
-  gap: 22px;
+.box a{
+  display:block;
+  margin-bottom:8px;
+  color:#7dd3fc;
+  font-size:0.9rem;
 }
 
-.section {
-  display: grid;
-  gap: 12px;
-  padding: 24px 22px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(30,41,59,.72),
-      rgba(15,23,42,.92)
-    );
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+.box a:hover{color:var(--accent);}
+
+/* footer */
+.footer{
+  text-align:center;
+  color:#8ea3be;
+  font-size:.9rem;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:18px;
 }
 
-.section h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.3;
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
-}
-
-.section p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.96rem;
-}
-
-.note {
-  padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
-  font-size: 0.94rem;
-}
-
-.code {
-  background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
-  border-radius: 8px;
-  padding: 16px;
-  overflow-x: auto;
-  font-family: Consolas, monospace;
-  font-size: 0.92rem;
-  color: #7dd3fc;
-  line-height: 1.65;
-  white-space: pre-wrap;
-}
-
-.sidebar {
-  display: grid;
-  gap: 16px;
-}
-
-.box {
-  padding: 18px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: rgba(30,41,59,.56);
-}
-
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 1rem;
-}
-
-.box a {
-  display: block;
-  color: #7dd3fc;
-  font-size: 0.92rem;
-  margin-bottom: 8px;
-}
-
-.box a:hover {
-  color: var(--accent);
-}
-
-.footer {
-  text-align: center;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148,163,184,.14);
-  color: #8ea3be;
-  font-size: 0.9rem;
-}
-
-@media (max-width: 980px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .page {
-    width: min(100% - 24px, 1180px);
-    padding-top: 84px;
-  }
-
-  .section {
-    padding: 20px 18px;
-  }
-
-  .hero p,
-  .section p {
-    font-size: 0.95rem;
-  }
+@media(max-width:1000px){
+  .layout{grid-template-columns:1fr;}
 }
 </style>
 </head>
 
-<body data-header="docs">
+<body>
 
 <main class="page">
 
@@ -259,233 +176,135 @@ a {
     <a href="/docs/index.html">Docs</a> /
     <a href="/docs/modules/index.html">Modules</a> /
     <a href="/docs/modules/memory/index.html">Memory</a> /
-    <span>Allocation</span>
+    <span>Memory Map</span>
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS Module</span>
-
-    <h1>内存分配（Memory Allocation）</h1>
-
+    <h1>内核内存映射（Memory Map）</h1>
     <p>
-      内存分配机制用于管理系统运行过程中的内存申请与释放，
-      支持静态分配与动态分配，在实时系统中提供确定性与可控性内存使用模型。
+      HRTOS采用分层内存布局设计，将系统状态、调度变量、堆栈空间与全局资源分离，
+      以保证实时性与可预测性。
     </p>
-
-    <div class="meta">
-      <span class="tag">内存管理</span>
-<span class="tag">RTOS核心</span>
-<span class="tag">资源管理</span>
-    </div>
+    <span class="tag">Kernel Memory Layout</span>
   </section>
 
   <div class="layout">
 
+    <!-- CONTENT -->
     <div class="content">
 
-      <section class="section" id="overview">
-  <h2>概述</h2>
-  <p>
-    内存分配（Memory Allocation）是RTOS内核中的基础资源管理机制，
-    用于为任务、消息队列、邮箱、缓冲区及其他系统对象提供运行时存储空间。
-  </p>
-
-  <p>
-    在实时系统中，内存管理不仅关注空间利用率，更强调分配与释放过程的确定性。
-    不可预测的分配延迟可能直接影响任务响应时间与系统实时性。
-  </p>
-
-  <div class="note">
-    HRTOS通常优先采用静态分配与内存池机制，以降低碎片化风险并提升可预测性。
-  </div>
-  <p>
-    内存分配机制分为静态分配与动态分配两种模式。静态分配在系统启动时预先分配所有资源，运行时不再申请或释放内存，具有最高的确定性与安全性，适用于资源受限的安全关键系统。动态分配在运行时按需申请和释放内存，提供更大的灵活性，但可能引入碎片化、分配延迟不确定等风险。HRTOS默认采用静态分配优先策略，在需要时提供受控的动态分配能力。
-  </p>
-  <p>
-    内存池（Memory Pool）是HRTOS推荐的动态分配实现方式。内存池预分配固定大小的内存块，运行时从池中获取或归还块，避免了传统堆分配的碎片化问题与不可预测的分配延迟。内存池通常按功能分类，如任务栈池、消息缓冲池、设备缓冲池等，每个池管理特定大小的块，确保分配时间的确定性。内存池还支持多级大小，通过多个池管理不同大小的块，平衡空间利用率与分配效率。
-  </p>
-  <p>
-    内存分配的核心挑战在于平衡空间利用率、分配效率与确定性。传统的最佳适配、首次适配等算法虽然能提高空间利用率，但分配时间不可预测，不适合实时系统。HRTOS采用固定块分配算法，牺牲一定的空间利用率换取确定性的分配时间，满足实时系统的严格要求。对于需要变长内存的场景，系统提供分块管理或链式分配方案，通过合理的块大小设计减少空间浪费。
-  </p>
-</section>
-
-      <section class="section" id="mechanism">
-  <h2>工作原理</h2>
-
-  <p>
-    HRTOS通常采用固定块分配或内存池机制，
-    避免传统动态分配带来的不可预测延迟。
-  </p>
-
-  <div class="code">
-1. 系统初始化内存池
-2. 建立空闲块链表
-3. 接收内存申请请求
-4. 查找可用块并分配
-5. 使用完成后回收至空闲链表
-  </div>
-
-  <div class="note">
-    在实时系统中，内存分配必须保证"时间确定性"，
-    避免碎片化、锁竞争与不可控延迟。
-  </div>
-  <p>
-    内存池的内部实现依赖于内存池控制块（Memory Pool Control Block）与空闲块链表。每个内存池包含缓冲区起始地址、块大小、总块数、空闲块数、空闲链表头指针等字段。系统初始化时，将整个缓冲区划分为固定大小的块，所有块通过链表指针连接形成空闲链表。空闲链表通常采用单链表或双向链表实现，头节点指向第一个可用块。
-  </p>
-  <p>
-    分配操作时，内核检查内存池的空闲块数是否大于0。如果空闲块数大于0，从空闲链表头部取出一个块，更新空闲链表头指针指向下一个块，递减空闲块计数，返回块地址给调用者。整个操作在O(1)时间内完成，具有确定性的时间特性。如果空闲块数为0，根据配置策略决定行为：阻塞等待块释放、超时返回或立即返回空指针。
-  </p>
-  <p>
-    释放操作时，内核验证块地址是否属于该内存池，验证块是否已释放（防止重复释放），将块插入空闲链表头部，递增空闲块计数，检查是否有等待的任务，如果有则唤醒最高优先级的等待任务并触发调度。释放操作同样在O(1)时间内完成。整个过程在临界区中执行，确保链表操作的原子性。
-  </p>
-  <p>
-    对于多级大小的内存池，HRTOS提供大小适配机制。当申请特定大小的内存时，系统查找能够满足需求的最小池，从该池分配块。如果所有池都没有可用块，系统根据配置决定行为：阻塞等待、超时返回或返回错误。这种设计平衡了空间利用率与分配效率，避免大块内存浪费在小需求上。
-  </p>
-</section>
-
-      <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
-<p>
-  内存管理通常包含初始化、申请、释放与内存池维护等核心接口。
-  这些接口负责构建实时系统中的基础资源管理能力。
-</p>
-        <div class="code">
-os_mem_init()
-os_malloc()
-os_free()
-
-struct mem_pool {
-    void* start;
-    uint32_t block_size;
-    uint32_t total_blocks;
-    uint32_t free_blocks;
-};
+      <section class="section" id="bit">
+        <h2>① BIT状态标志区</h2>
+        <p>用于高速控制与调度标志，全部为bit级变量，访问开销极低。</p>
+        <div class="block">
+          KUAI_PROCESS_A/B：高速任务控制<br>
+          SCHED_REASON：调度触发来源<br>
+          ISR_FLAG：中断保护标志<br>
+          RTOS_MODE：调度模式切换<br>
+          os_int_status：临界区状态
         </div>
-        <div class="note">
-  相关API：
-  <br><br>
-  <a href="/docs/api/memory/os_task_stack.html">os_task_stack()</a><br>
-  <a href="/docs/api/memory/os_memset.html">os_memset()</a>
-</div>
-        <p>
-          os_mem_init()用于初始化内存池，参数包括内存池控制块指针、缓冲区起始地址、缓冲区大小、块大小。该接口计算可分配的块数量、初始化空闲链表、设置内存池元数据。初始化操作必须在首次使用内存池之前调用，未初始化的内存池行为未定义。缓冲区通常由调用者分配，内存池仅管理缓冲区的访问逻辑。
-        </p>
-        <p>
-          os_malloc()用于从内存池分配内存块，参数包括内存池指针、超时时间。超时时间为0时为非阻塞调用，立即返回分配结果；超时时间为-1时为永久阻塞，任务会一直等待直到有可用块；超时时间为正数时为限时阻塞，任务等待指定时间后超时返回。分配成功返回块地址，超时返回NULL，错误返回NULL。该接口在临界区中执行，确保链表操作的原子性。
-        </p>
-        <p>
-          os_free()用于释放内存块到内存池，参数包括内存池指针、块地址。该接口验证块地址是否属于该内存池，验证块是否已释放（防止重复释放），将块插入空闲链表头部，递增空闲块计数，检查是否有等待的任务，如果有则唤醒最高优先级的等待任务并触发调度。释放成功返回0，失败返回错误码。
-        </p>
-        <p>
-          mem_pool结构体定义了内存池的核心属性。start字段指向缓冲区起始地址。block_size字段存储每个块的大小。total_blocks字段存储总块数量。free_blocks字段存储当前空闲块数量。该结构体还可能包含空闲链表头指针、等待队列指针、统计信息等字段。结构体大小取决于配置，HRTOS通过优化字段布局减少内存占用。
-        </p>
       </section>
 
-      <section class="section" id="flow">
-  <h2>运行流程</h2>
+      <section class="section" id="data">
+        <h2>② DATA / 寄存器保护区</h2>
+        <p>用于中断上下文保存与临时寄存器保护（0x30~0x34）。</p>
+        <div class="code">
+OS_INTERRUPT_PROTECT @0x30
+OS_R0_PROTECT        @0x31
+os_sp                @0x32
+OS_HRTOS             @0x33
+OS_HRTOS_2           @0x34
+        </div>
+        <div class="block">
+          该区域在中断进入/退出时快速保存CPU关键寄存器，避免任务上下文污染。
+        </div>
+      </section>
 
-  <p>
-    当任务申请内存时，系统首先检查空闲块链表，
-    若存在满足条件的内存块，则完成分配并更新元数据。
-  </p>
+      <section class="section" id="stack">
+        <h2>③ STACK堆栈区</h2>
+        <p>三层栈结构：系统栈 / 中断栈 / 用户栈完全隔离。</p>
+        <div class="code">
+OS_HRTOS_DUIZHAN_OS  (系统栈 System Stack)
+OS_HRTOS_DUIZHAN_INT (中断栈 Interrupt Stack)
+OS_HRTOS_DUIZHAN_APP (用户栈 User Stack)
+        </div>
+        <div class="block">
+          分层堆栈可避免中断与任务栈互相污染，提高系统稳定性。
+        </div>
+      </section>
 
-  <p>
-    当任务释放内存时，对应块将被重新插入空闲链表，
-    供后续任务再次使用。
-  </p>
+      <section class="section">
+        <h2>④ IDATA调度核心区</h2>
+        <div class="code">
+os_current_task
+os_prev_task
+OS_DISPATCH_ID
+OS_TIME_XY
+os_critical_nesting
+        </div>
+        <div class="block">
+          固定地址高速访问区域，用于任务切换、调度触发与时间片控制。
+        </div>
+      </section>
 
-  <div class="note">
-    查看具体实现接口：
-    <br><br>
-    <a href="/docs/api/memory/index.html">进入内存接口文档 →</a>
-  </div>
-  <p>
-    完整的内存分配流程包括：任务调用os_malloc()接口，内核进入临界区；检查内存池的空闲块数是否大于0，如果空闲块数大于0则从空闲链表头部取出一个块，更新空闲链表头指针指向下一个块，递减空闲块计数，退出临界区，返回块地址给调用者；如果空闲块数为0，根据超时配置决定行为：超时为0时立即返回NULL，超时为正数时将当前任务插入等待队列并阻塞，超时为-1时永久阻塞等待。
-  </p>
-  <p>
-    完整的内存释放流程包括：任务调用os_free()接口，内核进入临界区；验证块地址是否属于该内存池，验证块是否已释放（防止重复释放），将块插入空闲链表头部，递增空闲块计数，检查是否有等待的任务，如果有则唤醒最高优先级的等待任务并触发调度；退出临界区，释放操作完成。整个过程在临界区中执行，确保链表操作的原子性。
-  </p>
-  <p>
-    在中断服务程序（ISR）中使用内存分配时，只能使用非阻塞模式（timeout=0）。ISR不能阻塞等待内存块，否则会导致系统死锁。如果ISR需要分配内存，应使用非阻塞模式：如果内存池已满则返回NULL，ISR需采取降级处理策略，如使用预分配的静态缓冲区或丢弃操作。这种设计确保了中断响应的实时性，同时避免ISR中的阻塞风险。
-  </p>
-</section>
+      <section class="section" id="xdata">
+        <h2>⑤ XDATA全局资源池</h2>
+        <div class="code">
+OS_PROCESS_OK[]
+OS_JINCHENG_SP[]
+OS_KUAI_SP[]
+OS_TASK_CONTEXT[]
+OS_FAST_CONTEXT[]
+OS_MEMORY[]
+OS_EVENT_BIT
+OS_TICK_COUNT_L/H
+        </div>
+        <div class="block">
+          统一管理任务状态、上下文、事件系统与时间系统，是RTOS资源核心区。
+        </div>
+      </section>
 
-      <section class="section" id="extension">
-  <h2>扩展说明</h2>
+      <section class="section">
+        <h2>⑥ 内核对象池</h2>
+        <div class="code">
+OS_TASK[OS_PROCESS_MAX]
+OS_RES[OS_RESOURCE_MAX]
+OS_MSGQ[OS_MSGQ_MAX]
+        </div>
+        <div class="block">
+          提供任务 / 资源 / 消息队列统一管理接口，支撑IPC与调度系统。
+        </div>
+      </section>
 
-  <p>
-    HRTOS建议在关键实时路径中避免频繁动态分配，
-    优先使用静态分配或预分配内存池。
-  </p>
-
-  <div class="code">
-推荐实践：
-- 系统启动阶段完成资源初始化
-- 运行阶段减少动态申请
-- 统一管理任务栈空间
-- 使用固定大小内存块
-  </div>
-  <p>
-    内存泄漏是动态分配系统中的常见问题，指程序分配内存后未正确释放，导致可用内存逐渐耗尽。HRTOS提供内存泄漏检测机制作为可选功能，通过跟踪分配与释放操作检测未释放的内存块。系统还支持内存使用统计，记录每个内存池的分配次数、释放次数、当前使用量等信息，帮助开发者监控内存使用情况。
-  </p>
-  <p>
-    在安全关键系统中，内存分配需满足功能安全标准（如ISO 26262）的要求。系统需提供内存分配的静态分析工具，检查是否存在内存泄漏、双重释放、越界访问等风险。HRTOS支持内存分配跟踪与分析，可在系统设计阶段验证内存使用的正确性，避免运行时出现不可预测的行为。
-  </p>
-  <p>
-    内存池的容量规划是工程实践中的关键问题。容量过小会导致分配失败，容量过大会浪费内存资源。HRTOS提供内存池使用统计与监控工具，记录峰值使用量、分配失败次数等指标，指导开发者合理规划内存池容量。系统还支持动态扩容机制，在内存池耗尽时自动扩展容量，但此功能需谨慎使用，可能引入碎片化风险。
-  </p>
-  <ul>
-    <li>模块职责：内存分配管理负责系统内存资源的分配与释放，提供确定性的内存使用模型</li>
-    <li>内部机制：基于内存池控制块、空闲块链表、等待队列实现，支持静态与动态分配模式</li>
-    <li>状态迁移：内存块在ALLOCATED与FREE状态间切换，由分配与释放操作驱动</li>
-    <li>调用流程：init → malloc → allocate/block → free → release → wake</li>
-    <li>资源管理：内存池控制块为全局资源，空闲块链表为共享资源需保护并发访问</li>
-    <li>工程案例：任务栈分配、消息缓冲池、设备缓冲池、临时数据存储</li>
-    <li>边界条件：内存池容量、块大小、超时时间、等待队列容量</li>
-    <li>错误场景：内存泄漏、双重释放、越界访问、分配失败、ISR阻塞</li>
-    <li>异常处理：泄漏检测、双重释放检测、越界检查、容量监控</li>
-    <li>模块关系：与调度器模块协作阻塞唤醒任务，与中断模块协调ISR内存分配</li>
-  </ul>
-  <p>
-    内存分配的性能优化是实时系统工程的重要环节。HRTOS采用固定块分配算法，确保分配与释放操作在O(1)时间内完成。空闲链表采用单链表实现，减少内存开销。对于多级大小内存池，系统提供快速查找算法，在O(log n)时间内找到合适的池。这些优化确保了内存分配的高效性，满足实时系统的性能要求。
-  </p>
-  <p>
-    对于功耗敏感的嵌入式系统，内存分配的使用会影响系统功耗管理。长时间阻塞等待内存块的任务会阻止系统进入低功耗模式。HRTOS提供内存分配超时检测机制，当任务等待时间超过阈值时记录警告，指导开发者优化内存使用设计。系统还支持在分配失败时主动让出CPU，允许系统进入低功耗模式，平衡实时性与功耗。
-  </p>
-</section>
+      <section class="section">
+        <h2>设计原则</h2>
+        <div class="block">
+          Bit优先：控制路径极致优化<br>
+          DATA隔离：中断安全上下文<br>
+          STACK分层：系统稳定性保障<br>
+          IDATA高速：调度零延迟访问<br>
+          XDATA统一：资源池化管理<br>
+          O(1)路径优先：避免复杂搜索结构
+        </div>
+      </section>
 
     </div>
 
+    <!-- SIDEBAR -->
     <aside class="sidebar">
-<div class="box">
-  <h3>相关接口</h3>
-  <a href="/docs/api/memory/index.html">内存接口总览</a>
-  <a href="/docs/api/memory/os_task_stack.html">任务栈接口</a>
-  <a href="/docs/api/memory/os_memset.html">内存填充接口</a>
-</div>
+
       <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
+        <h3>内存导航</h3>
+        <a href="#bit">BIT状态区</a>
+        <a href="#data">DATA寄存器</a>
+        <a href="#stack">STACK堆栈</a>
+        <a href="#xdata">XDATA资源池</a>
       </div>
 
       <div class="box">
-  <h3>相关页面</h3>
-  <a href="/docs/modules/memory/fragmentation.html">内存碎片</a>
-  <a href="/docs/modules/memory/stack-management.html">栈管理</a>
-  <a href="/docs/modules/memory/memory-protection.html">内存保护</a>
-</div>
-
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/modules/memory/index.html">内存管理</a>
-      </div>
-
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/memory/index.html">Memory基础 → 内核资源管理</a>
+        <h3>相关模块</h3>
+        <a href="/docs/modules/memory/index.html">Memory</a>
+        <a href="/docs/modules/ipc/index.html">IPC</a>
       </div>
 
     </aside>
@@ -493,7 +312,7 @@ struct mem_pool {
   </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
+    © 2017–2026 HRTOS Kernel Memory Architecture
   </footer>
 
 </main>

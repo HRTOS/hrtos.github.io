@@ -6,59 +6,33 @@
 
 <title>互斥锁（Mutex） | HRTOS Documentation</title>
 <meta name="description" content="HRTOS互斥锁（Mutex）用于任务间资源互斥访问，支持优先级继承机制，是RTOS中用于保护临界资源的重要同步工具。" />
+<link rel="canonical" href="https://hrtos.com/docs/modules/ipc/mutex.html">
 
+<meta name="keywords" content="RTOS mutex, 互斥锁, 优先级继承, HRTOS mutex, embedded system synchronization">
+<meta name="robots" content="index, follow">
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root {
   --bg: #0f172a;
   --surface: rgba(15, 23, 42, 0.72);
-  --surface-card: rgba(30, 41, 59, 0.72);
-  --surface-hover: rgba(30, 64, 175, 0.18);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.36);
   --text: #e2e8f0;
   --muted: #94a3b8;
   --accent: #38bdf8;
+  --border: rgba(148, 163, 184, 0.16);
   --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
   --radius: 10px;
   color-scheme: dark;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: "Segoe UI","Microsoft YaHei",sans-serif;
   line-height: 1.75;
-  position: relative;
-  overflow-x: hidden;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.14;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
 }
 
 .page {
@@ -67,57 +41,17 @@ a {
   padding: 96px 0 56px;
   display: grid;
   gap: 40px;
-  position: relative;
-  z-index: 1;
 }
 
-.breadcrumb {
-  font-size: 0.92rem;
-  color: var(--muted);
-}
+.breadcrumb { color: var(--muted); font-size: 0.92rem; }
+.breadcrumb a { color: #7dd3fc; }
 
-.breadcrumb a {
-  color: #7dd3fc;
-}
+.hero { display: grid; gap: 12px; }
 
-.breadcrumb a:hover {
-  color: var(--accent);
-}
+.hero h1 { margin: 0; font-size: clamp(2.2rem,5vw,3.2rem); }
+.hero p { margin: 0; color: var(--muted); }
 
-.hero {
-  display: grid;
-  gap: 16px;
-}
-
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 0.9rem;
-}
-
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  line-height: 1.1;
-  font-weight: 700;
-}
-
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-  font-size: 1rem;
-}
-
-.meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+.meta { display: flex; gap: 10px; flex-wrap: wrap; }
 
 .tag {
   padding: 6px 12px;
@@ -125,102 +59,57 @@ a {
   border-radius: 999px;
   font-size: 0.85rem;
   color: #bae6fd;
-  background: rgba(15,23,42,.42);
 }
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: 1fr 280px;
   gap: 28px;
-  align-items: start;
-}
-
-.content {
-  display: grid;
-  gap: 22px;
 }
 
 .section {
-  display: grid;
-  gap: 12px;
-  padding: 24px 22px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(30,41,59,.72),
-      rgba(15,23,42,.92)
-    );
+  padding: 22px;
+  background: rgba(30,41,59,.72);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
 
 .section h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.3;
+  margin: 0 0 10px;
   border-left: 3px solid var(--accent);
   padding-left: 12px;
 }
 
-.section p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.96rem;
-}
-
-.note {
-  padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
-  font-size: 0.94rem;
-}
+.section p { margin: 0; color: var(--muted); }
 
 .code {
   background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
+  padding: 14px;
   border-radius: 8px;
-  padding: 16px;
-
-  font-family: Consolas, monospace;
-  font-size: 0.92rem;
   color: #7dd3fc;
-  line-height: 1.65;
-
+  font-family: Consolas, monospace;
   white-space: pre-wrap;
-  word-break: normal;        /* ❗关键：不要 break-word */
-  overflow-wrap: normal;     /* ❗关键：禁止强制断词 */
 }
 
-.sidebar {
-  display: grid;
-  gap: 16px;
+.note {
+  border-left: 3px solid var(--accent);
+  padding: 12px 14px;
+  background: rgba(15,23,42,.6);
+  color: var(--muted);
+  border-radius: 6px;
 }
+
+.sidebar { display: grid; gap: 16px; }
 
 .box {
-  padding: 18px 16px;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: rgba(30,41,59,.56);
 }
 
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 1rem;
-}
-
-.box a {
-  display: block;
-  color: #7dd3fc;
-  font-size: 0.92rem;
-  margin-bottom: 8px;
-}
-
-.box a:hover {
-  color: var(--accent);
-}
+.box a { display: block; color: #7dd3fc; margin-bottom: 6px; }
 
 .footer {
   text-align: center;
@@ -231,311 +120,215 @@ a {
 }
 
 @media (max-width: 980px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .page {
-    width: min(100% - 24px, 1180px);
-    padding-top: 84px;
-  }
-
-  .section {
-    padding: 20px 18px;
-  }
-
-  .hero p,
-  .section p {
-    font-size: 0.95rem;
-  }
+  .layout { grid-template-columns: 1fr; }
 }
 </style>
 </head>
 
-<body data-header="docs">
+<body>
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/ipc/index.html">IPC</a> /
-    <span>Mutex</span>
-  </nav>
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/modules/index.html">Modules</a> /
+  <a href="/docs/modules/ipc/index.html">IPC</a> /
+  <span>Mutex</span>
+</nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
-
-    <h1>互斥锁（Mutex）</h1>
-
-    <p>
-      互斥锁用于保护临界资源的独占访问，防止多任务并发冲突，并支持优先级继承机制以避免优先级反转问题。
-    </p>
-
-    <div class="meta">
-      <span class="tag">IPC通信</span>
-      <span class="tag">资源互斥</span>
-      <span class="tag">优先级继承</span>
-    </div>
-  </section>
-
-  <div class="layout">
-
-    <div class="content">
-<section class="section" id="definition">
-  <h2>定义</h2>
+<section class="hero">
+  <h1>互斥锁（Mutex）</h1>
   <p>
-    Mutex（互斥锁）是RTOS中用于保护共享资源独占访问的同步机制，
-    具有所有权语义，并支持优先级继承以避免优先级反转。
+    基于 OS_RES 资源单元实现的互斥同步机制，用于任务间临界资源保护，
+    支持优先级继承以避免优先级反转问题。
   </p>
-</section>
-      <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          互斥锁（Mutex）是一种用于保护共享资源的同步机制，
-          确保同一时刻只有一个任务可以访问临界区资源。
-        </p>
-        <p>
-          互斥锁具有所有权语义，只有获得锁的任务才能释放锁，这确保了资源的独占访问与正确释放。与信号量不同，互斥锁不支持跨任务释放，避免了因任务异常导致的资源泄漏。在实时操作系统中，互斥锁是保护临界区资源（如外设寄存器、全局数据结构、文件系统）的核心同步工具。
-        </p>
-        <p>
-          互斥锁的核心价值在于防止竞态条件与数据竞争。当多个任务同时访问共享资源时，如果没有适当的同步机制，可能导致数据损坏、状态不一致甚至系统崩溃。互斥锁通过原子化的获取与释放操作，确保临界区代码的原子性执行，从根本上避免了并发访问带来的风险。
-        </p>
-        <p>
-          优先级继承是互斥锁的关键特性，用于解决优先级反转问题。当高优先级任务等待低优先级任务持有的互斥锁时，低优先级任务可能被中优先级任务抢占，导致高优先级任务长时间无法执行。HRTOS通过优先级继承机制，临时提升低优先级任务的优先级至高优先级任务的水平，确保其尽快释放锁，从而保证高优先级任务的响应时间。
-        </p>
-      </section>
 
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          当任务申请互斥锁时，如果锁未被占用，则获得访问权限；
-          如果已被占用，则任务进入阻塞状态并加入等待队列。
-        </p>
-
-        <div class="note">
-          HRTOS中的Mutex支持优先级继承机制，用于解决高优先级任务被低优先级任务阻塞的问题。
-        </div>
-        <p>
-          互斥锁的内部实现依赖于互斥锁控制块（Mutex Control Block）与等待队列。每个互斥锁包含所有者任务指针、等待队列头指针、优先级继承标志等字段。当任务申请锁时，内核检查锁的所有者是否为空。如果锁空闲，将当前任务设置为所有者，任务获得锁并继续执行；如果锁已被占用，将当前任务插入等待队列，阻塞任务并触发调度器选择其他任务执行。
-        </p>
-        <p>
-          等待队列通常采用优先级排序，确保高优先级等待任务优先获得锁。当锁被释放时，内核从等待队列首部唤醒最高优先级的等待任务，将其设置为锁的所有者，并触发调度。这种设计保证了公平性，避免低优先级任务饥饿。在支持优先级继承的系统中，等待队列还需维护继承链信息，追踪优先级继承关系。
-        </p>
-        <p>
-          互斥锁的释放操作包含所有权验证。只有锁的所有者任务才能释放锁，其他任务尝试释放会返回错误。释放时，内核检查等待队列是否为空。如果等待队列为空，将锁的所有者置为空，锁变为空闲状态；如果等待队列不为空，唤醒队列首部的等待任务，将其设置为新的所有者，并触发调度。整个过程在临界区中执行，确保操作的原子性。
-        </p>
-        <p>
-          在多核SMP系统中，互斥锁需要考虑跨核心的同步。HRTOS提供自旋锁与互斥锁结合的混合机制：短临界区使用自旋锁避免任务切换开销，长临界区使用互斥锁允许任务让出CPU。跨核心的互斥锁操作需使用原子指令或硬件锁机制，确保多核并发访问的正确性。
-        </p>
-      </section>
-<section class="section" id="recursion">
-  <h2>递归特性</h2>
-
-  <div class="note">
-    HRTOS Mutex 默认是否支持递归锁取决于配置：
-    <br><br>
-    • 不支持递归：同一任务重复 lock 会死锁
-    • 支持递归：需要配合 lock_count 计数释放
+  <div class="meta">
+    <span class="tag">资源互斥</span>
+    <span class="tag">优先级继承</span>
+    <span class="tag">临界区保护</span>
   </div>
-  <p>
-    递归互斥锁允许同一个任务多次获取同一个锁，而不会发生死锁。这种机制适用于函数调用链中多个函数都需要访问同一资源的场景。递归锁内部维护一个锁计数器，每次获取锁时递增计数器，每次释放锁时递减计数器。只有当计数器归零时，锁才真正被释放，其他等待任务才能获得锁。
-  </p>
-  <p>
-    非递归互斥锁在同一个任务重复获取锁时会立即返回错误或导致死锁，具体实现取决于配置。这种设计更简单，性能开销更低，但要求开发者避免在持有锁的代码路径中再次尝试获取同一锁。在工程实践中，非递归锁更适合简单明确的临界区保护，递归锁适用于复杂的调用链场景。
-  </p>
-  <p>
-    HRTOS提供配置选项选择是否支持递归锁。在资源受限的嵌入式系统中，通常默认禁用递归锁以减少内存开销与代码复杂度。开发者可根据应用需求在系统配置时启用递归锁支持。递归锁的内存开销略高于非递归锁，因为需要额外的锁计数器字段。
-  </p>
 </section>
-<section class="section" id="priority-inheritance">
-  <h2>优先级继承机制（核心）</h2>
 
-  <div class="note">
-    当发生以下情况时触发优先级继承：
-    <br><br>
-    1. 高优先级任务阻塞在 Mutex 上
-    2. Mutex 被低优先级任务持有
-    3. 内核临时提升持有者优先级
-    <br><br>
-    释放 Mutex 后恢复原优先级
-  </div>
-  <p>
-    优先级继承是解决优先级反转问题的经典方案。当高优先级任务尝试获取被低优先级任务持有的互斥锁时，内核将低优先级任务的优先级临时提升至高优先级任务的水平。这样，低优先级任务不会被中优先级任务抢占，能够尽快完成临界区执行并释放锁，高优先级任务随后获得锁继续执行。
-  </p>
-  <p>
-    优先级继承链的形成需要谨慎处理。如果多个高优先级任务等待同一锁，或存在嵌套锁的情况，可能形成复杂的继承链。HRTOS支持优先级继承链追踪，确保持有者任务的优先级提升至所有等待任务中的最高优先级。当锁释放时，持有者任务的优先级恢复到继承前的原始值，或继承链中下一个等待任务的优先级。
-  </p>
-  <p>
-    优先级继承的触发时机是任务阻塞在互斥锁等待队列时。内核检查等待任务的优先级是否高于锁持有者的当前优先级，如果是则触发继承。继承操作包括保存持有者的原始优先级、提升持有者优先级至等待任务优先级、记录继承关系。整个过程在临界区中执行，确保优先级变更的原子性。
-  </p>
-  <p>
-    优先级继承的恢复时机是锁被释放时。内核检查持有者是否处于继承状态，如果是则恢复其原始优先级。如果存在继承链，需遍历继承链找到下一个等待任务的优先级，将持有者优先级设置为该优先级。恢复操作同样在临界区中执行，避免优先级变更过程中的干扰。
-  </p>
+<section class="section">
+<h2>定义</h2>
+<p>
+Mutex 是基于 OS_RES 的 value + owner + wait_mask 实现的资源锁机制，
+具有“所有权语义”，用于保证同一时刻只有一个任务访问共享资源。
+</p>
 </section>
-<section class="section" id="failure">
-  <h2>获取失败行为</h2>
 
-  <div class="code">
-os_mutex_lock(mutex, timeout)
+<div class="layout">
 
-返回值：
-  0   → 成功获取
- -1   → 超时
- -2   → 死锁检测失败（可选）
-  </div>
+<div class="content">
 
-  <p>
-    当 timeout = 0 时为非阻塞调用；
-    timeout = -1 表示永久阻塞。
-  </p>
-</section>
-      <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
-
-        <div class="code">
-os_mutex_init()
-os_mutex_lock()
-os_mutex_unlock()
-
-struct mutex {
-    task_t *owner;
-    task_list_t wait_list;
-    int priority_inherit;
-};
-        </div>
-        <div class="note">
-  API Reference：
-  <a href="/docs/api/ipc/os_mutex_init.html">os_mutex_init()</a> ·
-  <a href="/docs/api/ipc/os_mutex_lock.html">os_mutex_lock()</a> ·
-  <a href="/docs/api/ipc/os_mutex_unlock.html">os_mutex_unlock()</a>
+<section class="section">
+<h2>核心接口</h2>
+<div class="code">
+char os_mutex_init(char mid)
+char os_mutex_lock(char mid)
+char os_mutex_unlock(char mid)
 </div>
-        <p>
-          os_mutex_init()用于初始化互斥锁，参数为互斥锁控制块指针。该接口清零互斥锁的所有字段，初始化等待队列为空，设置所有者为空，根据配置启用或禁用优先级继承。初始化操作必须在首次使用互斥锁之前调用，未初始化的互斥锁行为未定义。
-        </p>
-        <p>
-          os_mutex_lock()用于获取互斥锁，参数包括互斥锁指针与超时时间。超时时间为0时为非阻塞调用，立即返回获取结果；超时时间为-1时为永久阻塞，任务会一直等待直到获得锁；超时时间为正数时为限时阻塞，任务等待指定时间后超时返回。获取成功返回0，失败返回错误码。该接口在临界区中执行，确保锁操作的原子性。
-        </p>
-        <p>
-          os_mutex_unlock()用于释放互斥锁，参数为互斥锁指针。该接口验证当前任务是否为锁的所有者，如果不是则返回错误。释放操作包括检查等待队列，如果有等待任务则唤醒最高优先级的等待任务并设置为新的所有者，触发调度；如果等待队列为空则将锁的所有者置为空。释放成功返回0，失败返回错误码。
-        </p>
-        <p>
-          mutex结构体定义了互斥锁的核心属性。owner字段存储当前持有锁的任务指针，为空表示锁空闲。wait_list字段维护等待获取锁的任务队列，通常按优先级排序。priority_inherit字段指示是否启用优先级继承，为1表示启用，为0表示禁用。该结构体还可能包含递归锁计数器、继承链信息、锁状态标志等字段。
-        </p>
-      </section>
-
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          任务尝试获取Mutex → 若空闲则获得所有权 →
-          若被占用则阻塞等待 → 释放后唤醒等待任务并重新调度。
-        </p>
-        <p>
-          完整的互斥锁获取流程包括：任务调用os_mutex_lock()接口，内核进入临界区；检查互斥锁的所有者是否为空，如果为空则将当前任务设置为所有者，退出临界区，任务获得锁并继续执行；如果锁已被占用，检查当前任务是否为所有者（递归锁场景），如果是则递增锁计数器并返回；如果不是，将当前任务插入等待队列，阻塞任务并触发调度器选择其他任务执行；任务被唤醒后重新尝试获取锁，循环上述过程直到成功或超时。
-        </p>
-        <p>
-          完整的互斥锁释放流程包括：任务调用os_mutex_unlock()接口，内核进入临界区；验证当前任务是否为锁的所有者，如果不是则返回错误；对于递归锁，递减锁计数器，如果计数器未归零则直接返回；对于非递归锁或递归锁计数器归零的情况，检查等待队列是否为空；如果等待队列为空，将锁的所有者置为空，锁变为空闲状态；如果等待队列不为空，从队列首部唤醒最高优先级的等待任务，将其设置为新的所有者，触发调度器执行；退出临界区，释放操作完成。
-        </p>
-        <p>
-          优先级继承触发流程包括：高优先级任务尝试获取被低优先级任务持有的互斥锁，内核将高优先级任务插入等待队列；检查高优先级任务是否高于锁持有者的当前优先级，如果是则触发继承；保存锁持有者的原始优先级，将持有者优先级提升至高优先级任务的水平；记录继承关系（持有者→等待任务）；持有者以提升后的优先级继续执行，避免被中优先级任务抢占；持有者释放锁时，内核恢复其原始优先级，继承关系解除。
-        </p>
-      </section>
-<section class="section" id="decision">
-  <h2>使用决策（非常重要）</h2>
-
-  <div class="code">
-Mutex vs Semaphore：
-
-Mutex：
-- 资源独占
-- 有所有权（必须 unlock）
-- 支持优先级继承
-- 防止并发访问
-
-Semaphore：
-- 资源计数
-- 无所有权
-- 不支持优先级继承
-- 用于同步/通知
-  </div>
 </section>
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          Mutex适用于保护共享资源，如外设驱动、全局数据结构、文件系统访问等关键临界区。
-        </p>
-        <p>
-          互斥锁的临界区设计是工程实践中的关键问题。临界区应尽可能短，减少锁持有时间，避免阻塞其他任务。临界区内不能包含可能导致任务切换的操作，如调用可能阻塞的接口、长时间计算、等待I/O等。违反这些规则可能导致死锁或优先级反转。HRTOS提供死锁检测机制作为可选功能，在检测到潜在的死锁风险时记录错误或触发系统复位。
-        </p>
-        <p>
-          在安全关键系统中，互斥锁的使用需满足功能安全标准（如ISO 26262）的要求。系统需提供互斥锁使用的静态分析工具，检查是否存在死锁风险、优先级反转风险或锁使用不当。HRTOS支持锁依赖图分析，可在系统设计阶段验证锁的正确使用，避免运行时出现不可预测的行为。
-        </p>
-        <p>
-          互斥锁与中断的交互需要特别注意。在中断服务程序（ISR）中通常不建议使用互斥锁，因为ISR不能阻塞等待锁。如果ISR需要访问共享资源，应使用自旋锁或禁用中断等机制。如果在ISR中必须使用互斥锁，必须使用非阻塞模式（timeout=0），获取失败时采取降级处理策略。
-        </p>
-        <ul>
-          <li>模块职责：互斥锁管理负责共享资源的独占访问保护，确保临界区代码的原子性执行</li>
-          <li>内部机制：基于互斥锁控制块、等待队列、所有权验证、优先级继承实现，支持递归与非递归模式</li>
-          <li>状态迁移：锁在LOCKED、UNLOCKED状态间切换，由获取与释放操作驱动</li>
-          <li>调用流程：init → lock → acquire/critical/unlock → release → wake</li>
-          <li>资源管理：互斥锁控制块为全局资源，等待队列为共享资源需保护并发访问</li>
-          <li>工程案例：外设驱动保护、全局数据结构保护、文件系统访问、嵌套锁处理</li>
-          <li>边界条件：锁持有时间上限、等待队列容量、递归深度限制、继承链深度</li>
-          <li>错误场景：死锁、优先级反转、锁泄漏、所有权违规、中断上下文使用</li>
-          <li>异常处理：死锁检测、超时处理、所有权验证失败、继承链循环</li>
-          <li>模块关系：与调度器模块协作阻塞唤醒任务，与优先级模块关联继承，与中断模块协调上下文</li>
-        </ul>
-        <p>
-          互斥锁的性能优化是实时系统工程的重要环节。HRTOS采用优化的等待队列数据结构，如优先级队列或红黑树，在O(log n)时间内找到最高优先级等待任务。对于高并发场景，系统支持无锁队列作为优化选项，减少临界区持续时间。这些优化确保了互斥锁操作的高效性，满足实时系统的性能要求。
-        </p>
-        <p>
-          对于功耗敏感的嵌入式系统，互斥锁的使用会影响系统功耗管理。长时间持有锁会阻止系统进入低功耗模式，增加功耗。HRTOS提供锁超时检测机制，当任务持有锁的时间超过阈值时记录警告，指导开发者优化临界区设计。系统还支持在获取锁失败时主动让出CPU，允许系统进入低功耗模式，平衡实时性与功耗。
-        </p>
-      </section>
 
-    </div>
+<section class="section">
+<h2>数据结构模型</h2>
+<div class="code">
+OS_RES[mid] {
+    value       // 1=可用 0=占用语义
+    owner       // 当前持有任务ID
+    wait_mask   // 等待任务位图
+    wait_cnt    // 等待计数
+}
+</div>
+</section>
 
-    <aside class="sidebar">
+<section class="section">
+<h2>初始化流程（os_mutex_init）</h2>
+<div class="code">
+m->value = 1
+m->owner = OS_INVALID_ID
+m->wait_mask = 0
+m->wait_cnt = 0
+</div>
+
+<p class="note">
+初始化表示 Mutex 处于“空闲可用状态”。
+</p>
+</section>
+
+<section class="section">
+<h2>加锁流程（os_mutex_lock）</h2>
+
+<div class="code">
+EA = 0
+
+if (owner == INVALID)
+{
+    owner = current_task
+    return 1
+}
+
+if (owner == current_task)
+{
+    return -1   // 不支持递归
+}
+
+/* 优先级继承 */
+if (current_prio > owner_prio)
+{
+    owner_prio = current_prio
+}
+
+EA = 1
+
+os_wait(WAIT_MUTEX, mid, 0)
+</div>
+
+<p class="note">
+核心逻辑：竞争失败 → 优先级继承 → 进入等待队列。
+</p>
+</section>
+
+<section class="section">
+<h2>解锁流程（os_mutex_unlock）</h2>
+
+<div class="code">
+if (owner != current_task)
+    return -1
+
+restore priority
+
+if (wait_mask != 0)
+{
+    next = highest_prio_task(wait_mask)
+    owner = next
+    wake_task(next)
+    return 1
+}
+
+owner = INVALID
+return 0
+</div>
+
+</section>
+
+<section class="section">
+<h2>优先级继承机制</h2>
+
+<p>
+当高优先级任务等待低优先级任务持有的 Mutex 时，
+系统会临时提升持有者优先级，避免优先级反转。
+</p>
+
+<div class="note">
+继承发生在 lock 阻塞阶段，unlock 时恢复原始优先级。
+</div>
+</section>
+
+<section class="section">
+<h2>关键特性</h2>
+<p class="note">
+• 资源独占访问<br>
+• 所有权机制（必须 unlock）<br>
+• 不支持递归锁<br>
+• 支持优先级继承<br>
+• wait_mask 管理等待任务<br>
+• EA 临界区保护
+</p>
+</section>
+
+<section class="section">
+<h2>行为语义</h2>
+<div class="code">
+lock   -> 获取 or 阻塞
+unlock -> 释放 + 唤醒
+wait   -> 进入 WAIT_MUTEX
+</div>
+</section>
+
+<section class="section">
+<h2>典型用途</h2>
+<p>
+• 外设寄存器保护<br>
+• 全局数据结构保护<br>
+• 驱动层临界区<br>
+• 文件系统访问同步
+</p>
+</section>
+
+</div>
+
+<aside class="sidebar">
+
 <div class="box">
-  <h3>知识链路</h3>
-  <a href="/docs/modules/ipc/index.html">← IPC 模块首页</a>
-  <a href="/docs/modules/ipc/semaphore.html">信号量</a>
-  <a href="/docs/modules/ipc/event.html">事件机制</a>
-  <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
+<h3>相关接口</h3>
+<a href="#">os_mutex_init</a>
+<a href="#">os_mutex_lock</a>
+<a href="#">os_mutex_unlock</a>
 </div>
-      <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
-      </div>
 
-      <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/ipc/semaphore.html">信号量</a>
-        <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
-      </div>
+<div class="box">
+<h3>模块关系</h3>
+<a href="/docs/modules/ipc/event.html">Event</a>
+<a href="/docs/modules/ipc/message-queue.html">Message Queue</a>
+<a href="/docs/modules/ipc/semaphore.html">Semaphore</a>
+</div>
 
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/modules/ipc/index.html">IPC通信机制</a>
-      </div>
+<div class="box">
+<h3>设计对比</h3>
+<a href="#">Mutex = 资源独占</a>
+<a href="#">Semaphore = 计数同步</a>
+<a href="#">Event = 状态通知</a>
+</div>
 
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/ipc/index.html">IPC基础 → 内核同步机制</a>
-      </div>
+</aside>
 
-    </aside>
+</div>
 
-  </div>
-
-  <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
-  </footer>
+<footer class="footer">
+© 2017–2026 HRTOS IPC Mutex Module
+</footer>
 
 </main>
 

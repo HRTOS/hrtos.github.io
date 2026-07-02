@@ -5,518 +5,287 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>信号量（Semaphore） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS信号量（Semaphore）用于任务同步与资源计数管理，是RTOS中基础的IPC同步机制之一。" />
+<meta name="description" content="HRTOS信号量用于任务同步与资源计数管理，是RTOS基础IPC机制之一。" />
 <link rel="canonical" href="https://hrtos.com/docs/modules/ipc/semaphore.html">
+
+<meta name="keywords" content="RTOS semaphore, IPC semaphore, embedded system synchronization, HRTOS">
+<meta name="robots" content="index, follow">
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root {
-  --bg: #0f172a;
-  --surface: rgba(15, 23, 42, 0.72);
-  --surface-card: rgba(30, 41, 59, 0.72);
-  --surface-hover: rgba(30, 64, 175, 0.18);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.36);
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
-  --radius: 10px;
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.16);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
   color-scheme: dark;
 }
 
-* {
-  box-sizing: border-box;
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-html {
-  scroll-behavior: smooth;
+.page{
+  width:min(1180px,calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:36px;
 }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Segoe UI", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
-  line-height: 1.75;
-  position: relative;
-  overflow-x: hidden;
+.breadcrumb{color:var(--muted);font-size:.92rem;}
+.breadcrumb a{color:#7dd3fc;}
+
+.hero{display:grid;gap:12px;}
+.hero h1{margin:0;font-size:clamp(2.2rem,5vw,3.2rem);}
+.hero p{margin:0;color:var(--muted);}
+
+.meta{display:flex;gap:10px;flex-wrap:wrap;}
+
+.tag{
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-size:.85rem;
+  color:#bae6fd;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.14;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
+.layout{
+  display:grid;
+  grid-template-columns:1fr 280px;
+  gap:28px;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.section{
+  padding:22px;
+  background:rgba(30,41,59,.72);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
 }
 
-.page {
-  width: min(1180px, calc(100% - 40px));
-  margin: 0 auto;
-  padding: 96px 0 56px;
-  display: grid;
-  gap: 40px;
-  position: relative;
-  z-index: 1;
+.section h2{
+  margin:0 0 10px;
+  border-left:3px solid var(--accent);
+  padding-left:12px;
 }
 
-.breadcrumb {
-  font-size: 0.92rem;
-  color: var(--muted);
+.section p{margin:0;color:var(--muted);}
+
+.code{
+  background:#020617;
+  padding:14px;
+  border-radius:8px;
+  color:#7dd3fc;
+  font-family:Consolas,monospace;
+  white-space:pre-wrap;
 }
 
-.breadcrumb a {
-  color: #7dd3fc;
+.note{
+  border-left:3px solid var(--accent);
+  padding:12px 14px;
+  background:rgba(15,23,42,.6);
+  color:var(--muted);
+  border-radius:6px;
 }
 
-.breadcrumb a:hover {
-  color: var(--accent);
+.sidebar{display:grid;gap:16px;}
+
+.box{
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:rgba(30,41,59,.56);
 }
 
-.hero {
-  display: grid;
-  gap: 16px;
+.box a{
+  display:block;
+  color:#7dd3fc;
+  margin-bottom:6px;
 }
 
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 0.9rem;
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  font-size:.9rem;
 }
 
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  line-height: 1.1;
-  font-weight: 700;
-}
-
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-  font-size: 1rem;
-}
-
-.meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.tag {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  color: #bae6fd;
-  background: rgba(15,23,42,.42);
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 28px;
-  align-items: start;
-}
-
-.content {
-  display: grid;
-  gap: 22px;
-}
-
-.section {
-  display: grid;
-  gap: 12px;
-  padding: 24px 22px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(30,41,59,.72),
-      rgba(15,23,42,.92)
-    );
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-
-.section h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.3;
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
-}
-
-.section p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.96rem;
-}
-
-.note {
-  padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
-  font-size: 0.94rem;
-}
-
-.code {
-  background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
-  border-radius: 8px;
-  padding: 16px;
-
-  font-family: Consolas, monospace;
-  font-size: 0.92rem;
-  color: #7dd3fc;
-  line-height: 1.65;
-
-  white-space: pre;        /* ⭐核心：不自动换行 */
-  overflow-x: auto;        /* ⭐横向滚动 */
-}
-
-.sidebar {
-  display: grid;
-  gap: 16px;
-}
-
-.box {
-  padding: 18px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: rgba(30,41,59,.56);
-}
-
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 1rem;
-}
-
-.box a {
-  display: block;
-  color: #7dd3fc;
-  font-size: 0.92rem;
-  margin-bottom: 8px;
-}
-
-.box a:hover {
-  color: var(--accent);
-}
-
-.footer {
-  text-align: center;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148,163,184,.14);
-  color: #8ea3be;
-  font-size: 0.9rem;
-}
-
-@media (max-width: 980px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .page {
-    width: min(100% - 24px, 1180px);
-    padding-top: 84px;
-  }
-
-  .section {
-    padding: 20px 18px;
-  }
-
-  .hero p,
-  .section p {
-    font-size: 0.95rem;
-  }
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr;}
 }
 </style>
 </head>
 
-<body data-header="docs">
+<body>
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/ipc/index.html">IPC</a> /
-    <span>Semaphore</span>
-  </nav>
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/modules/index.html">Modules</a> /
+  <a href="/docs/modules/ipc/index.html">IPC</a> /
+  <span>Semaphore</span>
+</nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
+<section class="hero">
+  <h1>信号量（Semaphore）</h1>
+  <p>基于 OS_RESOURCE.value 的计数型同步机制，用于任务同步与资源控制。</p>
 
-    <h1>信号量（Semaphore）</h1>
-
-    <p>
-      信号量用于任务同步与资源计数管理，通过计数机制控制资源访问或任务唤醒，是RTOS中基础的同步工具之一。
-    </p>
-
-    <div class="meta">
-      <span class="tag">IPC通信</span>
-      <span class="tag">任务同步</span>
-      <span class="tag">资源计数</span>
-    </div>
-  </section>
-
-  <div class="layout">
-
-    <div class="content">
-<section class="section" id="definition">
-  <h2>定义</h2>
-  <p>
-    Semaphore（信号量）是RTOS中基于计数器的同步机制，
-    用于资源计数控制与任务同步触发，不具有资源所有权语义。
-  </p>
-</section>
-      <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          信号量（Semaphore）是一种基于计数器的同步机制，用于控制任务对共享资源的访问，
-          或用于任务之间的同步触发。
-        </p>
-        <p>
-          信号量是实时操作系统中最基础且灵活的同步原语之一。通过维护一个非负整数计数器，信号量可以控制多个任务对共享资源的并发访问数量，或实现任务间的同步通知。与互斥锁不同，信号量不具有所有权语义，任何任务都可以释放信号量，这使其适用于更广泛的同步场景，但也增加了使用复杂度。
-        </p>
-        <p>
-          信号量分为二值信号量与计数信号量两种类型。二值信号量的计数值限制为0或1，主要用于任务同步场景，如中断通知任务、任务间事件触发等。计数信号量的计数值可大于1，用于资源计数管理，如连接池、缓冲区池、线程池等场景，控制同时访问资源的任务数量。HRTOS同时支持两种类型，开发者可根据应用需求选择合适的信号量类型。
-        </p>
-        <p>
-          信号量的核心操作包括P操作（wait/pend）与V操作（post/signal）。P操作尝试获取信号量，如果计数器大于0则递减计数器并立即返回；如果计数器为0则任务阻塞等待。V操作释放信号量，递增计数器，如果有等待任务则唤醒最高优先级的等待任务。这种经典的PV操作模型确保了同步的正确性与公平性。
-        </p>
-      </section>
-
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          信号量维护一个计数值，任务通过P操作（等待）和V操作（释放）来改变计数状态。
-          当计数为0时，任务进入阻塞状态。
-        </p>
-
-        <div class="note">
-          信号量分为二值信号量（0/1）和计数信号量（N），分别用于同步与资源管理。
-        </div>
-        <p>
-          信号量的内部实现依赖于信号量控制块（Semaphore Control Block）与等待队列。每个信号量包含计数字段、等待队列头指针、最大计数值等字段。当任务执行P操作时，内核检查信号量计数是否大于0。如果计数大于0，递减计数器，任务立即获得信号量并继续执行；如果计数为0，将当前任务插入等待队列，阻塞任务并触发调度器选择其他任务执行。
-        </p>
-        <p>
-          V操作释放信号量时，内核递增信号量计数器，检查是否超过最大计数值（防止计数溢出）。如果有等待任务，内核从等待队列首部唤醒最高优先级的等待任务，将其状态更新为就绪，并触发调度器执行。如果没有等待任务，仅递增计数器，信号量变为可用状态。整个过程在临界区中执行，确保计数器操作的原子性。
-        </p>
-        <p>
-          等待队列通常采用优先级排序，确保高优先级等待任务优先获得信号量。当信号量被释放时，内核从队列首部唤醒最高优先级的等待任务。这种设计保证了公平性，避免低优先级任务饥饿。在多核SMP系统中，信号量操作需要考虑跨核心的同步，通常使用原子指令或自旋锁保护信号量控制块。
-        </p>
-        <p>
-          二值信号量是计数信号量的特例，最大计数值限制为1。初始化时计数值为0或1，取决于使用场景。计数值为1的二值信号量可用于互斥访问（但不支持优先级继承），计数值为0的二值信号量用于同步通知。HRTOS提供专门的二值信号量接口，简化同步场景的使用。
-        </p>
-      </section>
-<section class="section" id="behavior">
-  <h2>行为特性（关键）</h2>
-
-  <div class="note">
-    • 当 count > 0：os_semaphore_wait() 立即返回  
-    • 当 count == 0：任务进入阻塞队列  
-    • os_semaphore_post() 可能触发任务唤醒与调度切换  
-    • 信号量不具有“所有权”概念（区别 Mutex）  
+  <div class="meta">
+    <span class="tag">IPC</span>
+    <span class="tag">同步机制</span>
+    <span class="tag">资源计数</span>
   </div>
 </section>
-<section class="section" id="blocking">
-  <h2>阻塞语义</h2>
 
-  <p>
-    信号量支持阻塞与非阻塞两种行为模式，
-    阻塞行为取决于等待接口是否启用 timeout。
-  </p>
-
-  <div class="code">
-os_semaphore_wait(sem, timeout)
-
-// timeout = 0   → 非阻塞
-// timeout = T    → 阻塞等待 T tick
-// timeout = -1   → 永久阻塞
-  </div>
+<section class="section">
+<h2>定义</h2>
+<p>
+Semaphore 是基于计数器的同步原语，核心依赖 OS_RESOURCE.value，
+用于资源可用性控制与任务阻塞/唤醒。
+</p>
 </section>
-<section class="section" id="compare">
-  <h2>机制对比（非常关键）</h2>
 
-  <div class="code">
-Semaphore vs Mutex vs Event
+<div class="layout">
 
-Semaphore:
-- 无所有权
-- 用于计数资源
-- 可多释放多获取
+<div class="content">
 
-Mutex:
-- 有所有权
-- 用于互斥访问
-- 支持优先级继承
-
-Event:
-- 仅状态通知
-- 不消耗资源
-- 位触发机制
-  </div>
-</section>
-<section class="section" id="usecase">
-  <h2>典型使用场景</h2>
-
-  <div class="note">
-    • 任务池资源管理（线程池 / buffer pool）  
-    • ISR → Task 通知  
-    • 生产者 / 消费者模型  
-    • 多资源计数控制（如连接数限制）
-  </div>
-</section>
-      <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
-
-        <div class="code">
-os_semaphore_wait(sem, timeout)
-  return: 0 success / -1 timeout / -2 error
-
-os_semaphore_post(sem)
-  return: 0 success / -1 overflow
-
-os_semaphore_init(sem, count)
-
-struct semaphore {
-    int count;
-    task_list_t wait_list;
-};
-        </div>
-        <div class="note">
-  API Reference：
-  <a href="/docs/modules/ipc/semaphore.html">os_semaphore_init()</a> ·
-  <a href="/docs/modules/ipc/semaphore.html">os_semaphore_wait()</a> ·
-  <a href="/docs/modules/ipc/semaphore.html">os_semaphore_post()</a>
+<section class="section">
+<h2>核心接口</h2>
+<div class="code">
+char os_sem_init(u8 sid, char init_val)
+char os_sem_post(char sid)
+u8 os_sem_wait(u8 sid)
 </div>
-        <p>
-          os_semaphore_init()用于初始化信号量，参数包括信号量控制块指针与初始计数值。初始计数值决定了信号量的初始状态，计数值为0表示信号量不可用，计数值大于0表示信号量可用。对于二值信号量，初始计数值通常为0或1；对于计数信号量，初始计数值对应可用资源数量。初始化操作必须在首次使用信号量之前调用。
-        </p>
-        <p>
-          os_semaphore_wait()用于获取信号量，参数包括信号量指针与超时时间。超时时间为0时为非阻塞调用，立即返回获取结果；超时时间为-1时为永久阻塞，任务会一直等待直到获得信号量；超时时间为正数时为限时阻塞，任务等待指定时间后超时返回。获取成功返回0，超时返回-1，错误返回-2。该接口在临界区中执行，确保计数器操作的原子性。
-        </p>
-        <p>
-          os_semaphore_post()用于释放信号量，参数为信号量指针。该接口递增信号量计数器，检查是否超过最大计数值（防止溢出）。如果有等待任务，唤醒最高优先级的等待任务并触发调度；如果没有等待任务，仅递增计数器。释放成功返回0，计数溢出返回-1。任何任务都可以释放信号量，不要求是获取信号量的任务。
-        </p>
-        <p>
-          semaphore结构体定义了信号量的核心属性。count字段存储当前计数值，非负整数。wait_list字段维护等待获取信号量的任务队列，通常按优先级排序。该结构体还可能包含最大计数字段、信号量类型标志（二值/计数）、统计信息等字段。结构体大小取决于配置，HRTOS通过优化字段布局减少内存占用。
-        </p>
-      </section>
+</section>
 
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          任务执行等待操作时若计数大于0则立即通过，否则进入阻塞队列；
-          释放操作会增加计数并唤醒等待任务。
-        </p>
-        <p>
-          完整的信号量等待流程包括：任务调用os_semaphore_wait()接口，内核进入临界区；检查信号量计数是否大于0，如果计数大于0则递减计数器，退出临界区，任务立即获得信号量并继续执行；如果计数为0，检查超时时间是否为0，如果是则立即返回超时错误；如果不是，将当前任务插入等待队列，阻塞任务并触发调度器选择其他任务执行；任务被唤醒后重新尝试获取信号量，循环上述过程直到成功或超时。
-        </p>
-        <p>
-          完整的信号量释放流程包括：任务调用os_semaphore_post()接口，内核进入临界区；递增信号量计数器，检查是否超过最大计数值，如果超过则返回溢出错误；检查等待队列是否为空，如果等待队列为空则仅递增计数器，信号量变为可用状态；如果等待队列不为空，从队列首部唤醒最高优先级的等待任务，将其状态更新为就绪，触发调度器执行；退出临界区，释放操作完成。
-        </p>
-        <p>
-          在中断服务程序（ISR）中使用信号量时，只能使用非阻塞模式（timeout=0）。ISR不能阻塞等待信号量，否则会导致系统死锁。如果ISR需要通知任务，应使用二值信号量的同步机制：ISR释放信号量，任务等待信号量。这种设计确保了中断响应的实时性，同时实现了ISR与任务间的同步通信。
-        </p>
-      </section>
+<section class="section">
+<h2>数据模型（真实实现）</h2>
+<div class="code">
+OS_RESOURCE {
+    value      // 信号量计数
+    owner      // 未使用（兼容 mutex）
+    wait_mask  // 等待任务位图
+    wait_cnt   // 保留字段
+}
+</div>
 
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          信号量常用于任务同步、资源池管理以及中断与任务之间的通信桥接。
-        </p>
-        <p>
-          信号量与互斥锁的选择是工程实践中的重要决策。互斥锁具有所有权语义，支持优先级继承，适用于保护临界区资源。信号量无所有权语义，不支持优先级继承，适用于资源计数与任务同步。如果需要独占访问共享资源，应使用互斥锁；如果需要控制并发访问数量或实现任务间同步，应使用信号量。错误的选择可能导致优先级反转或死锁。
-        </p>
-        <p>
-          生产者-消费者模型是信号量的经典应用场景。生产者任务生产数据后释放信号量，消费者任务等待信号量获取数据。通过使用两个信号量（一个用于满缓冲区计数，一个用于空缓冲区计数），可以实现线程安全的环形缓冲区。这种设计广泛应用于数据采集、消息传递、流水线处理等场景。
-        </p>
-        <p>
-          资源池管理是计数信号量的典型应用。连接池、缓冲区池、线程池等资源池使用计数信号量控制同时访问资源的任务数量。初始化时信号量计数值设置为资源池容量，任务获取资源时等待信号量，使用完成后释放信号量归还资源。这种设计避免了资源耗尽，提高了资源利用率。
-        </p>
-        <ul>
-          <li>模块职责：信号量管理负责基于计数器的同步控制，实现资源计数管理与任务同步通知</li>
-          <li>内部机制：基于信号量控制块、计数器、等待队列实现，支持二值与计数模式</li>
-          <li>状态迁移：信号量在AVAILABLE（count>0）与UNAVAILABLE（count=0）状态间切换</li>
-          <li>调用流程：init → wait → acquire/block → post → release → wake</li>
-          <li>资源管理：信号量控制块为全局资源，计数器为共享资源需保护并发访问</li>
-          <li>工程案例：资源池管理、生产者-消费者模型、ISR-Task同步、连接数控制</li>
-          <li>边界条件：计数器范围、等待队列容量、最大计数值限制、超时时间</li>
-          <li>错误场景：计数溢出、死锁、信号量泄漏、ISR阻塞、资源耗尽</li>
-          <li>异常处理：溢出检测、超时处理、死锁预防、资源回收</li>
-          <li>模块关系：与调度器模块协作阻塞唤醒任务，与中断模块协调ISR-Task通信</li>
-        </ul>
-        <p>
-          信号量的性能优化是实时系统工程的重要环节。HRTOS采用优化的等待队列数据结构，如优先级队列，在O(log n)时间内找到最高优先级等待任务。对于高并发场景，系统支持无锁队列作为优化选项，减少临界区持续时间。这些优化确保了信号量操作的高效性，满足实时系统的性能要求。
-        </p>
-        <p>
-          对于功耗敏感的嵌入式系统，信号量的使用会影响系统功耗管理。长时间阻塞等待信号量的任务会阻止系统进入低功耗模式。HRTOS提供信号量超时检测机制，当任务等待时间超过阈值时记录警告，指导开发者优化同步设计。系统还支持在获取信号量失败时主动让出CPU，允许系统进入低功耗模式，平衡实时性与功耗。
-        </p>
-      </section>
+<div class="note">
+Semaphore = value计数 + wait_mask等待队列，不是独立对象。
+</div>
+</section>
 
-    </div>
+<section class="section">
+<h2>wait流程（os_sem_wait）</h2>
 
-    <aside class="sidebar">
+<div class="code">
+if(value > 0)
+    value-- → 直接返回
+
+else
+    进入 WAIT_SEM
+    挂入 wait_mask
+    阻塞任务
+</div>
+
+<p class="note">
+快路径优先：避免调度开销。
+</p>
+</section>
+
+<section class="section">
+<h2>post流程（os_sem_post）</h2>
+
+<div class="code">
+if(wait_mask != 0)
+    选择最高优先级任务
+    wake_task()
+
+else if(value < 255)
+    value++
+</div>
+
+<p class="note">
+优先唤醒任务，其次才累加计数。
+</p>
+</section>
+
+<section class="section">
+<h2>行为语义</h2>
+<div class="code">
+Wait:
+  value > 0 → consume
+  value == 0 → block
+
+Post:
+  wake waiting task OR increase value
+</div>
+</section>
+
+<section class="section">
+<h2>关键特性</h2>
+<p class="note">
+• 无所有权（区别 Mutex）<br>
+• 支持计数资源<br>
+• ISR可 post，不可 wait阻塞<br>
+• wake_task 按优先级选择<br>
+• wait_mask 位图管理等待任务
+</p>
+</section>
+
+<section class="section">
+<h2>典型用途</h2>
+<p>
+• 生产者/消费者模型<br>
+• ISR → Task 通知<br>
+• 资源池（buffer / connection）<br>
+• 任务同步触发
+</p>
+</section>
+
+</div>
+
+<aside class="sidebar">
+
 <div class="box">
-  <h3>知识链路</h3>
-  <a href="/docs/modules/ipc/index.html">← IPC 模块首页</a>
-  <a href="/docs/modules/ipc/mutex.html">互斥锁</a>
-  <a href="/docs/modules/ipc/event.html">事件机制</a>
-  <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
+<h3>相关接口</h3>
+<a href="#">os_sem_init</a>
+<a href="#">os_sem_wait</a>
+<a href="#">os_sem_post</a>
 </div>
-      <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
-      </div>
 
-      <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/ipc/mutex.html">互斥锁</a>
-        <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
-      </div>
+<div class="box">
+<h3>模块关系</h3>
+<a href="/docs/modules/ipc/mutex.html">Mutex</a>
+<a href="/docs/modules/ipc/event.html">Event</a>
+<a href="/docs/modules/ipc/message-queue.html">Message Queue</a>
+</div>
 
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/modules/ipc/index.html">IPC通信机制</a>
-      </div>
+<div class="box">
+<h3>对比模型</h3>
+<a href="#">Semaphore = 计数</a>
+<a href="#">Mutex = 互斥</a>
+<a href="#">Event = 状态</a>
+</div>
 
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/ipc/index.html">IPC基础 → 同步机制</a>
-      </div>
+</aside>
 
-    </aside>
+</div>
 
-  </div>
-
-  <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
-  </footer>
+<footer class="footer">
+© 2017–2026 HRTOS IPC Semaphore Module
+</footer>
 
 </main>
 

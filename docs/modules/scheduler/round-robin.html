@@ -5,254 +5,163 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>时间片轮转调度（Round Robin） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS时间片轮转调度（Round Robin）机制说明，包括时间片分配、队列轮转策略与公平性调度模型。" />
+<meta name="description" content="HRTOS时间片轮转调度机制说明，包括时间片分配、队列轮转策略与调度模式切换机制。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
-:root {
-  --bg: #0f172a;
-  --surface: rgba(15, 23, 42, 0.72);
-  --surface-hover: rgba(30, 64, 175, 0.18);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.36);
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
-  --radius: 10px;
-  color-scheme: dark;
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.16);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
 }
 
-* { box-sizing: border-box; }
+*{box-sizing:border-box}
 
-html { scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height: 1.75;
-  overflow-x: hidden;
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.14;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
-}
+a{color:inherit;text-decoration:none}
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.page {
-  width: min(1180px, calc(100% - 40px));
-  margin: 0 auto;
-  padding: 96px 0 56px;
-  display: grid;
-  gap: 40px;
-  position: relative;
-  z-index: 1;
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:36px;
 }
 
 /* breadcrumb */
-.breadcrumb {
-  font-size: 0.92rem;
-  color: var(--muted);
-}
-
-.breadcrumb a {
-  color: #7dd3fc;
-}
-
-.breadcrumb a:hover {
-  color: var(--accent);
+.breadcrumb{
+  font-size:.92rem;
+  color:var(--muted);
 }
 
 /* hero */
-.hero {
-  display: grid;
-  gap: 16px;
+.hero{
+  display:grid;
+  gap:12px;
 }
 
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 0.9rem;
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.22);
+  color:#bae6fd;
+  font-size:.9rem;
 }
 
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  line-height: 1.1;
-  font-weight: 700;
+.hero h1{
+  margin:0;
+  font-size:clamp(2.2rem,5vw,3.4rem);
+  line-height:1.1;
 }
 
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-  font-size: 1rem;
-}
-
-.meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.tag {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  color: #bae6fd;
-  background: rgba(15,23,42,.42);
+.hero p{
+  margin:0;
+  max-width:820px;
+  color:var(--muted);
 }
 
 /* layout */
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 28px;
-  align-items: start;
+.layout{
+  display:grid;
+  grid-template-columns:1fr 280px;
+  gap:26px;
 }
 
-.content {
-  display: grid;
-  gap: 22px;
-}
-
-.section {
-  display: grid;
-  gap: 12px;
-  padding: 24px 22px;
-  background: linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-
-.section h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.3;
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
-}
-
-.section p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.96rem;
-}
-
-.note {
-  padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
-  font-size: 0.94rem;
-}
-
-.code {
-  background:#020617;
-  border:1px solid rgba(56,189,248,.14);
-  border-radius:8px;
-  padding:16px;
-  overflow-x:auto;
-  font-family:Consolas,monospace;
-  font-size:0.92rem;
-  color:#7dd3fc;
-  line-height:1.65;
-
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-/* sidebar */
-.sidebar {
-  display: grid;
-  gap: 16px;
-}
-
-.box {
-  padding: 18px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: rgba(30,41,59,.56);
-}
-
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 1rem;
-}
-
-.box a {
-  display: block;
-  color: #7dd3fc;
-  font-size: 0.92rem;
-  margin-bottom: 8px;
-}
-
-.box a:hover {
-  color: var(--accent);
-}
-
-/* footer */
-.footer {
-  text-align: center;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148,163,184,.14);
-  color: #8ea3be;
-  font-size: 0.9rem;
-}
-.link-list{
+.section{
+  padding:22px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
+  box-shadow:var(--shadow);
   display:grid;
   gap:10px;
 }
 
-.link-list a{
+.section h2{
+  margin:0;
+  font-size:1.3rem;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+  font-size:.95rem;
+}
+
+.code{
+  background:#020617;
+  border:1px solid rgba(56,189,248,.12);
+  border-radius:8px;
+  padding:14px;
+  font-family:Consolas,monospace;
+  font-size:.9rem;
   color:#7dd3fc;
-  font-size:0.95rem;
+  white-space:pre-wrap;
 }
 
-.link-list a:hover{
-  color:var(--accent);
+/* note */
+.note{
+  padding:12px 14px;
+  border-left:3px solid var(--accent);
+  background:rgba(15,23,42,.6);
+  color:var(--muted);
+  border-radius:6px;
+  font-size:.92rem;
 }
-@media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
+
+/* sidebar */
+.sidebar{
+  display:grid;
+  gap:14px;
 }
 
-@media (max-width: 640px) {
-  .page {
-    width: min(100% - 24px, 1180px);
-    padding-top: 84px;
-  }
+.box{
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:rgba(30,41,59,.5);
+}
 
-  .section {
-    padding: 20px 18px;
-  }
+.box h3{
+  margin:0 0 10px;
+  font-size:.95rem;
+}
 
-  .hero p,
-  .section p {
-    font-size: 0.95rem;
-  }
+.box a{
+  display:block;
+  font-size:.9rem;
+  color:#7dd3fc;
+  margin-bottom:6px;
+}
+
+/* footer */
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.12);
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+@media(max-width:980px){
+  .layout{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -269,20 +178,12 @@ a {
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
-
+    <span class="hero-label">HRTOS Scheduler</span>
     <h1>时间片轮转调度（Round Robin）</h1>
-
     <p>
-      时间片轮转调度是一种基于时间片的公平调度策略，通过固定时间片轮流分配CPU，
-      在保证系统响应性的同时提升任务公平性。
+      基于时间片的公平调度机制，在同优先级任务之间轮转执行，
+      同时支持实时/通用双调度模式切换。
     </p>
-
-    <div class="meta">
-      <span class="tag">Scheduler</span>
-      <span class="tag">Fair Scheduling</span>
-      <span class="tag">Time Slice</span>
-    </div>
   </section>
 
   <div class="layout">
@@ -292,41 +193,52 @@ a {
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
-          Round Robin（RR）调度为每个任务分配固定时间片，
-          当时间片用尽后自动切换到下一个就绪任务。
+          Round Robin（RR）通过固定时间片在同优先级任务之间轮转执行，
+          避免单任务长期占用CPU。
         </p>
         <p>
-          Round Robin调度算法是最古老且最简单的调度策略之一，其核心思想是通过时间分片实现公平的CPU分配。每个就绪任务被分配一个固定长度的时间片，在该时间片内独占CPU执行。当时间片耗尽或任务主动让出CPU时，调度器将该任务移至就绪队列末尾，并选择下一个任务执行。这种机制确保所有同优先级任务获得相等的CPU时间份额，避免任务饥饿。
-        </p>
-        <p>
-          在实时操作系统中，Round Robin通常不单独使用，而是与优先级调度结合形成混合调度策略。高优先级任务通过抢占式调度保证实时性，同优先级任务之间通过Round Robin实现公平调度。这种设计既满足了实时性要求，又保证了系统整体公平性，是RTOS中最常见的调度模型之一。
-        </p>
-        <p>
-          Round Robin的时间片长度是关键参数，直接影响系统性能与响应时间。时间片过长会导致任务响应延迟增加，降低系统交互性；时间片过短会增加上下文切换开销，降低CPU利用率。合理的时间片配置需要综合考虑任务执行时间、上下文切换开销、系统实时性要求以及硬件特性。
+          在 HRTOS 中，RR 通常与优先级调度结合形成混合调度模型，
+          用于提升系统公平性与吞吐能力。
         </p>
       </section>
 
       <section class="section" id="mechanism">
         <h2>工作原理</h2>
+
         <p>
-          系统维护一个循环就绪队列，任务按顺序执行。
-          当前任务时间片耗尽或主动让出CPU时，调度器切换到队列下一个任务。
+          系统维护循环就绪队列，任务按顺序执行，每次分配固定时间片。
         </p>
 
         <div class="note">
-          Round Robin不依赖优先级，是典型的“时间驱动公平调度”模型。
+          时间片耗尽或任务主动让出CPU时触发调度切换。
         </div>
+
         <p>
-          Round Robin调度的内部实现依赖于就绪队列管理与时间片计数器。每个任务控制块中维护剩余时间片字段，任务切换时初始化为配置的时间片值。系统时钟中断（Tick）定期递减当前任务的剩余时间片，当计数器归零时触发调度器执行任务切换。这种基于时间中断的机制确保时间片的精确控制，避免任务独占CPU。
+          Tick中断递减时间片计数器，当归零后任务进入队列尾部，
+          调度器选择下一个任务执行。
         </p>
+      </section>
+
+      <section class="section" id="mode">
+        <h2>调度模式（Scheduler Mode）</h2>
+
+        <div class="code">
+extern char os_scheduler_mode_switch(unsigned char id);
+// 1：实时模式（优先级调度）
+//    高优先级就绪立即抢占，不执行低优先级任务
+// 0：通用模式（时间片轮转）
+//    同优先级按时间片轮转执行，保证公平性
+//    优先级越高时间片越多（priority + 1），最低优先级也至少1片
+        </div>
+
+        <div class="code">
+extern char os_set_scheduler(unsigned char id);
+// 1：HRTOS默认实时调度模式
+// 0：MYOS用户策略模式（允许自定义调度行为）
+        </div>
+
         <p>
-          就绪队列通常采用循环链表或环形缓冲区实现，支持高效的队尾插入与队首删除操作。任务在时间片耗尽后被移至队尾，新就绪任务插入队尾，形成FIFO调度顺序。队列操作的时间复杂度为O(1)，确保调度决策的实时性。在多核SMP架构中，每个核心维护独立的就绪队列，通过负载均衡策略分配任务。
-        </p>
-        <p>
-          时间片耗尽触发的任务切换流程包括：保存当前任务上下文、更新任务状态为就绪、将任务移至就绪队列末尾、从队列首部选择下一个任务、恢复目标任务上下文、开始执行。整个过程由调度器统一管理，确保任务切换的原子性与一致性。在切换过程中，内核处于临界区，禁止中断干扰，避免状态不一致。
-        </p>
-        <p>
-          除了时间片耗尽外，任务主动让出CPU也会触发Round Robin调度。任务调用yield接口时，即使时间片未耗尽，调度器也会将其移至队列末尾并切换下一个任务。这种机制允许任务在完成关键处理后主动让出CPU，提高系统响应性。但频繁的yield会增加调度开销，需谨慎使用。
+          实时模式用于强时间约束场景；通用模式用于吞吐与公平性场景。
         </p>
       </section>
 
@@ -334,132 +246,78 @@ a {
         <h2>关键接口 / 结构</h2>
 
         <div class="code">
-os_rr_init()
-os_rr_set_timeslice()
-os_rr_scheduler_tick()
+extern char os_tick_config(u8 slice_count, u16 tick_value);
+// 设置系统Tick配置：时间片数量 + Tick粒度
+// 系统调度核心初始化接口（必须）
 
-struct rr_task {
-    uint32_t timeslice;
-    uint32_t remaining;
-};
+extern void os_tick_get(u16 *high, u16 *low);
+// 获取当前系统Tick计数（高低32位扩展）
+// 用于调度分析 / 时间统计 / 性能测量
+
+extern u32 os_uptime_ms();
+// 获取系统开机运行时间（毫秒）
+// 用于系统运行监控 / 健康检测
         </div>
-         <p>
-    相关接口文档：
-    <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a> /
-    <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a> /
-    <a href="/docs/modules/task/context-switch.html">任务上下文切换</a> /
-    <a href="/docs/system/scheduling-flow.html">调度流程</a>
-  </p>
+
         <p>
-          os_rr_init()用于初始化Round Robin调度器，配置默认时间片长度与就绪队列数据结构。该接口在系统启动时调用一次，建立调度器的基础运行环境。初始化过程包括分配队列内存、设置时间片全局变量、注册时钟中断处理函数等。
-        </p>
-        <p>
-          os_rr_set_timeslice()用于动态调整时间片长度，参数为新的时间片值（以Tick为单位）。该接口可在运行时调用，允许系统根据负载情况调整调度粒度。时间片调整会影响所有后续任务切换，但当前执行的任务不会立即受影响。频繁调整时间片可能导致调度行为不稳定，建议仅在系统配置变更时调用。
-        </p>
-        <p>
-          os_rr_scheduler_tick()是时钟中断处理函数的核心接口，在每个系统Tick中断中被调用。该接口递减当前任务的剩余时间片，当计数器归零时触发调度器执行Round Robin切换。该接口的执行时间必须极短，通常在微秒级别，避免影响系统实时性。实现时需考虑中断嵌套与临界区保护，确保时间片递减的原子性。
-        </p>
-        <p>
-          rr_task结构体扩展了任务控制块，添加了Round Robin调度所需的字段。timeslice字段记录配置的时间片长度，remaining字段记录当前剩余时间片。该结构体在任务创建时初始化，在任务切换时更新。在多优先级混合调度系统中，rr_task结构体可能作为任务控制块的成员存在，仅在任务处于Round Robin调度模式时生效。
+          RR通过时间片与队列管理实现调度控制，并依赖Tick中断驱动运行。
         </p>
       </section>
 
       <section class="section" id="flow">
         <h2>运行流程</h2>
+
+        <div class="code">
+task enqueue
+  ↓
+dispatch
+  ↓
+execute
+  ↓
+tick decrement
+  ↓
+timeslice expire
+  ↓
+move to tail
+  ↓
+next task
+        </div>
+
         <p>
-          任务进入就绪队列 → 分配时间片 →
-          执行直到时间片耗尽 → 移至队列末尾 →
-          调度下一个任务。
-        </p>
-        <p>
-          完整的Round Robin调度流程包括：任务创建或唤醒时插入就绪队列末尾，调度器从队列首部选择任务执行，初始化该任务的剩余时间片为配置值；任务开始执行，系统Tick中断定期递减剩余时间片；当剩余时间片归零时，调度器触发任务切换，保存当前任务上下文，将任务状态更新为就绪并移至队列末尾；从队列首部选择下一个任务，恢复其上下文并开始执行；循环往复，形成公平的时间片轮转。
-        </p>
-        <p>
-          在混合优先级调度系统中，Round Robin流程会有所调整。高优先级就绪任务会抢占低优先级任务的执行，即使低优先级任务的时间片未耗尽。同优先级任务之间遵循Round Robin规则，按时间片轮转。这种设计保证了实时性（通过优先级）与公平性（通过Round Robin）的平衡。
-        </p>
-        <p>
-          时间片耗尽触发的调度点与任务主动让出CPU触发的调度点处理流程相同，但语义不同。时间片耗尽是强制性的，任务无法阻止；主动让出是自愿的，任务可选择合适的时机。两种调度点都会导致任务移至队列末尾，但主动让出可能保留部分剩余时间片（取决于实现），在下次调度时继续使用。
-        </p>
-        <p>
-          在多核SMP系统中，Round Robin调度需要考虑跨核心的负载均衡。每个核心维护独立的就绪队列与时间片计数器，当某个核心负载过重时，系统可将部分任务迁移至其他核心。迁移时需考虑缓存亲和性、时间片同步以及任务状态一致性，避免频繁迁移导致的性能下降。
+          调度在Tick或yield触发时发生，保证轮转公平性。
         </p>
       </section>
 
       <section class="section" id="extension">
         <h2>扩展说明</h2>
+
         <p>
-          在HRTOS中，Round Robin通常与优先级调度结合使用，
-          用于同优先级任务之间的公平调度。
+          RR通常用于同优先级任务调度，与优先级调度组合构成混合模型。
         </p>
         <p>
-          Round Robin调度的优势在于实现简单、公平性好、避免任务饥饿。其劣势是响应时间受时间片长度限制，不适合强实时性任务。在工程实践中，Round Robin常用于后台任务、数据处理任务或交互性要求较高的场景，而关键实时任务则通过高优先级抢占式调度保证响应时间。
-        </p>
-        <p>
-          时间片长度的选择是Round Robin调度的核心工程问题。常见的时间片配置策略包括：固定时间片（所有任务使用相同时间片）、动态时间片（根据任务类型或系统负载调整）、自适应时间片（根据任务执行历史自动调整）。固定时间片实现简单但缺乏灵活性，动态时间片需要额外的管理开销但可优化性能。
-        </p>
-        <p>
-          在嵌入式实时系统中，时间片通常以系统Tick为单位配置。例如，系统Tick为1ms，时间片配置为10ms则表示10个Tick。这种配置方式便于与系统时钟同步，但时间片长度受限于Tick频率。如需更细粒度的时间片控制，可采用硬件定时器或高分辨率时钟实现。
-        </p>
-        <ul>
-          <li>模块职责：Round Robin调度负责任务的公平时间分配，确保同优先级任务获得相等的CPU时间份额</li>
-          <li>内部机制：基于就绪队列管理与时间片计数器实现，支持FIFO队列轮转与Tick驱动的时间递减</li>
-          <li>状态迁移：任务在RUNNING、READY状态间切换，由时间片耗尽或yield触发状态变化</li>
-          <li>调用流程：init → enqueue → dispatch → execute → tick → switch → enqueue → repeat</li>
-          <li>资源管理：就绪队列为全局资源，需通过临界区保护并发访问；时间片为任务私有属性</li>
-          <li>工程案例：后台任务调度、数据处理公平性、交互系统响应性、多核负载均衡</li>
-          <li>边界条件：时间片配置范围、就绪队列容量、Tick频率限制、任务数量上限</li>
-          <li>错误场景：时间片配置过小导致频繁切换、时间片过大导致响应延迟、队列溢出</li>
-          <li>异常处理：时间片归零检测、队列空检测、优先级抢占处理、SMP迁移失败</li>
-          <li>模块关系：与优先级调度模块协作形成混合调度，与任务模块关联生命周期，与时钟模块同步Tick</li>
-        </ul>
-        <p>
-          Round Robin调度在安全关键系统中需满足可预测性要求。时间片长度必须确定，调度延迟必须有界，任务切换时间必须可测量。系统需提供调度统计功能，记录任务的实际执行时间、切换次数与响应延迟，用于验证实时性约束是否满足。
-        </p>
-        <p>
-          对于能耗敏感的嵌入式系统，Round Robin调度可与动态电压频率调节（DVFS）结合。当系统负载较低时，可降低CPU频率并延长时间片，减少切换开销；当负载较高时，提高CPU频率并缩短时间片，保证响应性。这种协同优化需要在调度器与电源管理模块之间建立反馈机制。
+          在实时模式下RR被优先级调度覆盖，在通用模式下RR成为主调度策略。
         </p>
       </section>
-</section>  <!-- extension结束 -->
 
-<section class="section" id="related">
-  <h2>相关阅读</h2>
-  <p>
-    继续学习调度策略与任务切换机制，深入理解实时系统中的执行控制模型。
-  </p>
-
-  <div class="link-list">
-  <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
-  <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
-  <a href="/docs/modules/task/context-switch.html">任务上下文切换</a>
-  <a href="/docs/system/scheduling-flow.html">调度流程</a>
-</div>
-</section>
     </div>
 
     <aside class="sidebar">
 
       <div class="box">
-        <h3>目录导航</h3>
+        <h3>目录</h3>
         <a href="#overview">概述</a>
         <a href="#mechanism">工作原理</a>
+        <a href="#mode">调度模式</a>
         <a href="#interface">关键接口</a>
         <a href="#flow">运行流程</a>
+        <a href="#extension">扩展说明</a>
       </div>
 
       <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/scheduler/index.html">调度器总览</a>
+        <h3>相关模块</h3>
+        <a href="/docs/modules/scheduler/index.html">调度器</a>
         <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
-      </div>
-
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/modules/scheduler/index.html">Scheduler</a>
-      </div>
-
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/scheduler/index.html">Scheduler → 公平调度体系</a>
+        <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
       </div>
 
     </aside>
@@ -467,7 +325,7 @@ struct rr_task {
   </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
+    © 2017–2026 HRTOS. Real-Time System Documentation.
   </footer>
 
 </main>

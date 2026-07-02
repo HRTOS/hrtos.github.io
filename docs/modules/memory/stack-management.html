@@ -5,276 +5,182 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>栈管理（Stack Management） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS栈管理（Stack Management）机制，用于任务栈分配、保护与使用监控，确保实时系统运行的稳定性与可靠性。" />
+<meta name="description" content="HRTOS栈管理机制，用于任务栈分配、运行时监测与安全保护。在8051无MPU环境下，通过软件检测与边界约束实现栈安全与任务隔离。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root {
-  --bg: #0f172a;
-  --surface: rgba(15, 23, 42, 0.72);
-  --surface-card: rgba(30, 41, 59, 0.72);
-  --surface-hover: rgba(30, 64, 175, 0.18);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.36);
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
-  --radius: 10px;
-  color-scheme: dark;
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.16);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
 }
 
-* { box-sizing: border-box; }
+*{box-sizing:border-box}
 
-html { scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height: 1.75;
-  overflow-x: hidden;
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","Microsoft YaHei",sans-serif;
+  line-height:1.75;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.14;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:36px;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.breadcrumb{
+  color:var(--muted);
+  font-size:.92rem;
 }
 
-.page {
-  width: min(1180px, calc(100% - 40px));
-  margin: 0 auto;
-  padding: 96px 0 56px;
-  display: grid;
-  gap: 40px;
-  position: relative;
-  z-index: 1;
+.breadcrumb a{color:#7dd3fc;}
+
+.hero h1{
+  margin:0 0 12px;
+  font-size:clamp(2.2rem,5vw,3.4rem);
 }
 
-/* breadcrumb */
-.breadcrumb {
-  font-size: 0.92rem;
-  color: var(--muted);
+.hero p{
+  margin:0;
+  color:var(--muted);
+  max-width:900px;
 }
 
-.breadcrumb a {
-  color: #7dd3fc;
-}
-
-.breadcrumb a:hover {
-  color: var(--accent);
-}
-
-/* hero */
-.hero {
-  display: grid;
-  gap: 16px;
-}
-
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 0.9rem;
-}
-
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  line-height: 1.1;
-  font-weight: 700;
-}
-
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-  font-size: 1rem;
-}
-
-.meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.tag {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  color: #bae6fd;
-  background: rgba(15,23,42,.42);
+.tag{
+  display:inline-block;
+  margin-top:14px;
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  color:#bae6fd;
+  font-size:.85rem;
 }
 
 /* layout */
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 28px;
-  align-items: start;
+.layout{
+  display:grid;
+  grid-template-columns: 1fr 260px;
+  gap:28px;
+  align-items:stretch;
 }
 
-.content {
-  display: grid;
-  gap: 22px;
+.content{
+  display:grid;
+  gap:22px;
 }
 
-.section {
-  display: grid;
-  gap: 12px;
-  padding: 24px 22px;
-  background:
-    linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+.section{
+  padding:22px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:rgba(30,41,59,.55);
+  box-shadow:var(--shadow);
 }
 
-.section h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.3;
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
+.section h2{
+  margin:0 0 12px;
+  font-size:1.25rem;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
 }
 
-.section p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.96rem;
+.section p{
+  margin:0 0 10px;
+  color:var(--muted);
 }
 
-/* note */
-.note {
-  padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
-  font-size: 0.94rem;
+.code{
+  margin-top:12px;
+  background:#020617;
+  border:1px solid rgba(56,189,248,.15);
+  padding:14px;
+  border-radius:8px;
+  font-family:Consolas,monospace;
+  font-size:.9rem;
+  color:#7dd3fc;
+  white-space:pre-wrap;
 }
 
-/* code */
-.code {
-  background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
-  border-radius: 8px;
-  padding: 16px;
-  overflow-x: auto;
-  font-family: Consolas, monospace;
-  font-size: 0.92rem;
-  color: #7dd3fc;
-  line-height: 1.65;
-  white-space: pre-wrap;
-  word-break: break-word;
+.block{
+  margin-top:14px;
+  padding:14px;
+  border-left:3px solid #38bdf8;
+  background:rgba(15,23,42,.6);
+  border-radius:8px;
+  color:var(--muted);
 }
 
 /* sidebar */
-.sidebar {
-  display: grid;
-  gap: 16px;
+.sidebar{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
 }
 
-.box {
-  padding: 18px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: rgba(30,41,59,.56);
+.box{
+  flex:1;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(30,41,59,.5);
 }
 
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 1rem;
+.box h3{
+  margin:0 0 10px;
+  font-size:0.95rem;
 }
 
-.box a {
-  display: block;
-  color: #7dd3fc;
-  font-size: 0.92rem;
-  margin-bottom: 8px;
-}
-
-.box a:hover {
-  color: var(--accent);
+.box a{
+  display:block;
+  margin-bottom:8px;
+  color:#7dd3fc;
+  font-size:0.9rem;
 }
 
 /* footer */
-.footer {
-  text-align: center;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148,163,184,.14);
-  color: #8ea3be;
-  font-size: 0.9rem;
+.footer{
+  text-align:center;
+  color:#8ea3be;
+  font-size:.9rem;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:18px;
 }
 
-@media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 640px) {
-  .page {
-    width: min(100% - 24px, 1180px);
-    padding-top: 84px;
-  }
-
-  .section {
-    padding: 20px 18px;
-  }
-
-  .hero p,
-  .section p {
-    font-size: 0.95rem;
-  }
+@media(max-width:1000px){
+  .layout{grid-template-columns:1fr;}
 }
 </style>
 </head>
 
-<body data-header="docs">
+<body>
 
 <main class="page">
 
   <nav class="breadcrumb">
-    <a href="/docs/index.html">文档</a> /
-<a href="/docs/modules/index.html">模块</a> /
-<a href="/docs/modules/memory/index.html">内存管理</a> /
-<span>栈管理</span>
+    <a href="/docs/index.html">Docs</a> /
+    <a href="/docs/modules/index.html">Modules</a> /
+    <a href="/docs/modules/memory/index.html">Memory</a> /
+    <span>Stack Management</span>
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS 模块文档</span>
-
     <h1>栈管理（Stack Management）</h1>
-
     <p>
-  栈管理机制用于任务运行时栈空间的分配、监控与保护，
-  负责维护函数调用、局部变量与任务上下文数据，
-  是保障任务切换正确性与系统稳定性的核心基础组件。
-</p>
-
-    <div class="meta">
-      <span class="tag">内存管理</span>
-<span class="tag">任务运行时</span>
-<span class="tag">核心机制</span>
-    </div>
+      HRTOS在8051等无硬件内存保护的架构中，栈安全不依赖MPU/MMU，
+      而是通过边界约束、运行时检测与内核进入点校验共同实现。
+    </p>
+    <span class="tag">Task Isolation · Stack Safety · Memory Pool Guard</span>
   </section>
 
   <div class="layout">
@@ -282,214 +188,157 @@ a {
     <div class="content">
 
       <section class="section" id="overview">
-  <h2>概述</h2>
+        <h2>① 概述：无硬件保护下的栈模型</h2>
+        <p>
+          栈用于保存函数调用、任务上下文与中断现场，在8051架构中，
+          SP寄存器完全由软件控制，没有任何硬件边界保护。
+        </p>
+        <p>
+          因此栈安全依赖三层机制：任务栈边界注册、内核进入检测、
+          以及运行时溢出回调机制。
+        </p>
 
-  <p>
-    栈（Stack）用于保存任务执行过程中的局部变量、
-    函数返回地址、中断现场及上下文信息。
-  </p>
-
-  <p>
-    在RTOS中，每个任务通常拥有独立栈空间，
-    以避免任务之间的数据污染与运行干扰。
-  </p>
-
-  <div class="note">
-    栈空间不足可能导致栈溢出，
-    进而破坏任务状态或系统内核数据。
-  </div>
-  <p>
-    栈管理模块负责任务栈空间的分配、初始化、监控与保护。在任务创建时，系统根据配置的栈大小从内存池中分配连续空间，并初始化栈顶指针与栈底边界。任务运行期间，栈指针随函数调用与返回动态变化，栈管理模块通过水位标记（Watermark）机制记录栈的最大使用深度，为栈容量规划提供数据支持。
-  </p>
-  <p>
-    栈空间是任务运行时的关键资源，其大小直接影响系统的内存利用率与任务数量上限。栈空间过小可能导致栈溢出，过大则浪费内存资源。HRTOS提供栈使用率检测接口，允许开发者监控系统运行时的栈消耗情况，从而优化栈配置。
-  </p>
-  <p>
-    在多核SMP架构中，栈管理还需考虑缓存一致性与内存屏障问题。任务在不同核心间迁移时，需确保栈数据的可见性与一致性，避免因缓存不一致导致的执行错误。
-  </p>
-</section>
-
-      <section class="section" id="mechanism">
-  <h2>工作原理</h2>
-
-  <p>
-    系统在任务创建时分配固定栈空间，
-    运行期间通过栈指针（SP）执行压栈与出栈操作。
-  </p>
-
-  <div class="code">
-栈操作流程：
-1. 创建任务并分配栈
-2. 初始化栈顶指针
-3. 函数调用压栈
-4. 函数返回出栈
-5. 上下文切换保存/恢复栈状态
-  </div>
-
-  <div class="note">
-    栈溢出是RTOS中最常见的系统性错误之一，
-    可能导致不可预测行为。
-  </div>
-  <p>
-    栈管理机制的内部实现依赖于栈控制块（Stack Control Block），该结构记录栈基地址、栈顶指针、栈大小以及水位标记信息。任务创建时，内核从系统内存池中分配指定大小的连续内存区域，并用特定模式（如0x55或0xAA）填充整个栈空间，用于后续的栈溢出检测。
-  </p>
-  <p>
-    水位标记机制通过扫描栈空间中的填充模式来计算栈的最大使用深度。当任务运行时，栈指针向下移动覆盖填充区域，未被覆盖的区域表示栈从未达到的高度。通过检测填充模式的边界，系统可以精确计算出任务在运行过程中的栈峰值使用量。
-  </p>
-  <p>
-    栈溢出检测分为静态检测与动态检测两种。静态检测在任务创建时验证栈配置是否合理，动态检测在运行时监控栈指针是否超出边界。当检测到栈溢出时，系统可以触发错误处理回调、记录调试信息或执行系统复位，防止错误扩散。
-  </p>
-  <p>
-    在支持MPU（Memory Protection Unit）的架构中，栈管理模块可配置MPU区域保护，当栈指针超出合法范围时触发硬件异常，提供更快速、更可靠的溢出检测机制。MPU保护通常设置在栈边界附近，预留少量空间作为缓冲区，避免在临界边界触发误报。
-  </p>
-</section>
-
-      <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
-
-        <div class="code">
-os_stack_create()
-os_stack_check()
-os_stack_get_usage()
-
-struct task_stack {
-    void* base;
-    uint32_t size;
-    uint32_t used;
-};
+        <div class="block">
+          核心思想：<br>
+          不依赖硬件隔离，而依赖“规则 + 检测 + 约束”
         </div>
-        <div class="note">
-  相关接口：
-  <br><br>
-  <a href="/docs/api/memory/os_task_stack.html">任务栈接口</a><br>
-  <a href="/docs/api/memory/index.html">内存接口总览</a>
-</div>
-        <p>
-          os_stack_create()用于为任务创建栈空间，参数包括栈大小与对齐要求。该接口从系统内存池分配连续内存区域，并初始化栈填充模式与水位标记。栈大小通常建议为2的幂次方，便于内存对齐与MPU区域配置。
-        </p>
-        <p>
-          os_stack_check()用于检测栈溢出状态，可通过软件扫描水位标记或读取MPU异常状态实现。该接口可在任务切换时或周期性调用，及时发现潜在的栈溢出风险。检测到溢出时，系统可记录错误信息并触发相应的错误处理流程。
-        </p>
-        <p>
-          os_stack_get_usage()用于获取栈使用率统计，返回当前栈的峰值使用量与剩余空间。该接口通过扫描水位标记计算栈的最大使用深度，为栈容量优化提供数据支持。在系统调试与性能调优阶段，该接口可用于识别栈配置不合理或栈泄漏问题。
-        </p>
-        <p>
-          task_stack结构体维护栈的完整状态信息，包括基地址、栈大小、当前使用量以及水位标记数据。该结构体与任务控制块关联，在任务创建时初始化，在任务删除时清理。栈控制块的设计需考虑多核并发访问场景，通常采用自旋锁或原子操作保护关键数据。
-        </p>
       </section>
 
-      <section class="section" id="flow">
-  <h2>运行流程</h2>
+      <section class="section" id="mechanism">
+        <h2>② 工作机制：进入内核时的SP检测</h2>
 
-  <p>
-    任务创建后分配独立栈空间，
-    系统在运行期间持续维护栈增长与回收过程。
-  </p>
+        <p>
+          每次进入内核调度或关键系统路径时，
+          系统会检查当前SP是否仍在任务注册的栈范围内。
+        </p>
 
-  <div class="code">
-1. 分配任务栈
-2. 初始化任务上下文
-3. 任务运行压栈
-4. 上下文切换保存栈指针
-5. 恢复目标任务栈状态
-6. 周期性检查栈使用率
-  </div>
+        <div class="code">
+检测逻辑：
+- SP >= stack_base
+- SP <= stack_limit
+- 否则触发 overflow handler
+        </div>
 
-  <p>
-    当检测到栈空间接近上限时，
-    系统可触发预警或保护机制。
-  </p>
-  <p>
-    完整的栈生命周期管理流程包括：任务创建时调用栈分配接口，内核从内存池分配指定大小的连续区域，并用特定模式填充用于水位检测；初始化栈顶指针与栈底边界，将栈控制块关联到任务控制块；任务启动后，栈指针随函数调用动态变化，每次函数调用将返回地址与寄存器压栈，函数返回时出栈恢复；上下文切换时，内核保存当前任务的栈指针到任务控制块，并恢复目标任务的栈指针；系统周期性或按需扫描栈空间计算水位标记，更新栈使用率统计；当栈使用率超过阈值时触发预警，检测到溢出时执行错误处理。
-  </p>
-  <p>
-    栈回收流程在任务删除时执行。内核释放任务占用的栈空间回内存池，并清除相关的栈控制块记录。对于使用MPU保护的栈，需先解除MPU区域配置，避免后续访问触发异常。栈回收是内存管理的重要组成部分，直接影响系统的长期运行稳定性。
-  </p>
-  <p>
-    在中断嵌套场景下，栈管理需要特别考虑中断栈与任务栈的分离设计。中断通常使用独立的中断栈，避免中断处理过程中占用任务栈空间，防止任务栈溢出影响中断响应。中断栈的大小需根据最大中断嵌套深度与中断处理函数的栈需求进行配置。
-  </p>
-</section>
+        <p>
+          该机制属于“运行时边界校验”，属于轻量级安全模型，
+          不影响实时性。
+        </p>
 
-      <section class="section" id="extension">
-  <h2>扩展说明</h2>
+        <div class="block">
+          设计目标：<br>
+          在无MPU环境中，最大程度降低“静默栈破坏”
+        </div>
+      </section>
 
-  <p>
-    HRTOS通常结合栈水位标记（Watermark）
-    与MPU保护机制实现运行时栈安全检测。
-  </p>
+      <section class="section" id="overflow">
+        <h2>③ 栈溢出处理机制（Slab Overflow Hook）</h2>
 
-  <div class="code">
-推荐实践：
-- 为关键任务预留更大栈空间
-- 定期检测栈使用率
-- 启用栈溢出检查
-- 使用内存保护机制
-  </div>
-  <p>
-    在工程实践中，栈配置需要综合考虑任务的函数调用深度、局部变量大小、中断嵌套级别以及库函数的栈需求。对于递归函数，需要特别注意递归深度可能导致栈空间指数增长。建议通过静态分析工具评估代码的栈需求，并结合运行时水位检测数据进行验证。
-  </p>
-  <p>
-    栈溢出是RTOS系统中最危险的错误之一，可能导致数据损坏、系统崩溃甚至安全漏洞。当栈溢出发生时，可能覆盖相邻任务的栈空间、内核数据结构或返回地址，导致执行流跳转到非法地址。HRTOS提供多层防护机制：编译时通过-Wstack-usage选项警告大栈函数，运行时通过水位标记监控使用情况，硬件层面通过MPU提供边界保护。
-  </p>
-  <ul>
-    <li>模块职责：栈管理负责任务栈空间分配、初始化、监控与回收，确保任务运行时的内存安全</li>
-    <li>内部机制：基于栈控制块、水位标记与MPU保护实现，支持静态与动态溢出检测</li>
-    <li>状态迁移：栈空间在分配、使用、回收状态间转换，由任务生命周期驱动</li>
-    <li>调用流程：create → allocate → initialize → use → monitor → check → reclaim</li>
-    <li>资源管理：栈空间为任务私有资源，需通过内存池统一管理，避免碎片化</li>
-    <li>工程案例：中断栈分离、递归函数栈分析、关键任务栈预留、水位监控实践</li>
-    <li>边界条件：栈大小配置、中断嵌套深度、函数调用深度、局部变量大小</li>
-    <li>错误场景：栈溢出、栈不足、栈碎片、MPU配置错误</li>
-    <li>异常处理：溢出检测回调、错误记录、系统复位、安全降级</li>
-    <li>模块关系：与内存分配模块协作获取空间，与任务模块关联生命周期，与上下文切换模块配合保存恢复</li>
-  </ul>
-  <p>
-    在安全关键系统中，栈管理还需要满足功能安全标准（如ISO 26262）的要求。这包括栈配置的确定性验证、栈溢出检测的覆盖率保证以及错误处理的实时性要求。系统需提供栈使用情况的日志记录功能，便于故障分析与安全审计。
-  </p>
-  <p>
-    栈对齐是另一个重要的工程考虑因素。不同架构对栈对齐有不同要求，如ARM架构通常要求8字节或16字节对齐。不对齐的栈访问可能导致性能下降甚至硬件异常。栈管理模块在分配栈空间时需确保基地址与栈顶指针的对齐要求，并在上下文切换时维护对齐状态。
-  </p>
-  <p>
-    对于动态栈扩展需求，部分RTOS支持栈溢出时的动态扩展机制。当检测到栈空间不足时，系统可尝试从内存池分配额外空间并扩展栈边界。这种机制增加了系统的灵活性，但也引入了不确定性与内存碎片风险。在实时系统中，通常更倾向于静态栈配置以确保可预测性。
-  </p>
-  <p>
-    栈泄漏是另一种需要关注的问题。当任务持有栈引用但未正确释放时，可能导致内存泄漏。HRTOS通过任务生命周期管理确保栈在任务删除时被正确回收，但应用层仍需避免在任务栈中存储全局指针，防止栈回收后悬空指针访问。
-  </p>
-  <p>
-    栈性能优化也是工程实践中的重要考虑。频繁的栈操作可能导致缓存未命中，影响系统性能。合理的栈大小配置可以减少缓存压力，同时避免频繁的内存分配与释放。在性能敏感场景下，可通过栈热点分析优化任务函数调用结构，减少不必要的嵌套深度。
-  </p>
-</section>
+        <p>
+          当检测到SP越界或内存池栈破坏时，
+          系统不会直接崩溃，而是触发统一溢出入口。
+        </p>
+
+        <div class="code">
+void (*g_slab_overflow_hook)(void);
+
+void os_slab_overflow(void)
+{
+    if (g_slab_overflow_hook)
+    {
+        g_slab_overflow_hook();
+    }
+    else
+    {
+        while (1);   // 默认安全停机
+    }
+}
+        </div>
+
+        <p>
+          用户可以注册自己的处理函数，用于日志记录、复位或降级处理。
+        </p>
+
+        <div class="code">
+void os_slab_overflow_register(void (*hook)(void));
+        </div>
+
+        <div class="block">
+          该机制的本质：<br>
+          “让系统失控点变为可控入口”
+        </div>
+      </section>
+
+      <section class="section" id="pool">
+        <h2>④ 内存池栈安全模型</h2>
+
+        <p>
+          栈空间来自统一内存池分配，每个任务分配独立区间，
+          并记录边界用于运行时校验。
+        </p>
+
+        <div class="code">
+Stack Block：
+- base address
+- size
+- SP high watermark
+- owner task id
+        </div>
+
+        <p>
+          当任务释放或异常退出时，内存池负责回收并清理状态，
+          防止“悬挂栈区域”继续被访问。
+        </p>
+
+        <div class="block">
+          风险控制点：<br>
+          - 栈越界写入<br>
+          - 释放后访问<br>
+          - 中断嵌套过深
+        </div>
+      </section>
+
+      <section class="section" id="isolation">
+        <h2>⑤ 任务隔离安全模型</h2>
+
+        <p>
+          在没有硬件保护的系统中，“任务隔离”依赖逻辑边界约束。
+        </p>
+
+        <p>
+          每个任务只能访问：
+          自身栈区域 + 显式共享资源 + 内核入口控制路径。
+        </p>
+
+        <div class="code">
+隔离规则：
+- 禁止跨任务栈访问
+- 禁止非法SP回退
+- 禁止越界共享访问
+        </div>
+
+        <div class="block">
+          安全本质：<br>
+          用规则替代硬件，用检测替代隔离单元
+        </div>
+      </section>
 
     </div>
 
     <aside class="sidebar">
-<div class="box">
-  <h3>相关接口</h3>
-  <a href="/docs/api/memory/os_task_stack.html">任务栈接口</a>
-  <a href="/docs/api/memory/index.html">内存接口总览</a>
-</div>
+
       <div class="box">
-        <h3>目录导航</h3>
+        <h3>目录</h3>
         <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
+        <a href="#mechanism">SP检测</a>
+        <a href="#overflow">溢出处理</a>
+        <a href="#pool">内存池</a>
+        <a href="#isolation">任务隔离</a>
       </div>
 
       <div class="box">
-        <h3>相关页面</h3>
+        <h3>相关模块</h3>
         <a href="/docs/modules/memory/allocation.html">内存分配</a>
-        <a href="/docs/modules/task/context-switch.html">上下文切换</a>
-      </div>
-
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/modules/memory/index.html">内存管理</a>
-      </div>
-
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/memory/index.html">内存管理 → 栈运行机制 → 任务执行</a>
+        <a href="/docs/modules/memory/fragmentation.html">内存碎片</a>
       </div>
 
     </aside>
@@ -497,7 +346,7 @@ struct task_stack {
   </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
+    © 2017–2026 HRTOS Stack Safety Model (8051)
   </footer>
 
 </main>

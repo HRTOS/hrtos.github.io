@@ -28,21 +28,16 @@
   color-scheme: dark;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: "Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
   line-height: 1.75;
-  position: relative;
   overflow-x: hidden;
 }
 
@@ -59,10 +54,7 @@ body::before {
   mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+a { color: inherit; text-decoration: none; }
 
 .page {
   width: min(1180px, calc(100% - 40px));
@@ -70,57 +62,26 @@ a {
   padding: 96px 0 56px;
   display: grid;
   gap: 40px;
-  position: relative;
-  z-index: 1;
 }
 
-.breadcrumb {
-  font-size: 0.92rem;
-  color: var(--muted);
-}
+.breadcrumb { font-size: 0.92rem; color: var(--muted); }
+.breadcrumb a { color: #7dd3fc; }
 
-.breadcrumb a {
-  color: #7dd3fc;
-}
-
-.breadcrumb a:hover {
-  color: var(--accent);
-}
-
-.hero {
-  display: grid;
-  gap: 16px;
-}
+.hero { display: grid; gap: 16px; }
 
 .hero-label {
   display: inline-flex;
-  width: fit-content;
   padding: 8px 14px;
   border-radius: 999px;
   border: 1px solid rgba(56,189,248,.22);
   color: #bae6fd;
-  font-size: 0.9rem;
+  width: fit-content;
 }
 
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  line-height: 1.1;
-  font-weight: 700;
-}
+.hero h1 { margin: 0; font-size: clamp(2.2rem,5vw,3.4rem); }
+.hero p { margin: 0; color: var(--muted); }
 
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-  font-size: 1rem;
-}
-
-.meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+.meta { display: flex; gap: 10px; flex-wrap: wrap; }
 
 .tag {
   padding: 6px 12px;
@@ -128,100 +89,60 @@ a {
   border-radius: 999px;
   font-size: 0.85rem;
   color: #bae6fd;
-  background: rgba(15,23,42,.42);
 }
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: 1fr 280px;
   gap: 28px;
-  align-items: start;
-}
-
-.content {
-  display: grid;
-  gap: 22px;
 }
 
 .section {
-  display: grid;
-  gap: 12px;
-  padding: 24px 22px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(30,41,59,.72),
-      rgba(15,23,42,.92)
-    );
+  padding: 22px;
+  background: rgba(30,41,59,.72);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
 
 .section h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.3;
+  margin: 0 0 10px;
   border-left: 3px solid var(--accent);
   padding-left: 12px;
 }
 
-.section p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.96rem;
-}
-
-.note {
-  padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
-  font-size: 0.94rem;
-}
+.section p { margin: 0; color: var(--muted); }
 
 .code {
   background: #020617;
   border: 1px solid rgba(56,189,248,.14);
+  padding: 14px;
   border-radius: 8px;
-  padding: 16px;
-  font-family: Consolas, monospace;
-  font-size: 0.92rem;
   color: #7dd3fc;
-  line-height: 1.65;
-
+  font-family: Consolas, monospace;
   white-space: pre-wrap;
-  word-break: break-word;
 }
 
-.sidebar {
-  display: grid;
-  gap: 16px;
+.note {
+  border-left: 3px solid var(--accent);
+  padding: 12px 14px;
+  background: rgba(15,23,42,.6);
+  color: var(--muted);
+  border-radius: 6px;
 }
+
+.sidebar { display: grid; gap: 16px; }
 
 .box {
-  padding: 18px 16px;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: rgba(30,41,59,.56);
 }
 
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 1rem;
-}
+.box h3 { margin: 0 0 10px; }
 
-.box a {
-  display: block;
-  color: #7dd3fc;
-  font-size: 0.92rem;
-  margin-bottom: 8px;
-}
-
-.box a:hover {
-  color: var(--accent);
-}
+.box a { display: block; margin-bottom: 6px; color: #7dd3fc; }
 
 .footer {
   text-align: center;
@@ -232,25 +153,7 @@ a {
 }
 
 @media (max-width: 980px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .page {
-    width: min(100% - 24px, 1180px);
-    padding-top: 84px;
-  }
-
-  .section {
-    padding: 20px 18px;
-  }
-
-  .hero p,
-  .section p {
-    font-size: 0.95rem;
-  }
+  .layout { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -259,258 +162,128 @@ a {
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档</a> /
-<a href="/docs/modules/index.html">模块</a> /
-<a href="/docs/modules/ipc/index.html">进程间通信</a> /
-<span>事件机制</span>
-  </nav>
+<nav class="breadcrumb">
+  <a href="/docs/index.html">文档</a> /
+  <a href="/docs/modules/index.html">模块</a> /
+  <a href="/docs/modules/ipc/index.html">IPC</a> /
+  <span>事件机制</span>
+</nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
+<section class="hero">
+  <span class="hero-label">HRTOS Documentation</span>
+  <h1>事件机制（Event）</h1>
+  <p>基于事件标志位的轻量级同步机制，用于任务间状态通知与条件触发，不传递数据，仅表达状态。</p>
 
-    <h1>事件机制（Event）</h1>
-
-    <p>
-      事件机制用于任务之间的同步与状态通知，通过事件标志位实现条件触发，是一种高效的轻量级IPC机制。
-    </p>
-
-    <div class="meta">
-      <span class="tag">IPC通信</span>
-      <span class="tag">任务同步</span>
-      <span class="tag">内核机制</span>
-    </div>
-  </section>
-<section class="section">
-  <h2>适用场景</h2>
-  <p>
-    事件机制适用于状态通知、多条件等待和中断触发同步等场景，
-    常用于外设完成通知、系统状态变更广播以及任务协同控制。
-  </p>
-  <p>
-    在嵌入式实时系统中，事件机制广泛应用于中断服务程序与任务之间的同步。例如，串口接收中断触发后，ISR设置接收完成事件，数据处理任务等待该事件并读取数据。这种设计避免了在ISR中进行耗时操作，保证了中断响应的实时性。
-  </p>
-  <p>
-    事件机制也适用于多条件等待场景。任务可以同时等待多个事件位的组合，如等待外设A完成、外设B完成或超时事件。通过AND/OR逻辑组合，任务可以灵活表达复杂的等待条件，无需为每种条件组合创建单独的同步原语。
-  </p>
-  <p>
-    在状态机设计中，事件机制用于触发状态迁移。外部条件变化时设置对应事件位，状态机任务等待特定事件组合，根据事件类型执行状态转换逻辑。这种设计使得状态机与外部事件源解耦，提高了系统的可维护性与可扩展性。
-  </p>
-</section>
-  <div class="layout">
-
-    <div class="content">
-<section class="section" id="definition">
-  <h2>定义</h2>
-  <p>
-    事件（Event）是RTOS中用于任务间状态同步的一种轻量级IPC机制，
-    通过位标志（flag bits）表达条件状态。
-  </p>
-</section>
-      <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          事件（Event）是一种基于位标志的同步机制，用于表示系统中某种状态或条件的发生。
-          任务可以等待一个或多个事件位，从而实现条件同步。
-        </p>
-      </section>
-
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          事件由事件控制块维护，其核心是一个32位或64位标志寄存器。
-          任务可以设置、清除或等待指定事件位。
-        </p>
-
-        <div class="note">
-          事件机制不传递数据，只传递状态信息，适用于轻量级同步与状态触发场景。
-        </div>
-        <p>
-          事件控制块内部维护事件标志位集合与等待任务队列。当任务调用等待接口时，
-          内核将任务挂起并记录其等待条件（如等待特定事件位、任意事件位或全部事件位）。
-          等待条件支持逻辑与（AND）与逻辑或（OR）两种模式，分别用于多条件全满足与任一条件满足场景。
-        </p>
-        <p>
-          在中断上下文或任务上下文中设置事件位时，内核会遍历等待队列，检查每个等待任务的条件是否满足。
-          满足条件的任务将被移出等待队列并插入就绪队列，等待调度器执行。
-          事件清除操作通常由任务主动调用，用于重置状态标志，避免重复触发。
-        </p>
-        <p>
-          事件机制的原子性由内核临界区保护机制保证，确保事件标志位的设置与检查操作在多任务并发环境下的一致性。
-          在SMP架构中，事件控制块通常采用自旋锁或原子操作实现，避免竞态条件。
-        </p>
-      </section>
-<section class="section" id="classification">
-  <h2>事件机制的定位</h2>
-  <p>
-    在 HRTOS IPC 体系中，Event 属于“状态同步类机制”，
-    与 Semaphore（资源计数）、Message Queue（数据传递）形成三类基础模型。
-  </p>
-
-  <div class="note">
-    分类关系：
-    状态同步（Event） → 资源控制（Semaphore / Mutex） → 数据通信（Message Queue / Mailbox）
+  <div class="meta">
+    <span class="tag">状态同步</span>
+    <span class="tag">事件触发</span>
+    <span class="tag">轻量IPC</span>
   </div>
 </section>
-      <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
 
-        <div class="code">
-os_event_init()
-os_event_set()
-os_event_clear()
-os_event_wait()
-
-struct event_control_block {
-    uint32_t flags;
-    task_list_t wait_list;
-};
-        </div>
-      </section>
 <section class="section">
-  <h2>相关接口文档</h2>
-  <p>
-    查看事件机制相关API接口定义与使用说明。
-  </p>
-
-  <div class="note">
-    <a href="/docs/api/ipc/index.html">IPC接口总览</a><br><br>
-    <a href="/docs/api/ipc/os_event_set.html">os_event_set()</a><br>
-    <a href="/docs/modules/ipc/event.html">os_event_wait()</a>
-  </div>
+<h2>定义</h2>
+<p>Event 是基于 OS_RES 资源结构的状态标志机制，通过 value + wait_mask 实现任务同步。</p>
 </section>
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          任务进入等待状态后，内核挂起该任务并记录等待条件。
-          当事件被触发后，内核检查条件是否满足，并唤醒对应任务。
-        </p>
-        <p>
-          完整的等待流程包括：任务调用事件等待接口 → 内核检查当前事件标志位是否满足等待条件 → 若满足则立即返回，不满足则将任务挂起并加入等待队列 → 任务进入阻塞状态等待事件触发 → 其他任务或中断设置事件位 → 内核遍历等待队列检查条件 → 满足条件的任务被唤醒并插入就绪队列 → 调度器选择任务执行。
-        </p>
-        <p>
-          事件设置流程：调用设置接口 → 内核更新事件控制块标志位 → 遍历等待队列 → 对每个等待任务检查其等待条件 → 条件满足则将任务从等待队列移至就绪队列 → 若设置了调度需求则触发调度器运行 → 返回调用者。
-        </p>
-        <p>
-          在中断上下文中设置事件时，需要特别注意中断嵌套与调度延迟问题。通常中断中只设置事件标志位，实际的唤醒与调度操作推迟到中断退出后的内核调度点执行，以避免在中断上下文中进行复杂的任务调度操作。
-        </p>
-      </section>
+
+<div class="layout">
+
+<div class="content">
+
 <section class="section">
-  <h2>执行时序</h2>
-  <p>
-    典型流程包括：任务等待事件 → 内核挂起任务 →
-    其他任务或中断设置事件位 → 条件满足后唤醒任务恢复执行。
-  </p>
+<h2>核心接口</h2>
+<div class="code">
+os_event_init(u8 id)
+os_event_delete(u8 id)
+os_event_query(u8 id)
+os_event_write(u8 id)
+os_event_wait(u8 id, u16 tick)
+</div>
 </section>
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          事件机制常用于外设通知、中断信号同步以及任务状态联动。
-          在复杂系统中可与信号量、消息队列配合使用。
-        </p>
-        <p>
-          在工程实践中，事件机制常用于实现中断服务程序与任务之间的同步。中断服务程序通常执行时间受限，不能进行复杂的处理，因此只设置事件标志位通知任务，由任务在上下文中完成后续处理。这种模式既保证了中断响应的实时性，又实现了任务的解耦。
-        </p>
-        <p>
-          事件机制也常用于多任务协作场景，如生产者-消费者模型中的状态通知。生产者任务完成数据处理后设置事件位，消费者任务等待该事件位被触发后开始消费数据。相比消息队列，事件机制开销更低，适用于仅需状态通知而无数据传递的场景。
-        </p>
-        <p>
-          在状态机实现中，事件机制可用于状态迁移触发。外部条件变化时设置对应事件位，状态机任务等待特定事件组合，根据事件类型执行状态转换逻辑。这种设计使得状态机与外部事件源解耦，提高了系统的可维护性。
-        </p>
-        <ul>
-          <li>模块职责：事件机制负责任务间状态同步与条件触发，提供轻量级的通知能力</li>
-          <li>内部机制：基于位标志寄存器与等待队列实现，支持AND/OR逻辑条件判断</li>
-          <li>状态迁移：任务在READY、BLOCKED状态间切换，由事件触发驱动状态变化</li>
-          <li>调用流程：wait → check → block → set → wakeup → schedule</li>
-          <li>资源管理：事件控制块为全局资源，需通过临界区保护并发访问</li>
-          <li>工程案例：中断通知、外设完成、状态机触发、任务协同控制</li>
-          <li>边界条件：事件位溢出、等待队列满、中断嵌套场景</li>
-          <li>错误场景：事件丢失、重复触发、死锁等待</li>
-          <li>异常处理：超时等待、事件清除、优先级反转缓解</li>
-          <li>模块关系：与Semaphore互为补充，与MessageQueue用于不同通信层次</li>
-        </ul>
-      </section>
+
 <section class="section">
-  <h2>知识链路</h2>
-  <p>
-    event 属于 IPC 同步机制的一部分，通常与 semaphore / mutex / message queue 配合使用。
-  </p>
-
-  <div class="note">
-    下一步建议学习：
-    <a href="/docs/modules/ipc/semaphore.html">信号量</a> →
-    <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
-  </div>
+<h2>实现机制</h2>
+<p>
+事件使用 OS_RES[obj].value 作为状态标志，wait_mask 记录等待任务位图，wait_cnt 统计等待数量。
+</p>
+<p>
+写事件时关闭中断 EA，设置 value=1，并扫描 wait_mask 唤醒任务（wake_task）。
+</p>
+<p>
+等待时若 value 已置位则立即返回，否则进入 os_wait(WAIT_EVENT) 阻塞。
+</p>
+<div class="note">
+事件属于“状态保持型同步”，不会自动清除，需由任务显式 reset（delete）。
+</div>
 </section>
-    </div>
 
-    <aside class="sidebar">
+<section class="section">
+<h2>执行流程</h2>
+<p>
+等待流程：check → return / block → wait_queue  
+</p>
+<p>
+触发流程：EA off → set value → scan wait_mask → wake_task → EA on
+</p>
+</section>
+
+<section class="section">
+<h2>关键结构（内部）</h2>
+<div class="code">
+OS_RES[obj].value      // 事件状态
+OS_RES[obj].wait_mask  // 等待任务位图
+OS_RES[obj].wait_cnt   // 等待计数
+</div>
+</section>
+
+<section class="section">
+<h2>特性说明</h2>
+<p class="note">
+• 不传递数据，仅表示状态<br>
+• 支持超时等待<br>
+• 支持多任务广播唤醒<br>
+• 中断/任务均可触发<br>
+• 事件保持直到显式清除
+</p>
+</section>
+
+<section class="section">
+<h2>典型用途</h2>
+<p>
+外设完成通知、中断同步、状态机触发、多任务广播信号。
+</p>
+</section>
+
+</div>
+
+<aside class="sidebar">
+
 <div class="box">
-  <h3>相关接口</h3>
-  <a href="/docs/api/ipc/index.html">IPC接口总览</a>
-  <a href="/docs/api/ipc/os_event_set.html">事件设置接口</a>
-  <a href="/docs/modules/ipc/event.html">事件等待接口</a>
+<h3>相关接口</h3>
+<a href="#">os_event_init</a>
+<a href="#">os_event_write</a>
+<a href="#">os_event_wait</a>
 </div>
-      <div class="box">
-  <h3>文档路径</h3>
-  <a href="/docs/modules/ipc/index.html">← IPC 模块首页</a>
-  <a href="/docs/modules/index.html">← 返回 Modules</a>
+
+<div class="box">
+<h3>模块导航</h3>
+<a href="/docs/modules/ipc/index.html">IPC首页</a>
+<a href="/docs/modules/ipc/semaphore.html">信号量</a>
+<a href="/docs/modules/ipc/message-queue.html">消息队列</a>
 </div>
-      
-      <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
-      </div>
 
-      <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/ipc/semaphore.html">信号量</a>
-        <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
-      </div>
+<div class="box">
+<h3>学习路径</h3>
+<a href="#">Event → Semaphore → MQ</a>
+</div>
 
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/modules/ipc/index.html">IPC通信机制</a>
-      </div>
+</aside>
 
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/ipc/index.html">IPC基础 → 内核通信机制</a>
-      </div>
+</div>
 
-    </aside>
-
-  </div>
-<section class="section">
-  <h2>常见问题</h2>
-
-  <p><strong>事件机制和信号量有什么区别？</strong></p>
-  <p>事件用于状态同步，信号量用于资源计数与访问控制。事件关注"是否发生"，信号量关注"可用数量"。事件支持多条件组合等待，信号量通常用于单一资源管理。</p>
-
-  <p><strong>事件机制是否传递数据？</strong></p>
-  <p>事件仅传递状态信息，不直接承载数据内容。如需数据传递，应使用消息队列或邮箱机制。</p>
-
-  <p><strong>事件等待是否会消耗CPU资源？</strong></p>
-  <p>不会。事件等待会将任务挂起，任务进入阻塞状态，不占用CPU时间，直到事件触发后任务被唤醒。</p>
-
-  <p><strong>如何在多任务环境中避免事件丢失？</strong></p>
-  <p>事件标志位具有保持特性，一旦设置将保持直到被清除。因此不会因任务未及时等待而丢失事件。但需要注意清除时机，避免误清除导致事件丢失。</p>
-
-  <p><strong>事件机制支持超时等待吗？</strong></p>
-  <p>支持。HRTOS的事件等待接口通常支持超时参数，允许任务在指定时间内等待事件，超时后返回错误码，避免无限等待导致的死锁。</p>
-
-  <p><strong>事件机制在中断上下文中使用有哪些限制？</strong></p>
-  <p>中断上下文中可以设置事件，但通常不能执行可能导致任务切换的操作。建议在中断中仅设置事件标志位，实际的唤醒与调度操作由内核在退出中断后统一处理。</p>
-
-  <p><strong>事件标志位数量有限制吗？</strong></p>
-  <p>事件标志位数量取决于事件控制块中标志寄存器的位数，通常为32位或64位。每个位可独立表示一种事件类型，因此最多支持32或64种独立事件。如需更多事件类型，可使用多个事件控制块或结合其他IPC机制。</p>
-</section>
-  <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
-  </footer>
+<footer class="footer">
+© 2017–2026 HRTOS. Event IPC Module.
+</footer>
 
 </main>
 

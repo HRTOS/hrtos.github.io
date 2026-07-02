@@ -5,11 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>邮箱机制（Mailbox） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS邮箱机制（Mailbox）用于任务间小数据传递，是一种基于固定缓冲区的轻量级IPC通信方式。" />
+<meta name="description" content="HRTOS邮箱机制（Mailbox）用于任务间小数据传递，是一种基于固定资源单元的轻量级IPC通信方式。" />
 <link rel="canonical" href="https://hrtos.com/docs/modules/ipc/mailbox.html">
 
-<meta name="keywords" content="RTOS mailbox, IPC mailbox, embedded system communication, message buffer, real-time operating system, HRTOS mailbox mechanism">
-
+<meta name="keywords" content="RTOS mailbox, IPC mailbox, embedded system communication, HRTOS mailbox">
 <meta name="robots" content="index, follow">
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -17,52 +16,23 @@
 :root {
   --bg: #0f172a;
   --surface: rgba(15, 23, 42, 0.72);
-  --surface-card: rgba(30, 41, 59, 0.72);
-  --surface-hover: rgba(30, 64, 175, 0.18);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.36);
   --text: #e2e8f0;
   --muted: #94a3b8;
   --accent: #38bdf8;
+  --border: rgba(148, 163, 184, 0.16);
   --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
   --radius: 10px;
   color-scheme: dark;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: "Segoe UI","Microsoft YaHei",sans-serif;
   line-height: 1.75;
-  position: relative;
-  overflow-x: hidden;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.14;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
 }
 
 .page {
@@ -71,57 +41,17 @@ a {
   padding: 96px 0 56px;
   display: grid;
   gap: 40px;
-  position: relative;
-  z-index: 1;
 }
 
-.breadcrumb {
-  font-size: 0.92rem;
-  color: var(--muted);
-}
+.breadcrumb { color: var(--muted); font-size: 0.92rem; }
+.breadcrumb a { color: #7dd3fc; }
 
-.breadcrumb a {
-  color: #7dd3fc;
-}
+.hero { display: grid; gap: 12px; }
 
-.breadcrumb a:hover {
-  color: var(--accent);
-}
+.hero h1 { margin: 0; font-size: clamp(2.2rem,5vw,3.2rem); }
+.hero p { margin: 0; color: var(--muted); }
 
-.hero {
-  display: grid;
-  gap: 16px;
-}
-
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 0.9rem;
-}
-
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  line-height: 1.1;
-  font-weight: 700;
-}
-
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-  font-size: 1rem;
-}
-
-.meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+.meta { display: flex; gap: 10px; flex-wrap: wrap; }
 
 .tag {
   padding: 6px 12px;
@@ -129,102 +59,57 @@ a {
   border-radius: 999px;
   font-size: 0.85rem;
   color: #bae6fd;
-  background: rgba(15,23,42,.42);
 }
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: 1fr 280px;
   gap: 28px;
-  align-items: start;
-}
-
-.content {
-  display: grid;
-  gap: 22px;
 }
 
 .section {
-  display: grid;
-  gap: 12px;
-  padding: 24px 22px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(30,41,59,.72),
-      rgba(15,23,42,.92)
-    );
+  padding: 22px;
+  background: rgba(30,41,59,.72);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
 
 .section h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.3;
+  margin: 0 0 10px;
   border-left: 3px solid var(--accent);
   padding-left: 12px;
 }
 
-.section p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.96rem;
-}
-
-.note {
-  padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
-  font-size: 0.94rem;
-}
+.section p { margin: 0; color: var(--muted); }
 
 .code {
   background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
+  padding: 14px;
   border-radius: 8px;
-  padding: 16px;
-
-  font-family: Consolas, monospace;
-  font-size: 0.92rem;
   color: #7dd3fc;
-  line-height: 1.65;
-
+  font-family: Consolas, monospace;
   white-space: pre-wrap;
-  word-break: break-word;
-  overflow-wrap: anywhere;
 }
 
-.sidebar {
-  display: grid;
-  gap: 16px;
+.note {
+  border-left: 3px solid var(--accent);
+  padding: 12px 14px;
+  background: rgba(15,23,42,.6);
+  color: var(--muted);
+  border-radius: 6px;
 }
+
+.sidebar { display: grid; gap: 16px; }
 
 .box {
-  padding: 18px 16px;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: rgba(30,41,59,.56);
 }
 
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 1rem;
-}
-
-.box a {
-  display: block;
-  color: #7dd3fc;
-  font-size: 0.92rem;
-  margin-bottom: 8px;
-}
-
-.box a:hover {
-  color: var(--accent);
-}
+.box a { display: block; color: #7dd3fc; margin-bottom: 6px; }
 
 .footer {
   text-align: center;
@@ -235,303 +120,176 @@ a {
 }
 
 @media (max-width: 980px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .page {
-    width: min(100% - 24px, 1180px);
-    padding-top: 84px;
-  }
-
-  .section {
-    padding: 20px 18px;
-  }
-
-  .hero p,
-  .section p {
-    font-size: 0.95rem;
-  }
+  .layout { grid-template-columns: 1fr; }
 }
 </style>
 </head>
 
-<body data-header="docs">
+<body>
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/ipc/index.html">IPC</a> /
-    <span>Mailbox</span>
-  </nav>
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/modules/index.html">Modules</a> /
+  <a href="/docs/modules/ipc/index.html">IPC</a> /
+  <span>Mailbox</span>
+</nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
-
-    <h1>邮箱机制（Mailbox）</h1>
-
-    <p>
-      邮箱机制（Mailbox）是RTOS中一种轻量级IPC通信机制，邮箱机制（Mailbox）用于任务间固定大小数据传递，
-通过消息槽或缓冲区实现低开销、低延迟的小数据通信。
-    </p>
-
-    <div class="meta">
-      <span class="tag">IPC通信</span>
-      <span class="tag">数据传递</span>
-      <span class="tag">内核机制</span>
-    </div>
-  </section>
-<section class="section" id="ipc-hub">
-  <h2>IPC体系中的位置</h2>
+<section class="hero">
+  <h1>邮箱机制（Mailbox）</h1>
   <p>
-    Mailbox属于HRTOS IPC轻量级通信机制，与消息队列、信号量、互斥锁共同构成任务间通信体系。
-    其中Mailbox用于小数据高频传递，具有低延迟和固定结构优势。
-  </p>
-</section>
-
-  <div class="layout">
-
-    <div class="content">
-<section class="section" id="definition">
-  <h2>定义</h2>
-  <p>
-    Mailbox（邮箱机制）是一种基于固定缓冲区或消息槽的IPC通信方式，
-    用于任务间小数据单元的高效传递。
-  </p>
-</section>
-
-      <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          邮箱（Mailbox）是一种基于固定消息槽的通信机制，用于任务之间传递固定大小的数据单元。
-          每个邮箱可以存放一个或多个消息指针或数据块。
-        </p>
-        <p>
-          邮箱是实时操作系统中轻量级IPC通信的核心组件，专门为小数据高频通信场景设计。与消息队列相比，邮箱具有更低的内存开销、更快的访问速度和更确定的行为特性。邮箱内部通常维护固定数量的消息槽，每个槽存储固定大小的数据单元或指针。这种固定结构的设计使得邮箱在编译时即可确定内存需求，避免了动态内存分配的开销与风险。
-        </p>
-        <p>
-          邮箱的主要应用场景包括传感器数据上报、状态同步、驱动层事件通知、控制命令传递等。这些场景的共同特点是数据量小（通常为几个字节到几十字节）、通信频率高、对延迟敏感。邮箱通过环形缓冲区或消息槽数组实现，提供O(1)时间的发送与接收操作，满足实时系统的确定性要求。
-        </p>
-        <p>
-          邮箱支持阻塞与非阻塞两种通信模式。阻塞模式下，当邮箱已满时发送任务阻塞等待空槽，当邮箱为空时接收任务阻塞等待数据。非阻塞模式下，发送与接收操作立即返回成功或失败，适用于不能阻塞的任务或中断服务程序。HRTOS提供灵活的超时配置，允许开发者根据应用需求选择合适的阻塞策略。
-        </p>
-      </section>
-
-      <section class="section" id="design-goal">
-  <h2>设计目标</h2>
-  <p>
-    Mailbox 的设计目标是在保持极低系统开销的前提下，
-    提供确定性的小数据通信能力。
-    相比复杂消息系统，Mailbox更强调固定结构、快速访问与低延迟。
+    基于 OS_RES 资源单元的轻量级通信机制，用于任务间小数据传递与状态通知。
+    核心语义：写入 value + 唤醒等待任务。
   </p>
 
-  <div class="note">
-    适合：短消息、状态值、指针传递、驱动通知。<br>
-    不适合：大数据块、复杂优先级消息调度。
+  <div class="meta">
+    <span class="tag">状态传递</span>
+    <span class="tag">轻量IPC</span>
+    <span class="tag">任务同步</span>
   </div>
 </section>
 
-<section class="section" id="use-cases">
-  <h2>典型使用场景</h2>
-  <p>
-    Mailbox常用于传感器数据上报、状态同步、驱动层事件通知等小数据高频通信场景。
-    相比消息队列，它更轻量，但不适合大数据传输。
-  </p>
+<section class="section">
+<h2>定义</h2>
+<p>
+Mailbox 本质是 OS_RES 的 value 字段通信封装，不是队列结构，而是“单值消息槽”模型。
+</p>
 </section>
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          邮箱内部维护一个环形缓冲区，用于存储消息。
-          发送任务将数据放入邮箱，接收任务从邮箱取出数据进行处理。
-        </p>
 
-        <div class="note">
-          邮箱适用于小数据、高频通信场景，本质是"队列化的轻量消息传递结构"。
-        </div>
-        <p>
-          邮箱的内部实现依赖于邮箱控制块（Mailbox Control Block）与环形缓冲区。每个邮箱包含缓冲区指针、消息槽数量、消息大小、读写索引、等待队列等字段。环形缓冲区通过head与tail索引实现，head指向下一个写入位置，tail指向下一个读取位置。当head追上tail时表示邮箱已满，当tail追上head时表示邮箱为空。这种设计避免了数据移动，提供O(1)时间的写入与读取操作。
-        </p>
-        <p>
-          发送操作时，内核检查邮箱是否已满（head+1 == tail，考虑环形回绕）。如果邮箱未满，将数据复制到head指向的消息槽，递增head索引（考虑环形回绕），检查是否有等待的接收任务，如果有则唤醒最高优先级的接收任务并触发调度。如果邮箱已满，根据配置策略决定行为：阻塞等待空槽、超时返回或覆盖旧数据（overwrite模式）。
-        </p>
-        <p>
-          接收操作时，内核检查邮箱是否为空（head == tail）。如果邮箱未空，从tail指向的消息槽读取数据，递增tail索引（考虑环形回绕），检查是否有等待的发送任务，如果有则唤醒最高优先级的发送任务并触发调度。如果邮箱为空，根据配置策略决定行为：阻塞等待数据、超时返回或立即返回空值。
-        </p>
-        <p>
-          邮箱的等待队列通常采用优先级排序，确保高优先级等待任务优先获得消息槽或数据。当邮箱有空槽或有数据时，内核从队列首部唤醒最高优先级的等待任务。这种设计保证了公平性，避免低优先级任务饥饿。在多核SMP系统中，邮箱操作需要考虑跨核心的同步，通常使用原子指令或自旋锁保护邮箱控制块。
-        </p>
-      </section>
+<div class="layout">
 
-      <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
+<div class="content">
 
-        <div class="code">
+<section class="section">
+<h2>核心接口</h2>
+<div class="code">
 os_mailbox_init()
+os_mailbox_clear()
+os_mailbox_query()
 os_mailbox_send()
-os_mailbox_recv()
-
-struct mailbox {
-    void* buffer;
-    uint32_t size;
-    uint32_t head;
-    uint32_t tail;
-};
-        </div>
-        <div class="note">
-  API Reference:
-  <br>
-  <a href="/docs/modules/ipc/mailbox.html">os_mailbox_init()</a><br>
-  <a href="/docs/modules/ipc/mailbox.html">os_mailbox_send()</a><br>
-  <a href="/docs/modules/ipc/mailbox.html">os_mailbox_recv()</a>
+os_mailbox_receive()
 </div>
-        <p>
-          os_mailbox_init()用于初始化邮箱，参数包括邮箱控制块指针、缓冲区指针、消息槽数量、消息大小。该接口设置邮箱的缓冲区、初始化读写索引为0、配置消息槽大小与数量。初始化操作必须在首次使用邮箱之前调用，未初始化的邮箱行为未定义。缓冲区通常由调用者分配，邮箱仅管理缓冲区的访问逻辑。
-        </p>
-        <p>
-          os_mailbox_send()用于发送消息到邮箱，参数包括邮箱指针、数据指针、超时时间。超时时间为0时为非阻塞调用，立即返回发送结果；超时时间为-1时为永久阻塞，任务会一直等待直到有空槽；超时时间为正数时为限时阻塞，任务等待指定时间后超时返回。发送成功返回0，超时返回-1，错误返回-2。该接口在临界区中执行，确保缓冲区操作的原子性。
-        </p>
-        <p>
-          os_mailbox_recv()用于从邮箱接收消息，参数包括邮箱指针、接收缓冲区指针、超时时间。超时时间配置与发送接口相同。接收成功返回0，超时返回-1，错误返回-2。接收操作将邮箱中的数据复制到接收缓冲区，调用者需确保接收缓冲区足够大。该接口同样在临界区中执行。
-        </p>
-        <p>
-          mailbox结构体定义了邮箱的核心属性。buffer字段指向消息槽缓冲区，可以是静态分配或动态分配的内存。size字段存储消息槽的总数量。head字段指向下一个写入位置，tail字段指向下一个读取位置。该结构体还可能包含消息大小字段、等待队列指针、统计信息等字段。结构体大小取决于配置，HRTOS通过优化字段布局减少内存占用。
-        </p>
-      </section>
-
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          发送任务将数据写入邮箱缓冲区，当邮箱非满时写入成功；
-          接收任务在邮箱非空时读取数据并处理。
-        </p>
-        <p>
-          完整的邮箱发送流程包括：任务调用os_mailbox_send()接口，内核进入临界区；检查邮箱是否已满（head+1 == tail，考虑环形回绕），如果邮箱未满则将数据复制到head指向的消息槽，递增head索引（考虑环形回绕）；检查是否有等待的接收任务，如果有则唤醒最高优先级的接收任务并触发调度；退出临界区，发送操作完成。如果邮箱已满，根据超时配置决定行为：超时为0时立即返回错误，超时为正数时将当前任务插入发送等待队列并阻塞，超时为-1时永久阻塞等待。
-        </p>
-        <p>
-          完整的邮箱接收流程包括：任务调用os_mailbox_recv()接口，内核进入临界区；检查邮箱是否为空（head == tail），如果邮箱未空则从tail指向的消息槽读取数据，递增tail索引（考虑环形回绕）；检查是否有等待的发送任务，如果有则唤醒最高优先级的发送任务并触发调度；退出临界区，接收操作完成。如果邮箱为空，根据超时配置决定行为：超时为0时立即返回错误，超时为正数时将当前任务插入接收等待队列并阻塞，超时为-1时永久阻塞等待。
-        </p>
-      </section>
-
-<section class="section" id="blocking">
-  <h2>阻塞与唤醒机制</h2>
-  <p>
-    当邮箱为空时，接收任务可进入阻塞等待状态；
-    当邮箱已满时，发送任务可选择阻塞、超时返回或覆盖旧数据，
-    具体行为由系统配置策略决定。
-  </p>
-
-  <div class="note">
-    典型策略：block / timeout / non-blocking。
-  </div>
 </section>
 
-<section class="section" id="comparison">
-  <h2>Mailbox vs Message Queue</h2>
-  <p>
-    Mailbox适用于固定大小的小数据传输，结构简单、开销低；
-    Message Queue支持变长数据与更复杂调度机制，适用于复杂任务通信场景。
-  </p>
+<section class="section">
+<h2>数据模型</h2>
+<div class="code">
+OS_RESOURCE {
+    value      // 邮箱内容
+    owner      // 未使用
+    wait_mask  // 等待任务位图
+    wait_cnt   // 等待计数
+}
+</div>
+
+<div class="note">
+Mailbox = 单值资源 + 等待队列，不是FIFO队列结构。
+</div>
 </section>
 
-<section class="section" id="selection-guide">
-  <h2>机制选择建议</h2>
-  <p>
-    不同IPC机制适用于不同通信需求：
-  </p>
+<section class="section">
+<h2>发送流程（os_mailbox_send）</h2>
+<p>
+进入临界区 → 写入 value → 检查 wait_mask → 唤醒任务 → 退出临界区
+</p>
 
-  <div class="code">
-Mailbox        -> 小数据 / 高频 / 低延迟
-Message Queue  -> 复杂消息 / 多生产者消费者
-Event          -> 状态同步 / 条件触发
-Semaphore      -> 资源控制 / 同步计数
-Mutex          -> 临界区互斥保护
-  </div>
+<div class="code">
+EA = 0
+m->value = content
+
+if(wait_mask != 0)
+    wake_task(first_task)
+
+EA = 1
+</div>
 </section>
 
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          邮箱机制通常用于任务间事件数据传递，如传感器数据上报、状态信息同步等。
-          在高实时系统中可作为消息队列的轻量替代方案。
-        </p>
-        <p>
-          邮箱与消息队列的选择是工程实践中的重要决策。邮箱适用于固定大小的小数据高频通信，具有确定性的O(1)操作时间、固定的内存需求、简单的实现逻辑。消息队列支持变长数据、多优先级消息、复杂的调度策略，适用于复杂的任务通信场景。如果通信数据量小且固定、对延迟敏感，应选择邮箱；如果需要传输变长数据或复杂的消息调度，应选择消息队列。
-        </p>
-        <p>
-          在中断服务程序（ISR）中使用邮箱时，只能使用非阻塞模式（timeout=0）。ISR不能阻塞等待邮箱空槽，否则会导致系统死锁。如果ISR需要向任务发送数据，应使用邮箱的非阻塞发送模式：如果邮箱已满则丢弃数据或覆盖旧数据（overwrite模式）。这种设计确保了中断响应的实时性，同时实现了ISR与任务间的数据传递。
-        </p>
-        <p>
-          邮箱的覆盖模式（overwrite）是特殊的应用场景配置。启用覆盖模式后，当邮箱已满时，新数据会覆盖最旧的数据（tail位置），而不是阻塞等待。这种模式适用于最新数据最重要的场景，如传感器数据更新、状态值刷新等。HRTOS提供配置选项启用或禁用覆盖模式，开发者可根据应用需求选择合适的策略。
-        </p>
-        <ul>
-          <li>模块职责：邮箱管理负责基于固定缓冲区的小数据通信，实现高效、确定性的任务间数据传递</li>
-          <li>内部机制：基于邮箱控制块、环形缓冲区、读写索引、等待队列实现，支持阻塞与非阻塞模式</li>
-          <li>状态迁移：邮箱在EMPTY、PARTIAL、FULL状态间切换，由发送与接收操作驱动</li>
-          <li>调用流程：init → send → write/block → recv → read/block</li>
-          <li>资源管理：邮箱控制块为全局资源，缓冲区为共享资源需保护并发访问</li>
-          <li>工程案例：传感器数据上报、状态同步、驱动事件通知、控制命令传递</li>
-          <li>边界条件：消息槽数量、消息大小、环形回绕、超时时间</li>
-          <li>错误场景：邮箱溢出、数据丢失、缓冲区越界、ISR阻塞、死锁</li>
-          <li>异常处理：溢出检测、覆盖模式、超时处理、边界检查</li>
-          <li>模块关系：与调度器模块协作阻塞唤醒任务，与中断模块协调ISR-Task通信</li>
-        </ul>
-        <p>
-          邮箱的性能优化是实时系统工程的重要环节。HRTOS采用环形缓冲区设计，避免数据移动开销，提供O(1)时间的发送与接收操作。缓冲区大小根据应用需求配置，通常为2的幂次方，便于环形回绕计算（使用位掩码代替模运算）。对于多核SMP系统，邮箱操作使用原子指令或自旋锁保护，减少临界区持续时间。这些优化确保了邮箱操作的高效性，满足实时系统的性能要求。
-        </p>
-        <p>
-          对于功耗敏感的嵌入式系统，邮箱的使用会影响系统功耗管理。长时间阻塞等待邮箱空槽或数据的任务会阻止系统进入低功耗模式。HRTOS提供邮箱超时检测机制，当任务等待时间超过阈值时记录警告，指导开发者优化通信设计。系统还支持在发送或接收失败时主动让出CPU，允许系统进入低功耗模式，平衡实时性与功耗。
-        </p>
-      </section>
+<section class="section">
+<h2>接收流程（os_mailbox_receive）</h2>
+<p>
+先检查 value：
+</p>
 
-    </div>
+<div class="code">
+if(value != 0) 直接读取
+else 进入 WAIT_MAILBOX
+</div>
 
-    <aside class="sidebar">
+<p>
+唤醒后再次读取 value 并清空。
+</p>
+
+<div class="note">
+Mailbox 是“读一次清空”的单次消息语义。
+</div>
+</section>
+
+<section class="section">
+<h2>关键特性</h2>
+<p class="note">
+• 单槽结构（非队列）<br>
+• value = 当前消息<br>
+• 写入覆盖旧值<br>
+• 支持阻塞等待<br>
+• wake_task 唤醒机制<br>
+• EA 临界区保护
+</p>
+</section>
+
+<section class="section">
+<h2>行为语义</h2>
+<div class="code">
+Send   -> 写 value + 唤醒等待任务
+Receive-> 读 value + 清空
+Query  -> 读取 value（不修改）
+Clear  -> value = 0
+</div>
+</section>
+
+<section class="section">
+<h2>典型用途</h2>
+<p>
+• ISR → Task 通知<br>
+• 状态更新通知<br>
+• 单值控制命令<br>
+• 驱动层事件传递
+</p>
+</section>
+
+</div>
+
+<aside class="sidebar">
+
 <div class="box">
-  <h3>知识链路</h3>
-  <a href="/docs/modules/ipc/index.html">← IPC 模块首页</a>
-  <a href="/docs/modules/ipc/semaphore.html">信号量</a>
-  <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
-</div>
-      <div class="box">
-  <h3>目录导航</h3>
-  <a href="#definition">定义</a>
-  <a href="#overview">概述</a>
-  <a href="#design-goal">设计目标</a>
-  <a href="#mechanism">工作原理</a>
-  <a href="#blocking">阻塞与唤醒</a>
-  <a href="#comparison">机制比较</a>
+<h3>相关接口</h3>
+<a href="#">os_mailbox_send</a>
+<a href="#">os_mailbox_receive</a>
+<a href="#">os_mailbox_query</a>
 </div>
 
-      <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/ipc/event.html">事件机制</a>
-        <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
-      </div>
+<div class="box">
+<h3>模块关系</h3>
+<a href="/docs/modules/ipc/event.html">Event</a>
+<a href="/docs/modules/ipc/message-queue.html">Message Queue</a>
+</div>
 
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/modules/ipc/index.html">IPC通信机制</a>
-      </div>
+<div class="box">
+<h3>设计对比</h3>
+<a href="#">Mailbox = 单值</a>
+<a href="#">MQ = 队列</a>
+<a href="#">Event = 状态</a>
+</div>
 
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/ipc/index.html">IPC基础 → 内核通信机制</a>
-      </div>
+</aside>
 
-    </aside>
+</div>
 
-  </div>
-
-  <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
-  </footer>
+<footer class="footer">
+© 2017–2026 HRTOS IPC Mailbox Module
+</footer>
 
 </main>
-
 <script src="https://hrtos.com/header.js"></script>
 </body>
 </html>

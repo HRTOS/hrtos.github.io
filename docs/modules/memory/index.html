@@ -5,20 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>内存管理 | HRTOS 模块文档</title>
-<meta name="description" content="HRTOS内存管理模块文档，涵盖内存分配、碎片管理、内存保护与栈管理等核心机制，构建实时系统资源管理基础。" />
+<meta name="description" content="HRTOS内存管理模块索引页，包含内存分配、碎片管理、栈管理与任务隔离机制，是实时系统资源管理的核心组成部分。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root{
   --bg:#0f172a;
-  --surface:rgba(15,23,42,.72);
-  --surface-hover:rgba(30,41,59,.92);
-  --border:rgba(148,163,184,.18);
-  --border-strong:rgba(56,189,248,.38);
   --text:#e2e8f0;
   --muted:#94a3b8;
   --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
   --shadow:0 20px 48px rgba(2,6,23,.34);
   --radius:10px;
   color-scheme:dark;
@@ -30,50 +27,25 @@ body{
   margin:0;
   background:var(--bg);
   color:var(--text);
-  font-family:"Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+  font-family:"Segoe UI","Microsoft YaHei",sans-serif;
   line-height:1.7;
-  overflow-x:hidden;
-}
-
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background-image:
-    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
-  background-size:28px 28px;
-  opacity:.14;
-}
-
-a{
-  color:inherit;
-  text-decoration:none;
 }
 
 .page{
   width:min(1180px, calc(100% - 40px));
   margin:0 auto;
   padding:96px 0 56px;
-  position:relative;
-  z-index:1;
 }
 
 /* breadcrumb */
 .breadcrumb{
-  margin-bottom:28px;
   font-size:.92rem;
   color:var(--muted);
+  margin-bottom:28px;
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
-}
-
-.breadcrumb a:hover{
-  color:var(--accent);
-}
+.breadcrumb a{color:#7dd3fc;}
+.breadcrumb a:hover{color:var(--accent);}
 
 /* hero */
 .hero{
@@ -84,26 +56,25 @@ a{
   display:inline-block;
   padding:8px 14px;
   border-radius:999px;
-  border:1px solid rgba(56,189,248,.24);
+  border:1px solid rgba(56,189,248,.25);
   color:#bae6fd;
   font-size:.9rem;
-  margin-bottom:18px;
+  margin-bottom:16px;
 }
 
 .hero h1{
-  margin:0 0 16px;
-  font-size:clamp(2.3rem,5vw,4rem);
-  line-height:1.08;
-  font-weight:700;
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,5vw,3.6rem);
+  line-height:1.1;
 }
 
 .hero p{
   margin:0;
-  max-width:760px;
+  max-width:820px;
   color:var(--muted);
-  font-size:1rem;
 }
 
+/* meta */
 .meta{
   display:flex;
   gap:10px;
@@ -113,11 +84,11 @@ a{
 
 .tag{
   padding:6px 12px;
-  border-radius:999px;
   border:1px solid var(--border);
-  background:rgba(15,23,42,.45);
-  color:#bae6fd;
+  border-radius:999px;
   font-size:.84rem;
+  color:#bae6fd;
+  background:rgba(15,23,42,.45);
 }
 
 /* section */
@@ -127,12 +98,11 @@ a{
 
 .section h2{
   margin:0 0 12px;
-  font-size:1.5rem;
-  line-height:1.3;
+  font-size:1.35rem;
 }
 
 .section p{
-  margin:0 0 22px;
+  margin:0 0 16px;
   color:var(--muted);
 }
 
@@ -140,67 +110,57 @@ a{
 .grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+  gap:18px;
 }
 
 /* card */
 .card{
-  display:grid;
-  gap:12px;
-  padding:24px 22px;
-  min-height:180px;
-  background:
-    linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
-  border:1px solid var(--border);
+  display:block;
+  padding:22px 20px;
   border-radius:var(--radius);
+  border:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(30,41,59,.75),rgba(15,23,42,.92));
   box-shadow:var(--shadow);
-  transition:.22s ease;
+  transition:.2s ease;
+  text-decoration:none;
 }
 
 .card:hover{
-  transform:translateY(-6px);
-  border-color:var(--border-strong);
-  background:var(--surface-hover);
+  transform:translateY(-5px);
+  border-color:rgba(56,189,248,.35);
 }
 
 .card h3{
-  margin:0;
-  font-size:1.12rem;
+  margin:0 0 8px;
+  font-size:1.1rem;
   color:#f8fafc;
 }
 
 .card p{
   margin:0;
-  font-size:.95rem;
+  font-size:.92rem;
   color:var(--muted);
-  line-height:1.6;
 }
 
 .card span{
-  margin-top:auto;
+  display:inline-block;
+  margin-top:12px;
   color:#7dd3fc;
-  font-size:.92rem;
+  font-size:.9rem;
   font-weight:600;
 }
 
 /* footer */
 .footer{
+  text-align:center;
   padding-top:24px;
   border-top:1px solid rgba(148,163,184,.14);
-  text-align:center;
-  font-size:.9rem;
   color:#8ea3be;
+  font-size:.9rem;
 }
 
 @media(max-width:900px){
-  .grid{ grid-template-columns:1fr; }
-}
-
-@media(max-width:640px){
-  .page{
-    width:min(100% - 24px,1180px);
-    padding-top:84px;
-  }
+  .grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
@@ -217,145 +177,103 @@ a{
 
   <section class="hero">
     <span class="hero-label">HRTOS Module</span>
-
     <h1>内存管理（Memory Management）</h1>
 
     <p>
-      内存管理模块定义RTOS中所有内存相关机制，
-      包括分配、碎片控制、内存保护与栈管理，
-      为系统运行提供稳定、可控的资源基础。
+      内存管理模块统一管理RTOS运行期间的所有内存资源，
+      构建任务运行、通信与调度所需的基础内存体系。
     </p>
 
     <div class="meta">
-      <span class="tag">4 个主题</span>
-<span class="tag">内核内存</span>
-<span class="tag">RTOS核心</span>
+      <span class="tag">Allocation</span>
+      <span class="tag">Fragmentation</span>
+      <span class="tag">Stack</span>
+      <span class="tag">Isolation</span>
     </div>
   </section>
 
-<section class="section">
-  <h2>模块能力</h2>
-  <p>
-    HRTOS内存管理模块负责系统运行期间所有内存资源的生命周期管理，
-    包括任务栈空间分配、动态内存申请、固定块管理、碎片控制、
-    内存访问保护以及运行时安全检测。
-  </p>
-
-  <p>
-    在实时系统中，内存管理不仅影响系统可用资源，
-    还直接决定任务调度稳定性、上下文切换安全性与异常恢复能力。
-  </p>
-</section>
-
   <section class="section">
-    <h2>概述</h2>
+    <h2>模块定位</h2>
     <p>
-      内存管理是HRTOS内核的重要组成部分，负责控制系统中所有动态与静态内存资源的分配、
-      访问与保护策略，确保实时系统的确定性与可靠性。
+      内存管理负责系统运行期间的内存分配、回收与使用约束，
+      为任务调度、通信机制与中断执行提供稳定的资源基础。
     </p>
   </section>
 
   <section class="section">
     <h2>核心子模块</h2>
-    <p>进入具体机制，了解内存子系统的完整结构与实现方式。</p>
+    <p>进入不同内存子系统，查看具体实现机制。</p>
 
     <div class="grid">
 
       <a class="card" href="allocation.html">
-        <h3>内存分配（Allocation）</h3>
-        <p>管理动态/静态内存分配策略与内存池机制。</p>
+        <h3>内存分配</h3>
+        <p>动态/静态内存池与分配策略管理。</p>
         <span>进入 →</span>
       </a>
 
       <a class="card" href="fragmentation.html">
-        <h3>内存碎片（Fragmentation）</h3>
-        <p>分析碎片产生原因及系统级优化策略。</p>
+        <h3>内存碎片</h3>
+        <p>碎片产生机制与系统级优化策略。</p>
         <span>进入 →</span>
       </a>
 
       <a class="card" href="memory-protection.html">
-        <h3>内存保护（Protection）</h3>
-        <p>基于MPU/MMU实现任务隔离与访问控制。</p>
+        <h3>任务隔离机制</h3>
+        <p>基于软件策略实现任务访问边界控制。</p>
         <span>进入 →</span>
       </a>
 
       <a class="card" href="stack-management.html">
-        <h3>栈管理（Stack Management）</h3>
-        <p>任务栈分配、监控与溢出保护机制。</p>
+        <h3>栈管理</h3>
+        <p>任务栈分配与运行时安全检测机制。</p>
         <span>进入 →</span>
       </a>
 
     </div>
   </section>
-<section class="section">
-  <h2>相关接口</h2>
-  <p>
-    内存管理模块提供一组核心接口，
-    用于完成内存初始化、内存申请释放、栈监控与保护配置。
-  </p>
 
-  <div class="grid">
-
-    <a class="card" href="/docs/api/memory/index.html">
-      <h3>内存接口总览</h3>
-      <p>查看内存模块全部API与数据结构定义。</p>
-      <span>进入 →</span>
-    </a>
-
-    <a class="card" href="/docs/api/memory/os_task_stack.html">
-      <h3>任务栈接口</h3>
-      <p>任务栈初始化、使用率统计与溢出检测接口。</p>
-      <span>进入 →</span>
-    </a>
-
-  </div>
-</section>
   <section class="section">
-    <h2>相关模块</h2>
+    <h2>系统特性</h2>
+    <p>
+      HRTOS内存系统采用静态优先设计，避免不可控动态行为，
+      强调确定性、可预测性与低开销运行模型。
+    </p>
 
     <div class="grid">
 
-      <a class="card" href="/docs/modules/task/index.html">
-        <h3>任务管理</h3>
-        <p>任务调度与执行依赖内存与栈资源管理。</p>
-        <span>查看 →</span>
-      </a>
+      <div class="card">
+        <h3>确定性分配</h3>
+        <p>避免随机分配带来的不可预测延迟。</p>
+      </div>
 
-      <a class="card" href="/docs/modules/ipc/index.html">
-        <h3>进程间通信</h3>
-        <p>通信机制依赖内存缓冲与数据结构管理。</p>
-        <span>查看 →</span>
-      </a>
+      <div class="card">
+        <h3>任务级隔离</h3>
+        <p>通过软件边界限制任务访问范围。</p>
+      </div>
 
+      <div class="card">
+        <h3>低碎片设计</h3>
+        <p>减少长期运行后的内存碎片累积。</p>
+      </div>
 
-      <a class="card" href="/system-view/index.html">
-  <h3>系统视图</h3>
-  <p>了解内存资源在系统运行过程中的整体位置与作用。</p>
-  <span>查看 →</span>
-</a>
-
-<a class="card" href="/docs/architecture/kernel/index.html">
-  <h3>内核机制</h3>
-  <p>查看调度器、中断与内核资源管理机制。</p>
-  <span>查看 →</span>
-</a>
+      <div class="card">
+        <h3>栈安全检测</h3>
+        <p>运行时检测SP边界异常并触发保护机制。</p>
+      </div>
 
     </div>
   </section>
-<section class="section">
-  <h2>学习路径</h2>
-  <p>
-    推荐按以下顺序学习HRTOS内存系统：
-    内存分配 → 内存碎片 → 栈管理 → 内存保护。
-  </p>
 
-  <p>
-    完成内存模块后，可继续学习任务管理与IPC通信机制，
-    进一步理解实时系统中的资源协同关系。
-  </p>
-</section>
+  <section class="section">
+    <h2>学习路径</h2>
+    <p>
+      建议学习顺序：内存分配 → 碎片控制 → 栈管理 → 任务隔离。
+    </p>
+  </section>
+
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系.
+    © 2017–2026 HRTOS. Memory System Architecture.
   </footer>
 
 </main>

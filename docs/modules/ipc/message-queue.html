@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>消息队列（Message Queue） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS消息队列（Message Queue）用于任务间结构化数据传递，是一种支持阻塞与优先级调度的IPC机制。" />
+<meta name="description" content="HRTOS消息队列（Message Queue）用于任务间结构化数据传递，是基于环形缓冲区与阻塞唤醒机制实现的FIFO IPC通信机制。" />
 <link rel="canonical" href="https://hrtos.com/docs/modules/ipc/message-queue.html">
-<meta name="keywords" content="RTOS message queue, IPC queue, embedded system communication, real-time operating system, HRTOS, task communication, FIFO queue">
+
+<meta name="keywords" content="RTOS message queue, IPC queue, os_msgq, FIFO, embedded system, HRTOS">
 <meta name="robots" content="index, follow">
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -15,52 +16,23 @@
 :root {
   --bg: #0f172a;
   --surface: rgba(15, 23, 42, 0.72);
-  --surface-card: rgba(30, 41, 59, 0.72);
-  --surface-hover: rgba(30, 64, 175, 0.18);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.36);
   --text: #e2e8f0;
   --muted: #94a3b8;
   --accent: #38bdf8;
+  --border: rgba(148, 163, 184, 0.16);
   --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
   --radius: 10px;
   color-scheme: dark;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: "Segoe UI","Microsoft YaHei",sans-serif;
   line-height: 1.75;
-  position: relative;
-  overflow-x: hidden;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.14;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
 }
 
 .page {
@@ -69,57 +41,17 @@ a {
   padding: 96px 0 56px;
   display: grid;
   gap: 40px;
-  position: relative;
-  z-index: 1;
 }
 
-.breadcrumb {
-  font-size: 0.92rem;
-  color: var(--muted);
-}
+.breadcrumb { color: var(--muted); font-size: 0.92rem; }
+.breadcrumb a { color: #7dd3fc; }
 
-.breadcrumb a {
-  color: #7dd3fc;
-}
+.hero { display: grid; gap: 12px; }
 
-.breadcrumb a:hover {
-  color: var(--accent);
-}
+.hero h1 { margin: 0; font-size: clamp(2.2rem,5vw,3.2rem); }
+.hero p { margin: 0; color: var(--muted); }
 
-.hero {
-  display: grid;
-  gap: 16px;
-}
-
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 0.9rem;
-}
-
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  line-height: 1.1;
-  font-weight: 700;
-}
-
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-  font-size: 1rem;
-}
-
-.meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+.meta { display: flex; gap: 10px; flex-wrap: wrap; }
 
 .tag {
   padding: 6px 12px;
@@ -127,102 +59,57 @@ a {
   border-radius: 999px;
   font-size: 0.85rem;
   color: #bae6fd;
-  background: rgba(15,23,42,.42);
 }
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: 1fr 280px;
   gap: 28px;
-  align-items: start;
-}
-
-.content {
-  display: grid;
-  gap: 22px;
 }
 
 .section {
-  display: grid;
-  gap: 12px;
-  padding: 24px 22px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(30,41,59,.72),
-      rgba(15,23,42,.92)
-    );
+  padding: 22px;
+  background: rgba(30,41,59,.72);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
 
 .section h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.3;
+  margin: 0 0 10px;
   border-left: 3px solid var(--accent);
   padding-left: 12px;
 }
 
-.section p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.96rem;
-}
-
-.note {
-  padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
-  font-size: 0.94rem;
-}
+.section p { margin: 0; color: var(--muted); }
 
 .code {
   background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
+  padding: 14px;
   border-radius: 8px;
-  padding: 16px;
-
-  font-family: Consolas, monospace;
-  font-size: 0.92rem;
   color: #7dd3fc;
-  line-height: 1.65;
-
+  font-family: Consolas, monospace;
   white-space: pre-wrap;
-  word-break: break-word;
-  overflow-wrap: anywhere;
 }
 
-.sidebar {
-  display: grid;
-  gap: 16px;
+.note {
+  border-left: 3px solid var(--accent);
+  padding: 12px 14px;
+  background: rgba(15,23,42,.6);
+  color: var(--muted);
+  border-radius: 6px;
 }
+
+.sidebar { display: grid; gap: 16px; }
 
 .box {
-  padding: 18px 16px;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: rgba(30,41,59,.56);
 }
 
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 1rem;
-}
-
-.box a {
-  display: block;
-  color: #7dd3fc;
-  font-size: 0.92rem;
-  margin-bottom: 8px;
-}
-
-.box a:hover {
-  color: var(--accent);
-}
+.box a { display: block; color: #7dd3fc; margin-bottom: 6px; }
 
 .footer {
   text-align: center;
@@ -233,300 +120,180 @@ a {
 }
 
 @media (max-width: 980px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .page {
-    width: min(100% - 24px, 1180px);
-    padding-top: 84px;
-  }
-
-  .section {
-    padding: 20px 18px;
-  }
-
-  .hero p,
-  .section p {
-    font-size: 0.95rem;
-  }
+  .layout { grid-template-columns: 1fr; }
 }
 </style>
 </head>
 
-<body data-header="docs">
+<body>
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/ipc/index.html">IPC</a> /
-    <span>Message Queue</span>
-  </nav>
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/modules/index.html">Modules</a> /
+  <a href="/docs/modules/ipc/index.html">IPC</a> /
+  <span>Message Queue</span>
+</nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
-
-    <h1>消息队列（Message Queue）</h1>
-
-    <p>
-      消息队列用于任务之间的结构化数据传递，支持阻塞机制与先进先出调度，是RTOS中最常用的IPC通信方式之一。
-    </p>
-
-    <div class="meta">
-      <span class="tag">IPC通信</span>
-      <span class="tag">数据传递</span>
-      <span class="tag">调度机制</span>
-    </div>
-  </section>
-<section class="section" id="graph">
-  <h2>IPC体系中的位置</h2>
+<section class="hero">
+  <h1>消息队列（Message Queue）</h1>
   <p>
-    Message Queue 属于 HRTOS IPC 数据通信类机制，
-    位于 Event（状态同步）与 Mailbox（轻量消息传递）之上，
-    提供更完整的数据缓冲与任务解耦能力。
-  </p>
-</section>
-  <div class="layout">
-
-    <div class="content">
-<section class="section" id="definition">
-  <h2>定义</h2>
-  <p>
-    消息队列（Message Queue）是RTOS中用于任务间结构化数据传递的IPC机制，
-    支持FIFO顺序访问与阻塞/非阻塞通信模式。
-  </p>
-</section>
-      <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          消息队列（Message Queue）是一种支持多任务异步通信的机制，
-          允许任务以消息为单位进行数据交换，避免直接共享内存带来的风险。
-        </p>
-        <p>
-          消息队列是实时操作系统中功能最强大的IPC通信机制之一，支持结构化数据传递、异步通信、任务解耦与缓冲管理。与邮箱相比，消息队列支持变长消息、更复杂的调度策略（如优先级队列）、更大的数据容量。消息队列通过先进先出（FIFO）或优先级顺序管理消息，确保消息按预期顺序传递。
-        </p>
-        <p>
-          消息队列的核心价值在于任务解耦与异步通信。发送任务无需等待接收任务处理即可继续执行，接收任务可在任意时间处理队列中的消息。这种解耦设计提高了系统的响应性与灵活性，特别适用于生产者-消费者模型、事件驱动架构、流水线处理等场景。消息队列还提供了缓冲能力，平滑生产者与消费者之间的速度差异。
-        </p>
-        <p>
-          消息队列支持固定长度与变长两种消息模式。固定长度消息具有确定性的内存布局与访问时间，适用于对实时性要求极高的场景。变长消息提供更大的灵活性，可传输不同大小的数据结构，适用于需要传递复杂数据的场景。HRTOS同时支持两种模式，开发者可根据应用需求选择合适的消息类型。
-        </p>
-      </section>
-<section class="section" id="use-cases">
-  <h2>典型应用场景</h2>
-  <p>
-    消息队列常用于任务间异步通信，例如：
-    传感器数据上报、驱动层事件传递、日志系统缓冲等。
-  </p>
-</section>
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          消息队列内部维护一个循环缓冲区，每条消息包含固定或变长数据。
-          发送任务写入消息，接收任务按FIFO或优先级读取消息。
-        </p>
-
-        <div class="note">
-          消息队列支持阻塞与非阻塞模式，可与调度器联动实现任务唤醒机制。
-        </div>
-        <p>
-          消息队列的内部实现依赖于消息队列控制块（Message Queue Control Block）与循环缓冲区。每个消息队列包含缓冲区指针、消息大小、队列容量、读写索引、等待队列等字段。对于固定长度消息，缓冲区按固定大小的槽分配，每个槽存储一条消息。对于变长消息，缓冲区通常采用链表或分块管理，每条消息包含长度字段与数据字段。
-        </p>
-        <p>
-          发送操作时，内核检查队列是否已满。如果队列未满，将消息复制到缓冲区的tail位置，更新tail索引（考虑环形回绕），检查是否有等待的接收任务，如果有则唤醒最高优先级的接收任务并触发调度。如果队列已满，根据配置策略决定行为：阻塞等待空槽、超时返回或丢弃新消息。对于变长消息，还需检查剩余缓冲区空间是否足够存储消息。
-        </p>
-        <p>
-          接收操作时，内核检查队列是否为空。如果队列未空，从缓冲区的head位置读取消息，更新head索引（考虑环形回绕），释放已读取的消息空间，检查是否有等待的发送任务，如果有则唤醒最高优先级的发送任务并触发调度。如果队列为空，根据配置策略决定行为：阻塞等待消息、超时返回或立即返回空值。
-        </p>
-        <p>
-          消息队列支持FIFO与优先级两种调度策略。FIFO策略按消息到达顺序传递，保证公平性。优先级策略根据消息优先级字段传递，高优先级消息优先处理。优先级队列通常使用堆或优先级队列数据结构实现，在O(log n)时间内找到最高优先级消息。HRTOS提供配置选项选择调度策略，开发者可根据应用需求选择合适的模式。
-        </p>
-      </section>
-<section class="section" id="features">
-  <h2>特性总结</h2>
-  <p>
-    FIFO顺序传递、支持阻塞机制、支持固定长度与变长消息、适用于任务间解耦通信。
-  </p>
-</section>
-      <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
-
-        <div class="code">
-os_msg_queue_init()   // 初始化消息队列
-os_msg_queue_send()   // 发送消息
-os_msg_queue_recv()   // 接收消息
-
-struct msg_queue {
-    void* buffer;
-    uint32_t msg_size;
-    uint32_t capacity;
-    uint32_t head;
-    uint32_t tail;
-};
-        </div>
-        <div class="note">
-  Implementation API:
-  <br>
-  <a href="/docs/modules/ipc/message-queue.html">os_msg_queue_init()</a><br>
-  <a href="/docs/modules/ipc/message-queue.html">os_msg_queue_send()</a><br>
-  <a href="/docs/modules/ipc/message-queue.html">os_msg_queue_recv()</a>
-</div>
-        <p>
-          os_msg_queue_init()用于初始化消息队列，参数包括消息队列控制块指针、缓冲区指针、消息大小、队列容量。该接口设置队列的缓冲区、配置消息大小与容量、初始化读写索引为0、配置调度策略（FIFO或优先级）。初始化操作必须在首次使用消息队列之前调用，未初始化的队列行为未定义。缓冲区通常由调用者分配，消息队列仅管理缓冲区的访问逻辑。
-        </p>
-        <p>
-          os_msg_queue_send()用于发送消息到队列，参数包括消息队列指针、消息数据指针、消息大小（变长消息）、消息优先级（优先级队列）、超时时间。超时时间为0时为非阻塞调用，立即返回发送结果；超时时间为-1时为永久阻塞，任务会一直等待直到有空槽；超时时间为正数时为限时阻塞，任务等待指定时间后超时返回。发送成功返回0，超时返回-1，错误返回-2。该接口在临界区中执行，确保缓冲区操作的原子性。
-        </p>
-        <p>
-          os_msg_queue_recv()用于从队列接收消息，参数包括消息队列指针、接收缓冲区指针、接收缓冲区大小、消息优先级指针（优先级队列）、超时时间。超时时间配置与发送接口相同。接收成功返回0，超时返回-1，错误返回-2。接收操作将队列中的消息复制到接收缓冲区，调用者需确保接收缓冲区足够大。该接口同样在临界区中执行。
-        </p>
-        <p>
-          msg_queue结构体定义了消息队列的核心属性。buffer字段指向消息缓冲区，可以是静态分配或动态分配的内存。msg_size字段存储固定消息的大小或变长消息的最大限制。capacity字段存储队列容量，即最大消息数量。head字段指向下一个读取位置，tail字段指向下一个写入位置。该结构体还可能包含调度策略标志、等待队列指针、统计信息等字段。
-        </p>
-      </section>
-
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <p>
-          发送任务将消息写入队列尾部，若队列已满则进入阻塞或失败返回；
-          接收任务从队列头部读取消息并触发处理逻辑。
-        </p>
-        <p>
-          完整的消息队列发送流程包括：任务调用os_msg_queue_send()接口，内核进入临界区；检查队列是否已满，如果队列未满则将消息复制到缓冲区的tail位置，更新tail索引（考虑环形回绕）；检查是否有等待的接收任务，如果有则唤醒最高优先级的接收任务并触发调度；退出临界区，发送操作完成。如果队列已满，根据超时配置决定行为：超时为0时立即返回错误，超时为正数时将当前任务插入发送等待队列并阻塞，超时为-1时永久阻塞等待。
-        </p>
-        <p>
-          完整的消息队列接收流程包括：任务调用os_msg_queue_recv()接口，内核进入临界区；检查队列是否为空，如果队列未空则从缓冲区的head位置读取消息，更新head索引（考虑环形回绕），释放已读取的消息空间；检查是否有等待的发送任务，如果有则唤醒最高优先级的发送任务并触发调度；退出临界区，接收操作完成。如果队列为空，根据超时配置决定行为：超时为0时立即返回错误，超时为正数时将当前任务插入接收等待队列并阻塞，超时为-1时永久阻塞等待。
-        </p>
-        <p>
-          在中断服务程序（ISR）中使用消息队列时，只能使用非阻塞模式（timeout=0）。ISR不能阻塞等待队列空槽，否则会导致系统死锁。如果ISR需要向任务发送消息，应使用消息队列的非阻塞发送模式：如果队列已满则丢弃消息或返回错误。这种设计确保了中断响应的实时性，同时实现了ISR与任务间的数据传递。
-        </p>
-      </section>
-      <section class="section" id="blocking">
-  <h2>阻塞与超时机制</h2>
-  <p>
-    当消息队列为空时，接收任务可进入阻塞等待；
-    当队列已满时，发送任务可选择阻塞、超时返回或立即失败。
-    该机制可与调度器联动，实现高效任务同步。
+    基于 os_msgq_t 的环形FIFO通信机制，用于任务间结构化数据传递，
+    支持阻塞/非阻塞模式与 ISR/Task 解耦。
   </p>
 
-  <div class="note">
-    常见模式：blocking / timeout / non-blocking。
+  <div class="meta">
+    <span class="tag">FIFO通信</span>
+    <span class="tag">环形缓冲区</span>
+    <span class="tag">阻塞唤醒</span>
   </div>
 </section>
-<section class="section" id="comparison">
-  <h2>与其他IPC机制对比</h2>
-  <p>
-    相比信号量，消息队列支持结构化数据传递；
-    相比互斥锁，它不用于资源独占，而用于数据通信。
-  </p>
+
+<section class="section">
+<h2>定义</h2>
+<p>
+Message Queue 是基于 buf/head/tail/count 构建的环形队列结构，
+用于任务间按字节单位传递数据。
+</p>
 </section>
-<section class="section" id="selection">
-  <h2>何时使用 Message Queue</h2>
-  <p>
-    当任务之间需要传递结构化数据、支持排队缓存或异步解耦时，
-    Message Queue 通常是更优选择。
-  </p>
 
-  <div class="code">
-Use Message Queue:
-- structured data transfer
-- async communication
-- producer / consumer model
+<div class="layout">
 
-Use Mailbox:
-- small fixed-size data
-- low latency communication
+<div class="content">
 
-Use Event:
-- state synchronization only
-  </div>
+<section class="section">
+<h2>核心接口</h2>
+<div class="code">
+void os_msgq_init(os_msgq_t *q, u8 *buf, u8 size);
+char os_msgq_send(os_msgq_t *q, u8 obj, u8 data, char nonblock);
+char os_msgq_recv(os_msgq_t *q, u8 obj, u8 *data, char nonblock);
+void os_msgq_clear(os_msgq_t *q);
+</div>
 </section>
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-          消息队列适用于复杂数据通信场景，例如驱动层与应用层之间的数据交互，
-          或多任务间事件流转。
-        </p>
-        <p>
-          消息队列与邮箱的选择是工程实践中的重要决策。消息队列支持变长数据、复杂调度策略、更大的数据容量，适用于需要传递结构化数据、支持任务解耦的场景。邮箱适用于固定大小的小数据高频通信，具有确定性的O(1)操作时间、固定的内存需求。如果需要传输变长数据或复杂的消息调度，应选择消息队列；如果通信数据量小且固定、对延迟敏感，应选择邮箱。
-        </p>
-        <p>
-          生产者-消费者模型是消息队列的经典应用场景。生产者任务生产数据后发送到消息队列，消费者任务从队列中获取数据并处理。通过使用消息队列，生产者与消费者完全解耦，可以以不同的速率运行，无需同步等待。这种设计广泛应用于数据采集、消息传递、流水线处理、事件驱动架构等场景。
-        </p>
-        <p>
-          消息队列的优先级调度是高级特性，适用于需要区分消息重要性的场景。高优先级消息（如紧急事件、控制命令）优先处理，低优先级消息（如日志、统计数据）延后处理。HRTOS支持基于消息优先级的调度策略，使用优先级队列数据结构实现。开发者可在发送消息时指定消息优先级，系统根据优先级顺序传递消息。
-        </p>
-        <ul>
-          <li>模块职责：消息队列管理负责结构化数据的异步传递，实现任务解耦、缓冲管理与调度策略</li>
-          <li>内部机制：基于消息队列控制块、循环缓冲区、读写索引、等待队列实现，支持FIFO与优先级调度</li>
-          <li>状态迁移：队列在EMPTY、PARTIAL、FULL状态间切换，由发送与接收操作驱动</li>
-          <li>调用流程：init → send → write/block → recv → read/block</li>
-          <li>资源管理：消息队列控制块为全局资源，缓冲区为共享资源需保护并发访问</li>
-          <li>工程案例：生产者-消费者模型、驱动层与应用层通信、事件驱动架构、日志系统缓冲</li>
-          <li>边界条件：队列容量、消息大小、环形回绕、超时时间、优先级范围</li>
-          <li>错误场景：队列溢出、消息丢失、缓冲区越界、ISR阻塞、死锁</li>
-          <li>异常处理：溢出检测、超时处理、边界检查、优先级验证</li>
-          <li>模块关系：与调度器模块协作阻塞唤醒任务，与中断模块协调ISR-Task通信</li>
-        </ul>
-        <p>
-          消息队列的性能优化是实时系统工程的重要环节。HRTOS采用循环缓冲区设计，避免数据移动开销，提供O(1)时间的FIFO发送与接收操作。对于优先级队列，系统使用堆或优先级队列数据结构，在O(log n)时间内找到最高优先级消息。缓冲区大小根据应用需求配置，通常为2的幂次方，便于环形回绕计算。对于多核SMP系统，消息队列操作使用原子指令或自旋锁保护，减少临界区持续时间。
-        </p>
-        <p>
-          对于功耗敏感的嵌入式系统，消息队列的使用会影响系统功耗管理。长时间阻塞等待队列空槽或消息的任务会阻止系统进入低功耗模式。HRTOS提供消息队列超时检测机制，当任务等待时间超过阈值时记录警告，指导开发者优化通信设计。系统还支持在发送或接收失败时主动让出CPU，允许系统进入低功耗模式，平衡实时性与功耗。
-        </p>
-      </section>
 
-    </div>
-
-    <aside class="sidebar">
-
-
-      <div class="box">
-  <h3>知识链路</h3>
-  <a href="/docs/modules/ipc/index.html">← IPC 模块首页</a>
-  <a href="/docs/modules/ipc/event.html">事件机制</a>
-  <a href="/docs/modules/ipc/mailbox.html">邮箱机制</a>
-  <a href="/docs/modules/ipc/semaphore.html">信号量</a>
+<section class="section">
+<h2>数据结构</h2>
+<div class="code">
+os_msgq_t {
+    u8 *buf;    // 环形缓冲区
+    u8 _size;   // 队列容量
+    u8 head;    // 读索引
+    u8 tail;    // 写索引
+    u8 count;   // 当前数据量
+}
 </div>
 
-      <div class="box">
-  <h3>目录导航</h3>
-  <a href="#definition">定义</a>
-  <a href="#overview">概述</a>
-  <a href="#use-cases">典型应用</a>
-  <a href="#mechanism">工作原理</a>
-  <a href="#interface">关键接口</a>
-  <a href="#blocking">阻塞机制</a>
-  <a href="#comparison">机制对比</a>
+<div class="note">
+所有操作均在 EA=0 临界区执行，保证中断安全。
+</div>
+</section>
+
+<section class="section">
+<h2>发送流程（os_msgq_send）</h2>
+<p>
+检查 count 是否达到 _size：
+</p>
+
+<div class="code">
+if(count == size) → WAIT_MSG_SEND
+else write tail → tail++ → count++
 </div>
 
-      <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/modules/ipc/event.html">事件机制</a>
-        <a href="/docs/modules/ipc/mailbox.html">邮箱机制</a>
-      </div>
+<p>
+发送成功后：
+唤醒 WAIT_MSG_RECV 等待任务
+</p>
+</section>
 
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/modules/ipc/index.html">IPC通信机制</a>
-      </div>
+<section class="section">
+<h2>接收流程（os_msgq_recv）</h2>
+<p>
+检查 count 是否为 0：
+</p>
 
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/ipc/index.html">IPC基础 → 内核通信机制</a>
-      </div>
+<div class="code">
+if(count == 0) → WAIT_MSG_RECV
+else read head → head++ → count--
+</div>
 
-    </aside>
+<p>
+接收成功后：
+唤醒 WAIT_MSG_SEND 等待任务
+</p>
+</section>
 
-  </div>
+<section class="section">
+<h2>阻塞机制</h2>
+<div class="code">
+nonblock = 1 → 直接返回
+nonblock = 0 → os_wait(WAIT_MSG_SEND / WAIT_MSG_RECV)
+</div>
 
-  <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
-  </footer>
+<div class="note">
+阻塞本质：任务挂入 OS_RES[obj].wait_mask 等待队列，由调度器唤醒。
+</div>
+</section>
+
+<section class="section">
+<h2>返回值</h2>
+<div class="code">
+1  成功
+0  阻塞/非阻塞失败
+-1 等待失败
+</div>
+</section>
+
+<section class="section">
+<h2>关键特性</h2>
+<p>
+• FIFO顺序通信<br>
+• 环形缓冲区 O(1)<br>
+• 支持阻塞/非阻塞<br>
+• ISR安全（EA保护）<br>
+• wait_mask 唤醒机制<br>
+• 多任务竞争访问
+</p>
+</section>
+
+<section class="section">
+<h2>典型用途</h2>
+<p>
+驱动数据传递、ISR上报任务、日志系统、生产者消费者模型。
+</p>
+</section>
+
+</div>
+
+<aside class="sidebar">
+
+<div class="box">
+<h3>相关接口</h3>
+<a href="#">os_msgq_init</a>
+<a href="#">os_msgq_send</a>
+<a href="#">os_msgq_recv</a>
+</div>
+
+<div class="box">
+<h3>模块关系</h3>
+<a href="/docs/modules/ipc/event.html">Event</a>
+<a href="/docs/modules/ipc/mailbox.html">Mailbox</a>
+</div>
+
+<div class="box">
+<h3>设计对比</h3>
+<a href="#">MQ = 队列结构</a>
+<a href="#">Mailbox = 单值</a>
+<a href="#">Event = 状态</a>
+</div>
+
+</aside>
+
+</div>
+
+<footer class="footer">
+© 2017–2026 HRTOS IPC Message Queue Module
+</footer>
 
 </main>
 
