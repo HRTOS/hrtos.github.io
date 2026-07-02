@@ -5,20 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>任务状态模型（Task State Model） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS任务状态模型说明，包括就绪、运行、阻塞、挂起与终止状态及其转换机制。" />
+<meta name="description" content="HRTOS任务状态模型说明，基于TCB与调度器实现，包括就绪、运行、等待、挂起与删除状态及其转换机制。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root{
   --bg:#0f172a;
-  --surface:rgba(15,23,42,.72);
-  --surface-hover:rgba(30,41,59,.92);
-  --border:rgba(148,163,184,.18);
-  --border-strong:rgba(56,189,248,.38);
   --text:#e2e8f0;
   --muted:#94a3b8;
   --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
   --shadow:0 20px 48px rgba(2,6,23,.34);
   --radius:10px;
   color-scheme:dark;
@@ -30,54 +27,30 @@ body{
   margin:0;
   background:var(--bg);
   color:var(--text);
-  font-family:"Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
   line-height:1.75;
-  overflow-x:hidden;
 }
 
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background-image:
-    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
-  background-size:28px 28px;
-  opacity:.14;
-}
-
-a{
-  color:inherit;
-  text-decoration:none;
-}
+a{color:inherit;text-decoration:none}
 
 .page{
   width:min(1180px, calc(100% - 40px));
   margin:0 auto;
   padding:96px 0 56px;
-  position:relative;
-  z-index:1;
+  display:grid;
+  gap:36px;
 }
 
 /* breadcrumb */
 .breadcrumb{
-  margin-bottom:28px;
   font-size:.92rem;
   color:var(--muted);
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
-}
-
-.breadcrumb a:hover{
-  color:var(--accent);
-}
-
 /* hero */
 .hero{
-  margin-bottom:56px;
+  display:grid;
+  gap:10px;
 }
 
 .hero-label{
@@ -88,155 +61,96 @@ a{
   color:#bae6fd;
   font-size:.9rem;
   margin-bottom:18px;
+  justify-self:start;
 }
 
 .hero h1{
-  margin:0 0 16px;
-  font-size:clamp(2.3rem,5vw,4rem);
-  line-height:1.08;
-  font-weight:700;
+  margin:0;
+  font-size:clamp(2.2rem,5vw,3.6rem);
+  line-height:1.1;
 }
 
 .hero p{
   margin:0;
-  max-width:760px;
+  max-width:820px;
   color:var(--muted);
-  font-size:1rem;
 }
 
-.meta{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:18px;
-}
-
-.tag{
-  padding:6px 12px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  background:rgba(15,23,42,.45);
-  color:#bae6fd;
-  font-size:.84rem;
-}
-
-/* layout */
-.layout{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 280px;
-  gap:28px;
-  align-items:start;
-}
-
-.content{
-  display:grid;
-  gap:22px;
-}
-
+/* section */
 .section{
   display:grid;
   gap:12px;
-  padding:24px 22px;
-  background:linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
 }
 
 .section h2{
   margin:0;
   font-size:1.35rem;
-  line-height:1.3;
   border-left:3px solid var(--accent);
-  padding-left:12px;
+  padding-left:10px;
 }
 
 .section p{
   margin:0;
   color:var(--muted);
-  font-size:0.96rem;
 }
 
-.note{
-  padding:14px 16px;
-  border-left:3px solid var(--accent);
-  border-radius:8px;
-  background:rgba(15,23,42,.6);
-  color:var(--muted);
-  font-size:0.94rem;
-}
-
+/* code */
 .code{
   background:#020617;
   border:1px solid rgba(56,189,248,.14);
   border-radius:8px;
-  padding:16px;
-  overflow-x:auto;
+  padding:14px;
   font-family:Consolas,monospace;
-  font-size:0.92rem;
+  font-size:.92rem;
   color:#7dd3fc;
-  line-height:1.65;
-
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space:pre-wrap;
 }
 
-/* sidebar */
+/* note */
+.note{
+  padding:12px 14px;
+  border-left:3px solid var(--accent);
+  background:rgba(15,23,42,.6);
+  color:var(--muted);
+  border-radius:6px;
+  font-size:.92rem;
+}
+
+.layout{
+  display:grid;
+  grid-template-columns:1fr 280px;
+  gap:26px;
+}
+
 .sidebar{
   display:grid;
-  gap:16px;
+  gap:14px;
 }
 
 .box{
-  padding:18px 16px;
+  padding:16px;
   border:1px solid var(--border);
   border-radius:var(--radius);
-  background:rgba(30,41,59,.56);
-}
-
-.box h3{
-  margin:0 0 12px;
-  font-size:1rem;
+  background:rgba(30,41,59,.5);
 }
 
 .box a{
   display:block;
   color:#7dd3fc;
-  font-size:0.92rem;
-  margin-bottom:8px;
+  font-size:.9rem;
+  margin-bottom:6px;
 }
 
-.box a:hover{
-  color:var(--accent);
-}
-
-/* footer */
 .footer{
   text-align:center;
   padding-top:18px;
   border-top:1px solid rgba(148,163,184,.14);
-  color:#8ea3be;
-  font-size:0.9rem;
+  color:var(--muted);
+  font-size:.9rem;
 }
 
-@media(max-width:980px){
+@media(max-width:900px){
   .layout{grid-template-columns:1fr;}
-}
-
-@media(max-width:640px){
-  .page{
-    width:min(100% - 24px,1180px);
-    padding-top:84px;
-  }
-
-  .section{
-    padding:20px 18px;
-  }
-
-  .hero p,
-  .section p{
-    font-size:0.95rem;
-  }
 }
 </style>
 </head>
@@ -253,20 +167,11 @@ a{
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
-
+    <span class="hero-label">HRTOS Task</span>
     <h1>任务状态模型（Task State Model）</h1>
-
     <p>
-      任务状态模型用于描述任务在运行过程中所处的不同状态及其转换关系，
-      是调度器与任务管理的核心抽象结构。
+      任务状态模型基于TCB与调度器实现，用于描述任务在运行、就绪与等待之间的切换逻辑。
     </p>
-
-    <div class="meta">
-      <span class="tag">Task</span>
-      <span class="tag">State Machine</span>
-      <span class="tag">RTOS Core</span>
-    </div>
   </section>
 
   <div class="layout">
@@ -276,151 +181,148 @@ a{
       <section class="section" id="overview">
         <h2>概述</h2>
         <p>
-  任务状态模型是一种有限状态机（FSM），
-  用于描述任务在实时系统中的执行路径与转换规则，
-  是调度器行为分析的基础结构。
-</p>
-        <p>
-          任务状态模型用于描述任务在运行过程中所处的不同状态及其转换关系，是调度器与任务管理的核心抽象结构。在实时系统中，任务状态转换必须具有确定性与可预测性，确保任务响应时间满足实时性要求。HRTOS采用有限状态机模型管理任务状态，每个状态具有明确的进入条件与退出条件，状态转换由调度器、中断系统与同步原语共同驱动。
+          
+          在HRTOS中，任务状态由OS_TCB.state字段维护，
+          并由调度器、中断与同步对象共同驱动。
         </p>
         <p>
-          任务状态模型包括五个基本状态：就绪态（READY）、运行态（RUNNING）、阻塞态（BLOCKED）、挂起态（SUSPENDED）与终止态（TERMINATED）。就绪态表示任务已准备好执行，等待调度器分配CPU。运行态表示任务正在CPU上执行。阻塞态表示任务等待资源或事件，暂时无法执行。挂起态表示任务被显式暂停，暂停执行。终止态表示任务已完成执行或被终止，等待资源回收。
+
         </p>
-        <p>
-          状态转换规则定义了任务在不同状态之间的合法转换路径。就绪态可转换为运行态（调度器选择）或挂起态（显式挂起）。运行态可转换为就绪态（时间片到期、优先级抢占）、阻塞态（资源等待）或终止态（任务完成）。阻塞态可转换为就绪态（资源可用）或终止态（强制终止）。挂起态可转换为就绪态（显式恢复）。终止态是最终状态，不再转换。这些规则确保了状态转换的合法性与一致性。
+      </section>
+
+      <section class="section" id="model">
+        <h2>状态定义（基于实现）</h2>
+
+        <div class="code">
+#define READY     0   // 就绪
+#define WAIT      1   // 等待（资源/事件）
+#define RUNNING   2   // 运行
+#define SUSPEND   3   // 挂起
+#define DEAD      4   // 删除
+
+这些状态直接对应OS_TCB.state字段，不存在额外“虚拟状态层”。
+WAIT不是单一阻塞，而是统一资源等待态（信号量 / mutex / msg / event）。
+        </div>
+
+       
+
+        
+ <p>
+          
         </p>
       </section>
 
       <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-        <p>
-          状态转换由调度器、中断以及系统调用共同触发。
-          任务根据资源可用性与调度策略在不同状态之间切换。
-        </p>
+        <h2>状态判定机制</h2>
 
-        <div class="note">
-          状态模型是实现抢占式调度与实时响应的基础。
+        <p></p>
+
+        <div class="code">
+核心接口：os_task_get_state()
+
+0 = DEAD（未激活 / 已删除）
+1 = RUNNING（当前执行任务）
+2 = READY（就绪队列中）
+3 = SUSPEND（显式挂起）
+4 = PREEMPTED（最近被切出任务）
+
+实际逻辑来源于三类判断：
+1）OS_PROCESS_OK：任务是否存在
+2）OS_CURRENT_TASK / OS_PREV_TASK：运行态追踪
+3）资源位图 / 快速任务标志：判断等待或挂起
         </div>
-        <p>
-          状态转换的内部实现依赖于任务控制块的状态字段与转换规则。每个任务控制块包含一个状态字段，存储当前任务状态。状态转换操作在临界区中执行，确保原子性。系统维护状态转换表，定义所有合法的状态转换路径。当尝试非法状态转换时，系统触发错误或忽略操作，确保状态一致性。
-        </p>
-        <p>
-          调度器驱动的状态转换包括就绪态到运行态的转换。调度器从就绪队列中选择最高优先级任务，将任务状态从READY转换为RUNNING。同时，将当前运行任务状态从RUNNING转换为READY（时间片到期）或BLOCKED（优先级抢占）。这种转换在调度决策时触发，是抢占式调度的核心机制。
-        </p>
-        <p>
-          中断驱动的状态转换包括阻塞态到就绪态的转换。中断服务程序（ISR）通过唤醒机制将等待资源的任务从BLOCKED转换为READY。典型场景包括：定时器到期唤醒延时任务、UART接收中断唤醒等待数据的任务、GPIO中断唤醒等待事件的任务。这种转换确保了中断响应的实时性，是实时系统的关键特性。
-        </p>
-        <p>
-          系统调用驱动的状态转换包括运行态到阻塞态的转换。任务调用阻塞接口（如os_sem_wait、os_mutex_lock）时，内核检查资源是否可用。如果资源不可用，将任务状态从RUNNING转换为BLOCKED，将任务插入资源的等待队列，触发调度器选择下一个任务执行。这种转换由任务主动发起，是同步原语的核心机制。
-        </p>
+
+
+        
+      </section>
+
+      <section class="section" id="transition">
+        <h2>状态转换模型</h2>
+
+        <div class="code">
+READY  → RUNNING   (调度器选择)
+RUNNING → READY    (时间片 / 抢占)
+RUNNING → WAIT     (资源等待)
+WAIT   → READY     (资源释放/中断唤醒)
+RUNNING → SUSPEND  (主动挂起)
+ANY    → DEAD      (删除)
+
+所有转换必须在临界区内完成，避免调度竞争与状态错乱。
+        </div>
+
+       
+      </section>
+
+      <section class="section" id="wait">
+        <h2>等待体系（WAIT扩展）</h2>
+
+        <div class="code">
+WAIT_DELAY
+WAIT_SEM
+WAIT_MUTEX
+WAIT_MSG_SEND
+WAIT_MSG_RECV
+WAIT_EVENT
+WAIT_MAILBOX
+
+WAIT态不是单一阻塞，而是统一等待模型，由OS_RESOURCE.wait_mask管理。
+        </div>
+
+       
       </section>
 
       <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
+        <h2>关键接口</h2>
 
         <div class="code">
 os_task_suspend()
 os_task_resume()
 os_task_block()
 os_task_unblock()
+os_task_get_state(id)
 
-enum task_state {
-    READY,
-    RUNNING,
-    BLOCKED,
-    SUSPENDED,
-    TERMINATED
-};
+suspend/resume：控制生命周期
+block/unblock：资源驱动调度
+get_state：状态查询与调试接口
         </div>
-        <div class="note">
-  相关 API 文档：
-  <br><br>
-  <a href="/docs/modules/task/lifecycle.html">os_task_suspend()</a><br>
-  <a href="/docs/modules/task/lifecycle.html">os_task_resume()</a><br>
-  <a href="/docs/modules/task/lifecycle.html">os_task_block()</a><br>
-  <a href="/docs/modules/task/lifecycle.html">os_task_unblock()</a>
-</div>
+
         <p>
-          os_task_suspend()用于挂起任务，参数包括任务ID。该接口将任务状态从READY或RUNNING转换为SUSPENDED，从就绪队列中移除任务，暂停任务执行。挂起成功返回0，失败返回错误码。该接口在临界区中执行，确保状态转换的原子性。
-        </p>
-        <p>
-          os_task_resume()用于恢复任务，参数包括任务ID。该接口将任务状态从SUSPENDED转换为READY，将任务插入就绪队列，恢复任务执行。恢复成功返回0，失败返回错误码。该接口与os_task_suspend()配合使用，实现任务的暂停与恢复。
-        </p>
-        <p>
-          os_task_block()用于阻塞任务，参数包括任务ID与阻塞原因。该接口将任务状态从RUNNING转换为BLOCKED，将任务插入资源的等待队列，触发调度器选择下一个任务执行。阻塞成功返回0，失败返回错误码。该接口通常由同步原语内部调用，开发者无需直接调用。
-        </p>
-        <p>
-          os_task_unblock()用于唤醒任务，参数包括任务ID。该接口将任务状态从BLOCKED转换为READY，将任务从等待队列移除并插入就绪队列。如果被唤醒任务优先级高于当前运行任务，触发抢占调度。唤醒成功返回0，失败返回错误码。该接口通常由中断服务程序或同步原语内部调用。
-        </p>
-        <p>
-          task_state枚举定义了任务的所有可能状态。READY表示任务就绪，等待CPU分配。RUNNING表示任务正在CPU上执行。BLOCKED表示任务等待资源或事件。SUSPENDED表示任务被挂起，暂停执行。TERMINATED表示任务已终止，等待资源回收。该枚举是任务状态机的基础，确保状态转换的合法性。
+          
         </p>
       </section>
 
       <section class="section" id="flow">
         <h2>运行流程</h2>
-        <p>
-  任务从创建开始进入 READY 状态，
-  在调度器选择后进入 RUNNING 状态执行。
-  在运行过程中，可能因资源等待进入 BLOCKED，
-  或被更高优先级任务抢占返回 READY。
-  任务执行完成后进入 TERMINATED 状态。
-</p>
 
-<div class="code">
-CREATE
-  ↓
-READY
-  ↓ (调度器选择)
-RUNNING
- ↙        ↘
-BLOCKED   READY (抢占)
-  ↓
-READY
-  ↓
-TERMINATED
-</div>
+        <div class="code">
+CREATE → READY → RUNNING
+              ↓
+           WAIT / READY
+              ↓
+           DEAD
+
+状态流转由调度器 + 中断 + 资源系统共同驱动，不存在独立状态线程。
+        </div>
+
         <p>
-          完整的状态转换流程包括：任务创建，状态从CREATED转换为READY；调度器从就绪队列中选择任务，状态从READY转换为RUNNING；任务执行，可能因资源等待转换为BLOCKED，因时间片到期或优先级抢占转换为READY；资源可用，状态从BLOCKED转换为READY；任务完成或被终止，状态转换为TERMINATED；系统回收任务资源，任务生命周期结束。每个状态转换都有明确的触发条件与转换规则。
-        </p>
-        <p>
-          抢占式调度的状态转换流程包括：高优先级任务进入就绪状态；调度器检测到更高优先级任务就绪；内核进入临界区，禁用中断；将当前运行任务状态从RUNNING转换为READY；将高优先级任务状态从READY转换为RUNNING；保存当前任务上下文，加载目标任务上下文；退出临界区，跳转到目标任务执行。整个过程在微秒级完成，确保实时性。
-        </p>
-        <p>
-          阻塞到唤醒的状态转换流程包括：任务调用阻塞接口，状态从RUNNING转换为BLOCKED；任务插入资源的等待队列；调度器选择下一个任务执行；资源释放或事件触发；内核从等待队列中取出任务；将任务状态从BLOCKED转换为READY；将任务插入就绪队列；如果被唤醒任务优先级高于当前运行任务，触发抢占调度。这种机制确保了任务等待资源时的公平性与实时性。
+          
         </p>
       </section>
 
       <section class="section" id="extension">
-        <h2>扩展说明</h2>
-        <p>
-  状态模型直接影响系统的实时性分析能力，
-  包括任务响应时间、调度确定性以及系统可预测性。
-  在复杂系统中，状态设计不合理会导致优先级反转或调度饥饿问题。
-</p>
-        <p>
-          状态模型是实时性分析的基础。通过分析任务状态转换路径，系统可计算任务响应时间、调度延迟等关键指标。HRTOS提供状态转换时间测量工具，实时监控任务从就绪到运行的切换延迟，从阻塞到就绪的唤醒延迟。这些测量数据帮助开发者优化系统配置，满足实时性要求。
-        </p>
-        <p>
-          状态模型还影响系统的可预测性。确定性状态转换确保任务行为可预测，避免意外状态转换导致的系统不稳定。HRTOS采用严格的状态转换规则，禁止非法状态转换。系统还提供状态转换日志功能，记录所有状态转换事件，帮助开发者调试状态相关问题。
-        </p>
+        <h2>设计说明</h2>
+
+        
+
         <ul>
-          <li>模块职责：任务状态模型管理负责控制任务状态转换，确保状态一致性与合法性</li>
-          <li>内部机制：基于有限状态机、状态转换规则、临界区保护、状态转换表实现，支持原子性状态转换</li>
-          <li>状态迁移：任务在READY、RUNNING、BLOCKED、SUSPENDED、TERMINATED状态间转换</li>
-          <li>调用流程：state_check → transition_validate → state_update → queue_update → schedule_trigger</li>
-          <li>资源管理：状态字段为任务控制块私有资源，就绪队列为共享资源需保护并发访问</li>
-          <li>工程案例：汽车电子ECU、工业控制系统、医疗设备控制器、航空航天系统</li>
-          <li>边界条件：状态转换规则、优先级范围、队列容量、临界区执行时间</li>
-          <li>错误场景：非法状态转换、状态不一致、死锁、任务饥饿、状态转换失败</li>
-          <li>异常处理：状态回滚、错误日志、告警机制、系统重启、降级处理</li>
-          <li>模块关系：与调度器模块协作触发状态转换，与同步模块协调阻塞与唤醒</li>
+          <li>状态最小化：减少调度判断成本</li>
+          <li>资源驱动等待：统一WAIT模型</li>
+          <li>TCB直接控制：避免中间抽象层</li>
+          <li>中断可恢复性：WAIT → READY可由ISR触发</li>
         </ul>
-        <p>
-          状态模型的性能优化是实时系统工程的重要环节。HRTOS采用优化的状态转换机制，减少状态切换开销。系统支持快速状态检查，在常数时间内验证状态转换合法性。对于多核SMP系统，每个核心独立维护任务队列，避免核心间竞争。这些优化确保了状态模型的高效性，满足实时系统的性能要求。
-        </p>
-        <p>
-          对于功耗敏感的嵌入式系统，状态模型的使用会影响系统功耗管理。频繁的状态转换可能导致系统功耗增加。HRTOS提供智能功耗管理机制，在系统空闲时挂起非关键任务，减少状态转换频率。系统还支持任务级功耗配置，允许开发者根据任务重要性选择功耗策略，平衡实时性与功耗。
+<p>
+          HRTOS采用“轻状态模型”，避免复杂多状态爆炸，
+          所有复杂行为由WAIT资源体系实现，而不是扩展状态数量。
         </p>
       </section>
 
@@ -429,28 +331,19 @@ TERMINATED
     <aside class="sidebar">
 
       <div class="box">
-        <h3>目录导航</h3>
+        <h3>目录</h3>
         <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
+        <a href="#model">状态定义</a>
+        <a href="#mechanism">状态判定</a>
+        <a href="#transition">状态转换</a>
+        <a href="#interface">接口</a>
       </div>
 
       <div class="box">
-        <h3>相关页面</h3>
+        <h3>相关模块</h3>
+        <a href="/docs/modules/scheduler/index.html">调度器</a>
         <a href="/docs/modules/task/lifecycle.html">任务生命周期</a>
-        <a href="/docs/modules/task/context-switch.html">上下文切换</a>
-        <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
-      </div>
-
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/modules/task/index.html">Task</a>
-      </div>
-
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/task/index.html">Task → 状态机制</a>
+        <a href="/docs/modules/ipc/index.html">IPC</a>
       </div>
 
     </aside>
@@ -458,7 +351,7 @@ TERMINATED
   </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的工程级文档体系。
+    © 2017–2026 HRTOS. Embedded RTOS documentation.
   </footer>
 
 </main>

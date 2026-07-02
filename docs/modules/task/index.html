@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>Task Module | HRTOS Module Documentation</title>
-<meta name="description" content="HRTOS任务模块文档，涵盖任务生命周期、状态模型、优先级与上下文切换等核心任务管理机制。" />
+<meta name="description" content="HRTOS任务模块文档，包含任务生命周期、状态模型、优先级调度与上下文切换机制。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -60,25 +60,16 @@ a{
   z-index:1;
 }
 
-/* breadcrumb */
 .breadcrumb{
   margin-bottom:28px;
   font-size:.92rem;
   color:var(--muted);
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
-}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
 
-.breadcrumb a:hover{
-  color:var(--accent);
-}
-
-/* hero */
-.hero{
-  margin-bottom:56px;
-}
+.hero{ margin-bottom:56px; }
 
 .hero-label{
   display:inline-block;
@@ -120,10 +111,7 @@ a{
   font-size:.84rem;
 }
 
-/* section */
-.section{
-  margin-bottom:56px;
-}
+.section{ margin-bottom:56px; }
 
 .section h2{
   margin:0 0 12px;
@@ -136,14 +124,12 @@ a{
   color:var(--muted);
 }
 
-/* grid */
 .grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
   gap:20px;
 }
 
-/* card */
 .card{
   display:grid;
   gap:12px;
@@ -155,7 +141,7 @@ a{
   box-shadow:var(--shadow);
   transition:.22s ease;
   white-space: pre-wrap;
-word-break: break-word;
+  word-break: break-word;
 }
 
 .card:hover{
@@ -184,7 +170,6 @@ word-break: break-word;
   font-weight:600;
 }
 
-/* footer */
 .footer{
   padding-top:24px;
   border-top:1px solid rgba(148,163,184,.14);
@@ -222,53 +207,44 @@ word-break: break-word;
     <h1>Task 任务模块</h1>
 
     <p>
-      Task模块是HRTOS的核心执行单元体系，
-      负责管理任务生命周期、状态流转、优先级调度与上下文切换机制，
-      构成实时系统运行的基础结构。
+      Task模块是HRTOS核心执行单元，用于管理任务生命周期、状态流转、优先级调度以及上下文切换，
+      是实时系统运行的基础执行体系。
     </p>
 
     <div class="meta">
       <span class="tag">4 Topics</span>
       <span class="tag">Kernel Core</span>
-      <span class="tag">RTOS Task System</span>
+      <span class="tag">Task System</span>
     </div>
   </section>
 
   <section class="section">
     <h2>核心内容</h2>
-    <p>任务模块包含任务管理的完整生命周期与执行机制。</p>
+    <p>覆盖任务从创建到运行结束的完整管理机制。</p>
 
     <div class="grid">
 
       <a class="card" href="lifecycle.html">
         <h3>任务生命周期</h3>
-        <p>
-          描述任务从创建到终止的完整状态流转模型。
-        </p>
+        <p>任务从创建、就绪、运行到终止的完整状态过程。</p>
         <span>进入 →</span>
       </a>
 
       <a class="card" href="state-model.html">
         <h3>任务状态模型</h3>
-        <p>
-          定义任务在系统中的状态集合与转换机制。
-        </p>
+        <p>定义任务在系统中的状态集合及其转换规则。</p>
         <span>进入 →</span>
       </a>
 
       <a class="card" href="priority.html">
         <h3>任务优先级</h3>
-        <p>
-          控制任务调度顺序与抢占行为的核心参数体系。
-        </p>
+        <p>决定任务调度顺序与抢占行为的核心参数体系。</p>
         <span>进入 →</span>
       </a>
 
       <a class="card" href="context-switch.html">
         <h3>上下文切换</h3>
-        <p>
-          描述任务执行状态保存与恢复的底层机制。
-        </p>
+        <p>保存与恢复任务运行状态的底层执行机制。</p>
         <span>进入 →</span>
       </a>
 
@@ -282,36 +258,23 @@ word-break: break-word;
 
       <a class="card" href="/docs/modules/scheduler/index.html">
         <h3>Scheduler</h3>
-        <p>任务调度与CPU分配策略核心模块。</p>
+        <p>负责CPU调度与任务分配的核心模块。</p>
         <span>查看 →</span>
       </a>
 
       <a class="card" href="/docs/modules/ipc/index.html">
         <h3>IPC Communication</h3>
-        <p>任务间通信与同步机制。</p>
+        <p>实现任务间通信与同步机制。</p>
         <span>查看 →</span>
       </a>
 
     </div>
   </section>
-  <section class="section">
-  <h2>模块关系</h2>
-  <p>Task模块与Scheduler模块共同构成调度体系核心。</p>
 
-  <div class="grid">
-    <a class="card" href="/docs/modules/scheduler/index.html">
-      Scheduler → 调度核心
-    </a>
 
-    <a class="card" href="/docs/modules/task/index.html">
-      Task → 执行单元
-    </a>
-  </div>
-</section>
 
-  
   <footer class="footer">
-    © 2017–2026 HRTOS. Documentation for embedded real-time systems.
+    © 2017–2026 HRTOS. Embedded real-time system documentation.
   </footer>
 
 </main>
