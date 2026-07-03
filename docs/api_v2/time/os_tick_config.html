@@ -1,0 +1,266 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_tick_config | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_tick_config，用于配置系统定时器时间片长度与时间片数量，是系统调度核心初始化接口。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_tick_config</h1>
+  <div class="meta">所属模块：系统配置 | 类型：定时器配置函数</div>
+
+  <div class="section">
+    <h2>API Metadata</h2>
+    <div class="api-meta" data-nest="1">
+      <div>函数ID：os_tick_config</div>
+      <div>模块：system</div>
+      <div>类型：tick configuration</div>
+      <div>嵌套深度：1</div>
+    </div>
+  </div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+
+    <p>
+      os_tick_config 用于配置系统定时器的时间片参数，包括时间片数量与单个时间片长度。
+    </p>
+
+    <p>
+      该函数是系统调度器初始化的重要接口，用于建立基础的 tick 中断节拍机制。
+    </p>
+
+    <p>
+      配置完成后，系统将基于 tick_count 进行任务调度与时间管理。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+
+    <div class="code">
+char os_tick_config(u8 slice_count, u16 tick_value);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>slice_count</td>
+        <td>时间片数量（系统调度周期）</td>
+      </tr>
+
+      <tr>
+        <td>tick_value</td>
+        <td>单个时间片对应的计数值（定时器重装值）</td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+
+    <p>
+      0 表示配置成功，-1 表示参数非法或配置失败。
+    </p>
+
+  </div>
+
+  <!-- 源码 -->
+  <div class="section">
+    <h2>源码实现</h2>
+
+    <div class="code">
+char os_tick_config(u8 slice_count, u16 tick_value)
+{
+    if(tick_value == 0)
+    {
+        return -1;
+    }
+
+    OS_TICK_COUNT_H = 0;
+    OS_TICK_COUNT_L = 0;
+
+    OS_TIME_ONCE = slice_count;
+
+    tick_value = 65535 - tick_value;
+    tick_value++;
+
+    if(tick_value <= 1000)
+    {
+        return -1;
+    }
+    else
+    {
+        OS_T0_TH0 = tick_value >> 8;
+        OS_T0_TL0 = tick_value & 0xff;
+    }
+
+    return 0;
+}
+    </div>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void system_init()
+{
+    if(os_tick_config(10, 5000) == 0)
+    {
+        // 定时器配置成功
+    }
+}
+    </div>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      tick_value 不能为 0，且必须保证大于系统最小计时精度，否则配置失败。
+      该函数通常在系统初始化阶段调用。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="os_ms_to_tick.html">毫秒转Tick</a>
+      <a href="os_sec_to_tick.html">秒转Tick</a>
+      <a href="../scheduler/os_schedule.html">调度核心</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_data_to_xdata | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_data_to_xdata，用于将内部数据写入8051 XDATA外部存储空间，是底层内存搬运接口之一。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_data_to_xdata</h1>
+  <div class="meta">所属模块：底层内存管理 | 类型：XDATA写入函数</div>
+
+  <div class="section">
+    <h2>API Metadata</h2>
+    <div class="api-meta" data-nest="1">
+      <div>函数ID：os_data_to_xdata</div>
+      <div>模块：memory</div>
+      <div>类型：data transfer / xdata write</div>
+      <div>嵌套深度：1</div>
+    </div>
+  </div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+
+    <p>
+      os_data_to_xdata 用于将内部数据搬运到8051的XDATA外部存储空间。
+    </p>
+
+    <p>
+      该接口通过寄存器间接寻址方式实现数据写入，是HRTOS底层上下文保存与任务迁移的重要基础函数。
+    </p>
+
+    <p>
+      常用于任务上下文切换、堆栈保存以及高速任务数据迁移过程。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+
+    <div class="code">
+void os_data_to_xdata(u8 addr, u16 addr2);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>addr</td>
+        <td>源数据地址（内部寄存器/数据区索引）</td>
+      </tr>
+
+      <tr>
+        <td>addr2</td>
+        <td>XDATA目标地址（外部存储空间地址）</td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+
+    <p>无返回值。</p>
+
+  </div>
+
+  <!-- 源码 -->
+  <div class="section">
+    <h2>源码实现</h2>
+
+    <div class="code">
+void os_data_to_xdata(u8 addr, u16 addr2)
+{
+    u8 i;
+
+    i = IE;
+    EA = 0;
+
+    OS_HRTOS = addr;
+
+    __asm mov R1, OS_HRTOS
+
+    OS_HRTOS = addr2 & 0xff;
+    DPH = addr2 >> 8;
+    DPL = OS_HRTOS;
+
+    __asm MOV A, @R1
+    __asm MOVX @DPTR, A
+
+    IE = i;
+}
+    </div>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void demo_xdata_write()
+{
+    os_data_to_xdata(5, 0x1200);
+}
+    </div>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      该函数涉及中断关闭与寄存器操作，执行期间不可被打断，否则可能导致数据写入错误。
+      仅用于内核级数据搬运，不建议在应用层频繁调用。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="os_data_from_xdata.html">XDATA读取函数</a>
+      <a href="../task/os_task_set_priority.html">任务上下文迁移</a>
+      <a href="../scheduler/os_schedule.html">调度机制</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

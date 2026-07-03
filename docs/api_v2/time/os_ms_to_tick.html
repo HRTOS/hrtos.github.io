@@ -1,0 +1,242 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_ms_to_tick | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_ms_to_tick，将毫秒转换为系统Tick时间片，用于延时与调度时间换算。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_ms_to_tick</h1>
+  <div class="meta">所属模块：时间管理 | 类型：时间换算函数</div>
+
+  <div class="section">
+    <h2>API Metadata</h2>
+    <div class="api-meta" data-nest="1">
+      <div>函数ID：os_ms_to_tick</div>
+      <div>模块：time</div>
+      <div>类型：ms to tick conversion</div>
+      <div>嵌套深度：1</div>
+    </div>
+  </div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+    <p>
+      os_ms_to_tick 用于将毫秒时间转换为系统 Tick 数，用于任务延时和调度计算。
+    </p>
+
+    <p>
+      该函数会根据当前系统定时器计数值计算单个 Tick 的实际毫秒长度，从而完成动态换算。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+    <div class="code">
+u16 os_ms_to_tick(u16 ms);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>ms</td>
+        <td>输入的毫秒时间</td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+    <p>返回对应的 Tick 数（向上取整）。</p>
+  </div>
+
+  <!-- 源码 -->
+  <div class="section">
+    <h2>源码实现</h2>
+
+    <div class="code">
+u16 os_ms_to_tick(u16 ms)
+{
+    u16 tick_time_us;
+    u16 tick_value;
+    u16 tick_ms;
+
+    tick_value = OS_T0_TH0;
+    tick_value = tick_value << 8;
+    tick_value += OS_T0_TL0;
+
+    tick_time_us = 65536 - tick_value;
+    tick_ms = tick_time_us / 1000;
+
+    if(tick_ms == 0)
+    {
+        tick_ms = 1;
+    }
+
+    return (ms + tick_ms - 1) / tick_ms;
+}
+    </div>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void delay_task()
+{
+    u16 tick = os_ms_to_tick(100);
+
+    os_task_delay(tick);
+}
+    </div>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      Tick 计算依赖定时器当前计数值，若系统时钟配置变化，该函数结果会相应变化。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="os_task_delay.html">任务延时</a>
+      <a href="os_tick_init.html">系统时钟初始化</a>
+      <a href="../scheduler/os_schedule.html">调度机制</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

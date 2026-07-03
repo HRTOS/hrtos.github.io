@@ -1,0 +1,250 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_task_suspend_self | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_task_suspend_self，用于当前任务主动挂起自身并触发调度，是任务让出CPU的基础机制之一。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_task_suspend_self</h1>
+  <div class="meta">所属模块：任务管理 | 类型：任务主动挂起函数</div>
+
+  <div class="section">
+    <h2>API Metadata</h2>
+    <div class="api-meta" data-nest="1">
+      <div>函数ID：os_task_suspend_self</div>
+      <div>模块：task</div>
+      <div>类型：self suspend / yield block</div>
+      <div>嵌套深度：1</div>
+    </div>
+  </div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+
+    <p>
+      os_task_suspend_self 用于当前正在运行的任务主动挂起自身。
+    </p>
+
+    <p>
+      挂起后任务将从调度队列中移除，并触发系统重新调度。
+    </p>
+
+    <p>
+      该接口常用于任务主动让出CPU资源，实现协作式调度或节拍控制。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+
+    <div class="code">
+void os_task_suspend_self(void);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <p>无参数。</p>
+
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+
+    <p>无返回值。</p>
+
+  </div>
+
+  <!-- 源码 -->
+  <div class="section">
+    <h2>源码实现</h2>
+
+    <div class="code">
+void os_task_suspend_self()
+{
+    u8 id;
+
+    id = OS_CURRENT_TASK;
+
+    if(id >= OS_PROCESS_MAX)
+    {
+        id %= OS_PROCESS_MAX;
+
+        if(id == 1)
+        {
+            OS_KUAI_PROCESS_B = 0;
+        }
+        else
+        {
+            OS_KUAI_PROCESS_A = 0;
+        }
+    }
+    else
+    {
+        OS_PROCESS_OK[id] &= 0xFE;
+    }
+
+    OS_SCHED_REASON = 1;
+    TF0 = 1;
+}
+    </div>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void task_demo()
+{
+    while(1)
+    {
+        // 执行一轮任务后主动让出CPU
+        os_task_suspend_self();
+    }
+}
+    </div>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      该函数会立即触发调度，当前任务将不再继续执行当前时间片。
+      若任务未被其他机制重新激活，将持续处于挂起状态。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="os_task_resume.html">任务恢复</a>
+      <a href="os_task_set_next.html">强制调度切换</a>
+      <a href="../scheduler/os_schedule.html">调度机制</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

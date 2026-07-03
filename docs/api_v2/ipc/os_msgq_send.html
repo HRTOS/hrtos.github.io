@@ -1,0 +1,309 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_msgq_send | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_msgq_send，用于向消息队列发送数据，支持阻塞与非阻塞模式，并自动唤醒接收任务。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8e2;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8e2;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_msgq_send</h1>
+  <div class="meta">所属模块：通信机制 | 类型：消息队列发送函数</div>
+
+  <div class="section">
+    <h2>API Metadata</h2>
+    <div class="api-meta" data-nest="2">
+      <div>函数ID：os_msgq_send</div>
+      <div>模块：msgq</div>
+      <div>类型：message queue send</div>
+      <div>嵌套深度：2</div>
+    </div>
+  </div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+    <p>
+      os_msgq_send 用于向消息队列写入数据，
+      支持阻塞与非阻塞模式。
+    </p>
+
+    <p>
+      当队列满时任务可进入等待状态；
+      当队列有空闲空间时立即写入，并唤醒接收任务。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+    <div class="code">
+char os_msgq_send(os_msgq_t *q, u8 obj, u8 _data, char nonblock);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>q</td>
+        <td>消息队列控制块指针</td>
+      </tr>
+
+      <tr>
+        <td>obj</td>
+        <td>资源ID（用于唤醒等待接收任务）</td>
+      </tr>
+
+      <tr>
+        <td>_data</td>
+        <td>待发送的数据</td>
+      </tr>
+
+      <tr>
+        <td>nonblock</td>
+        <td>非阻塞标志（1=不阻塞 / 0=阻塞）</td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+    <p>
+      1  - 发送成功<br>
+      0  - 非阻塞模式下队列已满或未就绪<br>
+      -1 - 等待失败或异常
+    </p>
+  </div>
+
+  <!-- 源码 -->
+  <div class="section">
+    <h2>源码实现</h2>
+
+    <div class="code">
+#include "hrtos_internal.h"
+
+/**
+ * 消息队列发送
+ * 支持阻塞 / 非阻塞 + 自动唤醒消费者
+ */
+
+char os_msgq_send(os_msgq_t *q, u8 obj, u8 _data, char nonblock)
+{
+    u8 i;
+    EA = 0;
+
+    /* -------------------------
+     * 队列满 → 进入等待
+     * ------------------------- */
+    if(q->count == q->_size)
+    {
+        EA = 1;
+
+        if(nonblock)
+        {
+            return 0;
+        }
+
+        i = os_wait(WAIT_MSG_SEND, obj, 0);
+    }
+
+    /* -------------------------
+     * 队列未满 → 写入数据
+     * ------------------------- */
+    if(q->count < q->_size)
+    {
+        q->buf[q->head] = _data;
+        q->head = (q->head + 1) % q->_size;
+        q->count++;
+
+        /* -------------------------
+         * 唤醒接收任务
+         * ------------------------- */
+        if(OS_RES[obj].wait_mask)
+        {
+            u8 next = OS_INVALID_ID;
+
+            for(i = 0; i < OS_MAX_TASK; i++)
+            {
+                if((OS_RES[obj].wait_mask & ((u16)1 << i)) &&
+                   (OS_TASK[i].wait_type == WAIT_MSG_RECV))
+                {
+                    next = i;
+                    break;
+                }
+            }
+
+            if(next != OS_INVALID_ID)
+            {
+                wake_task(next, WAIT_SIGNAL);
+            }
+        }
+
+        EA = 1;
+        return 1;
+    }
+
+    EA = 1;
+
+    return i;
+}
+    </div>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void producer_task()
+{
+    os_msgq_send(&q, 0, 0xAA, 0);
+}
+    </div>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      该函数是典型生产者-消费者模型实现，
+      在队列满时可能进入阻塞状态，由调度器唤醒。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="os_msgq_recv.html">消息队列接收</a>
+      <a href="os_msgq_clear.html">消息队列清空</a>
+      <a href="os_mailbox_send.html">邮箱发送机制</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

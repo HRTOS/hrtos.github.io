@@ -1,0 +1,377 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_task_set_priority | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_task_set_priority，用于动态修改任务优先级，并支持普通任务与高速任务之间的转换。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_task_set_priority</h1>
+  <div class="meta">所属模块：任务管理 | 类型：任务优先级控制函数</div>
+
+  <div class="section">
+    <h2>API Metadata</h2>
+    <div class="api-meta" data-nest="1">
+      <div>函数ID：os_task_set_priority</div>
+      <div>模块：task</div>
+      <div>类型：priority migration / task transform</div>
+      <div>嵌套深度：1</div>
+    </div>
+  </div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+
+    <p>
+      os_task_set_priority 用于动态修改任务优先级。
+    </p>
+
+    <p>
+      支持普通任务优先级调整，以及普通任务与高速任务之间的转换。
+    </p>
+
+    <p>
+      在优先级变化过程中，系统会自动搬运任务上下文并触发调度切换，确保调度一致性。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+
+    <div class="code">
+char os_task_set_priority(unsigned char id, unsigned char pr);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>id</td>
+        <td>任务ID（普通任务或高速任务）</td>
+      </tr>
+
+      <tr>
+        <td>pr</td>
+        <td>目标优先级（0-7 普通优先级，8 高优先级）</td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+
+    <p>
+      0：成功<br>
+      -1：失败<br>
+      >0：新任务ID（发生任务形态转换时）
+    </p>
+
+  </div>
+
+  <!-- 源码 -->
+  <div class="section">
+    <h2>源码实现</h2>
+
+    <div class="code">
+char os_task_set_priority(unsigned char id, unsigned char pr)
+{
+    char i,j,K,x;
+
+    K = IE;
+    EA = 0;
+
+    if((id > OS_PROCESS_MAX + 1) || (pr >= OS_SCHED_LEVEL_MAX - 1))
+    {
+        IE = K;
+        return -1;
+    }
+
+    if(OS_TASK_EVENT[id] & OS_EVENT_DELETE_REQ)
+    {
+        IE = K;
+        return -1;
+    }
+
+    if(id < OS_PROCESS_MAX)
+    {
+        if(OS_PROCESS_OK[id] == 0)
+        {
+            IE = K;
+            return -1;
+        }
+
+        if((OS_TASK[id].state != READY) && (OS_TASK[id].state != DEAD))
+        {
+            IE = K;
+            return -1;
+        }
+
+        if(id == 0)
+        {
+            IE = K;
+            return -1;
+        }
+    }
+
+    /* ===== 普通任务 ===== */
+    if(id < OS_PROCESS_MAX && pr < (OS_SCHED_LEVEL_MAX - 2))
+    {
+        OS_PROCESS_OK[id] &= 0xF1;
+        pr <<= 1;
+        OS_PROCESS_OK[id] |= pr;
+
+        OS_SCHED_REASON = 1;
+        IE = K;
+        TF0 = 1;
+
+        return 0;
+    }
+
+    /* ===== 普通 → 高速任务 ===== */
+    else if(id < OS_PROCESS_MAX && pr == (OS_SCHED_LEVEL_MAX - 2))
+    {
+        i = 0;
+
+        if(OS_KUAI_SP[0] == 0) i = 1;
+        else if(OS_KUAI_SP[1] == 0) i = 2;
+
+        if(i != 0)
+        {
+            i--;
+
+            if(OS_CURRENT_TASK == id)
+            {
+                OS_CURRENT_TASK = OS_PROCESS_MAX + i;
+            }
+
+            OS_HRTOS = OS_JINCHENG_SP[id];
+            OS_KUAI_SP[i] = OS_HRTOS;
+
+            OS_HRTOS = OS_JINCHENG_JILU_SP[id];
+            OS_SP_KUAI_BEI[i] = OS_HRTOS;
+
+            OS_HRTOS = (OS_PROCESS_OK[id] >> 4) & 7;
+            OS_SP_KUAI_BEI2[i] = OS_HRTOS;
+
+            for(j = 0; j < OS_KUAI_SHENDU; j++)
+            {
+                OS_FAST_CONTEXT[i][j] = OS_TASK_CONTEXT[id][j];
+            }
+
+            OS_SCHED_REASON = 1;
+            IE = K;
+            TF0 = 1;
+
+            return i + OS_PROCESS_MAX;
+        }
+
+        IE = K;
+        return -1;
+    }
+
+    /* ===== 高速 → 普通任务 ===== */
+    else if(id >= OS_PROCESS_MAX && pr < (OS_SCHED_LEVEL_MAX - 2))
+    {
+        for(i = 0; i < OS_PROCESS_MAX; i++)
+        {
+            if(OS_PROCESS_OK[i] == 0)
+            {
+                break;
+            }
+        }
+
+        if(i < OS_PROCESS_MAX)
+        {
+            if(OS_CURRENT_TASK == id)
+            {
+                OS_CURRENT_TASK = i;
+            }
+
+            id -= OS_PROCESS_MAX;
+
+            OS_PROCESS_OK[i] = (pr << 1);
+
+            OS_SCHED_REASON = 1;
+            IE = K;
+            TF0 = 1;
+
+            return i;
+        }
+
+        IE = K;
+        return -1;
+    }
+
+    /* ===== 高速 → 高速 ===== */
+    if((id >= OS_PROCESS_MAX) && (pr == (OS_SCHED_LEVEL_MAX - 2)))
+    {
+        IE = K;
+        return 0;
+    }
+
+    IE = K;
+    return -1;
+}
+    </div>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void demo_prio()
+{
+    os_task_set_priority(2, 5);
+}
+    </div>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      该函数涉及任务上下文搬运与调度切换，属于高风险内核接口。
+      不当使用可能导致任务状态不一致或调度异常。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="os_task_get_priority.html">任务优先级查询</a>
+      <a href="os_task_set_next.html">强制调度切换</a>
+      <a href="../scheduler/os_schedule.html">调度机制</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

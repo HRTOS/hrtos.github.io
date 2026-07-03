@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>统一等待模型 Wait | HRTOS API v2</title>
+<meta name="description" content="HRTOS Wait模块说明，提供统一阻塞与唤醒机制，整合任务等待、资源等待与事件等待，是调度系统的重要抽象层。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#f8fafc;
+  line-height:1.6;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:30px;
+  margin-bottom:10px;
+}
+
+.meta{
+  color:#64748b;
+  font-size:14px;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:20px;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+  text-align:left;
+}
+
+.notice{
+  background:#eff6ff;
+  border-left:4px solid #2563eb;
+  padding:12px;
+  border-radius:6px;
+  margin-top:20px;
+  font-size:14px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  color:#2563eb;
+  margin-top:5px;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 10px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <h1>统一等待模型（Wait Mechanism）</h1>
+
+  <div class="meta">
+    模块分类：调度抽象层 / IPC融合层 / API v2
+  </div>
+
+  <div class="notice">
+    ⚠ Wait 模块是 HRTOS 的高级抽象层，用于统一任务阻塞、资源等待与事件唤醒机制。
+  </div>
+
+  <!-- 概述 -->
+  <div class="section">
+    <h2>模块概述</h2>
+    <p>
+      Wait 模块提供统一的任务阻塞与唤醒机制，
+      用于协调任务在等待资源、事件或条件时的调度行为。
+    </p>
+
+    <p>
+      它将 semaphore、event、msgq 等不同等待行为抽象为统一模型，
+      提升系统一致性与可扩展性。
+    </p>
+  </div>
+
+  <!-- 核心能力 -->
+  <div class="section">
+    <h2>核心能力</h2>
+    <ul>
+      <li>统一任务阻塞机制</li>
+      <li>资源等待抽象（Resource Wait）</li>
+      <li>任务唤醒机制</li>
+      <li>与IPC/调度器协同工作</li>
+    </ul>
+  </div>
+
+  <!-- 等待机制 -->
+  <div class="section">
+    <h2>等待机制</h2>
+
+    <table class="table">
+      <tr>
+        <th>函数名</th>
+        <th>说明</th>
+        <th>详情</th>
+      </tr>
+
+      <tr>
+        <td>os_wait</td>
+        <td>进入等待状态（统一阻塞入口）</td>
+        <td><a href="os_wait.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>wake_task</td>
+        <td>唤醒等待任务</td>
+        <td><a href="wake_task.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_res_init</td>
+        <td>初始化等待资源结构</td>
+        <td><a href="os_res_init.html">查看</a></td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 系统定位 -->
+  <div class="section">
+    <h2>系统定位</h2>
+
+    <ul>
+      <li>IPC 是“资源提供者”</li>
+      <li>Wait 是“调度行为抽象层”</li>
+      <li>Task 是“执行实体”</li>
+    </ul>
+
+    <p>
+      Wait 模块位于 IPC 与 Task 之间，是系统调度逻辑的统一入口。
+    </p>
+  </div>
+
+  <!-- 扩展阅读 -->
+  <div class="section">
+    <h2>扩展阅读</h2>
+
+    <div class="link-box">
+      <a href="../task/index.html">任务系统</a>
+      <a href="../ipc/index.html">IPC通信系统</a>
+      <a href="../kernel/index.html">内核系统</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

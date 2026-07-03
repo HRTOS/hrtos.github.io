@@ -1,0 +1,271 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_uptime_ms | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_uptime_ms，用于获取系统累计运行时间（毫秒），基于32位tick计数换算得到运行时长。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_uptime_ms</h1>
+  <div class="meta">所属模块：系统时间 | 类型：运行时间统计函数</div>
+
+  <div class="section">
+    <h2>API Metadata</h2>
+    <div class="api-meta" data-nest="1">
+      <div>函数ID：os_uptime_ms</div>
+      <div>模块：time</div>
+      <div>类型：uptime statistics</div>
+      <div>嵌套深度：1</div>
+    </div>
+  </div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+
+    <p>
+      os_uptime_ms 用于获取系统从启动开始累计运行的毫秒时间。
+    </p>
+
+    <p>
+      该函数基于32位tick计数器，并结合当前定时器重装值进行精确换算，可用于系统运行时间统计与性能分析。
+    </p>
+
+    <p>
+      内部采用临界区保护，保证tick读取的一致性，并使用浮点运算减少换算误差。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+
+    <div class="code">
+u32 os_uptime_ms(void);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <p>无参数。</p>
+
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+
+    <p>返回系统累计运行时间（单位：毫秒）。</p>
+
+  </div>
+
+  <!-- 源码 -->
+  <div class="section">
+    <h2>源码实现</h2>
+
+    <div class="code">
+u32 os_uptime_ms()
+{
+    u16 tick_h;
+    u16 tick_l;
+    u16 tick_value;
+    u32 TS;
+
+    float tick_ms;
+    float total_tick;
+    float total_ms;
+
+    u16 result_h;
+    u16 result_l;
+
+    EA = 0;
+    tick_h = OS_TICK_COUNT_H;
+    tick_l = OS_TICK_COUNT_L;
+    EA = 1;
+
+    tick_value = OS_T0_TH0;
+    tick_value <<= 8;
+    tick_value += OS_T0_TL0;
+
+    tick_ms = (65536.0 - tick_value) / 1000.0;
+
+    if(tick_ms <= 0)
+    {
+        tick_ms = 1;
+    }
+
+    total_tick = ((float)tick_h * 65536.0) + tick_l;
+
+    total_ms = total_tick * tick_ms;
+
+    if(total_ms > 4294967295.0)
+    {
+        total_ms = 4294967295.0;
+    }
+
+    result_h = (u16)(total_ms / 65536.0);
+    result_l = (u16)(total_ms - ((float)result_h * 65536.0));
+
+    TS = result_h;
+    TS <<= 16;
+    TS += result_l;
+
+    return TS;
+}
+    </div>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void debug_uptime()
+{
+    u32 ms;
+
+    ms = os_uptime_ms();
+
+    // 用于日志或性能统计
+}
+    </div>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      该函数使用浮点运算提升精度，在资源受限系统中需注意执行开销。
+      tick计数依赖定时器配置，系统频率变化会影响结果精度。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="os_tick_get.html">获取Tick计数</a>
+      <a href="os_ms_to_tick.html">毫秒转换Tick</a>
+      <a href="../scheduler/os_schedule.html">调度机制</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

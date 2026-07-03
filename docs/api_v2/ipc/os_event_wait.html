@@ -1,0 +1,256 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_event_wait | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_event_wait，用于等待事件触发，支持超时机制，是事件阻塞型同步接口。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8e2;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8e2;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_event_wait</h1>
+  <div class="meta">所属模块：通信机制 | 类型：事件阻塞等待函数</div>
+
+  <div class="section">
+    <h2>API Metadata</h2>
+    <div class="api-meta" data-nest="2">
+      <div>函数ID：os_event_wait</div>
+      <div>模块：event</div>
+      <div>类型：event wait</div>
+      <div>嵌套深度：2</div>
+    </div>
+  </div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+    <p>
+      os_event_wait 用于等待指定事件被触发，
+      支持超时机制，是任务进入阻塞状态的核心同步接口。
+    </p>
+
+    <p>
+      如果事件已触发，则立即返回；否则任务进入等待状态，
+      由调度器在事件到达或超时后唤醒。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+    <div class="code">
+char os_event_wait(u8 obj, u16 tick);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>obj</td>
+        <td>事件ID（0 ~ OS_RESOURCE_MAX-1）</td>
+      </tr>
+
+      <tr>
+        <td>tick</td>
+        <td>超时时间（系统节拍）</td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+    <p>
+      1 - 事件已触发（立即返回）<br>
+      0 / -1 - 等待失败或超时（取决于os_wait返回值）
+    </p>
+  </div>
+
+  <!-- 源码 -->
+  <div class="section">
+    <h2>源码实现</h2>
+
+    <div class="code">
+#include "hrtos_internal.h"
+
+char os_event_wait(u8 obj, u16 tick)
+{
+    if(obj >= OS_RESOURCE_MAX)
+    {
+        return -1;
+    }
+
+    EA = 0;
+
+    /* 事件已触发：快速路径返回 */
+    if(OS_RES[obj].value)
+    {
+        return 1;
+    }
+
+    EA = 1;
+
+    /* 进入阻塞等待 */
+    return os_wait(WAIT_EVENT, obj, tick);
+}
+    </div>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void task()
+{
+    if(os_event_wait(2, 100) == 1)
+    {
+        // 事件触发处理
+    }
+}
+    </div>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      该函数具有“快速路径优化”，事件已触发时不会进入调度器。
+      未触发时将进入阻塞状态，由内核统一调度唤醒。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="os_event_write.html">事件广播写入</a>
+      <a href="os_event_clear.html">事件清除</a>
+      <a href="os_wait.html">任务等待机制</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

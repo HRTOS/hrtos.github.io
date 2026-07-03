@@ -1,0 +1,281 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_task_create | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_task_create，用于创建任务/进程并分配栈空间，是系统任务管理核心接口之一（实现已脱敏）。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{ font-size:26px; }
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{ margin-top:30px; }
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer{
+  padding:6px 0 0;
+  border-top:1px solid rgba(148,163,184,0.14);
+  color:#8ea3be;
+  font-size:0.95rem;
+  text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <h1>os_task_create</h1>
+  <div class="meta">所属模块：任务管理 | 类型：任务/进程创建函数（核心接口，已脱敏）</div>
+
+  <div class="section">
+    <h2>API Metadata</h2>
+    <div class="api-meta" data-nest="1">
+      <div>函数ID：os_task_create</div>
+      <div>模块：task</div>
+      <div>类型：task create / process register</div>
+      <div>嵌套深度：1</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>函数简介</h2>
+
+    <p>
+      :contentReference[oaicite:0]{index=0} 用于创建任务或进程，并为其分配运行栈空间、调度信息以及初始执行入口。
+    </p>
+
+    <p>
+      该函数是系统任务管理的核心接口之一，涉及内存分配、优先级校验、栈空间管理以及上下文初始化。
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>函数原型</h2>
+    <div class="code">
+char os_task_create(unsigned int addr,
+                    unsigned char id,
+                    unsigned char pr,
+                    unsigned char sd);
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>addr</td>
+        <td>任务入口函数地址</td>
+      </tr>
+
+      <tr>
+        <td>id</td>
+        <td>任务编号</td>
+      </tr>
+
+      <tr>
+        <td>pr</td>
+        <td>任务优先级（决定调度类别）</td>
+      </tr>
+
+      <tr>
+        <td>sd</td>
+        <td>任务栈深度需求</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>返回值</h2>
+    <p>1 表示创建成功，-1 表示失败（参数非法或资源不足）。</p>
+  </div>
+
+  <div class="section">
+    <h2>源码实现（已脱敏）</h2>
+
+    <div class="code">
+char os_task_create(unsigned int addr,
+                    unsigned char id,
+                    unsigned char pr,
+                    unsigned char sd)
+{
+    /* =========================
+     * 1. 系统状态检查
+     * =========================
+     * - 检查是否允许创建任务
+     * - 检查优先级范围是否合法
+     */
+
+    /* =========================
+     * 2. 参数合法性校验
+     * =========================
+     * - ID 是否越界
+     * - 地址是否为空
+     * - 是否重复注册
+     */
+
+    /* =========================
+     * 3. 栈需求计算
+     * =========================
+     * - 根据任务类型调整实际栈深度
+     * - 标准任务 / 高速任务分别处理
+     */
+
+    /* =========================
+     * 4. 内存分配（Slab/Bitmap）
+     * =========================
+     * - 在用户 RAM 区域中查找连续空闲块
+     * - 使用位图标记占用情况
+     * - 找到足够连续空间后锁定分配
+     */
+
+    /* =========================
+     * 5. 栈空间安全检查
+     * =========================
+     * - 更新系统最大栈使用水位
+     * - 检查是否越界
+     * - 严重越界触发系统复位机制
+     */
+
+    /* =========================
+     * 6. 任务控制块初始化
+     * =========================
+     * 标准任务：
+     * - 初始化 SP
+     * - 保存入口地址到栈
+     * - 设置优先级与状态
+     * - 完成上下文初始化
+     */
+
+    /* =========================
+     * 7. 高速任务初始化
+     * =========================
+     * - 分配快速任务索引
+     * - 初始化高速任务上下文
+     * - 设置启动标志
+     */
+
+    /* =========================
+     * 8. 中断任务绑定
+     * =========================
+     * - pr == ISR 级任务
+     * - pr == 嵌套中断任务
+     * - 仅保存入口地址，不分配完整栈
+     */
+
+    return 1;
+}
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>注意事项</h2>
+    <div class="note">
+      该函数涉及系统栈分配与调度结构初始化，属于内核核心接口。
+      实现已脱敏，具体内存管理逻辑不可依赖外部行为推测。
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="../scheduler/os_schedule.html">任务调度核心</a>
+      <a href="../memory/os_slab_alloc.html">内存分配机制</a>
+      <a href="../kernel/os_idle_task.html">Idle任务机制</a>
+    </div>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>IPC通信与同步 | HRTOS 系统文档</title>
+<meta name="description" content="HRTOS IPC模块说明，涵盖信号量、互斥锁、事件、消息队列与邮箱机制，是任务间通信与同步的核心基础。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#f8fafc;
+  line-height:1.6;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:28px;
+  margin-bottom:10px;
+}
+
+.meta{
+  color:#64748b;
+  font-size:14px;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:20px;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+  text-align:left;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  color:#2563eb;
+  margin-top:5px;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <h1>IPC通信与同步机制</h1>
+  <div class="meta">模块分类：系统核心 / 更新时间：2026-07-03</div>
+
+  <!-- 模块概述 -->
+  <div class="section">
+    <h2>模块概述</h2>
+    <p>
+      IPC（Inter-Process Communication）模块用于实现任务之间的数据传递与同步控制，
+      是 HRTOS 多任务系统的核心组成部分。
+    </p>
+
+    <p>
+      本模块提供信号量、互斥锁、事件、消息队列以及邮箱机制，
+      支持任务同步与异步通信。
+    </p>
+  </div>
+
+  <!-- 核心功能 -->
+  <div class="section">
+    <h2>核心功能</h2>
+    <ul>
+      <li>任务同步机制（Semaphore / Mutex / Event）</li>
+      <li>任务间通信机制（Message Queue / Mailbox）</li>
+      <li>资源共享保护（互斥访问）</li>
+      <li>事件驱动通知机制</li>
+    </ul>
+  </div>
+
+  <!-- 同步机制 -->
+  <div class="section">
+    <h2>同步机制（Synchronization）</h2>
+
+    <table class="table">
+      <tr>
+        <th>函数名</th>
+        <th>说明</th>
+        <th>详情</th>
+      </tr>
+
+      <tr>
+        <td>os_sem_init</td>
+        <td>初始化信号量</td>
+        <td><a href="os_sem_init.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_sem_wait</td>
+        <td>等待信号量</td>
+        <td><a href="os_sem_wait.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_sem_post</td>
+        <td>释放信号量</td>
+        <td><a href="os_sem_post.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_mutex_init</td>
+        <td>初始化互斥锁</td>
+        <td><a href="os_mutex_init.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_mutex_lock</td>
+        <td>加锁</td>
+        <td><a href="os_mutex_lock.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_mutex_unlock</td>
+        <td>解锁</td>
+        <td><a href="os_mutex_unlock.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_event_init</td>
+        <td>初始化事件</td>
+        <td><a href="os_event_init.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_event_wait</td>
+        <td>等待事件触发</td>
+        <td><a href="os_event_wait.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_event_write</td>
+        <td>写入事件标志</td>
+        <td><a href="os_event_write.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_event_query</td>
+        <td>查询事件状态</td>
+        <td><a href="os_event_query.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_event_delete</td>
+        <td>删除事件</td>
+        <td><a href="os_event_delete.html">查看</a></td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 通信机制 -->
+  <div class="section">
+    <h2>通信机制（Communication）</h2>
+
+    <table class="table">
+      <tr>
+        <th>函数名</th>
+        <th>说明</th>
+        <th>详情</th>
+      </tr>
+
+      <tr>
+        <td>os_msgq_init</td>
+        <td>初始化消息队列</td>
+        <td><a href="os_msgq_init.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_msgq_send</td>
+        <td>发送消息</td>
+        <td><a href="os_msgq_send.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_msgq_recv</td>
+        <td>接收消息</td>
+        <td><a href="os_msgq_recv.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_msgq_clear</td>
+        <td>清空消息队列</td>
+        <td><a href="os_msgq_clear.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_mailbox_init</td>
+        <td>初始化邮箱</td>
+        <td><a href="os_mailbox_init.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_mailbox_send</td>
+        <td>发送邮件</td>
+        <td><a href="os_mailbox_send.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_mailbox_receive</td>
+        <td>接收邮件</td>
+        <td><a href="os_mailbox_receive.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_mailbox_clear</td>
+        <td>清空邮箱</td>
+        <td><a href="os_mailbox_clear.html">查看</a></td>
+      </tr>
+
+      <tr>
+        <td>os_mailbox_query</td>
+        <td>查询邮箱状态</td>
+        <td><a href="os_mailbox_query.html">查看</a></td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 扩展阅读 -->
+  <div class="section">
+    <h2>扩展阅读</h2>
+
+    <div class="link-box">
+      <a href="../task/index.html">任务管理机制</a>
+      <a href="../interrupt/index.html">中断与ISR机制</a>
+      <a href="../kernel/index.html">内核调度机制</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

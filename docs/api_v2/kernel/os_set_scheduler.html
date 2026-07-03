@@ -1,0 +1,243 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_set_scheduler | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_set_scheduler，用于切换系统调度器模式（HRTOS / MYOS），是调度核心控制接口之一。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_set_scheduler</h1>
+  <div class="meta">所属模块：调度系统 | 类型：调度器切换函数</div>
+
+  <div class="section">
+    <h2>API Metadata</h2>
+    <div class="api-meta" data-nest="1">
+      <div>函数ID：os_set_scheduler</div>
+      <div>模块：scheduler</div>
+      <div>类型：scheduler switch</div>
+      <div>嵌套深度：1</div>
+    </div>
+  </div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+    <p>
+      :contentReference[oaicite:0]{index=0} 用于切换系统当前使用的调度器类型，
+      支持在 HRTOS 调度与 MYOS 兼容模式之间切换。
+    </p>
+
+    <p>
+      该接口主要用于系统级调度框架切换，使系统能够在不同调度实现之间动态切换运行模式。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+    <div class="code">
+char os_set_scheduler(unsigned char id);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>id</td>
+        <td>调度器选择：0 = MYOS，1 = HRTOS</td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+    <p>1 表示切换成功，-1 表示切换失败或状态不满足条件。</p>
+  </div>
+
+  <!-- 源码 -->
+  <div class="section">
+    <h2>源码实现</h2>
+
+    <div class="code">
+char os_set_scheduler(unsigned char id)
+{
+    if((id == 0) && (OS_INTERRUPT_T0 == 0))
+    {
+        OS_INTERRUPT_T0 = 1;
+        OS_TIME_ONCE_BACKUP = OS_TIME_ONCE;
+        return 1;
+    }
+    else if((id == 1) && (OS_INTERRUPT_T0 == 1))
+    {
+        OS_INTERRUPT_T0 = 0;
+        OS_TIME_XY = OS_TIME_XY + OS_TIME_ONCE_BACKUP - OS_TIME_ONCE;
+        OS_TIME_ONCE = OS_TIME_ONCE_BACKUP;
+        return 1;
+    }
+
+    return -1;
+}
+    </div>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void scheduler_demo(void)
+{
+    // 切换到 MYOS
+    os_set_scheduler(0);
+
+    // 切换到 HRTOS
+    os_set_scheduler(1);
+}
+    </div>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      调度器切换会影响系统中断与时间基准状态，应避免在任务运行关键阶段频繁切换，以免造成时间统计偏差或调度异常。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="../scheduler/os_scheduler_mode_switch.html">调度模式切换</a>
+      <a href="../scheduler/os_schedule.html">任务调度核心</a>
+      <a href="../time/os_time_tick.html">系统时间管理</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>

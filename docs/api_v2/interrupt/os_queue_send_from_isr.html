@@ -1,0 +1,258 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+
+<title>os_queue_send_from_isr | HRTOS API 文档</title>
+<meta name="description" content="HRTOS API：os_queue_send_from_isr，用于在中断上下文中向队列/邮箱写入数据，并触发调度。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+}
+
+.container{
+  max-width:1000px;
+  margin:80px auto 40px;
+  padding:20px;
+  background:#ffffff;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:26px;
+}
+
+.meta{
+  color:#64748b;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.section h2{
+  border-left:4px solid #2563eb;
+  padding-left:10px;
+  font-size:18px;
+}
+
+.code{
+  background:#0f172a;
+  color:#e2e8e2;
+  padding:15px;
+  border-radius:6px;
+  overflow:auto;
+  margin-top:10px;
+  font-size:14px;
+  white-space: pre-wrap;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.table th,.table td{
+  border:1px solid #e2e8f0;
+  padding:10px;
+}
+
+.note{
+  background:#fef9c3;
+  padding:10px;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.link-box{
+  background:#f1f5f9;
+  padding:15px;
+  border-radius:6px;
+  margin-top:30px;
+}
+
+.link-box a{
+  display:block;
+  margin-top:5px;
+  color:#2563eb;
+  text-decoration:none;
+}
+
+.link-box a:hover{
+  text-decoration:underline;
+}
+
+.site-footer {
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.95rem;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<script src="https://hrtos.com/header.js"></script>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <h1>os_queue_send_from_isr</h1>
+  <div class="meta">所属模块：通信机制 | 类型：中断安全队列函数</div>
+
+  <div class="section">
+    <h2>API Metadata</h2>
+    <div class="api-meta" data-nest="1">
+      <div>函数ID：os_queue_send_from_isr</div>
+      <div>模块：ipc</div>
+      <div>类型：isr safe queue send</div>
+      <div>嵌套深度：1</div>
+    </div>
+  </div>
+
+  <!-- 简介 -->
+  <div class="section">
+    <h2>函数简介</h2>
+    <p>
+      os_queue_send_from_isr 用于在中断上下文中向邮箱/队列写入1字节数据。
+      该函数是HRTOS中中断安全IPC机制的一部分。
+    </p>
+
+    <p>
+      该接口在ISR中快速投递数据，并触发调度请求。
+    </p>
+  </div>
+
+  <!-- 函数原型 -->
+  <div class="section">
+    <h2>函数原型</h2>
+    <div class="code">
+char os_queue_send_from_isr(u8 id, u8 value);
+    </div>
+  </div>
+
+  <!-- 参数说明 -->
+  <div class="section">
+    <h2>参数说明</h2>
+
+    <table class="table">
+      <tr>
+        <th>参数</th>
+        <th>说明</th>
+      </tr>
+
+      <tr>
+        <td>id</td>
+        <td>邮箱/队列ID（0 ~ OS_RESOURCE_MAX-1）</td>
+      </tr>
+
+      <tr>
+        <td>value</td>
+        <td>写入的数据（1字节）</td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- 返回值 -->
+  <div class="section">
+    <h2>返回值</h2>
+    <p>
+      1 - 成功<br>
+      -1 - 失败（ID非法）
+    </p>
+  </div>
+
+  <!-- 源码 -->
+  <div class="section">
+    <h2>源码实现</h2>
+
+    <div class="code">
+#include"hrtos_internal.h"
+
+/*
+ * 中断安全消息发送
+ *
+ * 功能:
+ * 在中断环境向邮箱写入1字节数据
+ */
+
+char os_queue_send_from_isr(u8 id, u8 value)
+{
+    if (id >= OS_RESOURCE_MAX)
+    {
+        return -1;
+    }
+
+    /* 写入邮箱 */
+    OS_RES[id].value = value;
+
+    /* 事件计数 */
+    OS_RES[id].pending_signal++;
+
+    /* 触发调度 */
+    OS_SCHED_REASON = 1;
+
+    return 1;
+}
+    </div>
+
+  </div>
+
+  <!-- 使用示例 -->
+  <div class="section">
+    <h2>使用示例</h2>
+
+    <div class="code">
+void UART_ISR(void)
+{
+    os_queue_send_from_isr(1, RX_DATA);
+
+    // 立即返回中断
+}
+    </div>
+
+  </div>
+
+  <!-- 注意事项 -->
+  <div class="section">
+    <h2>注意事项</h2>
+
+    <div class="note">
+      该函数必须在中断上下文调用，禁止在任务中使用 ISR 版本接口。
+    </div>
+
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section">
+    <h2>相关推荐</h2>
+
+    <div class="link-box">
+      <a href="os_queue_send.html">任务环境队列发送</a>
+      <a href="os_queue_recv.html">队列接收</a>
+      <a href="os_in_isr.html">中断环境判断</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-footer">
+<p>版权所有 © 2017 - 2026 HRTOS · 作者：谭舒</p>
+</footer>
+
+</body>
+</html>
