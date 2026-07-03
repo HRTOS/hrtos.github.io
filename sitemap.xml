@@ -156,6 +156,11 @@
     <priority>0.90</priority>
   </url>
   <url>
+    <loc>https://hrtos.com/docs/docs/</loc>
+    <lastmod>2026-07-03</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
     <loc>https://hrtos.com/docs/api/task/os_task.html</loc>
     <lastmod>2026-07-03</lastmod>
     <priority>0.85</priority>
@@ -544,11 +549,6 @@
     <loc>https://hrtos.com/docs/learn/real-time-systems.html</loc>
     <lastmod>2026-07-03</lastmod>
     <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://hrtos.com/docs/dev_manual_cn/docs.html</loc>
-    <lastmod>2026-07-03</lastmod>
-    <priority>0.60</priority>
   </url>
   <url>
     <loc>https://hrtos.com/docs/examples/03-communication-model/mutex.html</loc>
