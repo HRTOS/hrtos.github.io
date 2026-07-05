@@ -5,21 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>饥饿现象演示 | HRTOS 实验系统</title>
-<meta name="description" content="HRTOS 饥饿现象实验：演示低优先级任务因高优先级任务长期占用CPU而无法获得执行机会的问题。">
+<meta name="description" content="HRTOS 饥饿现象实验：展示高优先级任务长期占用CPU导致低优先级任务无法调度的调度失衡行为。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
-<script src="/header.js" defer></script>
+<script src="https://hrtos.com/header.js" defer></script>
 
 <style>
 :root{
   --bg:#0f172a;
-  --surface:rgba(15,23,42,.72);
   --border:rgba(148,163,184,.18);
   --accent:#38bdf8;
   --text:#e2e8f0;
   --muted:#94a3b8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:12px;
   color-scheme:dark;
 }
 
@@ -45,9 +42,7 @@ body{
 .breadcrumb a{ color:#7dd3fc; }
 .breadcrumb a:hover{ color:var(--accent); }
 
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero-tag{
   display:inline-block;
@@ -62,7 +57,6 @@ body{
 .hero h1{
   margin:0 0 14px;
   font-size:clamp(2.2rem,4.5vw,3.4rem);
-  line-height:1.1;
 }
 
 .hero p{
@@ -71,9 +65,7 @@ body{
   color:var(--muted);
 }
 
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
 .section h2{
   margin:0 0 10px;
@@ -166,55 +158,66 @@ body{
 </nav>
 
 <section class="hero">
-  <span class="hero-tag">Scheduling Engine</span>
-  <h1>饥饿现象演示（Starvation Demo）</h1>
+  <span class="hero-tag">Scheduling Behavior</span>
+  <h1>饥饿现象演示（Starvation）</h1>
   <p>
-    本实验用于演示调度系统中的任务饥饿问题：当高优先级任务持续占用CPU资源时，
-    低优先级任务可能长期无法获得执行机会，从而导致系统响应不公平。
+    饥饿现象是调度系统在缺乏公平性机制时产生的典型行为：
+    高优先级任务长期占用CPU，导致低优先级任务无法获得执行机会。
   </p>
 </section>
 
 <section class="section">
   <h2>机制定义</h2>
   <div class="block">
-    Starvation = 高优先级长期运行 + 低优先级持续等待 + CPU资源竞争失衡
+    Starvation = 高优先级持续运行 + Ready队列长期被覆盖 + 低优先级无法调度
   </div>
+
+  <p style="margin-top:14px;">
+相关API（API_V2）：
+<a href="/docs/api_v2/scheduler/os_switch.html">os_switch</a> ·
+<a href="/docs/api_v2/scheduler/os_dispatch_id.html">os_dispatch_id</a> ·
+<a href="/docs/api_v2/task/os_task_yield.html">os_task_yield</a> ·
+<a href="/docs/api_v2/time/os_delay.html">os_delay</a>
+</p>
 </section>
+
 <section class="section">
-  <h2>调度器核心模型</h2>
+  <h2>调度器模型</h2>
 
   <div class="block">
-    Scheduler = Ready队列管理 + 优先级选择 + 时间片控制 + 抢占机制
+    Scheduler = Ready队列选择 + 优先级决策 + 抢占机制 + 时间片策略（若启用）
   </div>
 
   <p>
-    HRTOS调度系统统一由调度器控制，不同调度策略（优先级 / RR / 实时）本质上只是调度器决策规则不同。
+    饥饿现象不是错误，而是调度策略在“无公平补偿机制”条件下的自然结果。
   </p>
 </section>
+
 <section class="section">
   <h2>触发条件</h2>
-  <p>任务饥饿通常由以下情况导致：</p>
 
   <div class="flow">
+
     <div class="step">
-      <h3>高优先级任务死循环</h3>
-      <p>高优先级任务持续运行且不主动让出CPU。</p>
+      <h3>高优先级任务持续运行</h3>
+      <p>任务进入循环执行且频繁占用CPU。</p>
     </div>
 
     <div class="step">
-      <h3>缺少时间片轮转</h3>
-      <p>系统未启用公平调度策略。</p>
+      <h3>缺乏时间片轮转机制</h3>
+      <p>调度器始终优先选择高优先级任务。</p>
     </div>
 
     <div class="step">
-      <h3>资源竞争过度</h3>
-      <p>低优先级任务始终无法获取共享资源。</p>
+      <h3>低优先级任务长期Ready</h3>
+      <p>任务被唤醒但无法获得执行窗口。</p>
     </div>
 
     <div class="step">
-      <h3>调度策略偏置</h3>
-      <p>系统过度偏向实时任务。</p>
+      <h3>无公平调度补偿</h3>
+      <p>系统未引入RR或aging机制。</p>
     </div>
+
   </div>
 </section>
 
@@ -222,30 +225,32 @@ body{
   <h2>执行流程</h2>
 
   <div class="flow">
+
     <div class="step">
-      <h3>1. 创建高低优先级任务</h3>
-      <p>初始化多个竞争任务。</p>
+      <h3>1. 创建任务</h3>
+      <p>初始化高优先级与低优先级任务。</p>
     </div>
 
     <div class="step">
-      <h3>2. 高优先级任务持续运行</h3>
-      <p>CPU始终被高优先级任务占用。</p>
+      <h3>2. 高优先级占用CPU</h3>
+      <p>任务持续运行，形成调度主导。</p>
     </div>
 
     <div class="step">
-      <h3>3. 低优先级任务等待</h3>
-      <p>任务处于Ready但无法调度。</p>
+      <h3>3. 低优先级进入Ready</h3>
+      <p>任务等待调度器分配CPU时间。</p>
     </div>
 
     <div class="step">
-      <h3>4. 统计等待时间</h3>
-      <p>记录任务被延迟的执行周期。</p>
+      <h3>4. 调度长期偏置</h3>
+      <p>Ready队列不断被高优先级任务抢占。</p>
     </div>
 
     <div class="step">
-      <h3>5. 验证饥饿结果</h3>
-      <p>观察低优先级任务长期未执行现象。</p>
+      <h3>5. 饥饿现象出现</h3>
+      <p>低优先级任务执行机会极低或消失。</p>
     </div>
+
   </div>
 </section>
 
@@ -254,50 +259,52 @@ body{
 
   <div class="code-box">
     <button class="copy-btn">Copy</button>
-    <pre><code>
-// HRTOS Starvation Demo
-#include &lt;HRTOS.H&gt;
-#include &lt;HRTOS_KERNEL.H&gt;
+<pre><code>
+#include &lt;hrtos.h&gt;
 
-void high_task(void)
+sbit LED_HIGH = P1^0;
+sbit LED_LOW  = P1^1;
+
+void task_high(void)
 {
     while(1)
     {
-        os_nop();
+        LED_HIGH = ~LED_HIGH;
+        os_task_yield();
+
+        u16 i = 20000;
+        while(i--);
     }
 }
 
-void low_task(void)
+void task_low(void)
 {
     while(1)
     {
-        os_wait1(10);
+        LED_LOW = 1;
+
+        os_delay(10);
+
+        LED_LOW = 0;
+
+        os_delay(10);
     }
 }
 
-void main(void)
+void hrtos_main(void)
 {
-    os_scheduling(1);
-
-    os_task((unsigned int)high_task, 0, 5, 0);
-    os_task((unsigned int)low_task, 1, 1, 0);
-
-    os_task_release(0);
-
-    while(1)
-    {
-        os_nop();
-    }
+    os_task_create((unsigned int)task_high, 1, 4, 5);
+    os_task_create((unsigned int)task_low,  2, 1, 5);
 }
-    </code></pre>
+</code></pre>
   </div>
 </section>
 
 <section class="section">
   <h2>系统意义</h2>
   <p>
-    饥饿问题揭示了实时调度系统中公平性与实时性之间的平衡关系。
-    在HRTOS中，可通过时间片调度、优先级继承和任务让出机制降低饥饿风险。
+    饥饿现象揭示了调度公平性与实时性之间的冲突。
+    工程中通常通过时间片轮转（RR）、优先级继承或aging机制进行缓解。
   </p>
 </section>
 
@@ -306,29 +313,19 @@ void main(void)
 
   <div class="flow">
 
-<div class="step">
-  <h3>调度器 API</h3>
-  <p>
-    <a href="/docs/api/scheduler/index.html">Scheduler API</a>
-  </p>
-</div>
-
-<div class="step">
-  <h3>调度器核心模型</h3>
-  <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduler Core Model</a></p>
-</div>
-    
-
-    
-
     <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
+      <h3>Scheduler API</h3>
+      <p><a href="/docs/api_v2/scheduler/os_switch.html">进入</a></p>
     </div>
 
     <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+      <h3>Scheduling Engine</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">进入</a></p>
+    </div>
+
+    <div class="step">
+      <h3>Task Module</h3>
+      <p><a href="/docs/modules/task/index.html">进入</a></p>
     </div>
 
   </div>
@@ -351,16 +348,11 @@ document.addEventListener("click", function (e) {
   const code = box.querySelector("code");
   if (!code) return;
 
-  const text = code.innerText;
+  navigator.clipboard.writeText(code.innerText);
 
-  navigator.clipboard.writeText(text).then(() => {
-    const old = btn.innerText;
-    btn.innerText = "已复制";
-
-    setTimeout(() => {
-      btn.innerText = old;
-    }, 1000);
-  });
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(()=>btn.innerText = old, 1200);
 });
 </script>
 

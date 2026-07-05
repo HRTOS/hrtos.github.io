@@ -5,21 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>实时调度演示 | HRTOS 实验系统</title>
-<meta name="description" content="实时调度实验：演示HRTOS中实时任务响应、调度周期与确定性执行机制。">
+<meta name="description" content="实时调度实验：基于HRTOS v2 Tick + WAIT机制的周期任务调度模型。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
-<script src="/header.js" defer></script>
+<script src="https://hrtos.com/header.js" defer></script>
 
 <style>
 :root{
   --bg:#0f172a;
-  --surface:rgba(15,23,42,.72);
   --border:rgba(148,163,184,.18);
   --accent:#38bdf8;
   --text:#e2e8f0;
   --muted:#94a3b8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:12px;
   color-scheme:dark;
 }
 
@@ -43,11 +40,8 @@ body{
   color:var(--muted);
 }
 .breadcrumb a{ color:#7dd3fc; }
-.breadcrumb a:hover{ color:var(--accent); }
 
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero-tag{
   display:inline-block;
@@ -62,7 +56,6 @@ body{
 .hero h1{
   margin:0 0 14px;
   font-size:clamp(2.2rem,4.5vw,3.4rem);
-  line-height:1.1;
 }
 
 .hero p{
@@ -71,32 +64,20 @@ body{
   color:var(--muted);
 }
 
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
-.section h2{
-  margin:0 0 10px;
-  font-size:1.4rem;
-}
+.section h2{ margin:0 0 10px; }
 
-.section p{
-  margin:0 0 20px;
-  color:var(--muted);
-}
+.section p{ color:var(--muted); }
 
 .block{
   padding:18px 20px;
   border-left:3px solid var(--accent);
   background:rgba(56,189,248,.06);
   border-radius:10px;
-  color:var(--muted);
 }
 
-.flow{
-  display:grid;
-  gap:14px;
-}
+.flow{ display:grid; gap:14px; }
 
 .step{
   padding:18px 20px;
@@ -105,24 +86,20 @@ body{
   background:rgba(30,41,59,.45);
 }
 
-.step h3{
-  margin:0 0 8px;
-  font-size:1.05rem;
-  color:#f8fafc;
-}
-
-.step p{
-  margin:0;
-  color:var(--muted);
-}
+.step h3{ margin:0 0 8px; }
 
 .code-box{
   position:relative;
-  padding:18px;
   border:1px solid var(--border);
   border-radius:12px;
-  background:rgba(15,23,42,.6);
-  overflow:auto;
+  background:rgba(15,23,42,.7);
+}
+
+.code-box pre{
+  margin:0;
+  padding:18px;
+  font-size:.9rem;
+  color:#cbd5e1;
 }
 
 .copy-btn{
@@ -136,11 +113,6 @@ body{
   color:#7dd3fc;
   border-radius:8px;
   cursor:pointer;
-}
-
-.copy-btn:hover{
-  color:#fff;
-  border-color:#38bdf8;
 }
 
 .footer{
@@ -167,135 +139,101 @@ body{
 
 <section class="hero">
   <span class="hero-tag">Real-Time Core</span>
-  <h1>实时调度演示（Real Time Demo）</h1>
+  <h1>实时调度演示</h1>
   <p>
-    Real Time Demo 用于展示HRTOS中的实时任务执行机制，
-    包括周期任务、截止时间控制以及确定性调度行为。
+    HRTOS v2 的实时性建立在 Tick 驱动 + WAIT恢复机制之上，
+    任务在周期性 WAIT/READY 切换中形成可预测执行节奏。
   </p>
 </section>
 
 <section class="section">
-  <h2>机制定义</h2>
+  <h2>实时模型定义（v2）</h2>
+
   <div class="block">
-    Real-Time Scheduling = 周期任务触发 + Deadline控制 + 确定性响应
+    Real-Time = Tick驱动 + WAIT周期阻塞 + READY窗口执行
   </div>
+
   <p style="margin-top:14px;">
-实时调度API：
-<a href="/docs/api/scheduler/os_switch.html">os_switch</a> ·
-<a href="/docs/api/scheduler/os_dispatch_id.html">os_dispatch_id</a> ·
-<a href="/docs/api/time/os_wait1.html">os_wait1</a> ·
-<a href="/docs/api/time/os_timer_length.html">os_timer_length</a>
+核心API：
+<a href="/docs/api_v2/time/os_delay.html">os_delay</a> ·
+<a href="/docs/api_v2/time/os_ms_to_tick.html">os_ms_to_tick</a> ·
+<a href="/docs/api_v2/time/os_tick_get.html">os_tick_get</a> ·
+<a href="/docs/api_v2/wait/os_wait.html">os_wait</a>
 </p>
 </section>
 
 <section class="section">
-  <h2>实时行为</h2>
-  <p>实时调度通常包含以下关键机制：</p>
+  <h2>执行行为</h2>
 
   <div class="flow">
+
     <div class="step">
-      <h3>周期任务创建</h3>
-      <p>系统按固定周期触发任务运行。</p>
+      <h3>RUNNING阶段</h3>
+      <p>任务占用CPU执行逻辑</p>
     </div>
 
     <div class="step">
-      <h3>截止时间约束</h3>
-      <p>任务必须在Deadline前完成执行。</p>
+      <h3>WAIT阶段</h3>
+      <p>调用 os_delay 进入阻塞队列</p>
     </div>
 
     <div class="step">
-      <h3>调度决策</h3>
-      <p>调度器根据实时规则选择执行任务。</p>
+      <h3>Tick恢复</h3>
+      <p>系统Tick递减等待计数</p>
     </div>
 
     <div class="step">
-      <h3>结果验证</h3>
-      <p>验证任务响应时间是否满足实时要求。</p>
+      <h3>READY重新调度</h3>
+      <p>恢复后进入READY队列等待执行</p>
     </div>
-    <div class="step">
-  <h3>实时调度链路</h3>
-  <p>Tick触发 → Ready队列 → Deadline检查 → os_dispatch_id → os_switch → 执行</p>
-</div>
+
+  </div>
+
+  <div class="block" style="margin-top:18px;">
+调度链路：Tick → WAIT计数更新 → READY恢复 → os_dispatch → os_switch
   </div>
 </section>
 
 <section class="section">
-  <h2>执行流程</h2>
-
-  <div class="flow">
-    <div class="step">
-      <h3>1. 初始化任务</h3>
-      <p>创建实时任务并配置周期参数。</p>
-    </div>
-
-    <div class="step">
-      <h3>2. 启动调度器</h3>
-      <p>进入实时调度模式。</p>
-    </div>
-
-    <div class="step">
-      <h3>3. 周期触发</h3>
-      <p>系统按Tick触发任务执行。</p>
-    </div>
-
-    <div class="step">
-      <h3>4. 完成验证</h3>
-      <p>确认任务在规定时间内结束。</p>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <h2>演示代码</h2>
+  <h2>演示代码（严格原样）</h2>
 
   <div class="code-box">
     <button class="copy-btn">Copy</button>
-<pre><code>
-// 在这里填入 Real Time Demo 示例代码
-// 例如：deadline / tick / realtime / periodic task
-</code></pre>
+    <pre><code>
+#include "hrtos.h"
+
+sbit LED_RT = P1^0;
+
+void task_rt(void)
+{
+    while(1)
+    {
+        LED_RT = 1;      // 运行窗口
+        os_delay(10);     // 模拟实时执行窗口
+
+        LED_RT = 0;      // 等待周期
+        os_delay(40);
+    }
+}
+
+void hrtos_main(void)
+{
+    LED_RT = 0;
+
+    os_task_create((unsigned int)task_rt, 1, 2, 5);
+}
+    </code></pre>
   </div>
+
 </section>
 
 <section class="section">
   <h2>系统意义</h2>
+
   <p>
-    实时调度机制决定RTOS能否满足严格时间约束，
-    是工业控制、嵌入式设备与关键系统的核心能力。
+实时性在 HRTOS v2 中不依赖独立调度器，而由 Tick + WAIT恢复机制共同保证执行节奏稳定性。
   </p>
-  <p style="margin-top:14px;">
-内核实现：
-<a href="/docs/modules/scheduler/real-time-scheduling.html">Real-Time Scheduler</a> ·
-<a href="/docs/system/scheduling-flow.html">Scheduling Flow</a>
-</p>
-</section>
 
-<section class="section">
-  <h2>相关导航</h2>
-
-  <div class="flow">
-
-    <div class="step">
-      <h3>任务执行模型</h3>
-      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
-    </div>
-
-    <div class="step">
-      <h3>调度系统</h3>
-      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
-    </div>
-
-    <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
-    </div>
-
-    <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
-    </div>
-
-  </div>
 </section>
 
 <footer class="footer">
@@ -309,22 +247,15 @@ document.addEventListener("click", function (e) {
   const btn = e.target.closest(".copy-btn");
   if (!btn) return;
 
-  const box = btn.closest(".code-box");
-  if (!box) return;
-
-  const code = box.querySelector("code");
+  const code = btn.closest(".code-box")?.querySelector("code");
   if (!code) return;
 
-  const text = code.innerText;
+  navigator.clipboard.writeText(code.innerText);
 
-  navigator.clipboard.writeText(text).then(() => {
-    const old = btn.innerText;
-    btn.innerText = "已复制";
+  const old = btn.innerText;
+  btn.innerText = "Copied";
 
-    setTimeout(() => {
-      btn.innerText = old;
-    }, 1000);
-  });
+  setTimeout(() => btn.innerText = old, 1000);
 });
 </script>
 

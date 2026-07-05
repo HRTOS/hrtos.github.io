@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>定时器演示 | HRTOS 时间控制系统</title>
-<meta name="description" content="定时器演示：基于HRTOS的高精度定时器机制，包括周期触发、单次触发与系统节拍驱动行为。">
+<meta name="description" content="HRTOS Timer机制：基于Tick驱动的周期触发与事件调度模型。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 <script src="/header.js" defer></script>
@@ -41,23 +41,16 @@ body{
 }
 .breadcrumb a{ color:#7dd3fc; }
 
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero h1{
   margin:0 0 14px;
   font-size:2.4rem;
 }
 
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
-.flow{
-  display:grid;
-  gap:14px;
-}
+.flow{ display:grid; gap:14px; }
 
 .step{
   padding:18px 20px;
@@ -88,9 +81,10 @@ body{
   cursor:pointer;
 }
 
-.copy-btn:hover{
-  color:#fff;
-  border-color:#38bdf8;
+footer{
+  text-align:center;
+  color:#8ea3be;
+  margin-top:60px;
 }
 </style>
 </head>
@@ -107,137 +101,148 @@ body{
 </nav>
 
 <section class="hero">
-  <h1>定时器演示（Timer Demo）</h1>
+  <h1>定时器机制（Timer System）</h1>
   <p>
-展示 HRTOS Timer 在 Tick System 驱动下的周期触发、单次触发、
-自动重装载与回调执行机制。
-</p>
+    Timer 基于 HRTOS Tick 系统实现周期触发与事件驱动回调，
+    用于实现延时任务、周期任务与事件触发机制。
+  </p>
 </section>
 
 <section class="section">
-  <h2>机制说明</h2>
+  <h2>机制模型</h2>
+
   <div class="step">
-    定时器依赖系统Tick驱动，在固定时间间隔触发回调函数执行。
+    Timer = Tick Counter + Compare Match + Callback Dispatch
+  </div>
+
+  <div class="step" style="margin-top:10px;">
+    所有 Timer 行为依赖 os_tick_config / os_tick_get / scheduler dispatch
   </div>
 </section>
 
 <section class="section">
-  <h2>执行模型</h2>
+  <h2>执行流程</h2>
 
   <div class="flow">
-    <div class="step">1. 定时器注册到内核</div>
-    <div class="step">2. Tick中断递减计数</div>
-    <div class="step">3. 计数归零触发回调</div>
-    <div class="step">4. 可选择自动重装载</div>
+    <div class="step">1. Timer 注册到内核</div>
+    <div class="step">2. Tick递增计数</div>
+    <div class="step">3. Compare Match触发</div>
+    <div class="step">4. 调度器执行回调任务</div>
   </div>
 </section>
 
-<!-- 代码区（必须保留） -->
 <section class="section">
-  <h2>演示代码</h2>
+  <h2>HRTOS Timer 示例代码</h2>
 
   <div class="code-box">
-    <button class="copy-btn">复制</button>
-    <pre><code>
-#include <HRTOS.H>
+    <button class="copy-btn">Copy</button>
+<pre><code>
+#include "hrtos.h"
 
 #define TIMER_ID 0
+#define EVENT_ID  1
 
+/* Timer回调（建议：轻量 + 事件触发） */
 void timer_callback(void)
 {
-    os_news_send1(0, 0x55);
+    os_event_write(EVENT_ID);   // 推荐：通过事件解耦
 }
 
+/* 初始化 */
 void system_init(void)
 {
-    os_timer_create(TIMER_ID, 1000, timer_callback, 1);
+    os_event_init(EVENT_ID);
+
+    /* 1000ms周期Timer */
+    os_timer_create(TIMER_ID, os_ms_to_tick(1000), timer_callback, 1);
     os_timer_start(TIMER_ID);
 }
 
-void main(void)
+/* 消费任务 */
+void task_consumer(void)
+{
+    while(1)
+    {
+        os_event_wait(EVENT_ID, 0);  // 永久等待
+
+        LED_EVENT = ~LED_EVENT;
+    }
+}
+
+/* system entry */
+void hrtos_main(void)
 {
     system_init();
+
+    os_task_create((unsigned int)task_consumer, 1, 2, 5);
 
     while(1)
     {
         os_nop();
     }
 }
-    </code></pre>
+</code></pre>
   </div>
 </section>
 
 <section class="section">
-  <h2>系统意义</h2>
-  <p>定时器是RTOS时间驱动调度的基础组件，用于任务周期控制与事件触发。</p>
-</section>
-<section class="section">
-  <h2>深入理解</h2>
+  <h2>系统设计原则</h2>
 
   <div class="flow">
 
     <div class="step">
-      <h3>系统节拍机制</h3>
-      <p>
-        定时器依赖系统 Tick 递减计数。
-        <a href="tick-system.html">查看 Tick System →</a>
-      </p>
+      <h3>Timer不做重计算</h3>
+      <p>Timer回调应尽量短，仅用于触发事件。</p>
     </div>
 
     <div class="step">
-      <h3>延时与等待机制</h3>
-      <p>
-        理解 delay / wait 对定时行为的影响。
-        <a href="delay-vs-wait.html">查看 Delay vs Wait →</a>
-      </p>
+      <h3>推荐事件解耦</h3>
+      <p>Timer → Event → Task，避免ISR阻塞。</p>
     </div>
 
     <div class="step">
-      <h3>时间控制入口</h3>
-      <p>
-        返回时间控制实验总览。
-        <a href="/docs/examples/04-time-control/index.html">Time Control Index →</a>
-      </p>
+      <h3>Tick统一驱动</h3>
+      <p>Timer全部依赖系统Tick，而不是独立计时。</p>
     </div>
 
   </div>
 </section>
-<!-- 固定相关导航（严禁修改结构） -->
+
 <section class="section">
-  <h2>相关导航</h2>
+  <h2>API 对照（v2）</h2>
 
   <div class="flow">
 
     <div class="step">
-      <h3>任务执行模型</h3>
-      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+      <h3>Time API</h3>
+      <p>
+        <a href="\docs\api_v2\time\os_tick_get.html">os_tick_get</a><br/>
+        <a href="\docs\api_v2\time\os_ms_to_tick.html">os_ms_to_tick</a>
+      </p>
     </div>
 
     <div class="step">
-      <h3>调度系统</h3>
-      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+      <h3>Timer API</h3>
+      <p>
+        <a href="\docs\api_v2\time\os_timer_create.html">os_timer_create</a><br/>
+        <a href="\docs\api_v2\time\os_timer_start.html">os_timer_start</a>
+      </p>
     </div>
 
     <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
+      <h3>Event API</h3>
+      <p>
+        <a href="\docs\api_v2\ipc\os_event_init.html">os_event_init</a><br/>
+        <a href="\docs\api_v2\ipc\os_event_wait.html">os_event_wait</a><br/>
+        <a href="\docs\api_v2\ipc\os_event_write.html">os_event_write</a>
+      </p>
     </div>
-
-    <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
-    </div>
-
-    <div class="step">
-  <h3>Timer Module</h3>
-  <p><a href="/docs/modules/time/index.html">Timer Module</a></p>
-</div>
 
   </div>
 </section>
 
-<footer style="text-align:center;color:#8ea3be;margin-top:60px;">
-© HRTOS Time Control Module
+<footer>
+© 2017–2026 HRTOS · Timer Module
 </footer>
 
 </main>
@@ -247,16 +252,14 @@ document.addEventListener("click", function (e) {
   const btn = e.target.closest(".copy-btn");
   if (!btn) return;
 
-  const box = btn.closest(".code-box");
-  const code = box.querySelector("code");
-
+  const code = btn.closest(".code-box").querySelector("code");
   navigator.clipboard.writeText(code.innerText);
 
   const old = btn.innerText;
   btn.innerText = "已复制";
-  setTimeout(()=>btn.innerText = old, 1000);
+  setTimeout(() => btn.innerText = old, 1000);
 });
 </script>
-
+<script src="https://hrtos.com/header.js" defer></script>
 </body>
 </html>

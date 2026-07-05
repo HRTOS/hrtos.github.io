@@ -36,7 +36,6 @@ body{
   padding:96px 0 64px;
 }
 
-/* breadcrumb */
 .breadcrumb{
   margin-bottom:26px;
   font-size:.92rem;
@@ -45,10 +44,7 @@ body{
 .breadcrumb a{ color:#7dd3fc; }
 .breadcrumb a:hover{ color:var(--accent); }
 
-/* hero */
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero-tag{
   display:inline-block;
@@ -72,10 +68,7 @@ body{
   color:var(--muted);
 }
 
-/* section */
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
 .section h2{
   margin:0 0 10px;
@@ -87,7 +80,6 @@ body{
   color:var(--muted);
 }
 
-/* grid */
 .grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -102,6 +94,7 @@ body{
   border-radius:var(--radius);
   box-shadow:var(--shadow);
   transition:.25s ease;
+  text-decoration:none;
 }
 
 .card:hover{
@@ -129,7 +122,6 @@ body{
   font-weight:600;
 }
 
-/* model block */
 .model-box{
   padding:18px 20px;
   border-left:3px solid var(--accent);
@@ -139,7 +131,6 @@ body{
   margin-top:12px;
 }
 
-/* footer */
 .footer{
   margin-top:60px;
   padding-top:20px;
@@ -156,139 +147,121 @@ body{
 </head>
 
 <body data-header="docs">
-<script src="/header.js" defer></script>
+
+<!-- ✅ 统一 header -->
+<script src="https://hrtos.com/header.js" defer></script>
 
 <main class="page">
 
-  <!-- 面包屑 -->
   <nav class="breadcrumb">
     <a href="/docs/index.html">Docs</a> /
     <a href="/docs/examples/index.html">Examples</a> /
     <span>Time Control</span>
   </nav>
 
-  <!-- 标题区 -->
   <section class="hero">
     <span class="hero-tag">Time System</span>
 
     <h1>时间控制</h1>
 
     <p>
-时间控制模块用于描述 RTOS 中的时间管理机制，包括 Tick System、
-Delay、Software Timer、Timeout 与 Scheduler Timing，
-是实时系统调度精度与响应能力的基础。
-</p>
+      时间控制模块用于描述 RTOS 中的时间管理机制，
+      包括 Tick 系统（Tick System）、延时机制（Delay）、
+      软件定时器（Software Timer）、超时控制（Timeout）
+      与调度时序（Scheduler Timing）。
+    </p>
   </section>
 
-  <!-- 模型说明 -->
   <section class="section">
     <h2>时间控制模型定义</h2>
+
     <div class="model-box">
-      Time Control Model = Tick System + Delay Mechanism + Timer System + Scheduler Timing
+      Time Control Model（时间控制模型） = 
+      Tick System（系统节拍） + Delay Mechanism（延时机制） + 
+      Timer System（定时器系统） + Scheduler Timing（调度时序）
     </div>
   </section>
 
   <section class="section">
-  <h2>核心机制说明</h2>
+    <h2>核心机制说明</h2>
 
-  <div class="grid">
+    <div class="grid">
 
-    <div class="card">
-      <h3>Tick 驱动</h3>
-      <p>系统通过周期性中断维护全局时间基准，并触发调度检查。</p>
+      <div class="card">
+        <h3>Tick 驱动</h3>
+        <p>系统通过周期中断维护全局时间，并驱动调度。</p>
+      </div>
+
+      <div class="card">
+        <h3>Delay 阻塞</h3>
+        <p>任务进入时间等待队列，由Tick递减唤醒。</p>
+      </div>
+
+      <div class="card">
+        <h3>Timer 回调</h3>
+        <p>软件定时器基于Tick触发周期或单次回调。</p>
+      </div>
+
+      <div class="card">
+        <h3>调度联动</h3>
+        <p>时间系统直接影响调度与任务切换时机。</p>
+      </div>
+
     </div>
+  </section>
 
-    <div class="card">
-      <h3>Delay 阻塞</h3>
-      <p>任务进入时间等待队列，等待 Tick 递减至恢复条件。</p>
-    </div>
-
-    <div class="card">
-      <h3>Timer 回调</h3>
-      <p>软件定时器基于 Tick 驱动执行回调逻辑与周期任务。</p>
-    </div>
-
-    <div class="card">
-      <h3>调度联动</h3>
-      <p>时间系统直接影响时间片轮转、超时唤醒与任务切换。</p>
-    </div>
-
-  </div>
-</section>
-
-  <!-- 核心实验 -->
   <section class="section">
     <h2>核心实验</h2>
-    <p>以下实验用于验证系统时间行为与调度节拍之间的关系。</p>
 
     <div class="grid">
 
       <a class="card" href="delay-vs-wait.html">
         <h3>延时 vs 等待</h3>
-        <p>比较主动延时与阻塞等待的调度行为差异。</p>
+        <p>比较主动延时与阻塞等待差异。</p>
         <span>进入实验 →</span>
       </a>
 
       <a class="card" href="tick-system.html">
         <h3>系统节拍</h3>
-        <p>分析Tick中断对系统调度的驱动作用。</p>
+        <p>分析Tick中断驱动机制。</p>
         <span>进入实验 →</span>
       </a>
 
       <a class="card" href="timer-demo.html">
         <h3>定时器机制</h3>
-        <p>理解软件定时器的触发与回调流程。</p>
+        <p>软件定时器触发与回调流程。</p>
         <span>进入实验 →</span>
       </a>
 
-      <a class="card" href="/docs/system/interrupt-flow.html">
-  <h3>Tick Interrupt Flow</h3>
-  <p>查看系统节拍中断如何驱动内核时间更新。</p>
-  <span>查看流程 →</span>
-</a>
+      <a class="card" href="/docs/api_v2/time/os_tick_config.html">
+        <h3>Tick 中断流程</h3>
+        <p>查看系统节拍在内核中的实现路径。</p>
+        <span>查看 API →</span>
+      </a>
 
     </div>
   </section>
 
-  <!-- 关联 -->
   <section class="section">
     <h2>关联系统</h2>
 
     <div class="grid">
 
-      <a class="card" href="/docs/examples/02-scheduling-engine/index.html">
-        <h3>调度引擎</h3>
-        <p>时间片与优先级调度的核心执行机制。</p>
+      <a class="card" href="/docs/api_v2/kernel/index.html">
+        <h3>内核模块（Kernel Module）</h3>
+        <p>时间控制在内核调度中的实现。</p>
         <span>查看 →</span>
       </a>
 
-      <a class="card" href="/docs/examples/01-task-execution/index.html">
-        <h3>任务执行模型</h3>
-        <p>任务运行与时间控制的结合关系。</p>
+      <a class="card" href="/docs/api_v2/task/index.html">
+        <h3>任务模块（Task Module）</h3>
+        <p>任务延时、阻塞与唤醒机制。</p>
         <span>查看 →</span>
       </a>
 
     </div>
   </section>
-<section class="section">
-  <h2>深入学习</h2>
 
-  <div class="grid">
-
-    <a class="card" href="/docs/modules/task/index.html">
-      <h3>Task Module</h3>
-      <p>查看任务阻塞、唤醒与延时状态切换机制。</p>
-      <span>查看模块 →</span>
-    </a>
-
-    <a class="card" href="/docs/architecture/kernel/index.html">
-      <h3>Kernel Module</h3>
-      <p>理解时间控制在内核调度中的实现路径。</p>
-      <span>查看模块 →</span>
-    </a>
-
-  </div>
-</section>
   <footer class="footer">
     © 2017–2026 HRTOS · Time Control Module
   </footer>

@@ -36,7 +36,6 @@ body{
   padding:96px 0 64px;
 }
 
-/* breadcrumb */
 .breadcrumb{
   margin-bottom:26px;
   font-size:.92rem;
@@ -45,10 +44,7 @@ body{
 .breadcrumb a{ color:#7dd3fc; }
 .breadcrumb a:hover{ color:var(--accent); }
 
-/* hero */
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero-tag{
   display:inline-block;
@@ -72,10 +68,7 @@ body{
   color:var(--muted);
 }
 
-/* section */
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
 .section h2{
   margin:0 0 10px;
@@ -87,7 +80,6 @@ body{
   color:var(--muted);
 }
 
-/* grid */
 .grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -102,6 +94,7 @@ body{
   border-radius:12px;
   box-shadow:0 20px 48px rgba(2,6,23,.34);
   transition:.25s ease;
+  text-decoration:none;
 }
 
 .card:hover{
@@ -129,7 +122,6 @@ body{
   font-weight:600;
 }
 
-/* model */
 .model-box{
   padding:18px 20px;
   border-left:3px solid var(--accent);
@@ -139,7 +131,6 @@ body{
   margin-top:12px;
 }
 
-/* footer */
 .footer{
   margin-top:60px;
   padding-top:20px;
@@ -156,18 +147,18 @@ body{
 </head>
 
 <body data-header="docs">
-<script src="/header.js" defer></script>
+
+<!-- ✅ 统一 header -->
+<script src="https://hrtos.com/header.js" defer></script>
 
 <main class="page">
 
-  <!-- 面包屑 -->
   <nav class="breadcrumb">
     <a href="/docs/index.html">Docs</a> /
     <a href="/docs/examples/index.html">Examples</a> /
     <span>System Resource</span>
   </nav>
 
-  <!-- 标题 -->
   <section class="hero">
     <span class="hero-tag">Resource Management</span>
 
@@ -177,23 +168,23 @@ body{
       系统资源模块用于描述RTOS对内存、栈空间与运行资源的管理机制，
       包括分配策略、碎片化控制与异常保护机制。
     </p>
+
     <div class="model-box">
-  Resource Model = API Layer + Experiment Layer + Kernel Layer
-</div>  
+      资源模型（Resource Model） = 内核内存（Kernel Memory） + 任务栈（Task Stack） + 溢出保护（Overflow Protection） + 分配策略（Allocation Policy）
+    </div>
   </section>
 
-  <!-- 模型定义 -->
   <section class="section">
     <h2>资源管理模型定义</h2>
+
     <div class="model-box">
-      Resource Model = Memory Allocation + Stack Management + Fragmentation Control + Overflow Protection
+      资源模型（Resource Model） = 内存分配（Memory Allocation） + 栈管理（Stack Management） + 碎片控制（Fragmentation Control） + 溢出保护（Overflow Protection）
     </div>
   </section>
 
   <!-- 核心实验 -->
   <section class="section">
     <h2>核心实验</h2>
-    <p>以下实验用于验证系统资源在不同负载下的行为表现。</p>
 
     <div class="grid">
 
@@ -218,33 +209,32 @@ body{
     </div>
   </section>
 
-  <!-- API 绑定入口（必须新增） -->
-<section class="section">
-  <h2>API 接口映射</h2>
-  <p>系统资源模块与内核API一一对应，用于实验验证与真实系统调用对照。</p>
+  <!-- API 映射 -->
+  <section class="section">
+    <h2>API 接口映射</h2>
 
-  <div class="grid">
+    <div class="grid">
 
-    <a class="card" href="/docs/modules/memory/allocation.html">
-      <h3>内存初始化</h3>
-      <p>初始化系统内存管理器。</p>
-      <span>os_mem_init →</span>
-    </a>
+      <a class="card" href="/docs/api_v2/kernel/os_memset.html">
+        <h3>内存操作</h3>
+        <p>系统内存初始化与基础操作。</p>
+        <span>os_memset →</span>
+      </a>
 
-    <a class="card" href="/docs/api/memory/os_memset.html">
-      <h3>内存操作</h3>
-      <p>基础内存填充与管理接口。</p>
-      <span>os_memset →</span>
-    </a>
+      <a class="card" href="/docs/api_v2/kernel/os_slab_overflow.html">
+        <h3>内存保护</h3>
+        <p>栈溢出与内存异常检测机制。</p>
+        <span>overflow protection →</span>
+      </a>
 
-    <a class="card" href="/docs/api/memory/os_task_stack.html">
-      <h3>任务栈管理</h3>
-      <p>任务栈分配与使用分析。</p>
-      <span>os_task_stack →</span>
-    </a>
+      <a class="card" href="/docs/api_v2/task/os_task_self.html">
+        <h3>任务栈模型</h3>
+        <p>任务栈与TCB关系分析。</p>
+        <span>task stack →</span>
+      </a>
 
-  </div>
-</section>
+    </div>
+  </section>
 
   <!-- 关联 -->
   <section class="section">
@@ -258,9 +248,9 @@ body{
         <span>查看 →</span>
       </a>
 
-      <a class="card" href="/docs/examples/07-kernel-behavior/index.html">
-        <h3>内核行为系统</h3>
-        <p>资源调度与内核执行路径。</p>
+      <a class="card" href="/docs/api_v2/kernel/index.html">
+        <h3>内核系统</h3>
+        <p>资源调度与内核管理机制。</p>
         <span>查看 →</span>
       </a>
 

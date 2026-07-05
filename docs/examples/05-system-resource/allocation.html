@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>资源分配机制 | HRTOS 系统资源管理</title>
-<meta name="description" content="资源分配机制：HRTOS系统中任务对CPU资源、内存资源与外设资源的调度与分配模型。">
+<meta name="description" content="HRTOS资源分配机制：基于mutex的任务竞争控制与资源仲裁模型。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 <script src="/header.js" defer></script>
@@ -39,7 +39,6 @@ body{
   font-size:.92rem;
   color:var(--muted);
 }
-
 .breadcrumb a{ color:#7dd3fc; }
 
 .hero h1{
@@ -47,14 +46,9 @@ body{
   font-size:2.4rem;
 }
 
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
-.flow{
-  display:grid;
-  gap:14px;
-}
+.flow{ display:grid; gap:14px; }
 
 .step{
   padding:18px 20px;
@@ -63,7 +57,6 @@ body{
   background:rgba(30,41,59,.45);
 }
 
-/* 代码区 */
 .code-box{
   position:relative;
   padding:18px;
@@ -86,9 +79,10 @@ body{
   cursor:pointer;
 }
 
-.copy-btn:hover{
-  color:#fff;
-  border-color:#38bdf8;
+footer{
+  text-align:center;
+  color:#8ea3be;
+  margin-top:60px;
 }
 </style>
 </head>
@@ -97,7 +91,6 @@ body{
 
 <main class="page">
 
-<!-- 面包屑 -->
 <nav class="breadcrumb">
   <a href="/docs/index.html">Docs</a> /
   <a href="/docs/examples/index.html">Examples</a> /
@@ -105,166 +98,163 @@ body{
   <span>Allocation</span>
 </nav>
 
-<!-- 标题 -->
 <section class="hero">
   <h1>资源分配机制（Resource Allocation）</h1>
-  <p>描述HRTOS中任务对系统资源的动态分配与竞争管理机制。</p>
+  <p>
+    在 HRTOS 中，资源分配通过 mutex / scheduler / priority inheritance
+    实现任务级资源仲裁，而不是简单内存池模拟。
+  </p>
 </section>
 
-<!-- 机制说明 -->
 <section class="section">
   <h2>机制定义</h2>
+
   <div class="step">
-  资源分配 = 申请 + 仲裁 + 锁定 + 释放
-  <p>
-    在多任务系统中，不同任务可能同时竞争 CPU、内存或外设资源，
-    系统必须通过统一分配策略保证资源利用率与实时响应能力。
-  </p>
-</div>
+    Resource Allocation = Mutex Lock + Priority Arbitration + Scheduler Control + Release
+  </div>
+
+  <div class="step" style="margin-top:10px;">
+    所有资源竞争必须进入内核仲裁路径，而不是用户态轮询。
+  </div>
 </section>
 
-<!-- 分配流程 -->
 <section class="section">
   <h2>执行流程</h2>
 
   <div class="flow">
-    <div class="step">1. 任务发起资源申请</div>
+    <div class="step">1. 任务申请资源（mutex_lock）</div>
     <div class="step">2. 内核检查资源状态</div>
-    <div class="step">3. 调度器进行优先级仲裁</div>
-    <div class="step">4. 分配或阻塞任务</div>
+    <div class="step">3. 发生冲突 → 进入阻塞队列</div>
+    <div class="step">4. 高优先级继承（priority inheritance）</div>
     <div class="step">5. 释放后重新调度</div>
   </div>
 </section>
 
-<!-- 代码区（必须保留） -->
 <section class="section">
-  <h2>演示代码</h2>
+  <h2>HRTOS资源模型示例（真实语义）</h2>
 
   <div class="code-box">
-    <button class="copy-btn">复制</button>
-    <pre><code>
-#include <HRTOS.H>
+    <button class="copy-btn">Copy</button>
+<pre><code>
+#include "hrtos.h"
 
-#define TASK_ID_A 0
-#define TASK_ID_B 1
+#define TASK_A 1
+#define TASK_B 2
+#define MUTEX_ID 0
 
+sbit LED_OK   = P1^0;
+sbit LED_FAIL = P1^1;
+
+/* 高优先级任务 */
 void task_A(void)
 {
-    os_mutex_lock(0);
-
-    os_news_send1(0, 0xA1);
-
-    os_mutex_unlock(0);
-}
-
-void task_B(void)
-{
-    os_mutex_lock(0);
-
-    os_wait1(5);
-
-    os_mutex_unlock(0);
-}
-
-void system_init(void)
-{
-    os_task((unsigned int)task_A, TASK_ID_A, 3, 0);
-    os_task((unsigned int)task_B, TASK_ID_B, 2, 0);
-
-    os_mutex_init(0);
-}
-
-void main(void)
-{
-    system_init();
-
-    os_task_release(TASK_ID_A);
-
     while(1)
     {
-        os_nop();
+        os_mutex_lock(MUTEX_ID);
+
+        /* critical section */
+        LED_OK = ~LED_OK;
+
+        os_mutex_unlock(MUTEX_ID);
+
+        os_delay(10);
     }
 }
-    </code></pre>
+
+/* 低优先级任务（可能阻塞高优先级资源） */
+void task_B(void)
+{
+    while(1)
+    {
+        os_mutex_lock(MUTEX_ID);
+
+        os_delay(50);   // 模拟持锁延迟
+
+        LED_FAIL = ~LED_FAIL;
+
+        os_mutex_unlock(MUTEX_ID);
+    }
+}
+
+void hrtos_main(void)
+{
+    LED_OK = 0;
+    LED_FAIL = 0;
+
+    os_mutex_init(MUTEX_ID);
+
+    os_task_create((unsigned int)task_B, TASK_B, 2, 5);
+    os_task_create((unsigned int)task_A, TASK_A, 3, 5);
+}
+</code></pre>
   </div>
 </section>
 
 <section class="section">
-  <h2>相关 API</h2>
+  <h2>资源模型说明</h2>
 
   <div class="flow">
 
     <div class="step">
-      <h3>互斥锁初始化</h3>
-      <p><a href="/docs/api/ipc/os_mutex_init.html">os_mutex_init()</a></p>
+      <h3>Mutex保护临界区</h3>
+      <p>保证共享资源不会被并发破坏。</p>
     </div>
 
     <div class="step">
-      <h3>互斥锁加锁</h3>
-      <p><a href="/docs/api/ipc/os_mutex_lock.html">os_mutex_lock()</a></p>
+      <h3>优先级继承</h3>
+      <p>避免低优先级任务阻塞高优先级任务。</p>
     </div>
 
     <div class="step">
-      <h3>互斥锁解锁</h3>
-      <p><a href="/docs/api/ipc/os_mutex_unlock.html">os_mutex_unlock()</a></p>
+      <h3>调度器介入</h3>
+      <p>资源竞争直接触发任务状态变化。</p>
     </div>
 
   </div>
 </section>
 
-<!-- 系统意义 -->
+<section class="section">
+  <h2>API 对照（v2）</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Mutex API</h3>
+      <p>
+        <a href="\docs\api_v2\ipc\os_mutex_init.html">os_mutex_init</a><br/>
+        <a href="\docs\api_v2\ipc\os_mutex_lock.html">os_mutex_lock</a><br/>
+        <a href="\docs\api_v2\ipc\os_mutex_unlock.html">os_mutex_unlock</a>
+      </p>
+    </div>
+
+    <div class="step">
+      <h3>Task API</h3>
+      <p>
+        <a href="\docs\api_v2\task\os_task_create.html">os_task_create</a>
+      </p>
+    </div>
+
+    <div class="step">
+      <h3>Time API</h3>
+      <p>
+        <a href="\docs\api_v2\time\os_delay.html">os_delay</a>
+      </p>
+    </div>
+
+  </div>
+</section>
+
 <section class="section">
   <h2>系统意义</h2>
-  <p>
-    资源分配机制保证多任务环境下资源使用的公平性与实时性，是RTOS稳定性的核心基础。
-  </p>
-</section>
-<section class="section">
-  <h2>延伸阅读</h2>
 
-  <div class="flow">
-    <div class="step">
-      <h3>内存碎片问题</h3>
-      <p><a href="fragmentation.html">Memory Fragmentation</a></p>
-    </div>
-
-    <div class="step">
-      <h3>栈溢出演示</h3>
-      <p><a href="stack-overflow.html">Stack Overflow</a></p>
-    </div>
-  </div>
-</section>
-<!-- 固定导航（完全锁死，不允许改结构） -->
-<section class="section">
-  <h2>相关导航</h2>
-
-  <div class="flow">
-
-    <div class="step">
-      <h3>任务执行模型</h3>
-      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
-    </div>
-
-    <div class="step">
-      <h3>调度系统</h3>
-      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
-    </div>
-
-    <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
-    </div>
-
-    <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
-    </div>
-
+  <div class="step">
+    资源分配的核心不在“分配算法”，而在“调度器介入 + 阻塞机制 + 优先级继承”。
+    这是 RTOS 稳定性的关键基础。
   </div>
 </section>
 
-<footer style="text-align:center;color:#8ea3be;margin-top:60px;">
-© HRTOS System Resource Module
+<footer>
+© 2017–2026 HRTOS · Resource Module
 </footer>
 
 </main>
@@ -279,9 +269,9 @@ document.addEventListener("click", function (e) {
 
   const old = btn.innerText;
   btn.innerText = "已复制";
-  setTimeout(()=>btn.innerText = old, 1000);
+  setTimeout(() => btn.innerText = old, 1000);
 });
 </script>
-
+<script src="https://hrtos.com/header.js" defer></script>
 </body>
 </html>

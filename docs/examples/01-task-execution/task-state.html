@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>任务状态 | HRTOS 文档系统</title>
-<meta name="description" content="任务状态用于描述RTOS中任务在不同生命周期阶段的运行状态，包括就绪、运行、阻塞与挂起。">
+<meta name="description" content="任务状态机制实验：基于HRTOS v2 WAIT统一模型，分析任务在READY、RUNNING与WAIT阻塞之间的调度转换行为。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 <script src="/header.js" defer></script>
@@ -39,17 +39,9 @@ body{
   font-size:.92rem;
   color:var(--muted);
 }
-.breadcrumb a{
-  color:#7dd3fc;
-  text-decoration:none;
-}
-.breadcrumb a:hover{
-  color:var(--accent);
-}
+.breadcrumb a{ color:#7dd3fc; }
 
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero-tag{
   display:inline-block;
@@ -72,17 +64,13 @@ body{
   color:var(--muted);
 }
 
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
 .section h2{
   margin:0 0 10px;
-  font-size:1.4rem;
 }
 
 .section p{
-  margin:0 0 20px;
   color:var(--muted);
 }
 
@@ -91,13 +79,9 @@ body{
   border-left:3px solid var(--accent);
   background:rgba(56,189,248,.06);
   border-radius:10px;
-  color:var(--muted);
 }
 
-.flow{
-  display:grid;
-  gap:14px;
-}
+.flow{ display:grid; gap:14px; }
 
 .step{
   padding:18px 20px;
@@ -106,23 +90,13 @@ body{
   background:rgba(30,41,59,.45);
 }
 
-.step h3{
-  margin:0 0 8px;
-  font-size:1.05rem;
-  color:#f8fafc;
-}
-
-.step p{
-  margin:0;
-  color:var(--muted);
-}
+.step h3{ margin:0 0 8px; }
 
 .code-box{
   position:relative;
   border:1px solid var(--border);
   border-radius:12px;
   background:rgba(15,23,42,.7);
-  overflow:auto;
 }
 
 .code-box pre{
@@ -143,11 +117,6 @@ body{
   color:#7dd3fc;
   border-radius:8px;
   cursor:pointer;
-}
-
-.copy-btn:hover{
-  color:#fff;
-  border-color:#38bdf8;
 }
 
 .footer{
@@ -176,166 +145,119 @@ body{
   <span class="hero-tag">Task Core</span>
   <h1>任务状态</h1>
   <p>
-    任务状态用于表示RTOS任务在生命周期中的当前阶段，
-    系统通过状态切换控制任务调度与资源分配行为。
+    在 HRTOS v2 中，任务状态不是静态分类，而是调度器基于 READY 与 WAIT 系统动态推导的运行结果。
   </p>
 </section>
 
 <section class="section">
-  <h2>机制定义</h2>
+  <h2>状态模型（v2真实定义）</h2>
+
   <div class="block">
-    Task State = Ready + Running + Blocked + Suspended
+    RUNNING ←→ READY ←→ WAIT（统一阻塞模型）
   </div>
+
   <p style="margin-top:14px;">
-相关API：
-<a href="/docs/api/task/os_task.html">os_task</a> ·
-<a href="/docs/api/task/os_task_function.html">os_task_function</a> ·
-<a href="/docs/api/task/os_task_exit.html">os_task_release</a> ·
-<a href="/docs/api/scheduler/os_switch.html">os_switch</a>
+核心API：
+<a href="/docs/api_v2/task/os_task_get_state.html">os_task_get_state</a> ·
+<a href="/docs/api_v2/time/os_delay.html">os_delay</a> ·
+<a href="/docs/api_v2/wait/os_wait.html">os_wait</a> ·
+<a href="/docs/api_v2/task/os_task_yield.html">os_task_yield</a>
 </p>
-  <h3>任务状态背景</h3>
-  <p>任务状态是硬实时操作系统描述任务生命周期阶段的核心机制。任务状态定义任务在不同阶段的属性与行为，系统通过状态转换控制任务调度与资源分配。状态机模型确保任务状态转换的一致性与可预测性。</p>
-  <p>实时系统需要任务状态机制的原因在于，嵌入式应用包含多个并发任务，任务在不同阶段需要不同的处理策略。状态机制使系统能够精确控制任务执行流程，避免状态混乱与资源冲突。汽车电子、工业控制等典型应用依赖任务状态机制实现精确的任务管理。</p>
-  <h3>状态机模型</h3>
-  <p>任务状态机定义所有可能的状态与状态转换规则。状态机包括新建、就绪、运行、阻塞、挂起、终止等状态。每个状态对应特定的任务属性与系统行为。状态转换由事件驱动，转换规则明确定义。</p>
-  <p>状态机的一致性直接影响系统稳定性。非法状态转换可能导致任务调度异常或系统崩溃。HRTOS通过严格的状态机定义与运行时检查确保状态转换的正确性。</p>
-  <h3>状态转换触发</h3>
-  <p>状态转换由系统调用、中断、调度决策等事件触发。任务创建触发新建到就绪转换，调度器触发就绪到运行转换，系统调用触发运行到阻塞转换，事件满足触发阻塞到就绪转换。</p>
-  <p>状态转换需考虑原子性。转换过程必须原子性完成，避免中断破坏状态一致性。HRTOS通过临界区保护与汇编原子指令确保状态转换的原子性。</p>
-  <h3>状态管理开销</h3>
-  <p>状态管理开销包括状态检查、状态转换、队列操作等步骤。状态管理开销直接影响系统实时性。HRTOS通过优化状态检查路径、使用位图表示状态、快速队列操作等手段降低状态管理开销。</p>
-  <p>状态管理开销与状态数量相关。状态数量越多，状态检查与转换逻辑越复杂。HRTOS采用精简状态模型，仅包含必要状态，降低状态管理复杂度。</p>
+
+  <h3>状态本质</h3>
+  <p>
+READY：可调度<br>
+RUNNING：正在执行<br>
+WAIT：因 delay / event / mutex 等统一阻塞
+  </p>
+
+  <h3>设计核心</h3>
+  <p>
+HRTOS v2 不再区分多种 BLOCKED 子状态，而统一进入 WAIT 队列，由资源系统恢复。
+  </p>
 </section>
 
 <section class="section">
-  <h2>状态模型</h2>
+  <h2>状态转换行为</h2>
 
   <div class="flow">
 
     <div class="step">
-      <h3>就绪状态</h3>
-      <p>任务已满足执行条件，等待CPU调度。</p>
+      <h3>RUNNING → WAIT</h3>
+      <p>调用 os_delay / os_wait / mutex 等</p>
     </div>
 
     <div class="step">
-      <h3>运行状态</h3>
-      <p>任务当前占用CPU并执行代码。</p>
+      <h3>WAIT → READY</h3>
+      <p>时间到或事件满足</p>
     </div>
 
     <div class="step">
-      <h3>阻塞状态</h3>
-      <p>等待事件、消息、延时或资源。</p>
+      <h3>READY → RUNNING</h3>
+      <p>调度器选择最高优先级任务</p>
     </div>
 
     <div class="step">
-      <h3>挂起状态</h3>
-      <p>任务被系统或用户暂停执行。</p>
+      <h3>RUNNING → READY</h3>
+      <p>os_task_yield 或时间片抢占</p>
     </div>
 
   </div>
-  <div class="block" style="margin-top:18px;">
-<strong>执行来源（内核触发链）</strong><br><br>
 
-task_create → TCB初始化<br>
-os_task_release → Ready队列插入<br>
-os_switch → 任务切换发生<br>
-Tick中断 → 调度触发源<br>
-IPC事件 → 状态变化驱动
-</div>
-  <h3>就绪状态详细说明</h3>
-  <p>就绪状态表示任务已具备执行条件但尚未获得CPU使用权。就绪任务位于就绪队列中，等待调度器选择执行。就绪队列按优先级排序，高优先级任务位于队列头部。HRTOS支持多级就绪队列，每个优先级对应一个队列，提高调度效率。</p>
-  <p>就绪状态的转换包括从新建到就绪、从阻塞到就绪、从挂起到就绪。新建到就绪由任务创建触发，阻塞到就绪由事件满足触发，挂起到就绪由恢复操作触发。就绪到运行由调度器触发，调度器选择最高优先级就绪任务执行。</p>
-  <h3>运行状态详细说明</h3>
-  <p>运行状态表示任务当前占用CPU并执行代码。系统中同一时刻最多有一个运行任务。运行任务可通过系统调用主动切换，或被高优先级任务抢占。运行任务的所有寄存器状态保存在CPU中，TCB中的寄存器快照可能过时。</p>
-  <p>运行状态的转换包括从就绪到运行、从阻塞到运行。就绪到运行由调度器触发，阻塞到运行由抢占调度触发。运行到就绪由抢占或时间片耗尽触发，运行到阻塞由系统调用触发。运行到挂起由挂起操作触发，运行到终止由任务退出触发。</p>
-  <h3>阻塞状态详细说明</h3>
-  <p>阻塞状态表示任务等待事件发生。阻塞任务不占用CPU，位于等待队列中。阻塞原因包括等待信号量、消息队列、延时、互斥锁等。HRTOS为每种阻塞类型维护独立队列，便于快速查找与唤醒。</p>
-  <p>阻塞状态的转换包括从运行到阻塞、从阻塞到就绪。运行到阻塞由系统调用触发，阻塞到就绪由事件满足触发。阻塞任务在事件满足后重新进入就绪队列，等待调度器选择执行。阻塞时间长短直接影响系统实时性。</p>
-  <h3>挂起状态详细说明</h3>
-  <p>挂起状态是任务的暂停状态。挂起任务不在就绪队列中，即使就绪也不被调度。挂起通常由用户或系统触发，用于临时停止任务执行。恢复挂起任务需要显式调用接口。挂起状态常用于调试、错误恢复或功耗管理。</p>
-  <p>挂起状态的转换包括从运行到挂起、从就绪到挂起、从挂起到就绪。运行到挂起由挂起操作触发，就绪到挂起由挂起操作触发，挂起到就绪由恢复操作触发。挂起状态不影响任务的TCB与栈空间，任务恢复后可继续执行。</p>
-  <h3>终止状态详细说明</h3>
-  <p>终止状态表示任务执行结束。终止任务已释放所有资源，TCB可能被回收。HRTOS支持任务主动退出与被动删除。终止任务不再参与调度，其栈空间与TCB可被重用。任务终止是生命周期的最终状态。</p>
-  <p>终止状态的转换包括从运行到终止、从阻塞到终止、从挂起到终止。运行到终止由任务退出触发，阻塞到终止由删除操作触发，挂起到终止由删除操作触发。终止后任务的所有资源需正确释放，避免资源泄漏。</p>
 </section>
 
 <section class="section">
-  <h2>演示代码</h2>
+  <h2>演示代码（严格原样）</h2>
 
   <div class="code-box">
     <button class="copy-btn">复制</button>
     <pre><code>
-#include &lt;HRTOS.H&gt;
-#include &lt;HRTOS_KERNEL.H&gt;
+#include "hrtos.h"
 
+sbit LED_RUN = P1^0;
+
+/* 任务：状态演示 */
 void task_demo(void)
 {
     while(1)
     {
-        os_wait1(5);   // 进入阻塞状态
+        /* 运行态：进入CPU */
+        LED_RUN = 1;
 
-        os_nop();      // 恢复运行
+        os_delay(3);   // 进入延时 → 阻塞态
+
+        /* 从延时恢复 */
+        LED_RUN = 0;
+
+        os_delay(3);
     }
 }
 
-void system_init(void)
+/* 系统入口 */
+void hrtos_main(void)
 {
-    os_task((unsigned int)task_demo, 1, 2, 0);
-    os_task_release(1);
+    LED_RUN = 0;
+
+    os_task_create((unsigned int)task_demo, 1, 2, 5);
 }
     </code></pre>
   </div>
+
 </section>
 
 <section class="section">
   <h2>系统意义</h2>
-  <p>
-    任务状态管理决定RTOS调度行为与系统实时性，
-    是任务生命周期与调度器协作的基础机制。
-  </p>
-  <h3>调度行为控制</h3>
-  <p>任务状态管理决定RTOS调度行为。调度器根据任务状态选择执行任务，就绪任务参与调度，运行任务占用CPU，阻塞任务等待事件，挂起任务暂停执行。状态管理的正确性直接影响调度决策的正确性。</p>
-  <p>调度行为控制需考虑状态转换的及时性。状态转换延迟可能导致调度决策滞后，影响系统实时性。HRTOS通过优化状态检查路径、快速队列操作等手段降低状态转换延迟。</p>
-  <h3>实时性保障</h3>
-  <p>任务状态管理是系统实时性保障的基础。通过精确的状态转换控制，确保关键任务在规定时间内获得CPU执行权。实时性是汽车电子、工业控制、医疗设备等应用的核心要求，状态管理直接影响系统安全性与可靠性。</p>
-  <p>实时性保障需要考虑状态转换的可预测性。状态转换规则必须明确定义，避免不确定的状态转换导致实时性下降。HRTOS通过严格的状态机定义确保状态转换的可预测性。</p>
-  <h3>生命周期协作</h3>
-  <p>任务状态管理是任务生命周期与调度器协作的基础机制。生命周期定义任务的完整执行路径，状态管理实现生命周期各阶段的状态转换。两者协同工作，确保任务从创建到终止的正确执行。</p>
-  <p>生命周期协作需考虑状态转换的完整性。生命周期包含所有必要的状态转换，状态管理需支持所有转换路径。HRTOS通过完整的状态转换支持，确保生命周期与状态管理的一致性。</p>
-  <h3>资源分配优化</h3>
-  <p>任务状态管理优化资源分配。阻塞任务不占用CPU资源，系统可将CPU分配给其他就绪任务。挂起任务释放部分资源，系统可重用这些资源。状态管理通过精确的资源控制，提高系统资源利用率。</p>
-  <p>资源分配优化需考虑资源释放的及时性。状态转换时需及时释放不再需要的资源，避免资源泄漏。HRTOS通过自动资源管理机制，在状态转换时自动释放相关资源。</p>
-</section>
-<p style="margin-top:14px;">
-关联实验：
-<a href="/docs/examples/01-task-execution/create-task.html">创建任务</a> ·
-<a href="/docs/examples/01-task-execution/context-switch.html">上下文切换</a> ·
-<a href="/docs/examples/01-task-execution/priority-inheritance.html">优先级继承</a>
-</p>
-<section class="section">
-  <h2>系统关联链路</h2>
 
   <p>
-    <a href="/docs/modules/task/index.html">Task 模块</a> ·
-    <a href="/docs/modules/scheduler/index.html">Scheduler 调度器</a> ·
-    <a href="/docs/system/context-switch-flow.html">Context Switch Flow</a> ·
-    <a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a>
+任务状态机制的核心价值在于：用统一 WAIT 模型替代传统多分类阻塞状态。
   </p>
 
-  <p style="margin-top:12px;">
-    关联实验：
-    <a href="/docs/examples/01-task-execution/create-task.html">创建任务</a> ·
-    <a href="/docs/examples/01-task-execution/context-switch.html">上下文切换</a> ·
-    <a href="/docs/examples/01-task-execution/priority-inheritance.html">优先级继承</a>
-  </p>
+  <div class="block">
+    ✔ 状态简化为调度结果<br>
+    ✔ WAIT统一管理所有阻塞来源<br>
+    ✔ READY仅表示“可运行”
+  </div>
 
-  <p style="margin-top:12px;">
-    核心 API：
-    <a href="/docs/api/task/os_task.html">os_task</a> ·
-    <a href="/docs/api/task/os_task_function.html">os_task_function</a> ·
-    <a href="/docs/api/task/os_task_state.html">os_task_state</a> ·
-    <a href="/docs/api/scheduler/os_switch.html">os_switch</a>
-  </p>
 </section>
 
 <footer class="footer">
@@ -350,7 +272,6 @@ document.addEventListener("click", function(e){
   if(!btn) return;
 
   const code = btn.closest(".code-box").querySelector("code");
-
   navigator.clipboard.writeText(code.innerText);
 
   const old = btn.innerText;
@@ -358,6 +279,6 @@ document.addEventListener("click", function(e){
   setTimeout(()=>btn.innerText = old, 1200);
 });
 </script>
-
+<script src="https://hrtos.com/header.js" defer></script>
 </body>
 </html>

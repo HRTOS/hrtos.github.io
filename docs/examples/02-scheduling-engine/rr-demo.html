@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>时间片轮转演示 | HRTOS 实验系统</title>
-<meta name="description" content="时间片轮转实验：演示HRTOS中Round Robin调度机制、时间片切换与公平任务执行模型。">
+<meta name="description" content="时间片轮转实验：演示HRTOS中Round Robin调度机制、时间片切换与同优先级公平调度模型。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
-<script src="/header.js" defer></script>
+<script src="https://hrtos.com/header.js" defer></script>
 
 <style>
 :root{
@@ -18,8 +18,6 @@
   --accent:#38bdf8;
   --text:#e2e8f0;
   --muted:#94a3b8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:12px;
   color-scheme:dark;
 }
 
@@ -60,7 +58,6 @@ body{
 .hero h1{
   margin:0 0 14px;
   font-size:clamp(2.2rem,4.5vw,3.4rem);
-  line-height:1.1;
 }
 
 .hero p{
@@ -162,56 +159,59 @@ body{
 </nav>
 
 <section class="hero">
-  <span class="hero-tag">Round Robin Core</span>
-  <h1>时间片轮转演示（RR Demo）</h1>
+  <span class="hero-tag">Scheduling Core</span>
+  <h1>时间片轮转演示（Round Robin）</h1>
   <p>
-    RR Demo 用于展示HRTOS中的Round Robin调度策略，
-    通过固定时间片在多个同优先级任务之间进行公平切换。
+    时间片轮转用于验证同优先级任务的公平调度机制。
+    在相同优先级下，通过Tick驱动实现任务轮流执行。
   </p>
 </section>
 
 <section class="section">
   <h2>机制定义</h2>
+
   <div class="block">
-    Round Robin = 固定时间片 + 时间片耗尽切换 + 同优先级公平调度
+    Round Robin = 同优先级Ready队列 + 时间片计数 + Tick触发调度 + os_switch切换
   </div>
+
   <p style="margin-top:14px;">
-RR调度API：
-<a href="/docs/api/scheduler/os_switch.html">os_switch</a> ·
-<a href="/docs/api/scheduler/os_dispatch_id.html">os_dispatch_id</a> ·
-<a href="/docs/api/time/os_wait1.html">os_wait1</a> ·
-<a href="/docs/api/time/os_delay.html">os_delay</a>
+相关API（API_V2）：
+<a href="/docs/api_v2/scheduler/os_switch.html">os_switch</a> ·
+<a href="/docs/api_v2/scheduler/os_dispatch_id.html">os_dispatch_id</a> ·
+<a href="/docs/api_v2/time/os_delay.html">os_delay</a> ·
+<a href="/docs/api_v2/time/os_tick_get.html">os_tick_get</a>
 </p>
 </section>
 
 <section class="section">
-  <h2>调度行为</h2>
-  <p>时间片轮转通常包含以下行为：</p>
+  <h2>调度特性</h2>
 
   <div class="flow">
+
     <div class="step">
-      <h3>任务进入队列</h3>
-      <p>多个同优先级任务进入Ready队列。</p>
+      <h3>同优先级任务队列</h3>
+      <p>多个任务进入同一Ready链表。</p>
     </div>
 
     <div class="step">
-      <h3>分配时间片</h3>
-      <p>调度器为当前任务分配固定执行时间。</p>
+      <h3>时间片轮转执行</h3>
+      <p>每个任务占用固定时间片运行。</p>
     </div>
 
     <div class="step">
-      <h3>时间片耗尽</h3>
-      <p>触发Tick中断并切换下一个任务。</p>
+      <h3>Tick驱动切换</h3>
+      <p>系统Tick触发调度器重新选择任务。</p>
     </div>
 
     <div class="step">
-      <h3>循环执行</h3>
-      <p>任务按照队列顺序持续轮转执行。</p>
+      <h3>公平调度模型</h3>
+      <p>所有任务平均获得CPU时间。</p>
     </div>
-    <div class="step">
-  <h3>RR调度链路</h3>
-  <p>Ready队列 → 时间片计数 → Tick中断 → os_dispatch_id → os_switch → 下一个任务</p>
-</div>
+
+  </div>
+
+  <div class="block" style="margin-top:18px;">
+RR链路：Ready Queue → Time Slice → Tick Interrupt → os_dispatch_id → os_switch → Next Task
   </div>
 </section>
 
@@ -219,25 +219,27 @@ RR调度API：
   <h2>执行流程</h2>
 
   <div class="flow">
+
     <div class="step">
-      <h3>1. 创建任务</h3>
-      <p>初始化多个相同优先级任务。</p>
+      <h3>任务创建</h3>
+      <p>三个同优先级任务进入系统。</p>
     </div>
 
     <div class="step">
-      <h3>2. 启动调度器</h3>
-      <p>进入Round Robin调度模式。</p>
+      <h3>调度启动</h3>
+      <p>系统进入Round Robin模式。</p>
     </div>
 
     <div class="step">
-      <h3>3. Tick触发切换</h3>
-      <p>时间片结束后切换任务。</p>
+      <h3>时间片运行</h3>
+      <p>每个任务按Tick轮流执行。</p>
     </div>
 
     <div class="step">
-      <h3>4. 持续轮转</h3>
-      <p>系统持续执行公平调度。</p>
+      <h3>持续循环</h3>
+      <p>任务不断在CPU之间切换。</p>
     </div>
+
   </div>
 </section>
 
@@ -247,21 +249,62 @@ RR调度API：
   <div class="code-box">
     <button class="copy-btn">Copy</button>
 <pre><code>
-// 在这里填入 RR Demo 示例代码
-// 例如：round robin / tick / timeslice / scheduler
+#include "hrtos.h"
+
+sbit LED_A = P1^0;
+sbit LED_B = P1^1;
+sbit LED_C = P1^2;
+
+void task_a(void)
+{
+    while(1)
+    {
+        LED_A = ~LED_A;
+        os_task_yield();
+    }
+}
+
+void task_b(void)
+{
+    while(1)
+    {
+        LED_B = ~LED_B;
+        os_task_yield();
+    }
+}
+
+void task_c(void)
+{
+    while(1)
+    {
+        LED_C = ~LED_C;
+        os_task_yield();
+    }
+}
+
+void hrtos_main(void)
+{
+    LED_A = LED_B = LED_C = 0;
+
+    os_task_create((unsigned int)task_a, 1, 1, 5);
+    os_task_create((unsigned int)task_b, 2, 1, 5);
+    os_task_create((unsigned int)task_c, 3, 1, 5);
+}
 </code></pre>
   </div>
 </section>
 
 <section class="section">
   <h2>系统意义</h2>
+
   <p>
-    时间片轮转机制可以提升任务执行公平性，
-    适用于同等级任务共享CPU资源的场景。
+时间片轮转解决同优先级任务饥饿问题，实现CPU资源公平分配与稳定响应。
   </p>
+
   <p style="margin-top:14px;">
-内核实现：
-<a href="/docs/modules/scheduler/round-robin.html">Round Robin Scheduler</a> ·
+内核机制：
+<a href="/docs/api_v2/scheduler/os_switch.html">os_switch</a> ·
+<a href="/docs/modules/scheduler/round-robin.html">Round Robin</a> ·
 <a href="/docs/system/scheduling-flow.html">Scheduling Flow</a>
 </p>
 </section>
@@ -272,23 +315,23 @@ RR调度API：
   <div class="flow">
 
     <div class="step">
-      <h3>任务执行模型</h3>
-      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+      <h3>Task Execution</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">进入</a></p>
     </div>
 
     <div class="step">
-      <h3>调度系统</h3>
-      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+      <h3>Scheduling Engine</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">进入</a></p>
     </div>
 
     <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
+      <h3>Interrupt Flow</h3>
+      <p><a href="/docs/system/interrupt-flow.html">进入</a></p>
     </div>
 
     <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+      <h3>Task Lifecycle</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">进入</a></p>
     </div>
 
   </div>
@@ -305,22 +348,11 @@ document.addEventListener("click", function (e) {
   const btn = e.target.closest(".copy-btn");
   if (!btn) return;
 
-  const box = btn.closest(".code-box");
-  if (!box) return;
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
 
-  const code = box.querySelector("code");
-  if (!code) return;
-
-  const text = code.innerText;
-
-  navigator.clipboard.writeText(text).then(() => {
-    const old = btn.innerText;
-    btn.innerText = "已复制";
-
-    setTimeout(() => {
-      btn.innerText = old;
-    }, 1000);
-  });
+  btn.innerText = "已复制";
+  setTimeout(() => btn.innerText = "Copy", 1000);
 });
 </script>
 

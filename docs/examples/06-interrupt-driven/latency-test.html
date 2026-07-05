@@ -5,19 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>中断延迟测试 | HRTOS 实时性分析</title>
-<meta name="description" content="中断延迟测试：分析HRTOS从中断触发到ISR执行之间的时间开销与实时性能评估方法。">
+<meta name="description" content="HRTOS中断延迟测试：基于事件驱动模型评估ISR触发到任务响应的系统实时性能。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
-<script src="/header.js" defer></script>
+
+<!-- 固定 -->
+<script src="https://hrtos.com/header.js" defer></script>
 
 <style>
 :root{
   --bg:#0f172a;
   --border:rgba(148,163,184,.18);
-  --accent:#38bdf8;
   --text:#e2e8f0;
   --muted:#94a3b8;
-  color-scheme:dark;
 }
 
 body{
@@ -43,18 +43,11 @@ body{
 .breadcrumb a{ color:#7dd3fc; }
 
 .hero h1{
-  margin:0 0 14px;
   font-size:2.4rem;
+  margin:0 0 14px;
 }
 
-.section{
-  margin-bottom:54px;
-}
-
-.flow{
-  display:grid;
-  gap:14px;
-}
+.section{ margin-bottom:54px; }
 
 .step{
   padding:18px 20px;
@@ -63,7 +56,6 @@ body{
   background:rgba(30,41,59,.45);
 }
 
-/* code */
 .code-box{
   position:relative;
   padding:18px;
@@ -85,6 +77,11 @@ body{
   border-radius:8px;
   cursor:pointer;
 }
+footer{
+  text-align:center;
+  color:#8ea3be;
+  margin-top:60px;
+}
 </style>
 </head>
 
@@ -92,7 +89,7 @@ body{
 
 <main class="page">
 
-<!-- 面包屑 -->
+<!-- breadcrumb（统一结构） -->
 <nav class="breadcrumb">
   <a href="/docs/index.html">Docs</a> /
   <a href="/docs/examples/index.html">Examples</a> /
@@ -102,160 +99,148 @@ body{
 
 <!-- 标题 -->
 <section class="hero">
-  <h1>中断延迟测试（Interrupt Latency Test）</h1>
-  <p>用于测量HRTOS从中断触发到进入ISR执行之间的时间延迟，用于评估实时性能。</p>
+  <h1>中断延迟测试（ISR → Task Latency）</h1>
+  <p>测量HRTOS从中断触发到任务响应之间的系统级延迟（事件驱动模型）。</p>
 </section>
 
 <!-- 定义 -->
 <section class="section">
   <h2>机制定义</h2>
   <div class="step">
-    Interrupt Latency = 中断触发 → ISR第一条指令执行
+    Latency = ISR触发 → event投递 → task唤醒 → task执行
   </div>
 </section>
 
-<!-- 延迟组成模型（必须新增） -->
+<!-- 测试模型（统一真实架构） -->
 <section class="section">
-  <h2>延迟组成模型</h2>
+  <h2>测试模型</h2>
+
+  <div class="step">ISR只负责事件投递</div>
+  <div class="step">任务负责统计与处理</div>
+  <div class="step">负载任务用于模拟调度压力</div>
+</section>
+
+<!-- API（全部 api_v2 修正） -->
+<section class="section">
+  <h2>相关 API（v2）</h2>
 
   <div class="step">
-    Interrupt Latency = Detection Delay + CPU Response + Context Save + Vector Jump + ISR Entry
+    <h3>事件初始化</h3>
+    <p><a href="/docs/api_v2/ipc/os_event_init.html">os_event_init()</a></p>
+  </div>
+
+  <div class="step">
+    <h3>ISR事件投递</h3>
+    <p><a href="/docs/api_v2/interrupt/os_event_set_from_isr.html">os_event_set_from_isr()</a></p>
+  </div>
+
+  <div class="step">
+    <h3>事件等待</h3>
+    <p><a href="/docs/api_v2/ipc/os_event_wait.html">os_event_wait()</a></p>
+  </div>
+
+  <div class="step">
+    <h3>时间系统</h3>
+    <p><a href="/docs/api_v2/time/os_tick_get.html">os_tick_get()</a></p>
   </div>
 </section>
 
-<!-- 测试流程 -->
+<!-- 执行流程 -->
 <section class="section">
-  <h2>测试流程</h2>
+  <h2>执行流程</h2>
 
-  <div class="flow">
-    <div class="step">1. 触发外部中断信号</div>
-    <div class="step">2. CPU响应中断请求</div>
-    <div class="step">3. 记录时间戳T1</div>
-    <div class="step">4. ISR入口执行记录T2</div>
-    <div class="step">5. 计算 T2 - T1</div>
+  <div class="step">
+    IRQ → ISR → os_event_set_from_isr → Scheduler → Task Wake → Measurement
   </div>
 </section>
 
-<!-- 代码区 -->
+<!-- 示例代码 -->
 <section class="section">
-  <h2>演示代码</h2>
+  <h2>示例代码（真实测量模型）</h2>
 
   <div class="code-box">
     <button class="copy-btn">复制</button>
-    <pre><code>
-#include <HRTOS.H>
+<pre><code>#include "hrtos.h"
 
-volatile unsigned int t1, t2, latency;
+sbit LED_ISR  = P1^0;
+sbit LED_TASK = P1^1;
+sbit LED_LOAD = P1^2;
 
-/* 外部中断 */
-void ISR_Handler(void)
+#define EVENT_IRQ 1
+
+static u16 isr_cnt = 0;
+static u16 task_cnt = 0;
+
+/* =========================
+ * ISR（极简）
+ * ========================= */
+void INT0_ISR(void)
 {
-    t2 = os_get_tick();   // 进入ISR时间
-    latency = t2 - t1;
+    isr_cnt++;
 
-    os_news_send1(0, latency);
+    LED_ISR = ~LED_ISR;
+
+    os_event_set_from_isr(EVENT_IRQ);
 }
 
-/* 模拟触发 */
-void trigger_interrupt(void)
+/* =========================
+ * 响应任务（测延迟点）
+ * ========================= */
+void response_task(void)
 {
-    t1 = os_get_tick();    // 触发前时间
+    while(1)
+    {
+        os_event_wait(EVENT_IRQ, 0);
 
-    os_soft_interrupt();   // 软件触发中断
+        task_cnt++;
+
+        LED_TASK = ~LED_TASK;
+    }
 }
 
-void system_init(void)
+/* =========================
+ * 负载任务（压力测试）
+ * ========================= */
+void load_task(void)
 {
-    os_interrupt_init();
-}
-
-void main(void)
-{
-    system_init();
+    volatile u16 i;
 
     while(1)
     {
-        trigger_interrupt();
-        os_wait1(10);
+        LED_LOAD = ~LED_LOAD;
+
+        for(i = 0; i < 20000; i++);
     }
 }
-    </code></pre>
+
+/* =========================
+ * 系统入口
+ * ========================= */
+void hrtos_main(void)
+{
+    os_event_init(EVENT_IRQ);
+
+    IT0 = 1;
+    EX0 = 1;
+
+    os_task_create(INT0_ISR, 1, 9, 5);
+    os_task_create(response_task, 2, 5, 5);
+    os_task_create(load_task, 3, 3, 5);
+}
+</code></pre>
   </div>
-</section>
-<!-- API接口映射（必须新增） -->
-<section class="section">
-  <h2>API接口映射</h2>
-  <p>用于控制中断触发与时间测量的核心接口。</p>
-
-  <div class="flow">
-
-    <div class="step">
-      <h3>中断初始化</h3>
-      <p><a href="/docs/architecture/interrupt/interrupt-model.html">os_interrupt_init()</a></p>
-    </div>
-
-    <div class="step">
-      <h3>软件触发中断</h3>
-      <p><a href="/docs/architecture/interrupt/interrupt-model.html">os_soft_interrupt()</a></p>
-    </div>
-
-    <div class="step">
-      <h3>时间戳获取</h3>
-      <p><a href="/docs/api/time/index.html">os_get_tick()</a></p>
-    </div>
-
-  </div>
-</section>
-
-<section class="section">
-  <h2>实时性意义</h2>
-  <p>
-    中断延迟是RTOS实时能力的上限指标，它决定系统是否具备确定性响应能力，
-    是评估硬实时系统等级的核心标准。
-  </p>
 </section>
 
 <!-- 系统意义 -->
 <section class="section">
   <h2>系统意义</h2>
-  <p>
-    中断延迟是实时系统最关键指标之一，直接决定系统响应能力上限。
-  </p>
-</section>
-
-<!-- 固定导航 -->
-<section class="section">
-  <h2>相关导航</h2>
-
-  <div class="flow">
-
-    <div class="step">
-      <h3>任务执行模型</h3>
-      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
-    </div>
-
-    <div class="step">
-      <h3>调度系统</h3>
-      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
-    </div>
-
-    <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
-    </div>
-
-    <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
-    </div>
-
+  <div class="step">
+    该测试用于评估 HRTOS 在不同负载下的调度延迟稳定性，是实时系统性能验证核心指标。
   </div>
 </section>
-
-<footer style="text-align:center;color:#8ea3be;margin-top:60px;">
-© HRTOS Interrupt Performance Module
+<footer class="footer">
+  © HRTOS Project 2017–2026 · Real-Time Operating System Documentation
 </footer>
-
 </main>
 
 <script>

@@ -36,7 +36,6 @@ body{
   padding:96px 0 64px;
 }
 
-/* breadcrumb */
 .breadcrumb{
   margin-bottom:26px;
   font-size:.92rem;
@@ -45,10 +44,7 @@ body{
 .breadcrumb a{ color:#7dd3fc; }
 .breadcrumb a:hover{ color:var(--accent); }
 
-/* hero */
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero-tag{
   display:inline-block;
@@ -72,10 +68,7 @@ body{
   color:var(--muted);
 }
 
-/* section */
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
 .section h2{
   margin:0 0 10px;
@@ -87,7 +80,6 @@ body{
   color:var(--muted);
 }
 
-/* grid */
 .grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -110,18 +102,8 @@ body{
   border-color:rgba(56,189,248,.4);
 }
 
-.card h3{
-  margin:0 0 8px;
-  font-size:1.08rem;
-  color:#f8fafc;
-}
-
-.card p{
-  margin:0;
-  font-size:.95rem;
-  color:var(--muted);
-}
-
+.card h3{ margin:0 0 8px; font-size:1.08rem; color:#f8fafc; }
+.card p{ margin:0; font-size:.95rem; color:var(--muted); }
 .card span{
   display:inline-block;
   margin-top:12px;
@@ -130,7 +112,6 @@ body{
   font-weight:600;
 }
 
-/* model block */
 .model-box{
   padding:18px 20px;
   border-left:3px solid var(--accent);
@@ -140,7 +121,6 @@ body{
   margin-top:12px;
 }
 
-/* footer */
 .footer{
   margin-top:60px;
   padding-top:20px;
@@ -168,7 +148,7 @@ body{
     <span>Task Execution</span>
   </nav>
 
-  <!-- 标题区 -->
+  <!-- 标题 -->
   <section class="hero">
     <span class="hero-tag">Execution Model</span>
 
@@ -180,40 +160,41 @@ body{
     </p>
   </section>
 
-
-
   <!-- 模型说明 -->
   <section class="section">
     <h2>执行模型定义</h2>
+
     <div class="model-box">
       任务执行模型用于描述RTOS中任务从创建到运行、切换与终止的完整执行机制。
     </div>
+
     <p style="margin-top:14px;">
-相关API：
-<a href="/docs/api/task/index.html">Task API</a> ·
-<a href="/docs/api/task/os_task.html">os_task</a> ·
-<a href="/docs/api/task/os_task_function.html">os_task_function</a> ·
-<a href="/docs/api/scheduler/os_switch.html">os_switch</a>
-</p>
-    
+      相关API：
+      <a href="/docs/api_v2/task/index.html">Task API</a> ·
+      <a href="/docs/api_v2/task/os_task_create.html">os_task_create</a> ·
+      <a href="/docs/api_v2/task/os_task_get_state.html">os_task_get_state</a> ·
+      <a href="/docs/api_v2/kernel/os_dispatch_select.html">os_dispatch_select</a>
+    </p>
   </section>
-<!-- 学习路径（新增） -->
-<section class="section">
-  <h2>学习路径（推荐顺序）</h2>
 
-  <div class="model-box">
-    1. 任务创建（TCB初始化 + 栈分配）<br>
-    2. 任务状态模型（Ready / Running / Blocked）<br>
-    3. 上下文切换（os_switch + 寄存器保存）<br>
-    4. 调度引擎（优先级与选择逻辑）<br>
-    5. 优先级机制（抢占与继承）
-  </div>
+  <!-- 学习路径 -->
+  <section class="section">
+    <h2>学习路径（推荐顺序）</h2>
 
-  <p style="margin-top:14px;">
-    建议按顺序学习，可逐步构建完整RTOS执行链路理解。
-  </p>
-</section>
-  <!-- 核心内容 -->
+    <div class="model-box">
+      1. 任务创建（TCB初始化 + 栈分配）<br>
+      2. 任务状态模型（Ready / Running / Blocked）<br>
+      3. 上下文切换（调度器触发 + 寄存器保存）<br>
+      4. 调度引擎（os_dispatch_select）<br>
+      5. 优先级机制（抢占与继承）
+    </div>
+
+    <p style="margin-top:14px;">
+      建议按顺序学习，可逐步构建完整RTOS执行链路理解。
+    </p>
+  </section>
+
+  <!-- 核心实验 -->
   <section class="section">
     <h2>核心实验</h2>
     <p>以下实验用于验证任务执行模型在不同场景下的行为变化。</p>
@@ -245,15 +226,16 @@ body{
       </a>
 
     </div>
-    <div class="model-box" style="margin-top:16px;">
-<strong>执行模型来源</strong><br><br>
 
-任务创建 → TCB初始化<br>
-状态模型 → Ready / Running / Blocked<br>
-上下文切换 → os_switch() + 寄存器保存<br>
-优先级控制 → 调度器动态决策
-</div>
-     </section>
+    <div class="model-box" style="margin-top:16px;">
+      <strong>执行模型来源</strong><br><br>
+
+      任务创建 → os_task_create (task)<br>
+      状态模型 → os_task_get_state (task)<br>
+      上下文切换 → os_task_yield / os_dispatch_select (kernel)<br>
+      优先级控制 → os_task_set_priority (task)
+    </div>
+  </section>
 
   <!-- 关联 -->
   <section class="section">
@@ -274,19 +256,20 @@ body{
       </a>
 
     </div>
+
     <div style="margin-top:14px;">
-<strong>系统级视图：</strong><br><br>
-<a href="/system-view/01-execution-flow.html">执行流模型</a> ·
-<a href="/system-view/02-task-lifecycle.html">任务生命周期</a> ·
-<a href="/system-view/04-scheduler-cycle.html">调度周期</a>
-</div>
-    </section>
+      <strong>系统级视图：</strong><br><br>
+      <a href="/system-view/01-execution-flow.html">执行流模型</a> ·
+      <a href="/system-view/02-task-lifecycle.html">任务生命周期</a> ·
+      <a href="/system-view/04-scheduler-cycle.html">调度周期</a>
+    </div>
+  </section>
 
   <footer class="footer">
     © 2017–2026 HRTOS · Task Execution Model
   </footer>
 
 </main>
-
+<script src="https://hrtos.com/header.js" defer></script>
 </body>
 </html>

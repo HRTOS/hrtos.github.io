@@ -36,7 +36,6 @@ body{
   padding:96px 0 64px;
 }
 
-/* breadcrumb */
 .breadcrumb{
   margin-bottom:26px;
   font-size:.92rem;
@@ -45,10 +44,7 @@ body{
 .breadcrumb a{ color:#7dd3fc; }
 .breadcrumb a:hover{ color:var(--accent); }
 
-/* hero */
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero-tag{
   display:inline-block;
@@ -72,10 +68,7 @@ body{
   color:var(--muted);
 }
 
-/* section */
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
 .section h2{
   margin:0 0 10px;
@@ -87,7 +80,6 @@ body{
   color:var(--muted);
 }
 
-/* grid */
 .grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -102,6 +94,7 @@ body{
   border-radius:var(--radius);
   box-shadow:var(--shadow);
   transition:.25s ease;
+  text-decoration:none;
 }
 
 .card:hover{
@@ -129,7 +122,6 @@ body{
   font-weight:600;
 }
 
-/* model block */
 .model-box{
   padding:18px 20px;
   border-left:3px solid var(--accent);
@@ -139,7 +131,6 @@ body{
   margin-top:12px;
 }
 
-/* footer */
 .footer{
   margin-top:60px;
   padding-top:20px;
@@ -156,18 +147,18 @@ body{
 </head>
 
 <body data-header="docs">
-<script src="/header.js" defer></script>
+
+<!-- ✅ 你要求的统一 header -->
+<script src="https://hrtos.com/header.js" defer></script>
 
 <main class="page">
 
-  <!-- 面包屑 -->
   <nav class="breadcrumb">
     <a href="/docs/index.html">Docs</a> /
     <a href="/docs/examples/index.html">Examples</a> /
     <span>Communication Model</span>
   </nav>
 
-  <!-- 标题区 -->
   <section class="hero">
     <span class="hero-tag">IPC Model</span>
 
@@ -177,58 +168,60 @@ body{
       通信模型描述RTOS中任务之间的数据交换与同步机制，
       包括邮箱、消息队列、互斥锁与信号量等核心通信方式。
     </p>
-    <div class="model-box">
-IPC Layer = System Call + Kernel Queue + Task Scheduling Interaction
-</div>
-  </section>
 
-  <!-- 模型说明 -->
-  <section class="section">
-    <h2>通信模型定义</h2>
     <div class="model-box">
-      Communication Model = Mailbox + Message Queue + Mutex + Semaphore + Synchronization
+      IPC Layer（进程间通信层） = 系统调用（System Call） + 内核队列（Kernel Queue） + 任务调度交互（Task Scheduling Interaction）
     </div>
   </section>
 
   <section class="section">
-  <h2>通信API层</h2>
+    <h2>通信模型定义</h2>
 
-  <div class="model-box">
-    HRTOS IPC System Call Interface Layer
-  </div>
+    <div class="model-box">
+      通信模型（Communication Model） = 邮箱（Mailbox） + 消息队列（Message Queue） + 互斥锁（Mutex） + 信号量（Semaphore） + 同步机制（Synchronization）
+    </div>
+  </section>
 
-  <div class="grid">
+  <!-- API层 -->
+  <section class="section">
+    <h2>通信API层</h2>
 
-    <a class="card" href="/docs/modules/ipc/mailbox.html">
-      <h3>Mailbox API</h3>
-      <p>单消息通信接口</p>
-      <span>查看 API →</span>
-    </a>
+    <div class="model-box">
+      HRTOS IPC 系统调用接口层（HRTOS IPC System Call Interface Layer）
+    </div>
 
-    <a class="card" href="/docs/modules/ipc/message-queue.html">
-      <h3>Message Queue API</h3>
-      <p>多消息缓存接口</p>
-      <span>查看 API →</span>
-    </a>
+    <div class="grid">
 
-    <a class="card" href="/docs/modules/ipc/mutex.html">
-      <h3>Mutex API</h3>
-      <p>互斥访问控制接口</p>
-      <span>查看 API →</span>
-    </a>
+      <a class="card" href="/docs/api_v2/ipc/os_mailbox_init.html">
+        <h3>Mailbox API</h3>
+        <p>单消息通信接口</p>
+        <span>查看 API →</span>
+      </a>
 
-    <a class="card" href="/docs/modules/ipc/semaphore.html">
-      <h3>Semaphore API</h3>
-      <p>资源计数同步接口</p>
-      <span>查看 API →</span>
-    </a>
+      <a class="card" href="/docs/api_v2/ipc/os_msgq_init.html">
+        <h3>Message Queue API</h3>
+        <p>多消息缓存接口</p>
+        <span>查看 API →</span>
+      </a>
 
-  </div>
-</section>
-  <!-- 核心实验 -->
+      <a class="card" href="/docs/api_v2/ipc/os_mutex_init.html">
+        <h3>Mutex API</h3>
+        <p>互斥访问控制接口</p>
+        <span>查看 API →</span>
+      </a>
+
+      <a class="card" href="/docs/api_v2/ipc/os_sem_init.html">
+        <h3>Semaphore API</h3>
+        <p>资源计数同步接口</p>
+        <span>查看 API →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- 实验 -->
   <section class="section">
     <h2>核心实验</h2>
-    <p>以下实验用于验证任务间通信与同步机制的运行行为。</p>
 
     <div class="grid">
 

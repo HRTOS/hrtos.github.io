@@ -36,7 +36,6 @@ body{
   padding:96px 0 64px;
 }
 
-/* breadcrumb */
 .breadcrumb{
   margin-bottom:26px;
   font-size:.92rem;
@@ -45,10 +44,7 @@ body{
 .breadcrumb a{ color:#7dd3fc; }
 .breadcrumb a:hover{ color:var(--accent); }
 
-/* hero */
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero-tag{
   display:inline-block;
@@ -72,22 +68,13 @@ body{
   color:var(--muted);
 }
 
-/* section */
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
 .section h2{
   margin:0 0 10px;
   font-size:1.4rem;
 }
 
-.section p{
-  margin:0 0 20px;
-  color:var(--muted);
-}
-
-/* grid */
 .grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -102,6 +89,7 @@ body{
   border-radius:12px;
   box-shadow:0 20px 48px rgba(2,6,23,.34);
   transition:.25s ease;
+  text-decoration:none;
 }
 
 .card:hover{
@@ -129,17 +117,23 @@ body{
   font-weight:600;
 }
 
-/* model */
-.model-box{
-  padding:18px 20px;
+.flow{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  padding:18px;
   border-left:3px solid var(--accent);
   background:rgba(56,189,248,.06);
   border-radius:10px;
   color:var(--muted);
-  margin-top:12px;
 }
 
-/* footer */
+.step h3{
+  margin:0;
+  font-size:1rem;
+  color:#f8fafc;
+}
+
 .footer{
   margin-top:60px;
   padding-top:20px;
@@ -156,97 +150,132 @@ body{
 </head>
 
 <body data-header="docs">
-<script src="/header.js" defer></script>
+
+<!-- ✅ header统一 -->
+<script src="https://hrtos.com/header.js" defer></script>
 
 <main class="page">
 
-  <!-- 面包屑 -->
   <nav class="breadcrumb">
     <a href="/docs/index.html">Docs</a> /
     <a href="/docs/examples/index.html">Examples</a> /
     <span>Kernel Behavior</span>
   </nav>
 
-  <!-- 标题 -->
   <section class="hero">
     <span class="hero-tag">Kernel Core</span>
 
     <h1>内核行为系统</h1>
 
     <p>
-      内核行为系统用于分析RTOS在真实运行过程中的调度轨迹、
-      优先级反转现象以及任务切换的底层执行逻辑，是系统级行为观测核心模块。
+      内核行为系统用于分析RTOS真实运行路径，包括调度流程、
+      优先级反转与上下文切换行为，是系统级执行观测核心。
     </p>
   </section>
 
-  <!-- 模型定义 -->
   <section class="section">
     <h2>内核行为模型定义</h2>
-    <div class="model-box">
-      Kernel Behavior Model = Scheduling Flow + Priority Inversion + Context Switch Trace + Runtime Execution Path
+
+    <div class="flow">
+      内核行为（Kernel Behavior） = 调度流程（Schedule Flow） + 
+      上下文切换（Context Switch） + 中断交互（Interrupt Interaction） + 
+      优先级反转（Priority Inversion）
     </div>
   </section>
-<section class="section">
-  <h2>内核行为入口映射</h2>
 
-  <div class="flow">
+  <section class="section">
+    <h2>内核执行路径</h2>
 
-    <div class="step">
-      <h3>os_schedule_trigger()</h3>
-      <p>触发内核调度行为入口</p>
+    <div class="flow">
+
+      <div class="step">
+        <h3>os_schedule_request()</h3>
+        <p>触发调度请求</p>
+      </div>
+
+      <div class="step">
+        <h3>os_enter_critical()</h3>
+        <p>进入临界区保护上下文</p>
+      </div>
+
+      <div class="step">
+        <h3>os_scheduler_run()</h3>
+        <p>执行任务选择逻辑</p>
+      </div>
+
+      <div class="step">
+        <h3>os_task_yield()</h3>
+        <p>任务切换触发</p>
+      </div>
+
+      <div class="step">
+        <h3>os_tick_get()</h3>
+        <p>时间驱动调度参考</p>
+      </div>
+
     </div>
+  </section>
 
-    <div class="step">
-      <h3>os_context_save()</h3>
-      <p>保存当前任务运行状态</p>
-    </div>
-
-    <div class="step">
-      <h3>os_scheduler_run()</h3>
-      <p>执行调度决策逻辑</p>
-    </div>
-
-    <div class="step">
-      <h3>os_context_switch()</h3>
-      <p>切换到目标任务上下文</p>
-    </div>
-
-    <div class="step">
-      <h3>os_context_restore()</h3>
-      <p>恢复任务执行现场</p>
-    </div>
-
-  </div>
-</section>
   <!-- 核心实验 -->
   <section class="section">
     <h2>核心实验</h2>
-    <p>以下实验用于观察内核在复杂系统负载下的真实行为。</p>
 
     <div class="grid">
 
       <a class="card" href="full-schedule-flow.html">
         <h3>完整调度流程</h3>
-        <p>追踪系统从中断到任务切换的完整路径。</p>
+        <p>追踪系统从中断到任务切换路径。</p>
         <span>进入实验 →</span>
       </a>
 
       <a class="card" href="priority-inversion.html">
         <h3>优先级反转</h3>
-        <p>分析锁竞争导致的优先级异常问题。</p>
+        <p>分析锁竞争导致调度异常。</p>
         <span>进入实验 →</span>
       </a>
 
       <a class="card" href="real-system-run.html">
         <h3>真实系统运行</h3>
-        <p>模拟完整RTOS运行周期与调度行为。</p>
+        <p>模拟完整RTOS运行周期。</p>
         <span>进入实验 →</span>
       </a>
 
     </div>
   </section>
 
-  <!-- 关联 -->
+  <!-- API v2 -->
+  <section class="section">
+    <h2>API 映射</h2>
+
+    <div class="grid">
+
+      <a class="card" href="/docs/api_v2/interrupt/os_schedule_request.html">
+        <h3>调度触发</h3>
+        <p>系统调度入口API</p>
+        <span>schedule →</span>
+      </a>
+
+      <a class="card" href="/docs/api_v2/interrupt/os_enter_critical.html">
+        <h3>中断/临界区</h3>
+        <p>上下文保护机制</p>
+        <span>critical →</span>
+      </a>
+
+      <a class="card" href="/docs/api_v2/time/os_tick_get.html">
+        <h3>Tick系统</h3>
+        <p>时间驱动调度基础</p>
+        <span>tick →</span>
+      </a>
+
+      <a class="card" href="/docs/api_v2/kernel/os_slab_overflow.html">
+        <h3>内存保护</h3>
+        <p>运行安全机制</p>
+        <span>overflow →</span>
+      </a>
+
+    </div>
+  </section>
+
   <section class="section">
     <h2>关联系统</h2>
 
@@ -254,13 +283,13 @@ body{
 
       <a class="card" href="/docs/examples/01-task-execution/index.html">
         <h3>任务执行模型</h3>
-        <p>任务从创建到运行的核心机制。</p>
+        <p>任务生命周期分析。</p>
         <span>查看 →</span>
       </a>
 
       <a class="card" href="/docs/examples/02-scheduling-engine/index.html">
         <h3>调度引擎</h3>
-        <p>内核行为的调度决策核心。</p>
+        <p>调度决策核心。</p>
         <span>查看 →</span>
       </a>
 

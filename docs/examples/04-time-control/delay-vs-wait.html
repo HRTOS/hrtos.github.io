@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>延时 vs 等待机制 | HRTOS 实验系统</title>
-<meta name="description" content="对比 RTOS 中 delay 延时与 wait 等待机制的本质区别，包括调度行为、CPU释放方式与实时性影响分析。">
+<title>延时 vs 事件等待机制 | HRTOS 实验系统</title>
+<meta name="description" content="对比 HRTOS 中 os_delay 时间阻塞与 os_event_wait 事件阻塞机制，分析调度行为、CPU释放方式与实时响应差异。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 <script src="/header.js" defer></script>
@@ -40,11 +40,8 @@ body{
   color:var(--muted);
 }
 .breadcrumb a{ color:#7dd3fc; text-decoration:none; }
-.breadcrumb a:hover{ color:var(--accent); }
 
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero-tag{
   display:inline-block;
@@ -65,12 +62,7 @@ body{
 
 .section{ margin-bottom:54px; }
 
-.section h2{
-  margin:0 0 10px;
-  font-size:1.4rem;
-}
-
-.section p{ color:var(--muted); }
+.section h2{ margin:0 0 10px; font-size:1.4rem; }
 
 .block{
   padding:18px 20px;
@@ -113,11 +105,6 @@ body{
   cursor:pointer;
 }
 
-.copy-btn:hover{
-  color:#fff;
-  border-color:#38bdf8;
-}
-
 .footer{
   margin-top:60px;
   padding-top:20px;
@@ -133,187 +120,200 @@ body{
 
 <main class="page">
 
-<!-- 面包屑（严格 index.html） -->
 <nav class="breadcrumb">
   <a href="/docs/index.html">Docs</a> /
   <a href="/docs/examples/index.html">Examples</a> /
   <a href="/docs/examples/04-time-control/index.html">Time Control</a> /
-  <span>Delay vs Wait</span>
+  <span>Delay vs Event Wait</span>
 </nav>
 
-<!-- 标题 -->
 <section class="hero">
-  <span class="hero-tag">Time Control Core</span>
-  <h1>Delay vs Wait（延时与等待机制对比）</h1>
+  <span class="hero-tag">HRTOS Time & Event Model</span>
+  <h1>os_delay vs os_event_wait（时间阻塞 vs 事件阻塞）</h1>
   <p>
-    本页面用于对比 RTOS 中 delay（延时阻塞）与 wait（事件等待）两种调度行为的本质差异，
-    包括 CPU 释放方式、调度触发条件与实时性影响。
+    本示例基于 HRTOS 实际 API 行为，对比时间驱动阻塞（os_delay）
+    与事件驱动阻塞（os_event_wait）的调度差异，并通过 LED 行为直观验证。
   </p>
 </section>
 
-<!-- 定义 -->
 <section class="section">
   <h2>机制定义</h2>
+
   <div class="block">
-    delay = 时间驱动阻塞（time-based blocking）<br/>
-    wait = 事件驱动阻塞（event-based blocking）
+    os_delay → 时间驱动阻塞（Tick countdown based blocking）<br/>
+    os_event_wait → 事件驱动阻塞（Event wake-up based blocking）
   </div>
-  <div class="block">
-Time Control Model = Tick Scheduling + Time Blocking + Event Blocking + Wake-up Dispatch
-</div>
+
+  <div class="block" style="margin-top:10px;">
+    HRTOS Model = Tick Scheduler + Time Blocking + Event Blocking + ISR/Task Wake-up Dispatch
+  </div>
 </section>
 
-<!-- 核心区别 -->
 <section class="section">
-  <h2>核心区别</h2>
+  <h2>核心行为差异</h2>
 
   <div class="flow">
 
     <div class="step">
-      <h3>Delay（延时）</h3>
-      <p>任务主动进入阻塞状态，等待固定时间片结束后恢复执行。</p>
+      <h3>os_delay（时间任务）</h3>
+      <p>任务进入延时队列，由系统 Tick 递减计数，到期后恢复调度。</p>
     </div>
 
     <div class="step">
-      <h3>Wait（等待）</h3>
-      <p>任务等待某个事件（信号量 / 消息 / 条件）触发后恢复执行。</p>
+      <h3>os_event_wait（事件任务）</h3>
+      <p>任务阻塞在事件队列，直到 os_event_write 触发立即唤醒。</p>
     </div>
 
     <div class="step">
-      <h3>调度触发方式</h3>
-      <p>delay 依赖系统 tick；wait 依赖事件唤醒。</p>
+      <h3>调度触发机制</h3>
+      <p>delay → Tick驱动调度；event → ISR/任务主动唤醒调度。</p>
     </div>
 
     <div class="step">
-      <h3>实时性影响</h3>
-      <p>wait 通常优于 delay（响应更快、CPU利用率更高）。</p>
+      <h3>实时性</h3>
+      <p>事件模型优先级更高，响应延迟显著低于纯时间模型。</p>
     </div>
 
   </div>
 </section>
 
-<!-- 执行流程 -->
 <section class="section">
-  <h2>执行行为流程</h2>
+  <h2>执行流程</h2>
 
   <div class="flow">
 
     <div class="step">
-      <h3>Delay 流程</h3>
-      <p>进入阻塞 → 加入时间队列 → Tick递减 → 时间到恢复</p>
+      <h3>Delay Task</h3>
+      <p>运行 → LED翻转 → os_delay → Tick阻塞 → 恢复</p>
     </div>
 
     <div class="step">
-      <h3>Wait 流程</h3>
-      <p>进入阻塞 → 加入事件队列 → 事件触发 → 立即唤醒</p>
+      <h3>Event Task</h3>
+      <p>等待 → os_event_wait → 阻塞 → os_event_write触发 → 立即唤醒</p>
+    </div>
+
+    <div class="step">
+      <h3>Trigger Task</h3>
+      <p>周期延时 → 写事件 → 唤醒等待任务</p>
     </div>
 
   </div>
 </section>
 
-<!-- 代码区（必须保留） -->
 <section class="section">
-  <h2>演示代码</h2>
+  <h2>HRTOS 示例代码（真实API版本）</h2>
 
   <div class="code-box">
     <button class="copy-btn">Copy</button>
 <pre><code>
-/* HRTOS Delay vs Wait Demo */
+#include "hrtos.h"
 
-#include &lt;HRTOS_KERNEL.H&gt;
-#include &lt;HRTOS.H&gt;
+#define EVENT_ID 1
 
+sbit LED_DELAY  = P1^0;
+sbit LED_WAIT   = P1^1;
+sbit LED_EVENT  = P1^2;
+
+/* 时间驱动任务 */
 void task_delay(void)
 {
     while(1)
     {
-        os_wait1(10);   // delay行为：时间驱动阻塞
+        LED_DELAY = ~LED_DELAY;
+        os_delay(10);   // Tick阻塞
     }
 }
 
+/* 事件等待任务 */
 void task_wait(void)
 {
     while(1)
     {
-        os_wait_event(1); // wait行为：事件驱动阻塞
+        if(os_event_wait(EVENT_ID, 0))
+        {
+            LED_WAIT = ~LED_WAIT;
+
+            os_event_delete(EVENT_ID);
+
+            {
+                u16 i = 10000;
+                while(i--);
+            }
+        }
     }
 }
 
-void main(void)
+/* 事件触发任务 */
+void task_event_trigger(void)
 {
-    os_scheduling(1);
-
-    os_task((unsigned int)task_delay, 0, 2, 0);
-    os_task((unsigned int)task_wait, 1, 3, 0);
-
-    os_task_release(0);
-
     while(1)
     {
-        os_nop();
+        os_delay(20);
+
+        os_event_write(EVENT_ID);
+
+        LED_EVENT = ~LED_EVENT;
     }
+}
+
+/* 系统入口 */
+void hrtos_main(void)
+{
+    LED_DELAY = 0;
+    LED_WAIT  = 0;
+    LED_EVENT = 0;
+
+    os_event_init(EVENT_ID);
+
+    os_task_create((unsigned int)task_delay,        1, 2, 5);
+    os_task_create((unsigned int)task_wait,         2, 3, 5);
+    os_task_create((unsigned int)task_event_trigger,3, 2, 5);
 }
 </code></pre>
   </div>
-  <p>
-API 接口：
-<a href="/docs/api/time/index.html">Time Control API</a>
-</p>
 </section>
 
 <section class="section">
-  <h2>时间系统位置</h2>
-
-  <div class="block">
-    Time Control is the root driver of RTOS scheduling, communication and synchronization.
-  </div>
-</section>
-
-<!-- 系统意义 -->
-<section class="section">
-  <h2>系统意义</h2>
-  <p>
-    delay 适用于周期性控制任务，而 wait 更适用于事件驱动系统。
-    在 HRTOS 中，wait 被优先优化用于提升实时响应能力。
-  </p>
-  
-</section>
-<section class="section">
-  <h2>调度与时间关系</h2>
-
-  <div class="block">
-    Scheduler decisions are triggered by time tick or event wake-up.
-  </div>
-</section>
-<!-- 相关导航（锁死结构） -->
-<section class="section">
-  <h2>相关导航</h2>
+  <h2>API 对照（v2）</h2>
 
   <div class="flow">
 
     <div class="step">
-      <h3>任务执行模型</h3>
-      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+      <h3>Time API</h3>
+      <p>
+        <a href="\docs\api_v2\time\os_delay.html">os_delay</a>
+      </p>
     </div>
 
     <div class="step">
-      <h3>调度系统</h3>
-      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+      <h3>Event IPC API</h3>
+      <p>
+        <a href="\docs\api_v2\ipc\os_event_init.html">os_event_init</a><br/>
+        <a href="\docs\api_v2\ipc\os_event_wait.html">os_event_wait</a><br/>
+        <a href="\docs\api_v2\ipc\os_event_write.html">os_event_write</a><br/>
+        <a href="\docs\api_v2\ipc\os_event_delete.html">os_event_delete</a>
+      </p>
     </div>
 
     <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
+      <h3>Task API</h3>
+      <p>
+        <a href="\docs\api_v2\task\os_task_create.html">os_task_create</a>
+      </p>
     </div>
 
-    <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
-    </div>
-<div class="step">
-  <h3>时间控制系统</h3>
-  <p><a href="/docs/examples/04-time-control/index.html">Time Control</a></p>
-</div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+
+  <div class="block">
+    在 HRTOS 中，delay 属于“时间驱动调度路径”，
+    event 属于“事件驱动调度路径”。<br/><br/>
+
+    实际系统中：event 模型通常用于高实时响应逻辑，
+    delay 用于周期性背景任务。
   </div>
 </section>
 
@@ -328,19 +328,14 @@ document.addEventListener("click", function (e) {
   const btn = e.target.closest(".copy-btn");
   if (!btn) return;
 
-  const box = btn.closest(".code-box");
-  if (!box) return;
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
 
-  const code = box.querySelector("code");
-  if (!code) return;
-
-  navigator.clipboard.writeText(code.innerText).then(() => {
-    const old = btn.innerText;
-    btn.innerText = "已复制";
-    setTimeout(() => btn.innerText = old, 1000);
-  });
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(() => btn.innerText = old, 1000);
 });
 </script>
-
+<script src="https://hrtos.com/header.js" defer></script>
 </body>
 </html>

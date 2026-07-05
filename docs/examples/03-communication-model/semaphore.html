@@ -5,21 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>信号量机制 | HRTOS 实验系统</title>
-<meta name="description" content="HRTOS 信号量实验：理解资源同步、任务阻塞、释放机制与实时系统中的同步控制流程。">
+<meta name="description" content="HRTOS 信号量实验：演示任务同步、资源计数、阻塞与唤醒机制。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
-<script src="/header.js" defer></script>
+
+<!-- 统一 header 引用（标准化） -->
+<script src="https://hrtos.com/header.js" defer></script>
 
 <style>
 :root{
   --bg:#0f172a;
-  --surface:rgba(15,23,42,.72);
   --border:rgba(148,163,184,.18);
   --accent:#38bdf8;
   --text:#e2e8f0;
   --muted:#94a3b8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:12px;
   color-scheme:dark;
 }
 
@@ -42,8 +41,7 @@ body{
   font-size:.92rem;
   color:var(--muted);
 }
-.breadcrumb a{ color:#7dd3fc; text-decoration:none; }
-.breadcrumb a:hover{ color:var(--accent); }
+.breadcrumb a{ color:#7dd3fc; }
 
 .hero{
   margin-bottom:54px;
@@ -59,7 +57,7 @@ body{
   margin-bottom:16px;
 }
 
-.hero h1{
+h1{
   margin:0 0 14px;
   font-size:clamp(2.2rem,4.5vw,3.4rem);
   line-height:1.1;
@@ -71,9 +69,7 @@ body{
   color:var(--muted);
 }
 
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
 .section h2{
   margin:0 0 10px;
@@ -166,111 +162,50 @@ body{
 </nav>
 
 <section class="hero">
-  <span class="hero-tag">Communication Core</span>
+  <span class="hero-tag">Synchronization Core</span>
   <h1>信号量机制（Semaphore）</h1>
   <p>
-    信号量用于控制多个任务对共享资源的访问，
-    是RTOS中最基础的同步机制之一，可用于互斥控制、资源计数与任务阻塞管理。
+    信号量用于任务同步与资源管理，通过计数机制控制并发访问，
+    实现阻塞、唤醒与调度协作。
   </p>
 </section>
 
 <section class="section">
   <h2>机制定义</h2>
   <div class="block">
-    Semaphore = 资源计数器 + 阻塞队列 + 唤醒机制 + 调度联动
+    Semaphore = 资源计数 + 阻塞队列 + 唤醒机制 + 调度联动
   </div>
-</section>
-
-<section class="section">
-  <h2>API接口</h2>
-
-  <div class="flow">
-
-    <div class="step">
-      <h3>Mailbox API</h3>
-      <p><a href="/docs/modules/ipc/mailbox.html">/api/communication/mailbox</a></p>
-    </div>
-
-    <div class="step">
-      <h3>Message Queue API</h3>
-      <p><a href="/docs/modules/ipc/message-queue.html">/api/communication/message-queue</a></p>
-    </div>
-
-    <div class="step">
-      <h3>Mutex API</h3>
-      <p><a href="/docs/modules/ipc/mutex.html">/api/communication/mutex</a></p>
-    </div>
-
-    <div class="step">
-      <h3>Semaphore API</h3>
-      <p><a href="/docs/modules/ipc/semaphore.html">/api/communication/semaphore</a></p>
-    </div>
-
-  </div>
+  <p>
+    在 HRTOS 中，信号量是最基础的同步工具，用于解决任务间资源竞争问题。
+  </p>
 </section>
 
 <section class="section">
   <h2>核心行为</h2>
 
   <div class="flow">
-    <div class="step">
-      <h3>申请资源</h3>
-      <p>任务尝试获取信号量，资源不足时进入阻塞状态。</p>
-    </div>
-
-    <div class="step">
-      <h3>释放资源</h3>
-      <p>任务释放资源后唤醒等待队列中的其他任务。</p>
-    </div>
-
-    <div class="step">
-      <h3>任务阻塞</h3>
-      <p>等待资源期间任务暂停运行，释放CPU。</p>
-    </div>
-
-    <div class="step">
-      <h3>任务唤醒</h3>
-      <p>资源可用时恢复等待任务执行。</p>
-    </div>
+    <div class="step"><h3>申请资源</h3><p>计数>0则获取成功，否则阻塞。</p></div>
+    <div class="step"><h3>任务阻塞</h3><p>无资源时进入等待队列。</p></div>
+    <div class="step"><h3>释放资源</h3><p>计数增加并唤醒等待任务。</p></div>
+    <div class="step"><h3>任务恢复</h3><p>被唤醒任务重新进入调度。</p></div>
   </div>
-</section>
-
-<section class="section">
-  <h2>系统关系模型</h2>
-
-  <div class="block">
-    Task → Communication Object → Scheduler → Task
-  </div>
-
-  <p>
-    通信对象（Mailbox / Queue / Mutex / Semaphore）
-    本质上是调度器控制的资源中介。
-  </p>
 </section>
 
 <section class="section">
   <h2>执行流程</h2>
 
   <div class="flow">
-    <div class="step">
-      <h3>1. 初始化信号量</h3>
-      <p>创建资源计数器并设置初始值。</p>
-    </div>
+    <div class="step"><h3>1. 初始化信号量</h3><p>设置初始资源数量。</p></div>
+    <div class="step"><h3>2. 任务申请</h3><p>尝试获取资源。</p></div>
+    <div class="step"><h3>3. 阻塞等待</h3><p>资源不足进入等待队列。</p></div>
+    <div class="step"><h3>4. 释放资源</h3><p>资源释放触发唤醒。</p></div>
+  </div>
+</section>
 
-    <div class="step">
-      <h3>2. 任务申请资源</h3>
-      <p>若计数器大于0，则获取成功并减1。</p>
-    </div>
-
-    <div class="step">
-      <h3>3. 资源不足阻塞</h3>
-      <p>任务进入等待队列，挂起执行。</p>
-    </div>
-
-    <div class="step">
-      <h3>4. 释放信号量</h3>
-      <p>资源释放后增加计数并唤醒等待任务。</p>
-    </div>
+<section class="section">
+  <h2>系统关系模型</h2>
+  <div class="block">
+    Task → Semaphore → Scheduler → Task
   </div>
 </section>
 
@@ -280,10 +215,6 @@ body{
   <div class="code-box">
     <button class="copy-btn">Copy</button>
 <pre><code>
-/*********************************************************
-* HRTOS Semaphore Demo
-*********************************************************/
-
 #include &lt;HRTOS_KERNEL.H&gt;
 #include &lt;HRTOS.H&gt;
 
@@ -324,9 +255,9 @@ void main(void)
 <section class="section">
   <h2>系统意义</h2>
   <p>
-    信号量机制是实时系统同步控制的重要基础，
-    用于避免资源竞争、任务冲突以及不可预测执行顺序，
-    对系统稳定性与实时性具有直接影响。
+    信号量是 RTOS 并发控制的基础机制之一，
+    用于保证任务间同步执行与资源安全访问，
+    对系统稳定性与实时性具有关键作用。
   </p>
 </section>
 
@@ -334,27 +265,25 @@ void main(void)
   <h2>相关导航</h2>
 
   <div class="flow">
-
     <div class="step">
-      <h3>任务执行模型</h3>
-      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+      <h3>Task Execution</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">任务执行模型</a></p>
     </div>
 
     <div class="step">
-      <h3>调度系统</h3>
-      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
+      <h3>Scheduling Engine</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">调度系统</a></p>
     </div>
 
     <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
+      <h3>Interrupt Flow</h3>
+      <p><a href="/docs/system/interrupt-flow.html">中断机制</a></p>
     </div>
 
     <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+      <h3>Task Lifecycle</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">任务生命周期</a></p>
     </div>
-
   </div>
 </section>
 
@@ -369,22 +298,14 @@ document.addEventListener("click", function (e) {
   const btn = e.target.closest(".copy-btn");
   if (!btn) return;
 
-  const box = btn.closest(".code-box");
-  if (!box) return;
-
-  const code = box.querySelector("code");
+  const code = btn.closest(".code-box")?.querySelector("code");
   if (!code) return;
 
-  const text = code.innerText;
+  navigator.clipboard.writeText(code.innerText);
 
-  navigator.clipboard.writeText(text).then(() => {
-    const old = btn.innerText;
-    btn.innerText = "已复制";
-
-    setTimeout(() => {
-      btn.innerText = old;
-    }, 1000);
-  });
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(() => btn.innerText = old, 1000);
 });
 </script>
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>优先级调度演示 | HRTOS 实验系统</title>
-<meta name="description" content="优先级调度实验：演示HRTOS中任务优先级、抢占机制与调度决策流程。">
+<meta name="description" content="优先级调度实验：展示HRTOS基于READY队列与抢占式调度器的任务执行行为。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 <script src="/header.js" defer></script>
@@ -13,13 +13,10 @@
 <style>
 :root{
   --bg:#0f172a;
-  --surface:rgba(15,23,42,.72);
   --border:rgba(148,163,184,.18);
   --accent:#38bdf8;
   --text:#e2e8f0;
   --muted:#94a3b8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:12px;
   color-scheme:dark;
 }
 
@@ -43,11 +40,8 @@ body{
   color:var(--muted);
 }
 .breadcrumb a{ color:#7dd3fc; }
-.breadcrumb a:hover{ color:var(--accent); }
 
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero-tag{
   display:inline-block;
@@ -62,7 +56,6 @@ body{
 .hero h1{
   margin:0 0 14px;
   font-size:clamp(2.2rem,4.5vw,3.4rem);
-  line-height:1.1;
 }
 
 .hero p{
@@ -71,32 +64,20 @@ body{
   color:var(--muted);
 }
 
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
-.section h2{
-  margin:0 0 10px;
-  font-size:1.4rem;
-}
+.section h2{ margin:0 0 10px; }
 
-.section p{
-  margin:0 0 20px;
-  color:var(--muted);
-}
+.section p{ color:var(--muted); }
 
 .block{
   padding:18px 20px;
   border-left:3px solid var(--accent);
   background:rgba(56,189,248,.06);
   border-radius:10px;
-  color:var(--muted);
 }
 
-.flow{
-  display:grid;
-  gap:14px;
-}
+.flow{ display:grid; gap:14px; }
 
 .step{
   padding:18px 20px;
@@ -105,24 +86,20 @@ body{
   background:rgba(30,41,59,.45);
 }
 
-.step h3{
-  margin:0 0 8px;
-  font-size:1.05rem;
-  color:#f8fafc;
-}
-
-.step p{
-  margin:0;
-  color:var(--muted);
-}
+.step h3{ margin:0 0 8px; }
 
 .code-box{
   position:relative;
-  padding:18px;
   border:1px solid var(--border);
   border-radius:12px;
-  background:rgba(15,23,42,.6);
-  overflow:auto;
+  background:rgba(15,23,42,.7);
+}
+
+.code-box pre{
+  margin:0;
+  padding:18px;
+  font-size:.9rem;
+  color:#cbd5e1;
 }
 
 .copy-btn{
@@ -136,11 +113,6 @@ body{
   color:#7dd3fc;
   border-radius:8px;
   cursor:pointer;
-}
-
-.copy-btn:hover{
-  color:#fff;
-  border-color:#38bdf8;
 }
 
 .footer{
@@ -167,139 +139,138 @@ body{
 
 <section class="hero">
   <span class="hero-tag">Scheduling Core</span>
-  <h1>优先级调度演示（Priority Demo）</h1>
+  <h1>优先级调度演示</h1>
   <p>
-    Priority Demo 用于展示HRTOS中不同优先级任务之间的调度关系，
-    包括抢占、高优先级切换以及调度器选择逻辑。
+    HRTOS 调度器基于 READY 队列优先级选择机制，高优先级任务可在时间片边界触发抢占执行。
   </p>
 </section>
 
 <section class="section">
-  <h2>机制定义</h2>
+  <h2>调度机制定义</h2>
+
   <div class="block">
-    Priority Scheduling = 优先级比较 + Ready队列扫描 + 高优先级任务抢占执行
+    Scheduling = READY队列扫描 + 优先级比较 + os_switch上下文切换
   </div>
+
   <p style="margin-top:14px;">
-调度API：
-<a href="/docs/api/scheduler/os_switch.html">os_switch</a> ·
-<a href="/docs/api/scheduler/os_dispatch_id.html">os_dispatch_id</a> ·
-<a href="/docs/api/task/os_task_ready.html">os_task_ready</a> ·
-<a href="/docs/api/task/os_task_state.html">os_task_state</a>
+核心API：
+<a href="/docs/api_v2/scheduler/os_switch.html">os_switch</a> ·
+<a href="/docs/api_v2/task/os_task_create.html">os_task_create</a> ·
+<a href="/docs/api_v2/task/os_task_get_state.html">os_task_get_state</a> ·
+<a href="/docs/api_v2/time/os_tick_get.html">os_tick_get</a>
 </p>
 </section>
 
 <section class="section">
-  <h2>调度行为</h2>
-  <p>优先级调度通常表现为以下流程：</p>
+  <h2>调度流程</h2>
 
   <div class="flow">
+
     <div class="step">
-      <h3>任务进入Ready状态</h3>
-      <p>新任务进入调度队列等待执行。</p>
+      <h3>任务进入READY</h3>
+      <p>任务创建后进入就绪队列等待调度。</p>
     </div>
 
     <div class="step">
-      <h3>优先级比较</h3>
-      <p>调度器扫描当前所有Ready任务。</p>
+      <h3>优先级扫描</h3>
+      <p>调度器从READY队列选择最高优先级任务。</p>
     </div>
 
     <div class="step">
       <h3>抢占判断</h3>
-      <p>若新任务优先级更高，则抢占当前任务。</p>
+      <p>高优先级READY任务触发抢占条件。</p>
     </div>
 
     <div class="step">
-      <h3>任务切换</h3>
-      <p>保存当前上下文并切换到目标任务。</p>
+      <h3>上下文切换</h3>
+      <p>调用 os_switch 完成任务切换。</p>
     </div>
+
   </div>
-  <div class="step">
-  <h3>调度器核心链路</h3>
-  <p>Ready队列 → 优先级扫描 → os_dispatch_id → os_switch → 上下文切换</p>
-</div>
+
 </section>
 
 <section class="section">
-  <h2>执行流程</h2>
+  <h2>执行模型</h2>
 
   <div class="flow">
+
     <div class="step">
-      <h3>1. 创建任务</h3>
-      <p>初始化多个不同优先级任务。</p>
+      <h3>创建低优先级任务</h3>
+      <p>进入READY队列（优先级1）</p>
     </div>
 
     <div class="step">
-      <h3>2. 启动调度器</h3>
-      <p>进入HRTOS调度模式。</p>
+      <h3>创建高优先级任务</h3>
+      <p>进入READY队列（优先级3）</p>
     </div>
 
     <div class="step">
-      <h3>3. 高优先级任务到达</h3>
-      <p>触发抢占条件。</p>
+      <h3>调度器运行</h3>
+      <p>优先级3任务优先执行</p>
     </div>
 
     <div class="step">
-      <h3>4. 切换执行</h3>
-      <p>高优先级任务获得CPU控制权。</p>
+      <h3>持续抢占</h3>
+      <p>高优先级任务周期性获得CPU</p>
     </div>
+
   </div>
 </section>
 
 <section class="section">
-  <h2>演示代码</h2>
+  <h2>演示代码（严格原样）</h2>
 
   <div class="code-box">
     <button class="copy-btn">Copy</button>
-<pre><code>
-// 在这里填入 Priority Demo 示例代码
-// 例如：priority / scheduler / preemption
-</code></pre>
+    <pre><code>
+#include "hrtos.h"
+
+sbit LED_HIGH = P1^0;
+sbit LED_LOW  = P1^1;
+
+void task_low(void)
+{
+    while(1)
+    {
+        LED_LOW = ~LED_LOW;   // 慢闪
+        os_delay(20);
+    }
+}
+
+void task_high(void)
+{
+    while(1)
+    {
+        LED_HIGH = ~LED_HIGH; // 快闪（体现抢占更频繁）
+        os_delay(5);
+    }
+}
+
+void hrtos_main(void)
+{
+    LED_LOW = 0;
+    LED_HIGH = 0;
+
+    os_task_create((unsigned int)task_low,  1, 1, 5);
+    os_task_create((unsigned int)task_high, 2, 3, 5);
+}
+    </code></pre>
   </div>
+
 </section>
 
 <section class="section">
   <h2>系统意义</h2>
+
   <p>
-    优先级调度是RTOS实时性的核心保障机制，
-    能确保关键任务优先获得CPU资源，提高系统响应能力。
+优先级调度确保高实时性任务优先获得CPU执行权，是HRTOS抢占式内核的核心基础。
   </p>
-  <p style="margin-top:14px;">
-内核实现：
-<a href="/docs/modules/scheduler/priority-scheduling.html">Priority Scheduling Kernel</a> ·
-<a href="/docs/system/scheduling-flow.html">Scheduling Flow</a>
-</p>
-</section>
 
-<section class="section">
-  <h2>相关导航</h2>
-
-  <div class="flow">
-
-    <div class="step">
-      <h3>任务执行模型</h3>
-      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
-    </div>
-
-    <div class="step">
-      <h3>调度系统</h3>
-      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
-    </div>
-
-    <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
-    </div>
-
-    <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
-    </div>
-
-  </div>
 </section>
 
 <footer class="footer">
-  © 2017–2026 HRTOS · Priority Demo Module
+  © 2017–2026 HRTOS · Priority Scheduling Demo
 </footer>
 
 </main>
@@ -309,24 +280,18 @@ document.addEventListener("click", function (e) {
   const btn = e.target.closest(".copy-btn");
   if (!btn) return;
 
-  const box = btn.closest(".code-box");
-  if (!box) return;
-
-  const code = box.querySelector("code");
+  const code = btn.closest(".code-box")?.querySelector("code");
   if (!code) return;
 
-  const text = code.innerText;
+  navigator.clipboard.writeText(code.innerText);
 
-  navigator.clipboard.writeText(text).then(() => {
-    const old = btn.innerText;
-    btn.innerText = "已复制";
-
-    setTimeout(() => {
-      btn.innerText = old;
-    }, 1000);
-  });
+  const old = btn.innerText;
+  btn.innerText = "Copied";
+  setTimeout(() => btn.innerText = old, 1200);
 });
 </script>
+
+<script src="https://hrtos.com/header.js" defer></script>
 
 </body>
 </html>

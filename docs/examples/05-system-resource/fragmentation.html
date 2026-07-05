@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>内存碎片化 | HRTOS 系统资源管理</title>
-<meta name="description" content="内存碎片化机制：分析HRTOS中动态内存分配产生的碎片问题及其影响与优化策略。">
+<meta name="description" content="HRTOS内存碎片化机制：动态分配与释放导致的内存断裂与不可用空间问题。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 <script src="/header.js" defer></script>
@@ -39,7 +39,6 @@ body{
   font-size:.92rem;
   color:var(--muted);
 }
-
 .breadcrumb a{ color:#7dd3fc; }
 
 .hero h1{
@@ -47,14 +46,9 @@ body{
   font-size:2.4rem;
 }
 
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
-.flow{
-  display:grid;
-  gap:14px;
-}
+.flow{ display:grid; gap:14px; }
 
 .step{
   padding:18px 20px;
@@ -63,7 +57,6 @@ body{
   background:rgba(30,41,59,.45);
 }
 
-/* code */
 .code-box{
   position:relative;
   padding:18px;
@@ -85,6 +78,12 @@ body{
   border-radius:8px;
   cursor:pointer;
 }
+
+footer{
+  text-align:center;
+  color:#8ea3be;
+  margin-top:60px;
+}
 </style>
 </head>
 
@@ -92,7 +91,6 @@ body{
 
 <main class="page">
 
-<!-- 面包屑 -->
 <nav class="breadcrumb">
   <a href="/docs/index.html">Docs</a> /
   <a href="/docs/examples/index.html">Examples</a> /
@@ -100,151 +98,173 @@ body{
   <span>Fragmentation</span>
 </nav>
 
-<!-- 标题 -->
 <section class="hero">
   <h1>内存碎片化（Memory Fragmentation）</h1>
-  <p>描述HRTOS动态内存分配过程中由于分配与释放不均导致的内存碎片问题。</p>
+  <p>
+    在 HRTOS 中，动态内存分配与释放在不规则模式下会破坏连续内存结构，
+    导致“可用总量足够，但无法分配”的现象。
+  </p>
 </section>
 
-<!-- 机制说明 -->
 <section class="section">
   <h2>机制定义</h2>
+
   <div class="step">
-    内存碎片 = 外部碎片 + 内部碎片
+    Fragmentation = Free Blocks Discontinuity + Allocation Pattern Disorder
+  </div>
+
+  <div class="step" style="margin-top:10px;">
+    分为：外部碎片（External）与内部碎片（Internal）
   </div>
 </section>
 
-<!-- 产生过程 -->
 <section class="section">
-  <h2>产生过程</h2>
+  <h2>碎片产生机制</h2>
 
   <div class="flow">
-    <div class="step">1. 任务动态申请不同大小内存</div>
-    <div class="step">2. 不规则释放形成空洞</div>
-    <div class="step">3. 连续空间被切割</div>
-    <div class="step">4. 大块内存无法满足申请</div>
+    <div class="step">1. 不同大小任务申请内存</div>
+    <div class="step">2. 释放顺序与申请顺序不一致</div>
+    <div class="step">3. 内存被切割为多个不连续块</div>
+    <div class="step">4. 大块连续内存无法满足请求</div>
   </div>
 </section>
 
 <section class="section">
-  <h2>碎片类型扩展</h2>
+  <h2>HRTOS碎片模拟模型（真实表达）</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">Copy</button>
+<pre><code>
+#include "hrtos.h"
+
+#define HEAP_SIZE 32
+
+static u8 heap[HEAP_SIZE];
+
+/* 简化版分配标记 */
+u8 alloc(u8 size)
+{
+    u8 i, start;
+
+    for(i = 0; i < HEAP_SIZE - size; i++)
+    {
+        u8 j, ok = 1;
+
+        for(j = 0; j < size; j++)
+        {
+            if(heap[i + j])
+            {
+                ok = 0;
+                break;
+            }
+        }
+
+        if(ok)
+        {
+            for(j = 0; j < size; j++)
+                heap[i + j] = 1;
+
+            return i;
+        }
+    }
+
+    return 0xFF;
+}
+
+void free_block(u8 start, u8 size)
+{
+    u8 i;
+    for(i = 0; i < size; i++)
+        heap[start + i] = 0;
+}
+
+/* 碎片生成任务 */
+void task_fragment_demo(void)
+{
+    u8 a, b, c;
+
+    while(1)
+    {
+        a = alloc(8);
+        b = alloc(6);
+        c = alloc(10);
+
+        free_block(a, 8);
+        free_block(c, 10);
+
+        /* 此时中间产生碎片 */
+
+        alloc(12);  // 可能失败（典型碎片问题）
+
+        os_delay(10);
+    }
+}
+
+void hrtos_main(void)
+{
+    u8 i;
+
+    for(i = 0; i < HEAP_SIZE; i++)
+        heap[i] = 0;
+
+    os_task_create((unsigned int)task_fragment_demo, 1, 4, 5);
+}
+</code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>碎片类型</h2>
 
   <div class="flow">
 
     <div class="step">
       <h3>外部碎片</h3>
-      <p>空闲内存被切割成不连续的小块，无法满足大块申请。</p>
+      <p>空闲空间被切割为不连续小块。</p>
     </div>
 
     <div class="step">
       <h3>内部碎片</h3>
-      <p>分配块大于实际需求，造成空间浪费。</p>
+      <p>分配块大于实际需求造成浪费。</p>
     </div>
 
   </div>
 </section>
 
-<!-- 代码区（必须） -->
-<section class="section">
-  <h2>演示代码</h2>
-
-  <div class="code-box">
-    <button class="copy-btn">复制</button>
-    <pre><code>
-#include <HRTOS.H>
-
-void task_A(void)
-{
-    void* p1 = os_malloc(64);
-    void* p2 = os_malloc(128);
-
-    os_free(p1);   // 释放形成碎片
-    os_free(p2);
-
-    void* p3 = os_malloc(96); // 可能无法连续分配
-}
-
-void system_init(void)
-{
-    os_mem_init();
-    os_task((unsigned int)task_A, 0, 3, 0);
-}
-
-void main(void)
-{
-    system_init();
-
-    os_task_release(0);
-
-    while(1)
-    {
-        os_nop();
-    }
-}
-    </code></pre>
-  </div>
-</section>
-
-<!-- 系统意义 -->
 <section class="section">
   <h2>系统意义</h2>
-  <p>
-    内存碎片是嵌入式RTOS长期运行稳定性的关键问题，直接影响系统可用性与实时性。
-  </p>
-</section>
-<section class="section">
-  <h2>相关机制</h2>
 
-  <div class="flow">
-
-    <div class="step">
-      <h3>资源分配机制</h3>
-      <p><a href="allocation.html">Resource Allocation</a></p>
-    </div>
-
-    <div class="step">
-      <h3>栈溢出机制</h3>
-      <p><a href="stack-overflow.html">Stack Overflow</a></p>
-    </div>
-
-    <div class="step">
-      <h3>内存模型</h3>
-      <p><a href="/docs/architecture/memory/memory-model.html">Memory Model</a></p>
-    </div>
-
+  <div class="step">
+    碎片问题直接影响 RTOS 长期运行稳定性，
+    在嵌入式系统中通常通过 slab / pool / static allocation 规避。
   </div>
 </section>
-<!-- 固定导航（锁死结构） -->
+
 <section class="section">
-  <h2>相关导航</h2>
+  <h2>相关 API（v2）</h2>
 
   <div class="flow">
 
     <div class="step">
-      <h3>任务执行模型</h3>
-      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
+      <h3>Memory API</h3>
+      <p>
+        <a href="\docs\api_v2\kernel\os_memset.html">os_memset</a><br/>
+        <a href="\docs\api_v2\kernel\os_slab_overflow.html">os_slab_overflow</a>
+      </p>
     </div>
 
     <div class="step">
-      <h3>调度系统</h3>
-      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
-    </div>
-
-    <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
-    </div>
-
-    <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
+      <h3>Task API</h3>
+      <p>
+        <a href="\docs\api_v2\task\os_task_create.html">os_task_create</a>
+      </p>
     </div>
 
   </div>
 </section>
 
-<footer style="text-align:center;color:#8ea3be;margin-top:60px;">
-© HRTOS Memory Management Module
+<footer>
+© 2017–2026 HRTOS · Memory Module
 </footer>
 
 </main>
@@ -259,9 +279,9 @@ document.addEventListener("click", function (e) {
 
   const old = btn.innerText;
   btn.innerText = "已复制";
-  setTimeout(()=>btn.innerText = old, 1000);
+  setTimeout(() => btn.innerText = old, 1000);
 });
 </script>
-
+<script src="https://hrtos.com/header.js" defer></script>
 </body>
 </html>

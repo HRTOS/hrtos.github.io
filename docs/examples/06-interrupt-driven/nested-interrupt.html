@@ -5,16 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>嵌套中断 | HRTOS 实验系统</title>
-<meta name="description" content="嵌套中断机制实验：理解RTOS中断优先级嵌套、抢占执行、上下文保护与恢复流程。">
+<meta name="description" content="HRTOS嵌套中断机制：基于硬件优先级的ISR抢占与上下文保存恢复流程。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
-<script src="/header.js" defer></script>
+<script src="https://hrtos.com/header.js" defer></script>
 
 <style>
 :root{
   --bg:#0f172a;
   --border:rgba(148,163,184,.18);
-  --accent:#38bdf8;
   --text:#e2e8f0;
   --muted:#94a3b8;
   color-scheme:dark;
@@ -34,58 +33,41 @@ body{
   padding:96px 0 64px;
 }
 
-/* breadcrumb */
 .breadcrumb{
   margin-bottom:26px;
   font-size:.92rem;
   color:var(--muted);
 }
+
 .breadcrumb a{ color:#7dd3fc; }
 
-/* hero */
-.hero{ margin-bottom:54px; }
-.hero h1{ font-size:2.4rem; margin:0 0 10px; }
-.hero p{ color:var(--muted); }
-
-/* section */
-.section{ margin-bottom:54px; }
-.section h2{ font-size:1.4rem; margin-bottom:10px; }
-.section p{ color:var(--muted); }
-
-/* block */
-.block{
-  padding:18px;
-  border-left:3px solid var(--accent);
-  background:rgba(56,189,248,.06);
-  border-radius:10px;
+.hero h1{
+  font-size:2.4rem;
+  margin:0 0 14px;
 }
 
-/* flow */
-.flow{ display:grid; gap:14px; }
+.section{ margin-bottom:54px; }
 
 .step{
-  padding:16px;
+  padding:18px 20px;
   border:1px solid var(--border);
-  border-radius:10px;
+  border-radius:12px;
   background:rgba(30,41,59,.45);
 }
 
-.step h3{ margin:0 0 6px; }
-
-/* code */
 .code-box{
   position:relative;
+  padding:18px;
   border:1px solid var(--border);
   border-radius:12px;
   background:rgba(15,23,42,.6);
-  padding:18px;
   overflow:auto;
 }
 
 .copy-btn{
   position:absolute;
-  right:10px;
   top:10px;
+  right:10px;
   padding:6px 10px;
   border:1px solid rgba(56,189,248,.4);
   background:transparent;
@@ -93,15 +75,10 @@ body{
   border-radius:8px;
   cursor:pointer;
 }
-
-/* footer */
-.footer{
-  margin-top:60px;
-  padding-top:20px;
-  border-top:1px solid rgba(148,163,184,.14);
+footer{
   text-align:center;
-  font-size:.9rem;
   color:#8ea3be;
+  margin-top:60px;
 }
 </style>
 </head>
@@ -110,185 +87,106 @@ body{
 
 <main class="page">
 
-<!-- breadcrumb（严格 index 规范） -->
 <nav class="breadcrumb">
   <a href="/docs/index.html">Docs</a> /
-  <a href="/docs/examples/index.html">示例系统</a> /
-  <a href="/docs/examples/06-interrupt-driven/index.html">中断驱动系统</a> /
-  <span>嵌套中断</span>
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/06-interrupt-driven/index.html">Interrupt Driven</a> /
+  <span>Nested Interrupt</span>
 </nav>
 
-<!-- hero -->
 <section class="hero">
   <h1>嵌套中断（Nested Interrupt）</h1>
-  <p>
-    嵌套中断机制允许高优先级中断抢占低优先级中断执行，
-    是RTOS实时响应能力的重要组成部分。
-  </p>
+  <p>基于硬件优先级的中断嵌套机制，高优先级中断可抢占低优先级ISR执行。</p>
 </section>
 
-<!-- definition -->
 <section class="section">
   <h2>机制定义</h2>
-  <div class="block">
-    Nested Interrupt = 中断优先级判断 + 上下文保存 + 嵌套执行 + 恢复返回
+  <div class="step">
+    IRQ High Priority → preempt IRQ Low Priority → context save → ISR nesting → restore
   </div>
 </section>
 
-<section class="section">
-  <h2>相关 API</h2>
-
-  <div class="flow">
-
-    <div class="step">
-      <h3>os_enter_interrupt()</h3>
-      <p>进入中断上下文并保存执行状态。</p>
-      <p><a href="/docs/api/scheduler/index.html">查看 API →</a></p>
-    </div>
-
-    <div class="step">
-      <h3>os_exit_interrupt()</h3>
-      <p>退出中断并恢复调度状态。</p>
-      <p><a href="/docs/api/scheduler/index.html">查看 API →</a></p>
-    </div>
-
-  </div>
-</section>
-
-<!-- flow -->
 <section class="section">
   <h2>执行流程</h2>
 
-  <div class="flow">
+  <div class="step">1. INT1（低优先级）进入ISR</div>
+  <div class="step">2. INT0（高优先级）触发抢占</div>
+  <div class="step">3. CPU自动保存INT1上下文</div>
+  <div class="step">4. 执行INT0 ISR</div>
+  <div class="step">5. INT0结束后恢复INT1</div>
+</section>
 
-    <div class="step">
-      <h3>1. 低优先级中断触发</h3>
-      <p>CPU进入ISR1执行。</p>
-    </div>
+<section class="section">
+  <h2>关键API（v2）</h2>
 
-    <div class="step">
-      <h3>2. 高优先级中断到来</h3>
-      <p>中断控制器检测到更高优先级请求。</p>
-    </div>
+  <div class="step">
+    <h3>中断初始化</h3>
+    <p><a href="/docs/api_v2/interrupt/os_interrupt_init.html">os_interrupt_init()</a></p>
+  </div>
 
-    <div class="step">
-      <h3>3. 上下文保存</h3>
-      <p>保存ISR1执行状态到栈。</p>
-    </div>
-
-    <div class="step">
-      <h3>4. 嵌套进入ISR2</h3>
-      <p>执行更高优先级中断处理。</p>
-    </div>
-
-    <div class="step">
-      <h3>5. 逐级恢复</h3>
-      <p>ISR2 → ISR1 → 任务恢复执行。</p>
-    </div>
-
+  <div class="step">
+    <h3>中断调度请求</h3>
+    <p><a href="/docs/api_v2/interrupt/os_schedule_request.html">os_schedule_request()</a></p>
   </div>
 </section>
 
-<!-- code -->
 <section class="section">
-  <h2>演示代码</h2>
+  <h2>示例代码（真实嵌套中断）</h2>
 
   <div class="code-box">
     <button class="copy-btn">复制</button>
-    <pre><code>
-#include "HRTOS.h"
+<pre><code>#include "hrtos.h"
 
-/* 低优先级中断 */
-void ISR_LOW(void)
+sbit LED_HIGH = P1^0;
+sbit LED_LOW  = P1^1;
+
+/* =========================
+ * 高优先级中断 INT0
+ * ========================= */
+void INT0_ISR(void)
 {
-    os_interrupt_enter();
+    LED_HIGH = ~LED_HIGH;
 
-    while(1)
-    {
-        // 等待被高优先级抢占
-        os_nop();
-    }
-
-    os_interrupt_exit();
+    // 高优先级执行
 }
 
-/* 高优先级中断 */
-void ISR_HIGH(void)
+/* =========================
+ * 低优先级中断 INT1
+ * ========================= */
+void INT1_ISR(void)
 {
-    os_interrupt_enter();
+    LED_LOW = ~LED_LOW;
 
-    os_interrupt_flag_set();
-
-    os_interrupt_exit();
+    // 在执行过程中可能被INT0抢占
 }
-    </code></pre>
+
+/* =========================
+ * 系统入口
+ * ========================= */
+void hrtos_main(void)
+{
+    IT0 = 1;
+    IT1 = 1;
+
+    PX0 = 1;   // INT0 高优先级
+    PX1 = 0;   // INT1 低优先级
+
+    EX0 = 1;
+    EX1 = 1;
+}
+</code></pre>
   </div>
 </section>
 
 <section class="section">
   <h2>系统意义</h2>
-  <p>
-    嵌套中断机制使实时系统能够优先响应关键事件，
-    在保证高优先级任务及时性的同时维持系统整体可预测性。
-  </p>
-</section>
-
-<section class="section">
-  <h2>延伸阅读</h2>
-
-  <div class="flow">
-
-    <div class="step">
-      <h3>中断模型</h3>
-      <p><a href="/docs/architecture/interrupt/interrupt-model.html">Interrupt Model</a></p>
-    </div>
-
-    <div class="step">
-      <h3>中断流程</h3>
-      <p><a href="/docs/architecture/interrupt/interrupt-flow.html">Interrupt Flow</a></p>
-    </div>
-
-    <div class="step">
-      <h3>中断延迟分析</h3>
-      <p><a href="/docs/architecture/interrupt/interrupt-latency.html">Interrupt Latency</a></p>
-    </div>
-
+  <div class="step">
+    嵌套中断机制保证高优先级事件可立即打断低优先级ISR执行，是实时性上限的重要保障。
   </div>
 </section>
-
-<!-- related (LOCKED STRUCTURE) -->
-<section class="section">
-  <h2>相关导航</h2>
-
-  <div class="flow">
-
-    <div class="step">
-      <h3>任务执行模型</h3>
-      <p><a href="/docs/examples/01-task-execution/index.html">任务执行模型</a></p>
-    </div>
-
-    <div class="step">
-      <h3>调度系统</h3>
-      <p><a href="/docs/examples/02-scheduling-engine/index.html">调度系统</a></p>
-    </div>
-
-    <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">中断机制</a></p>
-    </div>
-
-    <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">任务生命周期</a></p>
-    </div>
-
-  </div>
-</section>
-
 <footer class="footer">
-  © 2017–2026 HRTOS · Interrupt System Module
+  © HRTOS Project 2017–2026 · Real-Time Operating System Documentation
 </footer>
-
 </main>
 
 <script>
@@ -301,7 +199,7 @@ document.addEventListener("click", function (e) {
 
   const old = btn.innerText;
   btn.innerText = "已复制";
-  setTimeout(()=>btn.innerText=old,1000);
+  setTimeout(()=>btn.innerText = old, 1000);
 });
 </script>
 

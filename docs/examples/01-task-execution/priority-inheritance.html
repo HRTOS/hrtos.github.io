@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>优先级继承 | HRTOS 文档系统</title>
-<meta name="description" content="优先级继承机制用于解决优先级反转问题，确保高优先级任务不会因资源竞争被低优先级任务长期阻塞。">
+<meta name="description" content="优先级继承机制实验：基于HRTOS v2 mutex锁机制，分析高低优先级任务竞争资源时的调度行为变化。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 <script src="/header.js" defer></script>
@@ -39,8 +39,7 @@ body{
   font-size:.92rem;
   color:var(--muted);
 }
-.breadcrumb a{ color:#7dd3fc; text-decoration:none; }
-.breadcrumb a:hover{ color:var(--accent); }
+.breadcrumb a{ color:#7dd3fc; }
 
 .hero{ margin-bottom:54px; }
 
@@ -59,36 +58,22 @@ body{
   font-size:clamp(2.2rem,4.5vw,3.4rem);
 }
 
-.hero p{
-  margin:0;
-  max-width:780px;
-  color:var(--muted);
-}
+.hero p{ margin:0; color:var(--muted); max-width:780px; }
 
 .section{ margin-bottom:54px; }
 
-.section h2{
-  margin:0 0 10px;
-  font-size:1.4rem;
-}
+.section h2{ margin:0 0 10px; }
 
-.section p{
-  margin:0 0 20px;
-  color:var(--muted);
-}
+.section p{ color:var(--muted); }
 
 .block{
   padding:18px 20px;
   border-left:3px solid var(--accent);
   background:rgba(56,189,248,.06);
   border-radius:10px;
-  color:var(--muted);
 }
 
-.flow{
-  display:grid;
-  gap:14px;
-}
+.flow{ display:grid; gap:14px; }
 
 .step{
   padding:18px 20px;
@@ -97,23 +82,13 @@ body{
   background:rgba(30,41,59,.45);
 }
 
-.step h3{
-  margin:0 0 8px;
-  font-size:1.05rem;
-  color:#f8fafc;
-}
-
-.step p{
-  margin:0;
-  color:var(--muted);
-}
+.step h3{ margin:0 0 8px; }
 
 .code-box{
   position:relative;
   border:1px solid var(--border);
   border-radius:12px;
   background:rgba(15,23,42,.7);
-  overflow:auto;
 }
 
 .code-box pre{
@@ -134,11 +109,6 @@ body{
   color:#7dd3fc;
   border-radius:8px;
   cursor:pointer;
-}
-
-.copy-btn:hover{
-  color:#fff;
-  border-color:#38bdf8;
 }
 
 .footer{
@@ -167,110 +137,140 @@ body{
   <span class="hero-tag">IPC Core</span>
   <h1>优先级继承</h1>
   <p>
-    优先级继承用于解决实时系统中的优先级反转问题。
-    当低优先级任务持有资源且阻塞高优先级任务时，系统临时提升其优先级。
+    在 HRTOS v2 中，当高优先级任务竞争 mutex 时，系统会临时提升低优先级持锁任务的调度优先级，
+    防止其被其他任务抢占，从而避免优先级反转。
   </p>
 </section>
 
 <section class="section">
-  <h2>机制定义</h2>
+  <h2>真实系统行为</h2>
+
   <div class="block">
-    Priority Inheritance = 资源持有者临时提升至等待者最高优先级
+    低优先级 task_low 持锁 → 占用资源 → 延迟释放<br>
+    高优先级 task_high 尝试获取锁 → 阻塞等待<br>
+    系统检测到竞争 → 提升 task_low 优先级 → 加速释放
   </div>
+
   <p style="margin-top:14px;">
-相关API：
-<a href="/docs/api/ipc/os_mutex_lock.html">os_mutex_lock</a>
-<a href="/docs/api/ipc/os_mutex_unlock.html">os_mutex_unlock</a>
-<a href="/docs/api/ipc/os_sem_take.html">os_sem_take</a>
-<a href="/docs/api/ipc/os_sem_give.html">os_sem_give</a>
-</p>
-  <h3>优先级继承背景</h3>
-  <p>优先级继承是实时操作系统解决优先级反转问题的重要机制。优先级反转发生在低优先级任务持有高优先级任务需要的资源，而中优先级任务持续运行，导致高优先级任务被长时间阻塞。优先级继承通过临时提升资源持有者的优先级至等待者最高优先级，缩短高优先级任务的阻塞时间。</p>
-  <p>实时系统需要优先级继承机制的原因在于，硬实时系统对响应时间有严格要求。优先级反转可能导致关键任务响应延迟超过截止时间，影响系统安全性与可靠性。汽车电子、工业控制、医疗设备等典型应用依赖优先级继承机制确保实时性。</p>
-  <h3>资源竞争场景</h3>
-  <p>资源竞争是优先级继承的触发场景。多个任务可能同时访问共享资源，如互斥锁、信号量、消息队列等。低优先级任务先获取资源，高优先级任务后请求资源，形成资源竞争。如果中优先级任务持续运行，高优先级任务被长时间阻塞。</p>
-  <p>资源竞争的典型场景包括：传感器数据采集任务持有数据缓冲区锁，高优先级控制任务需要访问缓冲区；网络通信任务持有网络接口锁，高优先级报警任务需要发送报警信息；文件系统任务持有文件锁，高优先级日志任务需要写入日志。</p>
-  <h3>优先级提升机制</h3>
-  <p>优先级提升是优先级继承的核心动作。当高优先级任务请求资源被阻塞时，系统检查资源持有者的优先级。如果持有者优先级低于等待者，系统临时提升持有者优先级至等待者最高优先级。提升后的持有者可以快速执行并释放资源。</p>
-  <p>优先级提升需要考虑嵌套资源持有情况。如果任务持有多个资源，每个资源都有等待任务，系统需提升任务至所有等待者中的最高优先级。HRTOS支持嵌套优先级继承，确保复杂资源竞争场景的正确处理。</p>
-  <h3>优先级恢复机制</h3>
-  <p>优先级恢复是优先级继承的收尾动作。当资源持有者释放资源后，系统检查是否还有其他等待任务。如果没有等待任务，系统恢复持有者的原始优先级。如果还有等待任务，系统保持提升后的优先级直至所有资源释放。</p>
-  <p>优先级恢复需避免优先级抖动。频繁的优先级提升与恢复可能导致系统调度不稳定。HRTOS通过优先级恢复延迟机制，减少不必要的优先级切换，提高系统稳定性。</p>
-  <h3>死锁预防作用</h3>
-  <p>优先级继承具有死锁预防作用。通过提升资源持有者优先级，避免中优先级任务长时间运行，减少死锁发生的可能性。死锁预防优于死锁检测，死锁检测需要额外的计算开销，死锁预防在资源获取时避免死锁。</p>
-  <p>优先级继承不能完全避免死锁，但显著降低死锁概率。开发者仍需遵循资源获取顺序、避免嵌套锁等最佳实践，进一步降低死锁风险。</p>
+核心 API：
+<a href="/docs/api_v2/ipc/os_mutex_lock.html">os_mutex_lock</a> ·
+<a href="/docs/api_v2/ipc/os_mutex_unlock.html">os_mutex_unlock</a> ·
+<a href="/docs/api_v2/time/os_delay.html">os_delay</a>
+  </p>
+
+  <h3>关键机制不是“公式”，而是调度变化</h3>
+  <p>
+    优先级继承发生在 mutex lock 阻塞链路中，
+    调度器会临时改变 task_low 的运行优先级，使其优先完成临界区执行。
+  </p>
 </section>
 
 <section class="section">
   <h2>执行流程</h2>
 
   <div class="flow">
+
     <div class="step">
-      <h3>低优先级任务占用资源</h3>
-      <p>任务已获取互斥资源或锁。</p>
+      <h3>1. task_low 持锁</h3>
+      <p>进入临界区，占用 RES_LOCK_ID</p>
     </div>
 
     <div class="step">
-      <h3>高优先级任务请求资源</h3>
-      <p>因资源被占用进入阻塞状态。</p>
+      <h3>2. task_high 请求锁</h3>
+      <p>调用 os_mutex_lock 被阻塞</p>
     </div>
 
     <div class="step">
-      <h3>优先级提升</h3>
-      <p>系统临时提升资源持有者优先级。</p>
+      <h3>3. 触发优先级继承</h3>
+      <p>task_low 优先级临时提升</p>
     </div>
 
     <div class="step">
-      <h3>释放资源恢复优先级</h3>
-      <p>任务释放锁后恢复原始优先级。</p>
+      <h3>4. task_low 加速执行</h3>
+      <p>完成 os_delay 后释放 mutex</p>
     </div>
+
+    <div class="step">
+      <h3>5. task_high 恢复运行</h3>
+      <p>成功获取锁并继续执行</p>
+    </div>
+
   </div>
+
   <p style="margin-top:14px;">
-调度关联：
-<a href="/docs/api/scheduler/os_switch.html">os_switch</a>
-<a href="/docs/api/task/os_task_ready.html">os_task_ready</a>
-<a href="/docs/api/task/os_task_state.html">os_task_state</a>
-</p>
-  <h3>资源占用详细流程</h3>
-  <p>低优先级任务通过互斥锁或信号量获取共享资源。获取资源时，系统检查资源是否可用。如果资源可用，任务成为资源持有者，继续执行。如果资源不可用，任务进入阻塞状态，等待资源释放。</p>
-  <p>资源持有期间，任务可能被中优先级任务抢占。中优先级任务运行时，低优先级任务处于就绪状态，不占用CPU但持有资源。这种情况下，高优先级任务请求资源时会被阻塞，形成优先级反转。</p>
-  <h3>资源请求详细流程</h3>
-  <p>高优先级任务请求资源时，系统检查资源持有者的优先级。如果持有者优先级低于请求者，系统触发优先级继承机制。系统临时提升资源持有者优先级至请求者优先级，使持有者能够快速执行并释放资源。</p>
-  <p>资源请求失败时，任务进入阻塞状态，加入资源等待队列。等待队列按优先级排序，高优先级任务位于队列头部。HRTOS支持优先级等待队列，确保高优先级任务优先获得资源。</p>
-  <h3>优先级提升详细流程</h3>
-  <p>优先级提升是优先级继承的核心步骤。系统更新资源持有者的TCB中的优先级字段，将当前优先级临时提升至等待者最高优先级。提升后，调度器重新评估调度决策，可能触发抢占调度。</p>
-  <p>优先级提升需考虑嵌套资源持有。如果任务持有多个资源，每个资源都有等待任务，系统需提升任务至所有等待者中的最高优先级。HRTOS支持嵌套优先级继承，确保复杂场景的正确处理。</p>
-  <h3>资源释放详细流程</h3>
-  <p>资源持有者完成任务后释放资源。释放资源时，系统检查资源等待队列。如果有等待任务，系统选择最高优先级等待任务，将其状态从阻塞转换为就绪，并可能触发抢占调度。</p>
-  <p>资源释放后，系统检查资源持有者是否还持有其他资源。如果没有其他资源，系统恢复持有者的原始优先级。如果还有其他资源，系统保持提升后的优先级直至所有资源释放。</p>
-  <h3>优先级恢复详细流程</h3>
-  <p>优先级恢复是优先级继承的最后步骤。系统将资源持有者的优先级从提升后的优先级恢复为原始优先级。恢复后，调度器重新评估调度决策，可能触发任务切换。</p>
-  <p>优先级恢复需避免优先级抖动。频繁的优先级提升与恢复可能导致系统调度不稳定。HRTOS通过优先级恢复延迟机制，减少不必要的优先级切换，提高系统稳定性。</p>
+关联API：
+<a href="/docs/api_v2/ipc/os_mutex_lock.html">os_mutex_lock</a> ·
+<a href="/docs/api_v2/ipc/os_mutex_unlock.html">os_mutex_unlock</a> ·
+<a href="/docs/api_v2/task/os_task_yield.html">os_task_yield</a>
+  </p>
 </section>
 
 <section class="section">
-  <h2>演示代码</h2>
+  <h2>演示代码（严格原样）</h2>
 
   <div class="code-box">
     <button class="copy-btn">复制</button>
     <pre><code>
-#include &lt;HRTOS.H&gt;
-#include &lt;HRTOS_KERNEL.H&gt;
+#include "hrtos.h"
 
+#define RES_LOCK_ID  1
+
+sbit LED_LOW  = P1^0;
+sbit LED_HIGH = P1^1;
+
+/* 低优先级任务：持锁 + 长时间执行 */
 void task_low(void)
 {
-    os_lock_take(0);
+    os_mutex_lock(RES_LOCK_ID);
 
-    os_wait1(10);
+    LED_LOW = 1;   // 进入临界区标记
 
-    os_lock_release(0);
+    /* 模拟临界区占用资源 */
+    os_delay(30);
+
+    LED_LOW = 0;
+
+    os_mutex_unlock(RES_LOCK_ID);
+
+    while(1)
+    {
+        os_task_yield();
+    }
 }
 
-void system_init(void)
+/* 高优先级任务：尝试频繁获取锁 */
+void task_high(void)
 {
-    os_lock_init();
+    while(1)
+    {
+        if(os_mutex_lock(RES_LOCK_ID) == 0)
+        {
+            LED_HIGH = 1;   // 成功获取锁（说明低任务已释放）
+            os_delay(5);
+            LED_HIGH = 0;
 
-    os_task((unsigned int)task_low, 1, 1, 0);
+            os_mutex_unlock(RES_LOCK_ID);
+        }
+        else
+        {
+            LED_HIGH = ~LED_HIGH;
+            os_delay(2);
+        }
+
+        os_task_yield();
+    }
+}
+
+/* 系统入口 */
+void hrtos_main(void)
+{
+    LED_LOW = 0;
+    LED_HIGH = 0;
+
+    os_mutex_init(RES_LOCK_ID);
+
+    os_task_create((unsigned int)task_low,  1, 1, 5);
+    os_task_create((unsigned int)task_high, 2, 3, 5);
 }
     </code></pre>
   </div>
@@ -278,47 +278,18 @@ void system_init(void)
 
 <section class="section">
   <h2>系统意义</h2>
-  <p>
-    优先级继承是实时操作系统资源同步的重要机制，
-    可以有效降低优先级反转带来的实时性风险。
-  </p>
-  <p style="margin-top:12px;">
-内核机制：
-<a href="/docs/system/context-switch-flow.html">上下文切换</a> ·
-<a href="/docs/modules/scheduler/index.html">调度器模型</a> ·
-<a href="/docs/modules/ipc/mutex.html">互斥锁机制</a>
-</p>
-  <h3>实时性保障</h3>
-  <p>优先级继承是硬实时系统保障实时性的重要机制。通过缩短高优先级任务的阻塞时间，确保关键任务在截止时间内完成执行。实时性是汽车电子、工业控制、医疗设备等应用的核心要求，优先级继承直接影响系统安全性与可靠性。</p>
-  <p>实时性保障需要考虑最坏情况执行时间（WCET）。优先级继承可以降低WCET，但无法完全消除优先级反转的影响。开发者需通过实时性分析工具评估系统WCET，确保满足实时性要求。</p>
-  <h3>资源同步优化</h3>
-  <p>优先级继承优化资源同步机制。传统资源同步机制可能导致优先级反转，影响系统实时性。优先级继承通过动态调整任务优先级，减少资源竞争带来的阻塞时间，提高资源同步效率。</p>
-  <p>资源同步优化需考虑资源持有时间。持有时间越长，优先级继承的效果越明显。开发者需优化资源持有逻辑，缩短持有时间，进一步提高系统实时性。</p>
-  <h3>调度策略增强</h3>
-  <p>优先级继承增强调度策略的灵活性。传统优先级调度策略在资源竞争场景下可能失效，优先级继承通过动态优先级调整，使调度策略适应资源竞争环境。调度策略的灵活性提高系统的适应性与鲁棒性。</p>
-  <p>调度策略增强需考虑调度开销。优先级继承增加调度决策的复杂度，可能增加调度延迟。HRTOS通过优化调度算法，在保证优先级继承功能的同时，控制调度开销在可接受范围内。</p>
-  <h3>系统可预测性</h3>
-  <p>优先级继承提高系统可预测性。通过明确的优先级提升与恢复规则，系统行为具有可预测性。可预测性是实时系统的重要特性，开发者可以根据优先级继承规则预测任务调度顺序与响应时间。</p>
-  <p>系统可预测性需要避免优先级抖动。频繁的优先级变化可能导致系统行为不可预测。HRTOS通过优先级恢复延迟机制，减少不必要的优先级切换，提高系统可预测性。</p>
-</section>
-
-<section class="section">
-  <h2>系统关联链路</h2>
 
   <p>
-    <a href="/docs/modules/ipc/index.html">IPC 模块</a> ·
-    <a href="/docs/modules/ipc/mutex.html">Mutex 互斥锁</a> ·
-    <a href="/docs/modules/scheduler/index.html">Scheduler 调度器</a> ·
-    <a href="/docs/system/context-switch-flow.html">Context Switch Flow</a>
+    优先级继承保证 HRTOS 在资源竞争情况下仍然保持确定性调度行为。
   </p>
 
-  <p style="margin-top:12px;">
-    核心 API：
-    <a href="/docs/api/ipc/os_mutex_lock.html">os_mutex_lock</a> ·
-    <a href="/docs/api/ipc/os_mutex_unlock.html">os_mutex_unlock</a> ·
-    <a href="/docs/api/ipc/os_sem_take.html">os_sem_take</a> ·
-    <a href="/docs/api/ipc/os_sem_give.html">os_sem_give</a>
-  </p>
+  <div class="block">
+    核心结果：
+    <br>• 防止高优先级任务被长期阻塞
+    <br>• 减少不可预测调度延迟
+    <br>• 保持实时系统稳定性
+  </div>
+
 </section>
 
 <footer class="footer">
@@ -333,7 +304,6 @@ document.addEventListener("click", function(e){
   if(!btn) return;
 
   const code = btn.closest(".code-box").querySelector("code");
-
   navigator.clipboard.writeText(code.innerText);
 
   const old = btn.innerText;
@@ -341,6 +311,6 @@ document.addEventListener("click", function(e){
   setTimeout(()=>btn.innerText = old, 1200);
 });
 </script>
-
+<script src="https://hrtos.com/header.js" defer></script>
 </body>
 </html>

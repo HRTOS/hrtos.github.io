@@ -36,7 +36,6 @@ body{
   padding:96px 0 64px;
 }
 
-/* breadcrumb */
 .breadcrumb{
   margin-bottom:26px;
   font-size:.92rem;
@@ -45,10 +44,7 @@ body{
 .breadcrumb a{ color:#7dd3fc; }
 .breadcrumb a:hover{ color:var(--accent); }
 
-/* hero */
-.hero{
-  margin-bottom:54px;
-}
+.hero{ margin-bottom:54px; }
 
 .hero-tag{
   display:inline-block;
@@ -72,22 +68,13 @@ body{
   color:var(--muted);
 }
 
-/* section */
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
 .section h2{
   margin:0 0 10px;
   font-size:1.4rem;
 }
 
-.section p{
-  margin:0 0 20px;
-  color:var(--muted);
-}
-
-/* grid */
 .grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -102,6 +89,7 @@ body{
   border-radius:12px;
   box-shadow:0 20px 48px rgba(2,6,23,.34);
   transition:.25s ease;
+  text-decoration:none;
 }
 
 .card:hover{
@@ -129,7 +117,6 @@ body{
   font-weight:600;
 }
 
-/* model */
 .model-box{
   padding:18px 20px;
   border-left:3px solid var(--accent);
@@ -139,7 +126,6 @@ body{
   margin-top:12px;
 }
 
-/* footer */
 .footer{
   margin-top:60px;
   padding-top:20px;
@@ -156,18 +142,18 @@ body{
 </head>
 
 <body data-header="docs">
-<script src="/header.js" defer></script>
+
+<!-- ✅ 强制 header -->
+<script src="https://hrtos.com/header.js" defer></script>
 
 <main class="page">
 
-  <!-- 面包屑 -->
   <nav class="breadcrumb">
     <a href="/docs/index.html">Docs</a> /
     <a href="/docs/examples/index.html">Examples</a> /
     <span>Interrupt Driven</span>
   </nav>
 
-  <!-- 标题 -->
   <section class="hero">
     <span class="hero-tag">Interrupt System</span>
 
@@ -179,91 +165,91 @@ body{
     </p>
   </section>
 
-  <!-- 模型定义 -->
   <section class="section">
     <h2>中断模型定义</h2>
+
     <div class="model-box">
-      Interrupt Model = Interrupt Entry + Nested Control + Latency Handling + Context Save/Restore
+      中断模型（Interrupt Model） = 进入机制（Entry） + 
+      优先级嵌套（Priority Nesting） + 上下文保存（Context Save） + 
+      延迟控制（Latency Control）
     </div>
   </section>
 
   <section class="section">
-  <h2>关键能力</h2>
+    <h2>关键能力</h2>
 
-  <div class="grid">
+    <div class="grid">
 
-    <div class="card">
-      <h3>快速响应</h3>
-      <p>中断触发后快速进入ISR，降低系统响应延迟。</p>
+      <div class="card">
+        <h3>快速响应</h3>
+        <p>ISR进入延迟极低，保证实时响应能力。</p>
+      </div>
+
+      <div class="card">
+        <h3>嵌套控制</h3>
+        <p>支持高优先级中断抢占低优先级ISR。</p>
+      </div>
+
+      <div class="card">
+        <h3>上下文保护</h3>
+        <p>完整保存任务执行现场。</p>
+      </div>
+
+      <div class="card">
+        <h3>实时分析</h3>
+        <p>用于测量系统最坏响应延迟。</p>
+      </div>
+
     </div>
+  </section>
 
-    <div class="card">
-      <h3>优先级抢占</h3>
-      <p>高优先级中断可抢占低优先级中断执行。</p>
-    </div>
-
-    <div class="card">
-      <h3>上下文保护</h3>
-      <p>保存与恢复CPU执行状态，保证任务连续性。</p>
-    </div>
-
-    <div class="card">
-      <h3>实时性评估</h3>
-      <p>通过延迟测试分析系统中断性能上限。</p>
-    </div>
-
-  </div>
-</section>
-
-  <!-- 核心实验 -->
   <section class="section">
     <h2>核心实验</h2>
-    <p>以下实验用于验证中断触发与任务调度之间的响应关系。</p>
 
     <div class="grid">
 
       <a class="card" href="interrupt-entry.html">
         <h3>中断进入流程</h3>
-        <p>分析中断触发与上下文保存过程。</p>
+        <p>分析ISR入口与上下文保存。</p>
         <span>进入实验 →</span>
       </a>
 
       <a class="card" href="nested-interrupt.html">
         <h3>嵌套中断</h3>
-        <p>观察中断优先级嵌套与抢占机制。</p>
+        <p>观察优先级抢占行为。</p>
         <span>进入实验 →</span>
       </a>
 
       <a class="card" href="latency-test.html">
         <h3>中断延迟测试</h3>
-        <p>测量系统响应时间与实时性能。</p>
+        <p>测量系统实时响应能力。</p>
         <span>进入实验 →</span>
       </a>
 
     </div>
   </section>
 
+  <!-- API v2 -->
   <section class="section">
-  <h2>相关 API</h2>
+    <h2>API 关联</h2>
 
-  <div class="grid">
+    <div class="grid">
 
-    <a class="card" href="/docs/api/scheduler/index.html">
-      <h3>Interrupt APIs</h3>
-      <p>查看中断上下文切换与调度相关接口。</p>
-      <span>查看 API →</span>
-    </a>
+      <a class="card" href="/docs/api_v2/interrupt/index.html">
+        <h3>中断核心 API</h3>
+        <p>中断控制与调度接口。</p>
+        <span>interrupt core →</span>
+      </a>
 
-    <a class="card" href="/docs/api/time/index.html">
-      <h3>Time APIs</h3>
-      <p>查看Tick与延迟测试相关接口。</p>
-      <span>查看 API →</span>
-    </a>
+      <a class="card" href="/docs/api_v2/time/os_tick_get.html">
+        <h3>时间系统 API</h3>
+        <p>系统节拍与延迟测量接口。</p>
+        <span>time API →</span>
+      </a>
 
-  </div>
-</section>
+    </div>
+  </section>
 
-  <!-- 关联 -->
   <section class="section">
     <h2>关联系统</h2>
 
@@ -271,37 +257,19 @@ body{
 
       <a class="card" href="/docs/examples/01-task-execution/index.html">
         <h3>任务执行模型</h3>
-        <p>中断触发任务切换的执行路径。</p>
+        <p>中断触发任务切换路径。</p>
         <span>查看 →</span>
       </a>
 
       <a class="card" href="/docs/examples/02-scheduling-engine/index.html">
         <h3>调度引擎</h3>
-        <p>中断与调度器之间的联动机制。</p>
+        <p>调度器与中断协同机制。</p>
         <span>查看 →</span>
       </a>
 
     </div>
   </section>
-<section class="section">
-  <h2>延伸阅读</h2>
 
-  <div class="grid">
-
-    <a class="card" href="/docs/architecture/interrupt/index.html">
-      <h3>中断架构</h3>
-      <p>查看HRTOS中断系统整体结构与设计模型。</p>
-      <span>查看 →</span>
-    </a>
-
-    <a class="card" href="/docs/architecture/interrupt/interrupt-latency.html">
-      <h3>中断延迟分析</h3>
-      <p>深入理解中断响应时间构成与影响因素。</p>
-      <span>查看 →</span>
-    </a>
-
-  </div>
-</section>
   <footer class="footer">
     © 2017–2026 HRTOS · Interrupt Driven System
   </footer>

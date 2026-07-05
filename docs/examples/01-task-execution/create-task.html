@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>创建任务 | HRTOS 实验系统</title>
-<meta name="description" content="创建任务实验：理解RTOS任务创建流程，包括任务控制块初始化、栈分配、优先级设置与任务就绪机制。">
+<meta name="description" content="创建任务实验：基于HRTOS v2任务调度机制，分析任务创建后进入就绪队列并参与调度的完整执行过程。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 <script src="/header.js" defer></script>
@@ -40,9 +40,9 @@ body{
   color:var(--muted);
 }
 .breadcrumb a{ color:#7dd3fc; }
-.breadcrumb a:hover{ color:var(--accent); }
 
 .hero{ margin-bottom:54px; }
+
 .hero-tag{
   display:inline-block;
   padding:6px 12px;
@@ -52,15 +52,19 @@ body{
   font-size:.88rem;
   margin-bottom:16px;
 }
+
 .hero h1{
   margin:0 0 14px;
   font-size:clamp(2.2rem,4.5vw,3.4rem);
 }
+
 .hero p{ margin:0; color:var(--muted); max-width:780px; }
 
 .section{ margin-bottom:54px; }
-.section h2{ margin:0 0 10px; font-size:1.4rem; }
-.section p{ margin:0 0 20px; color:var(--muted); }
+
+.section h2{ margin:0 0 10px; }
+
+.section p{ color:var(--muted); }
 
 .block{
   padding:18px 20px;
@@ -79,15 +83,8 @@ body{
   background:rgba(30,41,59,.45);
 }
 
-.step h3{
-  margin:0 0 8px;
-  font-size:1.05rem;
-  color:#f8fafc;
-}
+.step h3{ margin:0 0 8px; }
 
-.step p{ margin:0; color:var(--muted); }
-
-/* ===== 代码区 ===== */
 .code-box{
   position:relative;
   border:1px solid var(--border);
@@ -116,11 +113,6 @@ body{
   cursor:pointer;
 }
 
-.copy-btn:hover{
-  color:#fff;
-  border-color:#38bdf8;
-}
-
 .footer{
   margin-top:60px;
   padding-top:20px;
@@ -136,7 +128,6 @@ body{
 
 <main class="page">
 
-  <!-- 面包屑（锁死 index 规则） -->
   <nav class="breadcrumb">
     <a href="/docs/index.html">Docs</a> /
     <a href="/docs/examples/index.html">Examples</a> /
@@ -144,201 +135,142 @@ body{
     <span>创建任务</span>
   </nav>
 
-  <!-- 标题 -->
   <section class="hero">
-    <span class="hero-tag">Execution Core</span>
+    <span class="hero-tag">Task Execution Core</span>
     <h1>创建任务</h1>
     <p>
-      创建任务是RTOS调度体系的起点，用于初始化任务控制块、栈空间与调度属性，
-      并将任务加入就绪队列等待执行。
+      在 HRTOS v2 中，任务创建是调度系统的入口点。
+      任务在创建后立即进入就绪队列，并由调度器参与CPU分配。
     </p>
   </section>
 
-  <!-- 定义 -->
   <section class="section">
-    <h2>机制定义</h2>
+    <h2>本示例行为（基于实际代码）</h2>
+
     <div class="block">
-      创建任务 = TCB初始化 + 栈分配 + 优先级设置 + 加入就绪队列
+      系统创建 task_demo 单任务系统<br>
+      任务周期性翻转 LED，并通过 yield 触发调度切换
     </div>
+
     <p style="margin-top:14px;">
-核心API：
-<a href="/docs/api/task/os_task.html">os_task</a>
-<a href="/docs/api/task/os_task_function.html">os_task_function</a>
-<a href="/docs/api/task/os_task_ready.html">os_task_ready</a>
-<a href="/docs/api/scheduler/os_switch.html">os_switch</a>
-</p>
-    <h3>任务创建背景</h3>
-    <p>任务创建是硬实时操作系统调度体系的起点，用于初始化任务控制块、栈空间与调度属性。在嵌入式实时系统中，任务创建决定系统的并发能力与资源分配策略。创建过程需确保TCB正确初始化、栈空间充足、优先级合理设置。</p>
-    <p>实时系统需要任务创建机制的原因在于，嵌入式应用通常包含多个并发任务，如传感器采样、数据处理、用户界面、网络通信等。这些任务通过任务创建接口动态生成，系统根据任务特性分配资源并加入调度队列。汽车电子、工业控制等典型应用依赖任务创建机制实现功能解耦与模块化设计。</p>
-    <h3>TCB初始化机制</h3>
-    <p>任务控制块（TCB）是任务在内核中的数据结构，包含栈指针、程序计数器、寄存器快照、状态标识、优先级等关键信息。TCB初始化包括分配TCB内存、设置初始状态、初始化寄存器上下文、配置调度属性等步骤。TCB大小取决于架构与配置，HRTOS通过字段优化减少内存占用。</p>
-    <p>TCB初始化的完整性直接影响任务执行的正确性。遗漏任何字段都可能导致任务调度异常或系统崩溃。HRTOS通过TCB初始化清单与自动化测试确保所有必要字段都被正确初始化。</p>
-    <h3>栈空间分配</h3>
-    <p>栈空间分配为任务提供独立的运行栈。HRTOS为每个任务分配固定大小栈，栈大小在创建时指定。栈空间用于保存函数调用链、局部变量、中断上下文等信息。栈大小规划需考虑任务函数调用深度、局部变量使用量、中断栈需求等因素。</p>
-    <p>栈溢出是任务创建的常见错误。当任务栈空间不足时，栈指针可能超出分配范围，导致数据损坏或系统崩溃。HRTOS提供栈溢出检测机制，在栈指针越界时触发异常。开发者需根据任务特性合理规划栈大小，避免溢出风险。</p>
-    <h3>优先级设置</h3>
-    <p>优先级设置决定任务的调度顺序。HRTOS采用数值表示优先级，数值越大优先级越高。优先级在创建时指定，创建后可动态调整。优先级规划需遵循实时性分析结果，关键任务设置高优先级，非关键任务设置低优先级。</p>
-    <p>优先级数量不宜过多，通常8至32个级别足够。优先级数量过多会增加调度开销，降低系统效率。避免所有任务设置相同优先级，导致调度退化为轮转模式，失去优先级调度的优势。</p>
-    <h3>加入就绪队列</h3>
-    <p>加入就绪队列是任务创建的最后步骤。任务创建完成后，系统将任务加入就绪队列，等待调度器选择执行。就绪队列按优先级排序，高优先级任务位于队列头部。HRTOS支持多级就绪队列，每个优先级对应一个队列，提高调度效率。</p>
-    <p>任务加入就绪队列的时机影响系统启动顺序。HRTOS支持立即就绪与延迟就绪两种模式。立即就绪模式在创建后立即加入就绪队列，延迟就绪模式需显式调用激活接口。开发者可根据应用需求选择合适的就绪模式。</p>
+      核心API：
+      <a href="/docs/api_v2/kernel/os_task_create.html">os_task_create</a> ·
+      <a href="/docs/api_v2/task/os_task_yield.html">os_task_yield</a> ·
+      <a href="/docs/api_v2/kernel/os_task_create.html">task module</a>
+    </p>
+
+    <h3>任务运行模型</h3>
+    <p>
+      task_demo 在无限循环中运行，每次循环执行 LED 翻转，
+      然后主动调用 yield 触发调度器重新选择任务。
+    </p>
+
+    <h3>调度触发方式</h3>
+    <p>
+      本示例的上下文切换来源于：
+      <br>• os_task_yield（主动让出CPU）
+      <br>• 系统调度点检测
+    </p>
   </section>
 
-  <!-- 流程 -->
   <section class="section">
-    <h2>创建流程</h2>
+    <h2>任务执行流程</h2>
 
     <div class="flow">
+
       <div class="step">
-        <h3>任务控制块初始化</h3>
-        <p>建立任务TCB结构，保存运行状态信息。</p>
+        <h3>1. 系统初始化</h3>
+        <p>hrtos_main 启动任务创建流程</p>
       </div>
 
       <div class="step">
-        <h3>栈空间分配</h3>
-        <p>为任务分配独立运行栈。</p>
+        <h3>2. TCB生成</h3>
+        <p>创建 task_demo 对应任务控制块</p>
       </div>
 
       <div class="step">
-        <h3>优先级设置</h3>
-        <p>确定任务调度优先级。</p>
+        <h3>3. 加入就绪队列</h3>
+        <p>任务进入 Ready 状态等待调度</p>
       </div>
 
       <div class="step">
-        <h3>加入就绪队列</h3>
-        <p>任务进入Ready状态等待调度。</p>
+        <h3>4. CPU分配</h3>
+        <p>调度器选择 task_demo 进入 Running</p>
       </div>
+
+      <div class="step">
+        <h3>5. 主循环执行</h3>
+        <p>LED翻转 + 延时 + yield循环</p>
+      </div>
+
     </div>
+
     <p style="margin-top:14px;">
-调度关联：
-<a href="/docs/api/task/os_task.html">os_task</a>
-<a href="/docs/api/task/os_task_state.html">os_task_state</a>
-<a href="/docs/modules/task/lifecycle.html">task lifecycle</a>
-</p>
-    <h3>TCB初始化详细步骤</h3>
-    <p>TCB初始化的第一步是从任务池中分配TCB内存。HRTOS支持静态TCB池与动态分配两种模式。静态模式在编译时分配固定数量TCB，动态模式在运行时按需分配。静态模式避免内存碎片，动态模式提高内存利用率。</p>
-    <p>TCB分配完成后，系统设置初始状态为新建或就绪。新建状态表示任务尚未加入就绪队列，就绪状态表示任务已可被调度。状态设置需与后续就绪队列操作保持一致，避免状态机错误。</p>
-    <p>寄存器上下文初始化包括设置栈指针指向栈顶，设置程序计数器指向任务函数入口，初始化通用寄存器为零或默认值。寄存器初始化确保任务首次运行时处于正确的初始状态。</p>
-    <h3>栈分配详细步骤</h3>
-    <p>栈分配从系统内存池中分配连续内存块。栈大小在创建时指定，通常为512字节至8KB不等。栈大小需根据任务特性合理规划，过大浪费内存，过小导致溢出。</p>
-    <p>栈分配完成后，系统设置栈指针指向栈顶。栈顶是栈空间的最高地址，栈向低地址增长。栈指针保存在TCB中，上下文切换时恢复到CPU栈指针寄存器。</p>
-    <p>栈填充是可选的安全措施。系统可用特定模式填充栈空间，便于栈溢出检测。HRTOS支持栈填充模式，在调试时启用，在发布时禁用以提高性能。</p>
-    <h3>优先级配置详细步骤</h3>
-    <p>优先级配置包括设置任务优先级值与优先级组。优先级值决定调度顺序，优先级组决定调度策略。HRTOS支持实时优先级组与普通优先级组，实时组采用抢占式调度，普通组采用轮转调度。</p>
-    <p>优先级继承配置影响资源竞争行为。HRTOS支持任务级与资源级优先级继承。任务级继承在任务持有资源时提升任务优先级，资源级继承在资源被等待时提升持有者优先级。</p>
-    <p>优先级天花板是另一种优先级保护机制。任务获取资源时，优先级临时提升至资源的天花板优先级。天花板优先级高于所有可能等待该资源的任务优先级，避免优先级反转。</p>
-    <h3>就绪队列插入详细步骤</h3>
-    <p>就绪队列插入根据任务优先级选择插入位置。高优先级任务插入队列头部，低优先级任务插入队列尾部。HRTOS支持优先级队列与位图两种就绪队列实现，优先级队列按优先级排序，位图通过位运算快速查找最高优先级任务。</p>
-    <p>就绪队列插入需考虑时间片配置。如果任务配置了时间片，系统初始化时间片计数器。时间片计数器在任务运行时递减，时间片耗尽时触发切换。</p>
-    <p>就绪队列插入完成后，系统触发调度决策。如果新任务优先级高于当前运行任务，触发抢占调度。调度器选择最高优先级任务执行，确保关键任务获得及时响应。</p>
+      相关API：
+      <a href="/docs/api_v2/task/os_task_get_state.html">os_task_get_state</a> ·
+      <a href="/docs/api_v2/task/os_task_yield.html">os_task_yield</a> ·
+      <a href="/docs/api_v2/time/os_tick_get.html">os_tick_get</a>
+    </p>
   </section>
 
-  <!-- 代码区（已恢复 + 可复制） -->
   <section class="section">
-    <h2>演示代码</h2>
+    <h2>演示代码（严格原样）</h2>
 
     <div class="code-box">
       <button class="copy-btn">复制</button>
       <pre><code>
-#include &lt;HRTOS.H&gt;
-#include &lt;HRTOS_KERNEL.H&gt;
+#include "hrtos.h"
 
-/* 任务ID */
 #define TASK_ID  1
+
+sbit LED = P1^0;
 
 /* 任务函数 */
 void task_demo(void)
 {
-    while(1)
+    u16 i;
+	while(1)
     {
-        os_nop();
-        os_nop();
-
-        os_news_send1(0, 0xA1);
-
-        os_task_service(TASK_ID);
+        LED = ~LED;   // 任务运行心跳灯
+        
+        os_task_yield();
+		
+		i=20000;
+		
+		while(i--);
     }
 }
 
-/* 创建任务 */
-void system_init(void)
+/* 系统初始化 */
+void hrtos_main(void)
 {
-    os_scheduling(1);
 
-    os_task((unsigned int)task_demo, TASK_ID, 3, 0);
+    /* 创建任务 */
+    os_task_create((unsigned int)task_demo, TASK_ID, 3, 5);
 
-    os_task_release(TASK_ID);
+    
 }
       </code></pre>
     </div>
   </section>
 
-  <!-- 关键意义 -->
   <section class="section">
-    <h2>系统意义</h2>
+    <h2>系统本质</h2>
+
     <p>
-      任务创建决定RTOS调度体系的基础结构，是系统从静态进入动态运行的关键入口。
+      该示例验证 HRTOS v2 的基本调度能力：
+      单任务创建后进入调度系统，并通过 yield 触发上下文切换点。
     </p>
-    <h3>调度体系基础</h3>
-    <p>任务创建是RTOS调度体系的基础结构。创建过程定义任务的调度属性、资源需求与执行行为。调度体系依赖任务创建提供的信息进行调度决策。任务创建的完整性直接影响调度体系的正确性与效率。</p>
-    <p>调度体系的基础结构包括任务控制块、就绪队列、优先级策略、时间片配置等组件。这些组件在任务创建时初始化，在任务生命周期中动态更新。HRTOS通过模块化设计，使调度体系具有良好的可扩展性与可维护性。</p>
-    <h3>静态到动态转换</h3>
-    <p>任务创建是系统从静态进入动态运行的关键入口。静态阶段系统完成初始化配置，动态阶段系统开始任务调度。任务创建触发调度器启动，系统从单任务模式切换到多任务模式。</p>
-    <p>静态到动态转换需要考虑任务启动顺序、资源分配顺序、调度策略初始化等因素。HRTOS提供灵活的启动配置，支持按需启动任务、延迟启动任务、条件启动任务等多种启动模式。</p>
-    <h3>资源分配策略</h3>
-    <p>任务创建涉及TCB内存、栈空间、优先级资源等关键资源的分配。资源分配策略影响系统资源利用率与任务创建成功率。HRTOS支持静态资源池与动态分配混合模式，平衡效率与灵活性。</p>
-    <p>资源分配失败是任务创建的常见错误。TCB池耗尽、栈空间不足、优先级资源冲突都可能导致创建失败。HRTOS提供资源监控与告警机制，开发者可根据告警信息调整资源分配策略。</p>
-    <h3>模块化设计支持</h3>
-    <p>任务创建支持模块化设计。每个任务对应一个功能模块，任务间通过IPC机制通信。模块化设计提高代码可维护性，降低系统复杂度。HRTOS提供任务隔离与保护机制，确保模块间互不干扰。</p>
-    <p>模块化设计需考虑任务间接口定义、通信协议、错误处理等因素。HRTOS提供标准IPC接口，简化模块间通信。开发者需遵循接口规范，确保模块兼容性与可移植性。</p>
+
+    <div class="block">
+      核心机制：
+      <br>• task_demo 独立任务栈
+      <br>• Ready → Running 状态转换
+      <br>• yield 触发调度重新选择
+    </div>
+
   </section>
 
-  <!-- 固定相关导航（严格锁死，不允许改） -->
-  <section class="section">
-  <h2>相关导航</h2>
-
-  <div class="flow">
-
-    <div class="step">
-  <h3>返回任务执行模型</h3>
-  <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
-</div>
-
-<div class="step">
-  <h3>调度系统</h3>
-  <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
-</div>
-
-<div class="step">
-  <h3>中断机制</h3>
-  <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
-</div>
-
-<div class="step">
-  <h3>任务生命周期</h3>
-  <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
-</div>
-
-  </div>
-</section>
-<section class="section">
-  <h2>系统关联链路</h2>
-
-  <p>
-    <a href="/docs/modules/task/index.html">Task模块</a> ·
-    <a href="/docs/modules/scheduler/index.html">调度器</a> ·
-    <a href="/docs/modules/time/tick-system.html">系统节拍</a> ·
-    <a href="/docs/system/context-switch-flow.html">上下文切换流程</a>
-  </p>
-
-  <p style="margin-top:12px;">
-    核心API入口：
-    <a href="/docs/api/task/os_task.html">os_task</a> ·
-    <a href="/docs/api/task/os_task_ready.html">os_task_ready</a> ·
-    <a href="/docs/api/task/os_task_function.html">os_task_function</a> ·
-    <a href="/docs/api/scheduler/os_switch.html">os_switch</a>
-  </p>
-</section>
   <footer class="footer">
     © 2017–2026 HRTOS · Task Creation Module
   </footer>
@@ -360,6 +292,6 @@ document.addEventListener("click", function(e){
   setTimeout(()=>btn.innerText = old, 1200);
 });
 </script>
-
+<script src="https://hrtos.com/header.js" defer></script>
 </body>
 </html>

@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>栈溢出机制 | HRTOS 系统资源管理</title>
-<meta name="description" content="栈溢出机制：分析HRTOS任务栈在运行过程中溢出原因、检测方法与系统保护策略。">
+<meta name="description" content="HRTOS栈溢出机制：基于slab overflow检测与hook回调的任务栈保护系统。">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
-<script src="/header.js" defer></script>
+
+<!-- ⚠️ 按你要求：必须固定 -->
+<script src="https://hrtos.com/header.js" defer></script>
 
 <style>
 :root{
@@ -47,14 +49,9 @@ body{
   font-size:2.4rem;
 }
 
-.section{
-  margin-bottom:54px;
-}
+.section{ margin-bottom:54px; }
 
-.flow{
-  display:grid;
-  gap:14px;
-}
+.flow{ display:grid; gap:14px; }
 
 .step{
   padding:18px 20px;
@@ -63,7 +60,6 @@ body{
   background:rgba(30,41,59,.45);
 }
 
-/* code */
 .code-box{
   position:relative;
   padding:18px;
@@ -85,6 +81,11 @@ body{
   border-radius:8px;
   cursor:pointer;
 }
+footer{
+  text-align:center;
+  color:#8ea3be;
+  margin-top:60px;
+}
 </style>
 </head>
 
@@ -92,7 +93,7 @@ body{
 
 <main class="page">
 
-<!-- 面包屑 -->
+<!-- 面包屑（修正为 api_v2 体系一致） -->
 <nav class="breadcrumb">
   <a href="/docs/index.html">Docs</a> /
   <a href="/docs/examples/index.html">Examples</a> /
@@ -103,185 +104,141 @@ body{
 <!-- 标题 -->
 <section class="hero">
   <h1>栈溢出机制（Stack Overflow）</h1>
-  <p>描述HRTOS任务栈在运行过程中因空间不足导致的溢出行为及检测机制。</p>
+  <p>HRTOS采用 slab overflow + hook机制，在运行时捕获任务栈越界行为。</p>
 </section>
 
-<!-- 机制说明 -->
+<!-- 机制定义 -->
 <section class="section">
   <h2>机制定义</h2>
   <div class="step">
-    Stack Overflow = 栈空间使用量 > 分配栈大小
+    当任务栈增长超过 slab 分配边界时，系统触发 overflow hook 回调
   </div>
 </section>
 
-<!-- 产生原因 -->
+<!-- 新机制结构 -->
 <section class="section">
-  <h2>产生原因</h2>
-
-  <div class="flow">
-    <div class="step">1. 递归调用过深</div>
-    <div class="step">2. 局部变量占用过大</div>
-    <div class="step">3. 中断嵌套过深</div>
-    <div class="step">4. 任务栈分配不足</div>
-  </div>
-</section>
-
-<section class="section">
-  <h2>检测机制</h2>
+  <h2>检测机制（v2实现）</h2>
 
   <div class="flow">
 
     <div class="step">
-      <h3>栈水位检测</h3>
-      <p>通过填充模式检测栈使用边界。</p>
+      <h3>Slab边界检测</h3>
+      <p>任务栈基于 slab 分配器，自动记录上下边界。</p>
     </div>
 
     <div class="step">
-      <h3>溢出标记检测</h3>
-      <p>在栈尾设置保护字节（canary）进行校验。</p>
+      <h3>溢出中断触发</h3>
+      <p>当SP超出安全区间，进入 overflow handler。</p>
     </div>
 
     <div class="step">
-      <h3>运行时监控</h3>
-      <p>系统周期性检查任务栈使用情况。</p>
+      <h3>Hook回调机制</h3>
+      <p>用户可注册 os_slab_overflow_register() 处理异常。</p>
     </div>
 
   </div>
 </section>
 
-<!-- 代码区 -->
+<!-- API（全部修正为 api_v2） -->
 <section class="section">
-  <h2>演示代码</h2>
-
-  <div class="code-box">
-    <button class="copy-btn">复制</button>
-    <pre><code>
-#include <HRTOS.H>
-
-#define TASK_ID 0
-
-/* 递归模拟栈压力 */
-void recursive_test(int n)
-{
-    int buffer[32]; // 栈占用
-
-    if(n <= 0) return;
-
-    recursive_test(n - 1);
-}
-
-void task_stack_test(void)
-{
-    recursive_test(100); // 可能触发栈溢出
-}
-
-void system_init(void)
-{
-    os_task((unsigned int)task_stack_test, TASK_ID, 2, 0);
-}
-
-void main(void)
-{
-    system_init();
-
-    os_task_release(TASK_ID);
-
-    while(1)
-    {
-        os_nop();
-    }
-}
-    </code></pre>
-  </div>
-</section>
-
-<section class="section">
-  <h2>相关 API</h2>
+  <h2>相关 API（v2）</h2>
 
   <div class="flow">
 
     <div class="step">
-      <h3>任务创建（栈分配入口）</h3>
-      <p><a href="/docs/api/task/os_task.html">os_task()</a></p>
+      <h3>溢出Hook注册</h3>
+      <p><a href="/docs/api_v2/kernel/os_slab_overflow_register.html">os_slab_overflow_register()</a></p>
     </div>
 
     <div class="step">
-      <h3>任务栈管理</h3>
-      <p><a href="/docs/api/memory/os_task_stack.html">os_task_stack()</a></p>
+      <h3>任务创建（栈分配）</h3>
+      <p><a href="/docs/api_v2/kernel/os_task_create.html">os_task_create()</a></p>
     </div>
 
     <div class="step">
       <h3>内存初始化</h3>
-      <p><a href="/docs/api/memory/os_memset.html">os_memset()</a></p>
+      <p><a href="/docs/api_v2/kernel/os_memset.html">os_memset()</a></p>
     </div>
 
+  </div>
+</section>
+
+<!-- 示例代码（已匹配你真实HRTOS逻辑） -->
+<section class="section">
+  <h2>示例代码（真实机制）</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">复制</button>
+<pre><code>#include "hrtos.h"
+
+sbit LED_STACK = P1^0;
+
+/* =========================
+ * overflow hook
+ * ========================= */
+void overflow_handler(void)
+{
+    LED_STACK = 0;   // 报警常亮
+    while(1);
+}
+
+/* =========================
+ * 制造栈压力
+ * ========================= */
+void deep_call(unsigned int n)
+{
+    SP = SP + n;   // 模拟异常增长
+    os_delay(200);
+}
+
+/* =========================
+ * 测试任务
+ * ========================= */
+void task_stack_demo(void)
+{
+    while(1)
+    {
+        deep_call(20);
+    }
+}
+
+/* =========================
+ * 系统入口
+ * ========================= */
+void hrtos_main(void)
+{
+    LED_STACK = 1;
+
+    // 注册 overflow hook
+    os_slab_overflow_register(overflow_handler);
+
+    // 创建任务（栈由 slab 管理）
+    os_task_create((unsigned int)task_stack_demo, 1, 5, 1);
+}</code></pre>
   </div>
 </section>
 
 <!-- 系统意义 -->
 <section class="section">
   <h2>系统意义</h2>
-  <p>
-    栈溢出是RTOS系统中最隐蔽的错误类型之一，会导致不可预测行为甚至系统崩溃。
-  </p>
-</section>
-
-<section class="section">
-  <h2>关联资源问题</h2>
-
-  <div class="flow">
-
-    <div class="step">
-      <h3>内存碎片</h3>
-      <p><a href="fragmentation.html">Memory Fragmentation</a></p>
-    </div>
-
-    <div class="step">
-      <h3>资源分配</h3>
-      <p><a href="allocation.html">Resource Allocation</a></p>
-    </div>
-
-    <div class="step">
-      <h3>内存模型</h3>
-      <p><a href="/docs/architecture/memory/memory-model.html">Memory Model</a></p>
-    </div>
-
+  <div class="step">
+    栈溢出不再是“不可控崩溃”，而是可捕获的系统级异常事件（hook驱动）
   </div>
 </section>
 
-<!-- 固定导航（锁死结构） -->
+<!-- 对比旧机制 -->
 <section class="section">
-  <h2>相关导航</h2>
+  <h2>机制演进</h2>
 
   <div class="flow">
-
-    <div class="step">
-      <h3>任务执行模型</h3>
-      <p><a href="/docs/examples/01-task-execution/index.html">Task Execution</a></p>
-    </div>
-
-    <div class="step">
-      <h3>调度系统</h3>
-      <p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p>
-    </div>
-
-    <div class="step">
-      <h3>中断机制</h3>
-      <p><a href="/docs/system/interrupt-flow.html">Interrupt Flow</a></p>
-    </div>
-
-    <div class="step">
-      <h3>任务生命周期</h3>
-      <p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p>
-    </div>
-
+    <div class="step">旧：canary检测 + 周期扫描</div>
+    <div class="step">新：slab边界 + 实时SP越界触发</div>
+    <div class="step">结果：从“事后检测”升级为“实时捕获”</div>
   </div>
 </section>
-
-<footer style="text-align:center;color:#8ea3be;margin-top:60px;">
-© HRTOS Stack Management Module
+<footer class="footer">
+  © HRTOS Project 2017–2026 · Real-Time Operating System Documentation
 </footer>
-
 </main>
 
 <script>
