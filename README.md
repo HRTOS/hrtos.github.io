@@ -1,8 +1,8 @@
-# HRTOS - High Reliability Real-Time Operating System
+# HRTOS - Hard Real-Time Operating System
 
-HRTOS is a lightweight, high-reliability embedded real-time operating system designed for resource-constrained devices and industrial applications.
+HRTOS is a lightweight embedded hard real-time operating system designed for resource-constrained and industrial control systems.
 
-It supports multitasking, interrupt management, scheduling, and memory control, making it suitable for embedded systems and real-time applications.
+It provides deterministic scheduling, interrupt handling, task management, and memory control to ensure strict timing constraints in embedded applications.
 
 ---
 
