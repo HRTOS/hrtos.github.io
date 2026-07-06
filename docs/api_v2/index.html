@@ -214,11 +214,10 @@ body::before{
 
   <!-- system note -->
   <section>
-    <h2 style="margin:0 0 10px 0;"> “嵌套深度” 术语说明</h2>
+    <h2 style="margin:0 0 10px 0;"> 术语说明</h2>
 
     <p style="color:#94a3b8;max-width:900px;">
-      HRTOS 创建任务时的参数，任务每调用1层函数，深度加1 。调用函数时PC地址压入堆栈SP+2，
-      系统根据嵌套深度分配片内RAM，系统会根据申请数量加一层（中断），故用户仅需对自身任务判断即可。
+      嵌套深度：任务函数调用的最大层级，用于预估任务栈空间占用。
     </p>
   </section>
 
