@@ -162,7 +162,7 @@ featured: [
 
   examples: createModule({
     label: "Examples",
-    title: "实验系统",
+    title: "HRTOS 实验中心",
     intro: "通过实验页面观察 RTOS 行为与系统运行过程。",
     breadcrumb: "Examples",
 
