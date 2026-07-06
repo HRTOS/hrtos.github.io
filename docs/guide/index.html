@@ -29,7 +29,8 @@ body{
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
   background:var(--bg);
   color:var(--text);
-  height:100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display:flex;
   flex-direction:column;
 }
@@ -163,6 +164,45 @@ body{
   #sidebar{width:240px}
   .grid{grid-template-columns:1fr}
 }
+
+@media (max-width: 768px) {
+
+  /* 1. 主布局改成上下结构 */
+  .main{
+    flex-direction: column;
+  }
+
+  /* 2. sidebar 变成顶部全宽 */
+  #sidebar{
+    width: 100%;
+    height: auto;
+    max-height: 240px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* 3. 内容区适配 */
+  #content{
+    padding: 14px;
+  }
+
+  /* 4. 卡片改为单列 */
+  .grid{
+    grid-template-columns: 1fr;
+  }
+
+  /* 5. 顶栏字体稍微缩小 */
+  .topbar{
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px;
+  }
+
+  .topbar a{
+    margin-left: 8px;
+    font-size: 13px;
+  }
+}
 </style>
 </head>
 
@@ -270,10 +310,42 @@ function showHome(){
     content.innerHTML=`
       <div class="hero">
         <h1>HRTOS 系统手册</h1>
-        <p>HRTOS 内核 / 调度 / IPC / 内存管理 / 嵌入式系统完整参考体系</p>
+        <p>轻量级实时操作系统 · 内核 / 调度 / IPC / 内存管理完整参考</p>
       </div>
 
-     
+      <div class="grid">
+
+        <div class="card" onclick="location.hash='01_kernel_overview'">
+          <h3>📌 内核系统</h3>
+          <p>任务调度 / 生命周期 / 内核结构</p>
+        </div>
+
+        <div class="card" onclick="location.hash='03_scheduler_design'">
+          <h3>⚡ 调度系统</h3>
+          <p>优先级调度 / 时间片 / 抢占机制</p>
+        </div>
+
+        <div class="card" onclick="location.hash='05_event_design'">
+          <h3>🔗 通信机制</h3>
+          <p>信号量 / 队列 / 事件 / 互斥锁</p>
+        </div>
+
+        <div class="card" onclick="location.hash='11_memory_layout'">
+          <h3>🧠 内存管理</h3>
+          <p>栈 / 堆 / 内存保护 / 分配策略</p>
+        </div>
+
+        <div class="card" onclick="location.hash='10_interrupt_design'">
+          <h3>⚙️ 中断系统</h3>
+          <p>嵌套中断 / 延迟 / 优先级</p>
+        </div>
+
+        <div class="card" onclick="location.hash='20_debugging'">
+          <h3>🛠 调试工具</h3>
+          <p>日志 / 断点 / 运行分析</p>
+        </div>
+
+      </div>
     `;
 }
 
