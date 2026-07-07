@@ -3,34 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MYOS Kernel Lab | HRTOS 项目实战</title>
-  <meta name="description" content="MYOS 是 HRTOS 的轻量级实时操作系统实验项目，围绕任务调度、中断驱动与任务切换机制进行内核实现与技术解析。">
-  <meta name="keywords" content="MYOS, HRTOS, RTOS, task scheduling, embedded system">
+  <title>HRTOS Myos Kernel | HRTOS 项目实战</title>
+  <meta name="description" content="HRTOS Myos 是 HRTOS 的轻量级实时操作系统实验项目，围绕任务调度、中断驱动与任务切换机制进行内核实现与技术解析。">
+  <meta name="keywords" content="HRTOS Myos, HRTOS, RTOS, task scheduling, embedded system">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <meta name="theme-color" content="#0f172a">
-  <meta property="og:title" content="MYOS / HRTOS 轻量级实时操作系统内核解析">
-  <meta property="og:description" content="把 MYOS 源码转化为可读的 RTOS 技术讲解，解释任务调度、中断驱动、栈保护与裸机嵌入式设计思路。">
+  <meta property="og:title" content="HRTOS Myos / HRTOS 轻量级实时操作系统内核解析">
+  <meta property="og:description" content="把 HRTOS Myos 源码转化为可读的 RTOS 技术讲解，解释任务调度、中断驱动、栈保护与裸机嵌入式设计思路。">
   <meta property="og:type" content="article">
   <meta name="twitter:card" content="summary_large_image">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "TechArticle",
-    "headline": "MYOS / HRTOS 轻量级实时操作系统内核解析",
-    "description": "一份面向 embedded system 与 RTOS 学习者的单页面技术文档，重点讲解 MYOS 的任务调度、中断分发、栈保护与启动流程。",
+    "headline": "HRTOS Myos / HRTOS 轻量级实时操作系统内核解析",
+    "description": "一份面向 embedded system 与 RTOS 学习者的单页面技术文档，重点讲解 HRTOS Myos 的任务调度、中断分发、栈保护与启动流程。",
     "keywords": [
-      "MYOS",
+      "HRTOS Myos",
       "HRTOS",
       "RTOS",
       "task scheduling",
       "embedded system",
       "interrupt",
-      "scheduler"
+      "Myos"
     ],
     "inLanguage": "zh-CN",
     "articleSection": [
       "系统设计理念",
-      "MYOS实现机制",
+      "HRTOS Scheduler实现机制",
       "代码展示区",
       "系统运行流程"
     ]
@@ -618,7 +618,7 @@
     <div class="topbar-inner">
       <a class="brand" href="https://hrtos.com/docs/index.html" aria-label="跳转到 HRTOS 文档首页">
         <span class="brand-mark">H</span>
-        <span>MYOS Kernel Lab</span>
+        <span>HRTOS Myos Kernel</span>
       </a>
       <nav class="topnav" aria-label="顶部导航">
   
@@ -635,10 +635,10 @@
     <header id="overview" class="hero">
   <span class="eyebrow">个人项目 · 轻量级实时操作系统</span>
 
-  <h1>MYOS / HRTOS 项目实战与内核实现</h1>
+  <h1>HRTOS Myos Kernel Implementation</h1>
 
   <p class="hero-lead">
-    MYOS 是一个面向 8051 与 STM32 小型嵌入式系统的轻量级实时操作系统实验项目。
+    HRTOS Myos 是一个面向 8051 小型嵌入式系统的轻量级实时操作系统实验项目。
     这个项目主要关注任务调度、中断驱动、任务栈切换与最小化内核实现，
     目标不是做功能最全的 RTOS，而是构建一个结构透明、执行路径清晰、便于理解和修改的小型内核。
   </p>
@@ -658,7 +658,7 @@
       <div class="hero-stats">
         <div class="stat">
           <strong>目标平台</strong>
-          <span>8051 / STM32</span>
+          <span>8051</span>
         </div>
 
         <div class="stat">
@@ -695,7 +695,7 @@
         <h2>章节目录</h2>
         <ol>
           <li><a href="#design">系统设计理念</a></li>
-          <li><a href="#mechanism">MYOS 实现机制</a></li>
+          <li><a href="#mechanism">HRTOS Myos 实现机制</a></li>
           <li><a href="#functions">核心函数拆解</a></li>
           <li><a href="#code">代码展示区</a></li>
           <li><a href="#flow">系统运行流程</a></li>
@@ -716,27 +716,27 @@
 
           <div class="two-col">
             <article class="mini-card">
-              <h3>为什么要做 MYOS</h3>
+              <h3>为什么要做 HRTOS Myos</h3>
               <p>
-                很多嵌入式项目并不需要一个“功能最全”的 RTOS，而是需要一个“可完全解释”的 RTOS。MYOS 的价值在于把任务切换、调度时机和中断分发压缩成几段短函数，让开发者能直接从 SP、PSW、EA 和定时器寄存器看懂系统状态，而不是隔着厚重抽象层排查问题。
+                很多嵌入式项目并不需要一个“功能最全”的 RTOS，而是需要一个“可完全解释”的 RTOS。HRTOS Myos 的价值在于把任务切换、调度时机和中断分发压缩成几段短函数，让开发者能直接从 SP、PSW、EA 和定时器寄存器看懂系统状态，而不是隔着厚重抽象层排查问题。
               </p>
             </article>
             <article class="mini-card">
               <h3>为什么不用 FreeRTOS / 现成 RTOS</h3>
               <p>
-                通用 RTOS 在功能、移植层和生态上更强，但也会带来更大的心智负担。对于 8051 这类极小内存目标，通用方案的可配置性未必等于可控性。MYOS 选择的是“少做一点，但每一步都清楚”，尤其适合教学、实验平台和对切换路径高度敏感的裸机场景。
+                通用 RTOS 在功能、移植层和生态上更强，但也会带来更大的心智负担。对于 8051 这类极小内存目标，通用方案的可配置性未必等于可控性。HRTOS Myos 选择的是“少做一点，但每一步都清楚”，尤其适合教学、实验平台和对切换路径高度敏感的裸机场景。
               </p>
             </article>
             <article class="mini-card">
               <h3>设计目标：极简、可控、裸机</h3>
               <p>
-                从源码能看出，MYOS 不追求复杂优先级继承、对象系统或完整内核服务，而是围绕三个目标展开：一是极简，确保任务状态和上下文恢复路径足够短；二是可控，让调度真正由中断节拍驱动；三是裸机友好，便于直接嵌入已有寄存器级工程。
+                从源码能看出，HRTOS Myos 不追求复杂优先级继承、对象系统或完整内核服务，而是围绕三个目标展开：一是极简，确保任务状态和上下文恢复路径足够短；二是可控，让调度真正由中断节拍驱动；三是裸机友好，便于直接嵌入已有寄存器级工程。
               </p>
             </article>
             <article class="mini-card">
-              <h3>为什么面向 8051 / STM32</h3>
+              <h3>为什么面向 8051 </h3>
               <p>
-                8051 是理解 RTOS 本质的好平台，因为资源紧、寄存器少、SP 单一，任何调度动作都必须精打细算。STM32 则覆盖了更常见的 Cortex-M 裸机项目，适合作为从“能跑”走向“可维护任务系统”的过渡。MYOS 的思想可以跨平台迁移，但在这两类 MCU 上最能体现它的价值。
+                8051 是理解 RTOS 本质的好平台，因为资源紧、寄存器少、SP 单一，任何调度动作都必须精打细算。HRTOS Myos 的思想可以跨平台迁移，但在 8051MCU 上最能体现它的价值。
               </p>
             </article>
           </div>
@@ -757,18 +757,18 @@
           <div class="section-head">
             <div>
               <div class="kicker">Kernel Mechanics</div>
-              <h2 id="mechanism-title">MYOS 实现机制</h2>
+              <h2 id="mechanism-title">HRTOS Myos 实现机制</h2>
             </div>
             <p>把源码翻译成系统语言，而不是把函数名再读一遍。</p>
           </div>
 
           <p>
-            从调用关系看，MYOS 的关键路径非常明确：<code>hrtos_main</code> 先把调度入口挂到 HRTOS 框架，再把业务初始化任务注册进去；之后 CPU 进入常驻循环，真正推动 scheduler 前进的是 Timer0 中断；Timer0 一到，<code>my_os</code> 就读取当前中断号、保存当前任务的栈位置、调用 <code>os_select</code> 找到下一项可运行任务，最后通过 <code>os_task_release</code> 恢复该任务的 SP 并以 <code>RETI</code> 方式返回。也就是说，MYOS 的多任务并不是在主循环里轮询函数，而是在中断出口处直接把 CPU 交给另一个任务。
+            从调用关系看，HRTOS Myos 的关键路径非常明确：<code>hrtos_main</code> 先把调度入口挂到 HRTOS 框架，再把业务初始化任务注册进去；之后 CPU 进入常驻循环，真正推动 Myos 前进的是 Timer0 中断；Timer0 一到，<code>os_kernel_tick_handler</code> 就读取当前中断号、保存当前任务的栈位置、调用 <code>os_scheduler_select_next</code> 找到下一项可运行任务，最后通过 <code>os_context_restore</code> 恢复该任务的 SP 并以 <code>RETI</code> 方式返回。也就是说，HRTOS Myos 的多任务并不是在主循环里轮询函数，而是在中断出口处直接把 CPU 交给另一个任务。
           </p>
 
           <div class="timeline">
             <div class="timeline-step"><span>1</span>启动阶段由 <code>hrtos_main</code> 完成系统挂载，明确谁是系统调度入口，谁是业务初始化入口。</div>
-            <div class="timeline-step"><span>2</span>运行阶段由 <code>my_os</code> 统一接住中断，Timer0 走调度分支，其他中断走分发表。</div>
+            <div class="timeline-step"><span>2</span>运行阶段由 <code>os_kernel_tick_handler</code> 统一接住中断，Timer0 走调度分支，其他中断走分发表。</div>
             <div class="timeline-step"><span>3</span>任务切换阶段先保存当前任务栈，再执行基于轮询的任务选择算法，最后恢复目标任务 SP 并从中断返回。</div>
           </div>
 
@@ -799,17 +799,17 @@
             </article>
 
             <article class="function-card">
-              <h3><code>os_task_release(u8 id)</code></h3>
+              <h3><code>os_context_restore(u8 id)</code></h3>
               <div class="detail-list">
                 <p><strong>功能说明：</strong>恢复目标任务执行权，是实际发生上下文切换的关键函数。</p>
                 <p><strong>执行流程：</strong>先写入当前任务编号，再把 <code>SP</code> 切到 <code>OS_JINCHENG_SP[id]</code>，随后清零 <code>PSW</code>、打开 <code>EA</code>，最后执行 <code>RETI</code>。</p>
                 <p><strong>为什么这样设计：</strong>在 8051 里，<code>RETI</code> 会从当前栈顶取回返回地址。只要先把 SP 指向目标任务保存过的栈，CPU 就会从“那个任务上次被打断的位置”继续跑，不需要再写一个复杂跳转器。</p>
-                <p><strong>对系统的作用：</strong>这是 MYOS 把调度决策真正落地成任务恢复的桥梁，也是实时性最核心的一步。</p>
+                <p><strong>对系统的作用：</strong>这是 HRTOS Myos 把调度决策真正落地成任务恢复的桥梁，也是实时性最核心的一步。</p>
               </div>
             </article>
 
             <article class="function-card">
-              <h3><code>os_task_id()</code></h3>
+              <h3><code>os_get_current_task_id()</code></h3>
               <div class="detail-list">
                 <p><strong>功能说明：</strong>读取当前正在运行的任务编号。</p>
                 <p><strong>执行流程：</strong>直接返回 <code>OS_YUNXING_BIANHAO</code>。</p>
@@ -819,27 +819,27 @@
             </article>
 
             <article class="function-card">
-              <h3><code>os_select(u8 id)</code></h3>
+              <h3><code>os_scheduler_select_next(u8 id)</code></h3>
               <div class="detail-list">
                 <p><strong>功能说明：</strong>基于轮询的任务选择算法（循环扫描 + 就绪位判断），负责决定下一次切给谁运行。</p>
                 <p><strong>执行流程：</strong>先从当前任务下一个编号开始向后扫描到 <code>OS_JINCHENG_MAX - 1</code>；如果发现 <code>OS_PEOCESS_OK[i] &amp; 1</code> 为真，就把该任务记为候选；若后半段没命中，再从任务 2 扫回当前任务，形成一轮完整环扫。</p>
                 <p><strong>为什么这样设计：</strong>这是一种非常适合小型 RTOS 的 round-robin scheduler。它不依赖复杂队列，也不维护昂贵的数据结构，只要任务就绪位存在，就能用 O(n) 的固定思路完成挑选。</p>
-                <p><strong>对系统的作用：</strong>它决定了 MYOS 的公平性与简洁度。代码里从任务 2 开始回绕，也说明系统故意把部分编号留给内核或初始化任务，普通任务只在业务区间内轮询。</p>
+                <p><strong>对系统的作用：</strong>它决定了 HRTOS Myos 的公平性与简洁度。代码里从任务 2 开始回绕，也说明系统故意把部分编号留给内核或初始化任务，普通任务只在业务区间内轮询。</p>
               </div>
             </article>
 
             <article class="function-card">
-              <h3><code>os_task_protect(u8 id)</code></h3>
+              <h3><code>os_task_save_sp(u8 id)</code></h3>
               <div class="detail-list">
                 <p><strong>功能说明：</strong>保存当前任务的栈位置，完成最小粒度的上下文保护。</p>
                 <p><strong>执行流程：</strong>把当前中断阶段记录下来的 <code>os_sp</code> 写入 <code>OS_JINCHENG_SP[id]</code>。</p>
-                <p><strong>为什么这样设计：</strong>8051 只有一个硬件栈指针，想做多任务就必须把“每个任务上次停在哪里”单独保存下来。MYOS 没有做超重的上下文块，而是抓住最关键的 SP 快照，这正是轻量级内核的取舍。</p>
+                <p><strong>为什么这样设计：</strong>8051 只有一个硬件栈指针，想做多任务就必须把“每个任务上次停在哪里”单独保存下来。HRTOS Myos 没有做超重的上下文块，而是抓住最关键的 SP 快照，这正是轻量级内核的取舍。</p>
                 <p><strong>对系统的作用：</strong>如果没有这一步，切换后任务就无法从原来的调用栈继续执行，整个 RTOS 的任务隔离能力也就不存在了。</p>
               </div>
             </article>
 
             <article class="function-card">
-              <h3><code>os_inter_sp()</code></h3>
+              <h3><code>os_get_sp()</code></h3>
               <div class="detail-list">
                 <p><strong>功能说明：</strong>导出当前中断上下文关联的栈指针值。</p>
                 <p><strong>执行流程：</strong>直接返回 <code>os_sp</code>。</p>
@@ -849,21 +849,21 @@
             </article>
 
             <article class="function-card">
-              <h3><code>volatile void my_os()</code></h3>
+              <h3><code>volatile void os_kernel_tick_handler()</code></h3>
               <div class="detail-list">
-                <p><strong>功能说明：</strong>中断驱动调度核心（Timer0 触发调度），同时也是 MYOS 的统一中断入口。</p>
-                <p><strong>执行流程：</strong>先调用 <code>os_inter()</code> 读取中断来源；如果是 1，就把它当成 Timer0 节拍，清理定时器状态后获取当前任务 ID、保存当前任务 SP、调用 <code>os_select</code> 挑出下一任务，再调用 <code>os_task_release</code> 完成切换；如果不是 1，则把中断号映射到 <code>my_inter[]</code>，再交给 <code>os_operate</code> 执行对应处理函数。</p>
-                <p><strong>为什么这样设计：</strong>把 scheduler 放在定时中断里，意味着任务切换时机是可预测的；把其他硬件中断也收拢到同一个入口，则让系统入口更统一，避免业务中断各自散落、难以管理。</p>
-                <p><strong>对系统的作用：</strong>它相当于 MYOS 的心跳与总闸门。没有 <code>my_os</code>，任务不会轮转，中断也不会被按自定义方式分发。</p>
+                <p><strong>功能说明：</strong>中断驱动调度核心（Timer0 触发调度），同时也是 HRTOS Myos 的统一中断入口。</p>
+                <p><strong>执行流程：</strong>先调用 <code>os_inter()</code> 读取中断来源；如果是 1，就把它当成 Timer0 节拍，清理定时器状态后获取当前任务 ID、保存当前任务 SP、调用 <code>os_scheduler_select_next</code> 挑出下一任务，再调用 <code>os_context_restore</code> 完成切换；如果不是 1，则把中断号映射到 <code>my_inter[]</code>，再交给 <code>os_operate</code> 执行对应处理函数。</p>
+                <p><strong>为什么这样设计：</strong>把 Myos 放在定时中断里，意味着任务切换时机是可预测的；把其他硬件中断也收拢到同一个入口，则让系统入口更统一，避免业务中断各自散落、难以管理。</p>
+                <p><strong>对系统的作用：</strong>它相当于 HRTOS Myos 的心跳与总闸门。没有 <code>os_kernel_tick_handler</code>，任务不会轮转，中断也不会被按自定义方式分发。</p>
               </div>
             </article>
 
             <article class="function-card">
               <h3><code>hrtos_main()</code></h3>
               <div class="detail-list">
-                <p><strong>功能说明：</strong>系统启动入口，负责把 MYOS 嵌入到底层 HRTOS 运行框架中。</p>
-                <p><strong>执行流程：</strong>先关闭全局中断 <code>EA</code>，再用 <code>os_task(...)</code> 注册 <code>my_os</code> 和 <code>my_main</code> 两个关键入口，之后重新打开中断，最后进入常驻 <code>while(1)</code>。</p>
-                <p><strong>为什么这样设计：</strong>启动时先关中断，是为了避免系统数据结构尚未建立好就被硬件事件打断；先挂调度入口，再挂业务初始化入口，则说明 MYOS 希望先把“内核骨架”放稳，再让应用层开始跑。</p>
+                <p><strong>功能说明：</strong>系统启动入口，负责把 HRTOS Myos 嵌入到底层 HRTOS 运行框架中。</p>
+                <p><strong>执行流程：</strong>先关闭全局中断 <code>EA</code>，再用 <code>os_task(...)</code> 注册 <code>os_kernel_tick_handler</code> 和 <code>my_main</code> 两个关键入口，之后重新打开中断，最后进入常驻 <code>while(1)</code>。</p>
+                <p><strong>为什么这样设计：</strong>启动时先关中断，是为了避免系统数据结构尚未建立好就被硬件事件打断；先挂调度入口，再挂业务初始化入口，则说明 HRTOS Myos 希望先把“内核骨架”放稳，再让应用层开始跑。</p>
                 <p><strong>对系统的作用：</strong>它把“一个裸机工程”变成“一个能被调度的系统”，是所有任务与中断策略的起点。</p>
               </div>
             </article>
@@ -888,22 +888,22 @@
     OS_YUNXING_BIANHAO = id;
 }
 
-char os_task_id(void)
+char os_get_current_task_id(void)
 {
     return OS_YUNXING_BIANHAO;
 }
 
-void os_task_protect(u8 id)
+void os_task_save_sp(u8 id)
 {
     OS_JINCHENG_SP[id] = os_sp;
 }
 
-U8 os_inter_sp(void)
+U8 os_get_sp(void)
 {
     return os_sp;
 }
 
-void os_task_release(u8 id)
+void os_context_restore(u8 id)
 {
     OS_YUNXING_BIANHAO = id;
     SP = OS_JINCHENG_SP[id];
@@ -914,9 +914,9 @@ void os_task_release(u8 id)
             </article>
 
             <article class="code-card">
-              <h3>模块二：轮询式 scheduler</h3>
-              <p><code>os_select</code> 的重点不是优先级计算，而是用两段循环完成一次环形扫描，谁的就绪位有效，就把 CPU 让给谁。</p>
-              <pre><code>U8 os_select(u8 current)
+              <h3>模块二：轮询式 Myos</h3>
+              <p><code>os_scheduler_select_next</code> 的重点不是优先级计算，而是用两段循环完成一次环形扫描，谁的就绪位有效，就把 CPU 让给谁。</p>
+              <pre><code>U8 os_scheduler_select_next(u8 current)
 {
     u8 i;
 
@@ -945,10 +945,10 @@ selected:
 
             <article class="code-card">
               <h3>模块三：中断驱动调度核心</h3>
-              <p>Timer0 到来时走调度分支，其他硬件中断则从 <code>my_inter[]</code> 分发表找到对应处理函数，这就是 MYOS 的统一入口设计。</p>
+              <p>Timer0 到来时走调度分支，其他硬件中断则从 <code>my_inter[]</code> 分发表找到对应处理函数，这就是 HRTOS Myos 的统一入口设计。</p>
               <pre><code>u16 my_inter[10];
 
-volatile void my_os(void)
+volatile void os_kernel_tick_handler(void)
 {
     U8 irq = os_inter();
 
@@ -958,10 +958,10 @@ volatile void my_os(void)
         TH0 = 0;
         TL0 = 0;
 
-        irq = os_task_id();
-        os_task_protect(irq);
-        irq = os_select(irq);
-        os_task_release(irq);
+        irq = os_get_current_task_id();
+        os_task_save_sp(irq);
+        irq = os_scheduler_select_next(irq);
+        os_context_restore(irq);
     }
     else
     {
@@ -977,12 +977,12 @@ volatile void my_os(void)
 
             <article class="code-card">
               <h3>模块四：启动挂载入口</h3>
-              <p>这段逻辑说明 MYOS 并不是孤立运行，而是作为一个自定义调度层嵌到 HRTOS 框架上，再由 <code>my_main</code> 接手用户初始化。</p>
+              <p>这段逻辑说明 HRTOS Myos 并不是孤立运行，而是作为一个自定义调度层嵌到 HRTOS 框架上，再由 <code>my_main</code> 接手用户初始化。</p>
               <pre><code>void hrtos_main(void)
 {
     EA = 0;
 
-    os_task(my_os, 15, 9, 0);
+    os_task(os_kernel_tick_handler, 15, 9, 0);
     os_task(my_main, 1, 1, 2);
 
     EA = 1;
@@ -1015,7 +1015,7 @@ volatile void my_os(void)
             </article>
             <article class="flow-card">
               <strong>2. 中断初始化</strong>
-              <span>底层 HRTOS 已提供中断接入能力，MYOS 把 <code>my_os</code> 作为自己的统一内核入口挂进去。</span>
+              <span>底层 HRTOS 已提供中断接入能力，HRTOS Myos 把 <code>os_kernel_tick_handler</code> 作为自己的统一内核入口挂进去。</span>
             </article>
             <article class="flow-card">
               <strong>3. 任务注册</strong>
@@ -1027,11 +1027,11 @@ volatile void my_os(void)
             </article>
             <article class="flow-card">
               <strong>5. 中断触发</strong>
-              <span>Timer0 到来后，<code>my_os</code> 根据中断号进入调度逻辑；如果是其他中断，则走中断分发表。</span>
+              <span>Timer0 到来后，<code>os_kernel_tick_handler</code> 根据中断号进入调度逻辑；如果是其他中断，则走中断分发表。</span>
             </article>
             <article class="flow-card">
               <strong>6. 任务切换</strong>
-              <span>系统先用 <code>os_task_protect</code> 保存当前任务 SP，再由 <code>os_select</code> 做轮询式选择，最后调用 <code>os_task_release</code> 把 SP 指到目标任务。</span>
+              <span>系统先用 <code>os_task_save_sp</code> 保存当前任务 SP，再由 <code>os_scheduler_select_next</code> 做轮询式选择，最后调用 <code>os_context_restore</code> 把 SP 指到目标任务。</span>
             </article>
             <article class="flow-card">
               <strong>7. 恢复现场</strong>
@@ -1054,7 +1054,7 @@ volatile void my_os(void)
       <h3>多任务 LED 控制实验</h3>
       <p>
         通过多个任务分别控制 LED 闪烁、按键扫描和计时逻辑，
-        验证 MYOS 的基本调度能力。
+        验证 HRTOS Myos 的基本调度能力。
       </p>
     </article>
 
