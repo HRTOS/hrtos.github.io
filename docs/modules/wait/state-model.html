@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>等待状态模型（Wait State Model） | HRTOS Documentation</title>
+<meta name="description" content="HRTOS等待状态模型说明，包括任务WAIT状态、等待类型、状态转换以及统一等待机制。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
+}
+
+a{color:inherit;text-decoration:none}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+  display:grid;
+  gap:36px;
+}
+
+.breadcrumb{
+  font-size:.92rem;
+  color:var(--muted);
+}
+
+.hero{
+  display:grid;
+  gap:10px;
+}
+
+.hero-label{
+  display:inline-block;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.24);
+  color:#bae6fd;
+  font-size:.9rem;
+  margin-bottom:18px;
+  justify-self:start;
+}
+
+.hero h1{
+  margin:0;
+  font-size:clamp(2.2rem,5vw,3.6rem);
+  line-height:1.1;
+}
+
+.hero p{
+  margin:0;
+  max-width:820px;
+  color:var(--muted);
+}
+
+.section{
+  display:grid;
+  gap:12px;
+}
+
+.section h2{
+  margin:0;
+  font-size:1.35rem;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
+}
+
+.section p{
+  margin:0;
+  color:var(--muted);
+}
+
+.code{
+  background:#020617;
+  border:1px solid rgba(56,189,248,.14);
+  border-radius:8px;
+  padding:14px;
+  font-family:Consolas,monospace;
+  font-size:.92rem;
+  color:#7dd3fc;
+  white-space:pre-wrap;
+}
+
+.layout{
+  display:grid;
+  grid-template-columns:1fr 280px;
+  gap:26px;
+}
+
+.sidebar{
+  display:grid;
+  gap:14px;
+}
+
+.box{
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:rgba(30,41,59,.5);
+}
+
+.box a{
+  display:block;
+  color:#7dd3fc;
+  font-size:.9rem;
+  margin-bottom:6px;
+}
+
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;}
+}
+</style>
+
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+
+<nav class="breadcrumb">
+<a href="/docs/index.html">Docs</a> /
+<a href="/docs/modules/index.html">Modules</a> /
+<a href="/docs/modules/wait/index.html">Wait</a> /
+<span>State Model</span>
+</nav>
+
+
+<section class="hero">
+
+<span class="hero-label">HRTOS Wait</span>
+
+<h1>等待状态模型（Wait State Model）</h1>
+
+<p>
+等待状态模型描述HRTOS任务进入阻塞、等待以及恢复运行的状态管理机制。
+通过WAIT状态与统一等待类型，实现时间、资源和通信事件的统一处理。
+</p>
+
+</section>
+
+
+
+<div class="layout">
+
+<div class="content">
+
+
+<section class="section" id="overview">
+
+<h2>概述</h2>
+
+<p>
+在HRTOS中，任务状态由OS_TCB.state维护，
+WAIT状态表示任务当前无法继续执行，需要等待某个条件满足。
+</p>
+
+<p>
+WAIT不是独立任务类型，而是任务生命周期中的一种运行状态。
+具体等待原因通过wait_type字段进一步描述。
+</p>
+
+</section>
+
+
+
+<section class="section" id="model">
+
+<h2>状态定义（OS_TCB.state）</h2>
+
+
+<div class="code">
+
+#define READY       0   // 就绪态
+
+#define WAIT        1   // 等待态
+
+#define RUNNING     2   // 运行态
+
+#define SUSPEND     3   // 挂起态
+
+#define DEAD        4   // 删除态
+
+
+这些状态直接存储于：
+
+OS_TASK[id].state
+
+
+</div>
+
+
+<p>
+HRTOS采用较少的任务状态，
+复杂阻塞逻辑通过WAIT类型扩展，而不是增加大量任务状态。
+</p>
+
+</section>
+
+
+
+<section class="section" id="wait-type">
+
+<h2>等待类型模型（wait_type）</h2>
+
+
+<div class="code">
+
+WAIT_NONE
+
+无等待状态
+
+
+WAIT_DELAY
+
+时间延迟等待
+
+
+WAIT_SEM
+
+信号量等待
+
+
+WAIT_MUTEX
+
+互斥锁等待
+
+
+WAIT_MSG_SEND
+
+消息队列发送等待
+
+
+WAIT_MSG_RECV
+
+消息队列接收等待
+
+
+WAIT_EVENT
+
+事件等待
+
+
+WAIT_MAILBOX
+
+邮箱等待
+
+</div>
+
+
+<p>
+wait_type描述任务为什么进入WAIT状态，
+同一个任务同时只允许存在一种等待来源。
+</p>
+
+</section>
+
+
+
+<section class="section" id="transition">
+
+<h2>状态转换模型</h2>
+
+
+<div class="code">
+
+RUNNING
+
+    |
+
+    | os_wait()
+
+    ↓
+
+
+WAIT
+
+    |
+
+    | wake_task()
+
+    ↓
+
+
+READY
+
+    |
+
+    | scheduler select
+
+    ↓
+
+
+RUNNING
+
+
+
+超时：
+
+WAIT → READY
+
+
+信号：
+
+WAIT → READY
+
+</div>
+
+
+<p>
+所有状态转换均由调度器、Tick中断以及资源释放事件共同驱动。
+</p>
+
+</section>
+
+
+
+<section class="section" id="mechanism">
+
+<h2>等待状态管理机制</h2>
+
+
+<div class="code">
+
+进入等待：
+
+OS_TASK[tid].wait_type = type
+
+OS_TASK[tid].wait_obj  = obj
+
+OS_TASK[tid].wait_tick = tick
+
+OS_TASK[tid].state = WAIT
+
+
+
+恢复运行：
+
+wait_type = WAIT_NONE
+
+wait_obj  = OS_INVALID_ID
+
+wait_tick = 0
+
+state = READY
+
+</div>
+
+
+<p>
+任务等待上下文直接存储于TCB，
+避免额外等待控制结构，提高8051环境下的资源利用率。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="resource">
+
+<h2>资源等待关系</h2>
+
+
+<div class="code">
+
+OS_RESOURCE
+
+
+wait_mask
+
+
+bit0  -> task0
+
+bit1  -> task1
+
+...
+
+bit15 -> task15
+
+
+</div>
+
+
+<p>
+资源对象通过等待位图记录阻塞任务。
+当资源满足条件时，内核调用wake_task解除等待状态。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="flow">
+
+<h2>运行流程</h2>
+
+
+<div class="code">
+
+任务创建
+
+   ↓
+
+READY
+
+   ↓
+
+RUNNING
+
+   ↓
+
+等待资源
+
+   ↓
+
+WAIT
+
+   ↓
+
+资源满足 / 超时
+
+   ↓
+
+READY
+
+   ↓
+
+RUNNING
+
+</div>
+
+
+<p>
+HRTOS通过轻量状态模型结合统一WAIT机制，
+实现完整任务阻塞和恢复流程。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="extension">
+
+<h2>设计特点</h2>
+
+
+<ul>
+
+<li>任务状态保持简单，降低调度复杂度</li>
+
+<li>等待类型独立扩展，不增加状态数量</li>
+
+<li>TCB直接保存等待上下文</li>
+
+<li>资源等待统一使用位图管理</li>
+
+<li>支持任务与ISR共同触发唤醒</li>
+
+</ul>
+
+
+<p>
+HRTOS采用“状态最小化 + WAIT扩展”的设计思想，
+使内核能够在8051有限资源环境下保持结构清晰和可维护性。
+</p>
+
+
+</section>
+
+
+</div>
+
+
+
+<aside class="sidebar">
+
+
+<div class="box">
+
+<h3>目录</h3>
+
+<a href="#overview">概述</a>
+
+<a href="#model">状态定义</a>
+
+<a href="#wait-type">等待类型</a>
+
+<a href="#transition">状态转换</a>
+
+<a href="#mechanism">管理机制</a>
+
+</div>
+
+
+<div class="box">
+
+<h3>相关模块</h3>
+
+<a href="/docs/modules/wait/mechanism.html">等待机制</a>
+
+<a href="/docs/modules/task/index.html">任务管理</a>
+
+<a href="/docs/modules/scheduler/index.html">调度器</a>
+
+<a href="/docs/modules/ipc/index.html">IPC</a>
+
+</div>
+
+
+</aside>
+
+
+</div>
+
+
+<footer class="footer">
+
+© 2017–2026 HRTOS. Embedded RTOS documentation.
+
+</footer>
+
+
+</main>
+
+
+<script src="https://hrtos.com/header.js"></script>
+
+</body>
+</html>

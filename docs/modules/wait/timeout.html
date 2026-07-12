@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>等待超时机制（Wait Timeout） | HRTOS Documentation</title>
+<meta name="description" content="HRTOS等待超时机制说明，包括WAIT tick管理、超时唤醒、等待结果返回以及任务状态恢复流程。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
+}
+
+a{
+ color:inherit;
+ text-decoration:none;
+}
+
+.page{
+ width:min(1180px,calc(100% - 40px));
+ margin:0 auto;
+ padding:96px 0 56px;
+ display:grid;
+ gap:36px;
+}
+
+.breadcrumb{
+ font-size:.92rem;
+ color:var(--muted);
+}
+
+.hero{
+ display:grid;
+ gap:12px;
+}
+
+.hero-label{
+ display:inline-block;
+ padding:8px 14px;
+ border-radius:999px;
+ border:1px solid rgba(56,189,248,.24);
+ color:#bae6fd;
+ font-size:.9rem;
+ margin-bottom:18px;
+ justify-self:start;
+}
+
+.hero h1{
+ margin:0;
+ font-size:clamp(2.2rem,5vw,3.6rem);
+ line-height:1.1;
+}
+
+.hero p{
+ margin:0;
+ color:var(--muted);
+}
+
+.layout{
+ display:grid;
+ grid-template-columns:1fr 280px;
+ gap:26px;
+}
+
+.section{
+ display:grid;
+ gap:12px;
+ padding:22px;
+ border:1px solid var(--border);
+ border-radius:var(--radius);
+ background:rgba(30,41,59,.55);
+ box-shadow:var(--shadow);
+}
+
+.section h2{
+ margin:0;
+ font-size:1.3rem;
+ border-left:3px solid var(--accent);
+ padding-left:10px;
+}
+
+.section p{
+ margin:0;
+ color:var(--muted);
+ font-size:.95rem;
+}
+
+.code{
+ background:#020617;
+ border:1px solid rgba(56,189,248,.12);
+ border-radius:8px;
+ padding:14px;
+ font-family:Consolas,monospace;
+ font-size:.9rem;
+ color:#7dd3fc;
+ white-space:pre-wrap;
+}
+
+.note{
+ padding:12px 14px;
+ border-left:3px solid var(--accent);
+ background:rgba(15,23,42,.6);
+ color:var(--muted);
+ border-radius:6px;
+ font-size:.92rem;
+}
+
+.sidebar{
+ display:grid;
+ gap:14px;
+}
+
+.box{
+ padding:16px;
+ border:1px solid var(--border);
+ border-radius:var(--radius);
+ background:rgba(30,41,59,.5);
+}
+
+.box h3{
+ margin:0 0 10px;
+ font-size:.95rem;
+}
+
+.box a{
+ display:block;
+ font-size:.9rem;
+ color:#7dd3fc;
+ margin-bottom:6px;
+}
+
+.footer{
+ text-align:center;
+ padding-top:18px;
+ border-top:1px solid rgba(148,163,184,.14);
+ color:var(--muted);
+ font-size:.9rem;
+}
+
+@media(max-width:980px){
+ .layout{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+
+
+<body data-header="docs">
+
+
+<main class="page">
+
+
+<nav class="breadcrumb">
+
+<a href="/docs/index.html">Docs</a> /
+
+<a href="/docs/modules/index.html">Modules</a> /
+
+<a href="/docs/modules/wait/index.html">Wait</a> /
+
+<span>Timeout</span>
+
+</nav>
+
+
+
+<section class="hero">
+
+<span class="hero-label">HRTOS Wait</span>
+
+<h1>等待超时机制（Wait Timeout）</h1>
+
+<p>
+等待超时机制用于限制任务等待时间，
+当等待条件未满足但超过指定时间后，
+内核自动恢复任务执行。
+</p>
+
+</section>
+
+
+
+<div class="layout">
+
+
+<div class="content">
+
+
+
+<section class="section" id="overview">
+
+<h2>概述</h2>
+
+<p>
+HRTOS中的等待操作均支持超时控制。
+任务进入WAIT状态后，等待时间由TCB中的wait_tick字段维护。
+</p>
+
+<p>
+超时机制同时适用于时间等待、同步等待以及通信等待。
+</p>
+
+
+<div class="note">
+等待超时并不表示资源成功获取，而是表示等待条件失败并返回。
+</div>
+
+</section>
+
+
+
+<section class="section" id="context">
+
+<h2>等待时间管理</h2>
+
+
+<div class="code">
+
+OS_TCB
+
+{
+
+    u8 wait_type;
+
+    u8 wait_flag;
+
+    u8 wait_obj;
+
+    u16 wait_tick;
+
+};
+
+
+wait_tick:
+
+当前等待剩余tick数量
+
+</div>
+
+
+<p>
+任务调用os_wait()进入等待时，
+内核保存目标等待时间。
+系统Tick运行期间持续更新等待状态。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="timeout">
+
+<h2>超时判断流程</h2>
+
+
+<div class="code">
+
+任务进入WAIT
+
+        ↓
+
+保存wait_tick
+
+        ↓
+
+系统Tick递减
+
+        ↓
+
+wait_tick == 0
+
+        ↓
+
+调用wake_task()
+
+        ↓
+
+WAIT_TIMEOUT
+
+        ↓
+
+任务READY
+
+
+</div>
+
+
+<p>
+超时处理最终通过统一唤醒函数完成，
+避免不同等待对象拥有不同恢复逻辑。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="result">
+
+<h2>等待结果返回</h2>
+
+
+<div class="code">
+
+#define WAIT_TIMEOUT 1
+
+#define WAIT_SIGNAL  2
+
+
+
+WAIT_TIMEOUT
+
+条件未满足
+
+等待时间结束
+
+
+
+WAIT_SIGNAL
+
+资源满足
+
+事件触发唤醒
+
+</div>
+
+
+<p>
+任务恢复运行后，
+通过wait_flag判断此次等待结束原因。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="interface">
+
+<h2>关键接口</h2>
+
+
+<div class="code">
+
+u8 os_wait(
+    u8 type,
+    u8 obj,
+    u16 tick
+);
+
+
+
+void wake_task(
+    u8 tid,
+    u8 flag
+);
+
+</div>
+
+
+<p>
+os_wait负责进入等待状态，
+wake_task负责解除等待并恢复任务。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="flow">
+
+<h2>运行流程</h2>
+
+
+<div class="code">
+
+调用等待API
+
+      ↓
+
+os_wait()
+
+      ↓
+
+任务进入WAIT
+
+      ↓
+
+等待资源 / 时间
+
+      ↓
+
+-----------------
+
+资源满足
+
+      ↓
+
+WAIT_SIGNAL
+
+
+或者
+
+
+时间结束
+
+      ↓
+
+WAIT_TIMEOUT
+
+-----------------
+
+      ↓
+
+READY
+
+      ↓
+
+调度运行
+
+</div>
+
+
+</section>
+
+
+
+<section class="section" id="design">
+
+<h2>设计特点</h2>
+
+
+<ul>
+
+<li>统一等待超时处理</li>
+
+<li>TCB保存等待时间上下文</li>
+
+<li>支持资源等待与时间等待结合</li>
+
+<li>超时和事件唤醒使用同一恢复路径</li>
+
+<li>适合低资源8051实时系统</li>
+
+</ul>
+
+
+<p>
+HRTOS通过WAIT机制将阻塞、超时以及唤醒过程统一管理，
+降低内核复杂度，提高长期维护性。
+</p>
+
+
+</section>
+
+
+
+</div>
+
+
+
+<aside class="sidebar">
+
+
+<div class="box">
+
+<h3>目录</h3>
+
+<a href="#overview">概述</a>
+
+<a href="#context">时间管理</a>
+
+<a href="#timeout">超时流程</a>
+
+<a href="#result">返回结果</a>
+
+<a href="#interface">接口</a>
+
+<a href="#flow">运行流程</a>
+
+</div>
+
+
+
+<div class="box">
+
+<h3>相关模块</h3>
+
+<a href="/docs/modules/wait/mechanism.html">等待机制</a>
+
+<a href="/docs/modules/wait/state-model.html">状态模型</a>
+
+<a href="/docs/modules/time/index.html">时间管理</a>
+
+<a href="/docs/modules/ipc/index.html">IPC</a>
+
+</div>
+
+
+</aside>
+
+
+</div>
+
+
+<footer class="footer">
+
+© 2017–2026 HRTOS. Embedded RTOS documentation.
+
+</footer>
+
+
+</main>
+
+
+<script src="https://hrtos.com/header.js"></script>
+
+</body>
+
+</html>

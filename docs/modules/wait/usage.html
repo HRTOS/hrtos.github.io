@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>等待机制使用（Wait Usage） | HRTOS Documentation</title>
+<meta name="description" content="HRTOS等待机制使用说明，包括delay、semaphore、mutex、message、event等接口与WAIT模型关系。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --border:rgba(148,163,184,.18);
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--text);
+ font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+ line-height:1.75;
+}
+
+a{
+ color:inherit;
+ text-decoration:none;
+}
+
+.page{
+ width:min(1180px,calc(100% - 40px));
+ margin:0 auto;
+ padding:96px 0 56px;
+ display:grid;
+ gap:34px;
+}
+
+.breadcrumb{
+ font-size:.92rem;
+ color:var(--muted);
+}
+
+.hero{
+ display:grid;
+ gap:10px;
+}
+
+.hero-label{
+ display:inline-block;
+ padding:8px 14px;
+ border-radius:999px;
+ border:1px solid rgba(56,189,248,.24);
+ color:#bae6fd;
+ font-size:.9rem;
+ justify-self:start;
+}
+
+.hero h1{
+ margin:0;
+ font-size:clamp(2.2rem,5vw,3.6rem);
+ line-height:1.1;
+}
+
+.hero p{
+ margin:0;
+ color:var(--muted);
+}
+
+.layout{
+ display:grid;
+ grid-template-columns:1fr 280px;
+ gap:26px;
+}
+
+.section{
+ display:grid;
+ gap:12px;
+ padding:22px;
+ border:1px solid var(--border);
+ border-radius:var(--radius);
+ background:rgba(30,41,59,.55);
+ box-shadow:var(--shadow);
+}
+
+.section h2{
+ margin:0;
+ font-size:1.25rem;
+ border-left:3px solid var(--accent);
+ padding-left:10px;
+}
+
+.section p{
+ margin:0;
+ color:var(--muted);
+ font-size:.95rem;
+}
+
+.code{
+ background:#020617;
+ border:1px solid rgba(56,189,248,.12);
+ border-radius:8px;
+ padding:14px;
+ font-family:Consolas,monospace;
+ font-size:.9rem;
+ color:#7dd3fc;
+ white-space:pre-wrap;
+}
+
+.note{
+ padding:12px 14px;
+ border-left:3px solid var(--accent);
+ background:rgba(15,23,42,.6);
+ color:var(--muted);
+ border-radius:6px;
+ font-size:.92rem;
+}
+
+.sidebar{
+ display:grid;
+ gap:14px;
+}
+
+.box{
+ padding:16px;
+ border:1px solid var(--border);
+ border-radius:var(--radius);
+ background:rgba(30,41,59,.5);
+}
+
+.box h3{
+ margin:0 0 10px;
+ font-size:.95rem;
+}
+
+.box a{
+ display:block;
+ color:#7dd3fc;
+ font-size:.9rem;
+ margin-bottom:6px;
+}
+
+.footer{
+ text-align:center;
+ padding-top:18px;
+ border-top:1px solid rgba(148,163,184,.14);
+ color:var(--muted);
+ font-size:.9rem;
+}
+
+@media(max-width:980px){
+ .layout{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+
+
+<body data-header="docs">
+
+
+<main class="page">
+
+
+<nav class="breadcrumb">
+
+<a href="/docs/index.html">Docs</a> /
+
+<a href="/docs/modules/index.html">Modules</a> /
+
+<a href="/docs/modules/wait/index.html">Wait</a> /
+
+<span>Usage</span>
+
+</nav>
+
+
+
+<section class="hero">
+
+<span class="hero-label">HRTOS Wait</span>
+
+<h1>等待机制使用（Wait Usage）</h1>
+
+<p>
+HRTOS应用层通过任务同步与通信接口使用WAIT机制，
+无需直接操作内核等待结构。
+</p>
+
+</section>
+
+
+
+<div class="layout">
+
+
+<div class="content">
+
+
+<section class="section" id="overview">
+
+<h2>概述</h2>
+
+
+<p>
+HRTOS中的WAIT机制位于内核层，
+应用程序通常通过delay、semaphore、mutex、message以及event接口间接使用。
+</p>
+
+
+<p>
+所有阻塞操作最终统一进入os_wait()，
+由内核完成任务状态切换和调度处理。
+</p>
+
+
+<div class="note">
+应用层关注等待条件，内核负责等待状态管理。
+</div>
+
+
+</section>
+
+
+
+<section class="section" id="delay">
+
+<h2>时间等待（Delay）</h2>
+
+
+<p>
+任务需要主动等待一定时间时，可以使用延时接口。
+</p>
+
+
+<div class="code">
+
+os_delay(tick);
+
+
+执行流程：
+
+os_delay()
+
+    ↓
+
+WAIT_DELAY
+
+    ↓
+
+等待tick递减
+
+    ↓
+
+READY
+
+
+</div>
+
+
+<p>
+延时等待不会关联资源对象，只依赖系统Tick。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="sem">
+
+<h2>信号量等待（Semaphore）</h2>
+
+
+<div class="code">
+
+os_sem_wait(sid);
+
+
+内部流程：
+
+Semaphore
+
+    ↓
+
+资源不可用
+
+    ↓
+
+WAIT_SEM
+
+    ↓
+
+os_wait()
+
+    ↓
+
+任务阻塞
+
+
+</div>
+
+
+<p>
+当其他任务调用post释放信号量后，
+等待任务被唤醒。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="mutex">
+
+<h2>互斥锁等待（Mutex）</h2>
+
+
+<div class="code">
+
+os_mutex_lock(mid);
+
+
+流程：
+
+获取Mutex
+
+    ↓
+
+成功
+
+继续执行
+
+
+失败
+
+    ↓
+
+WAIT_MUTEX
+
+    ↓
+
+等待锁释放
+
+
+</div>
+
+
+<p>
+HRTOS支持Mutex优先级继承，
+避免高优先级任务长期等待。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="message">
+
+<h2>消息等待（Message Queue）</h2>
+
+
+<div class="code">
+
+os_msgq_send()
+
+os_msgq_recv()
+
+
+
+发送等待：
+
+WAIT_MSG_SEND
+
+
+接收等待：
+
+WAIT_MSG_RECV
+
+</div>
+
+
+<p>
+消息队列满或空时，
+任务通过WAIT机制进入阻塞状态。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="event">
+
+<h2>事件与邮箱等待</h2>
+
+
+<div class="code">
+
+事件：
+
+os_event_wait(id,tick)
+
+
+邮箱：
+
+os_mailbox_receive(mid)
+
+
+对应等待类型：
+
+WAIT_EVENT
+
+WAIT_MAILBOX
+
+</div>
+
+
+<p>
+事件和邮箱同样使用统一资源等待模型。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="flow">
+
+<h2>典型使用流程</h2>
+
+
+<div class="code">
+
+任务运行
+
+
+    ↓
+
+
+调用同步API
+
+
+    ↓
+
+
+条件满足？
+
+    ↓          ↓
+
+
+是          否
+
+
+继续执行   os_wait()
+
+
+             ↓
+
+
+            WAIT
+
+
+             ↓
+
+
+        wake_task()
+
+
+             ↓
+
+
+            READY
+
+
+</div>
+
+
+</section>
+
+
+
+<section class="section" id="api">
+
+<h2>核心接口</h2>
+
+
+<div class="code">
+
+/* WAIT核心 */
+
+u8 os_wait(
+    u8 type,
+    u8 obj,
+    u16 tick
+);
+
+
+/* 唤醒 */
+
+void wake_task(
+    u8 tid,
+    u8 flag
+);
+
+</div>
+
+
+<p>
+通常情况下，应用程序无需直接调用上述接口。
+</p>
+
+
+<div class="note">
+os_wait主要用于内核模块实现，应用层推荐使用高级同步API。
+</div>
+
+
+</section>
+
+
+
+<section class="section" id="example">
+
+<h2>简单示例</h2>
+
+
+<div class="code">
+
+void task_example(void)
+{
+
+    while(1)
+    {
+
+        //等待事件
+
+        os_event_wait(0,100);
+
+
+        //处理任务
+
+
+    }
+
+}
+
+
+</div>
+
+
+<p>
+任务等待结束后自动恢复执行，
+无需应用程序轮询检查状态。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="feature">
+
+<h2>使用特点</h2>
+
+
+<ul style="margin:0;padding-left:18px;color:var(--muted);">
+
+<li>统一阻塞接口</li>
+
+<li>支持超时控制</li>
+
+<li>支持任务与ISR唤醒</li>
+
+<li>减少应用层轮询代码</li>
+
+<li>适合实时任务设计</li>
+
+</ul>
+
+
+</section>
+
+
+
+</div>
+
+
+
+<aside class="sidebar">
+
+
+<div class="box">
+
+<h3>目录</h3>
+
+<a href="#overview">概述</a>
+
+<a href="#delay">延时等待</a>
+
+<a href="#sem">信号量</a>
+
+<a href="#mutex">互斥锁</a>
+
+<a href="#message">消息队列</a>
+
+<a href="#event">事件邮箱</a>
+
+<a href="#api">接口</a>
+
+</div>
+
+
+
+<div class="box">
+
+<h3>相关模块</h3>
+
+<a href="/docs/modules/wait/mechanism.html">Wait机制</a>
+
+<a href="/docs/modules/wait/state-model.html">状态模型</a>
+
+<a href="/docs/modules/ipc/index.html">IPC</a>
+
+<a href="/docs/modules/time/index.html">Time</a>
+
+</div>
+
+
+</aside>
+
+
+</div>
+
+
+<footer class="footer">
+
+© 2017–2026 HRTOS. Embedded RTOS documentation.
+
+</footer>
+
+
+</main>
+
+
+<script src="https://hrtos.com/header.js"></script>
+
+</body>
+
+</html>

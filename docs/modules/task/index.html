@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>Task Module | HRTOS Module Documentation</title>
-<meta name="description" content="HRTOS任务模块文档，包含任务生命周期、状态模型、优先级调度与上下文切换机制。" />
+<meta name="description" content="HRTOS任务模块文档，介绍任务创建、生命周期、状态模型、优先级体系以及上下文切换机制。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -66,10 +66,13 @@ a{
   color:var(--muted);
 }
 
-.breadcrumb a{ color:#7dd3fc; }
-.breadcrumb a:hover{ color:var(--accent); }
+.breadcrumb a{
+  color:#7dd3fc;
+}
 
-.hero{ margin-bottom:56px; }
+.hero{
+  margin-bottom:56px;
+}
 
 .hero-label{
   display:inline-block;
@@ -85,14 +88,12 @@ a{
   margin:0 0 16px;
   font-size:clamp(2.3rem,5vw,4rem);
   line-height:1.08;
-  font-weight:700;
 }
 
 .hero p{
   margin:0;
-  max-width:760px;
+  max-width:800px;
   color:var(--muted);
-  font-size:1rem;
 }
 
 .meta{
@@ -111,12 +112,13 @@ a{
   font-size:.84rem;
 }
 
-.section{ margin-bottom:56px; }
+.section{
+  margin-bottom:56px;
+}
 
 .section h2{
   margin:0 0 12px;
   font-size:1.5rem;
-  line-height:1.3;
 }
 
 .section p{
@@ -135,38 +137,32 @@ a{
   gap:12px;
   padding:24px 22px;
   min-height:180px;
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  background:linear-gradient(180deg,rgba(30,41,59,.8),rgba(15,23,42,.92));
   border:1px solid var(--border);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
   transition:.22s ease;
-  white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .card:hover{
   transform:translateY(-6px);
   border-color:var(--border-strong);
-  background:rgba(30,64,175,.18);
 }
 
 .card h3{
   margin:0;
   font-size:1.12rem;
-  color:#f8fafc;
 }
 
 .card p{
   margin:0;
-  font-size:.95rem;
   color:var(--muted);
-  line-height:1.6;
+  font-size:.95rem;
 }
 
 .card span{
   margin-top:auto;
   color:#7dd3fc;
-  font-size:.92rem;
   font-weight:600;
 }
 
@@ -174,111 +170,230 @@ a{
   padding-top:24px;
   border-top:1px solid rgba(148,163,184,.14);
   text-align:center;
-  font-size:.9rem;
   color:#8ea3be;
+  font-size:.9rem;
 }
 
 @media(max-width:900px){
-  .grid{grid-template-columns:1fr;}
-}
-
-@media(max-width:640px){
-  .page{
-    width:min(100% - 24px,1180px);
-    padding-top:84px;
+  .grid{
+    grid-template-columns:1fr;
   }
 }
 </style>
 </head>
 
+
 <body data-header="docs">
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <span>Task（任务）</span>
-  </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS Module</span>
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/modules/index.html">Modules</a> /
+  <span>Task（任务）</span>
+</nav>
 
-    <h1>Task 任务模块</h1>
 
-    <p>
-      Task模块是HRTOS核心执行单元，用于管理任务生命周期、状态流转、优先级调度以及上下文切换，
-      是实时系统运行的基础执行体系。
-    </p>
+<section class="hero">
 
-    <div class="meta">
-      <span class="tag">4 Topics</span>
-      <span class="tag">Kernel Core</span>
-      <span class="tag">Task System</span>
-    </div>
-  </section>
+<span class="hero-label">HRTOS Module</span>
 
-  <section class="section">
-    <h2>核心内容</h2>
-    <p>覆盖任务从创建到运行结束的完整管理机制。</p>
+<h1>Task 任务模块</h1>
 
-    <div class="grid">
+<p>
+Task模块是HRTOS核心执行体系，负责管理任务创建、任务生命周期、
+运行状态、优先级控制以及上下文切换。
+它定义了任务作为CPU执行实体的完整模型。
+</p>
 
-      <a class="card" href="lifecycle.html">
-        <h3>任务生命周期</h3>
-        <p>任务从创建、就绪、运行到终止的完整状态过程。</p>
-        <span>进入 →</span>
-      </a>
 
-      <a class="card" href="state-model.html">
-        <h3>任务状态模型</h3>
-        <p>定义任务在系统中的状态集合及其转换规则。</p>
-        <span>进入 →</span>
-      </a>
+<div class="meta">
+<span class="tag">4 Topics</span>
+<span class="tag">Kernel Core</span>
+<span class="tag">Task Control</span>
+<span class="tag">Context Management</span>
+</div>
 
-      <a class="card" href="priority.html">
-        <h3>任务优先级</h3>
-        <p>决定任务调度顺序与抢占行为的核心参数体系。</p>
-        <span>进入 →</span>
-      </a>
-
-      <a class="card" href="context-switch.html">
-        <h3>上下文切换</h3>
-        <p>保存与恢复任务运行状态的底层执行机制。</p>
-        <span>进入 →</span>
-      </a>
-
-    </div>
-  </section>
-
-  <section class="section">
-    <h2>相关模块</h2>
-
-    <div class="grid">
-
-      <a class="card" href="/docs/modules/scheduler/index.html">
-        <h3>Scheduler</h3>
-        <p>负责CPU调度与任务分配的核心模块。</p>
-        <span>查看 →</span>
-      </a>
-
-      <a class="card" href="/docs/modules/ipc/index.html">
-        <h3>IPC Communication</h3>
-        <p>实现任务间通信与同步机制。</p>
-        <span>查看 →</span>
-      </a>
-
-    </div>
-  </section>
+</section>
 
 
 
-  <footer class="footer">
-    © 2017–2026 HRTOS. Embedded real-time system documentation.
-  </footer>
+<section class="section">
+
+<h2>核心内容</h2>
+
+<p>
+Task模块描述任务从建立到退出的完整执行过程，
+包括任务管理接口、状态模型以及底层切换机制。
+</p>
+
+
+<div class="grid">
+
+
+<a class="card" href="lifecycle.html">
+
+<h3>任务生命周期</h3>
+
+<p>
+描述任务从创建、激活、运行、暂停到退出的完整生命周期管理过程。
+</p>
+
+<span>进入 →</span>
+
+</a>
+
+
+
+<a class="card" href="state-model.html">
+
+<h3>任务状态模型</h3>
+
+<p>
+基于OS_TCB.state定义任务状态，
+描述READY、RUNNING、WAIT、SUSPEND与DEAD之间的转换关系。
+</p>
+
+<span>进入 →</span>
+
+</a>
+
+
+
+<a class="card" href="priority.html">
+
+<h3>任务优先级</h3>
+
+<p>
+定义HRTOS多级优先级体系，
+包括普通任务、高速任务以及不同执行层级的优先级管理。
+</p>
+
+<span>进入 →</span>
+
+</a>
+
+
+
+<a class="card" href="context-switch.html">
+
+<h3>上下文切换</h3>
+
+<p>
+介绍任务现场保存与恢复机制，
+包括SP管理、任务上下文区域以及切换流程。
+</p>
+
+<span>进入 →</span>
+
+</a>
+
+
+</div>
+
+</section>
+
+
+
+
+<section class="section">
+
+<h2>任务体系特点</h2>
+
+<div class="grid">
+
+
+<div class="card">
+
+<h3>多级执行模型</h3>
+
+<p>
+普通任务采用0~7优先级，
+高速任务使用独立寄存器组，
+中断执行层独立管理。
+</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>轻量状态设计</h3>
+
+<p>
+通过最小化任务状态模型降低调度开销，
+复杂阻塞行为由WAIT机制统一处理。
+</p>
+
+</div>
+
+
+</div>
+
+</section>
+
+
+
+
+<section class="section">
+
+<h2>相关模块</h2>
+
+
+<div class="grid">
+
+
+<a class="card" href="/docs/modules/scheduler/index.html">
+
+<h3>Scheduler</h3>
+
+<p>
+负责任务选择、调度触发以及CPU执行权分配，
+是Task运行机制的核心支撑模块。
+</p>
+
+<span>查看 →</span>
+
+</a>
+
+
+
+<a class="card" href="/docs/modules/ipc/index.html">
+
+<h3>IPC Communication</h3>
+
+<p>
+提供任务间通信、同步以及资源协作机制，
+支持任务之间的数据交换与协调运行。
+</p>
+
+<span>查看 →</span>
+
+</a>
+
+
+
+
+</div>
+
+
+</section>
+
+
+
+<footer class="footer">
+
+© 2017–2026 HRTOS. Embedded real-time system documentation.
+
+</footer>
+
 
 </main>
 
+
 <script src="https://hrtos.com/header.js"></script>
+
 </body>
 </html>

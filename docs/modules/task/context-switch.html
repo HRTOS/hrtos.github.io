@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>上下文切换（Context Switch） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS上下文切换机制说明，包括寄存器保存与恢复、调度触发条件、内核标志位与XDATA任务上下文管理。" />
+<meta name="description" content="HRTOS上下文切换机制说明，包括任务栈管理、任务上下文保存、高速任务专用寄存器组以及标准任务切换机制。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -50,7 +50,10 @@ body{
   font-size:clamp(2.2rem,5vw,3.6rem);
 }
 
-.hero p{color:var(--muted);max-width:780px}
+.hero p{
+  color:var(--muted);
+  max-width:780px
+}
 
 .layout{
   display:grid;
@@ -99,10 +102,12 @@ body{
   font-size:.92rem;
   margin:6px 0;
 }
+
 .sidebar{
   display:grid;
   gap:14px;
 }
+
 .footer{
   text-align:center;
   padding-top:18px;
@@ -110,6 +115,7 @@ body{
   color:var(--muted);
   font-size:.9rem;
 }
+
 .box{
   padding:16px;
   border:1px solid var(--border);
@@ -124,163 +130,232 @@ body{
   margin-bottom:6px;
 }
 </style>
+
 </head>
 
 <body>
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/task/index.html">Task</a> /
-    <span>Context Switch</span>
-  </nav>
+<nav class="breadcrumb">
+<a href="/docs/index.html">Docs</a> /
+<a href="/docs/modules/index.html">Modules</a> /
+<a href="/docs/modules/task/index.html">Task</a> /
+<span>Context Switch</span>
+</nav>
 
-  <section class="hero">
-    <h1>上下文切换（Context Switch）</h1>
-    <p>
-      上下文切换是HRTOS任务调度的核心机制，通过保存当前任务执行现场并恢复目标任务现场，
-      实现单CPU上的多任务并发执行。
-    </p>
-  </section>
 
-  <div class="layout">
+<section class="hero">
 
-    <div>
+<h1>上下文切换（Context Switch）</h1>
 
-      <section class="section">
-        <h2>一、内核控制与状态标志体系</h2>
+<p>
+上下文切换是HRTOS实现多任务运行的基础机制。
+系统通过保存当前任务执行现场，并恢复目标任务执行现场，
+使多个任务能够在单CPU环境下交替运行。
+</p>
 
-        <p>HRTOS上下文切换不仅依赖TCB结构，还依赖一组位于BIT / DATA / IDATA / XDATA的底层控制寄存器。</p>
+</section>
 
-        <div class="code">
-/* 调度控制 */
-OS_JINCHENG_CUNCHU   -> 优先级筛选开关
-OS_SCHED_REASON      -> 调度触发类型
-OS_RTOS_YES          -> 时间片 / 优先级模式
 
-/* 中断控制 */
-OS_ISR_FLAG          -> ISR干扰屏蔽
-OS_INTERRUPT_GAO     -> 高优先级中断
-os_int_status        -> 临界区嵌套控制
+<div class="layout">
 
-/* 高速任务 */
-OS_KUAI_PROCESS_A
-OS_KUAI_PROCESS_B
-        </div>
+<div>
 
-        <p>
-          这些BIT标志构成“软调度控制层”，决定调度器是否进入上下文切换路径。
-          在中断环境下，OS_ISR_FLAG用于阻断时间片调度，避免现场破坏。
-        </p>
-      </section>
 
-      <section class="section">
-        <h2>二、上下文保存区（IDATA / STACK）</h2>
+<section class="section">
 
-        <div class="code">
-OS_CURRENT_TASK   _at_ 0xE3
-OS_PREV_TASK      _at_ 0xE4
-OS_DISPATCH_ID    _at_ 0xE5
-os_critical_nesting _at_ 0xE7
+<h2>一、任务上下文概念</h2>
 
-OS_INT_BAO[6]     -> ACC/B/DPH/DPL/PSW
-        </div>
+<p>
+每个任务在运行过程中都会产生独立的执行状态，包括程序执行位置、
+堆栈位置以及处理器运行环境。
+上下文切换的作用就是保存这些状态，使任务能够在之后恢复执行。
+</p>
 
-        <p>
-          上下文切换发生时，CPU寄存器首先进入IDATA保护区，再由调度器写入TCB。
-          其中0xE3~0xE7构成“最小调度状态快照”。
-        </p>
+<p>
+HRTOS针对不同类型任务采用不同的上下文管理方式：
+</p>
 
-        <p>
-          OS_INT_BAO用于中断现场保护，是ISR级上下文切换的第一层保存机制。
-        </p>
-      </section>
+<div class="code">
+标准任务:
+OS_TASK_CONTEXT[OS_PROCESS_MAX][OS_JINCHENG_SHENDU]
 
-      <section class="section">
-        <h2>三、XDATA任务上下文结构</h2>
+高速任务:
+OS_FAST_CONTEXT[OS_FAST_TASK_MAX][OS_KUAI_SHENDU]
+</div>
 
-        <div class="code">
-OS_TASK_CONTEXT[16][...]   -> 标准任务上下文
-OS_FAST_CONTEXT[2][...]    -> 高速任务上下文
+</section>
 
-OS_JINCHENG_SP[16]         -> SP记录
-OS_KUAI_SP[2]              -> 快速任务SP
-        </div>
 
-        <p>
-          XDATA区域是HRTOS的完整任务上下文存储区，负责保存完整执行状态。
-          标准任务与高速任务采用不同深度的上下文结构以优化切换延迟。
-        </p>
-      </section>
 
-      <section class="section">
-        <h2>四、上下文切换流程</h2>
+<section class="section">
 
-        <div class="code">
-TRIGGER
-  ↓
-os_int_status / OS_ISR_FLAG 判断
-  ↓
-保存 CURRENT_TASK → IDATA
-  ↓
-写入 OS_TASK_CONTEXT
-  ↓
-调度器选择 NEXT_TASK
-  ↓
-恢复 NEXT_TASK 上下文
-  ↓
-更新 OS_CURRENT_TASK
-  ↓
-RETURN TO EXECUTION
-        </div>
+<h2>二、标准任务上下文保存</h2>
 
-        <p>
-          切换路径由调度源决定（时间片 / ISR / 阻塞唤醒）。
-          所有切换必须在临界区内完成，避免任务状态竞争。
-        </p>
-      </section>
+<p>
+普通任务使用独立任务栈保存运行现场。
+任务创建时，系统会为任务分配栈空间，并记录对应的栈指针。
+</p>
 
-      <section class="section">
-        <h2>五、设计特点</h2>
+<div class="code">
+OS_JINCHENG_SP[OS_PROCESS_MAX]
 
-        <ul>
-          <li>BIT层控制调度路径（极低开销）</li>
-          <li>IDATA实现最小上下文快照</li>
-          <li>XDATA实现完整任务恢复</li>
-          <li>高速任务与标准任务分层切换</li>
-          <li>ISR与调度器双路径切换模型</li>
-        </ul>
-      </section>
+标准任务栈指针记录
+</div>
 
-    </div>
+<p>
+任务切换过程中，当前任务的执行现场被保存，
+恢复任务时通过保存的栈信息继续执行。
+</p>
 
-    <aside class="sidebar">
+</section>
 
-      <div class="box">
-        <h3>目录</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">机制</a>
-        <a href="#flow">流程</a>
-      </div>
 
-      <div class="box">
-        <h3>相关模块</h3>
-        <a href="/docs/modules/task/index.html">Task</a>
-        <a href="/docs/modules/scheduler/index.html">Scheduler</a>
-        <a href="/docs/modules/ipc/index.html">IPC</a>
-      </div>
 
-    </aside>
+<section class="section">
 
-  </div>
+<h2>三、高速任务上下文机制</h2>
 
-  <footer class="footer">
-    © 2017–2026 HRTOS. Context Switch Core Documentation.
-  </footer>
+<p>
+HRTOS提供高速任务机制，用于需要快速响应的执行场景。
+高速任务拥有独立工作寄存器组，可以减少部分上下文搬运开销。
+</p>
+
+
+<div class="code">
+OS_KUAI_SP[OS_FAST_TASK_MAX]
+
+高速任务栈指针
+
+
+OS_FAST_CONTEXT[OS_FAST_TASK_MAX][...]
+
+高速任务上下文区域
+</div>
+
+
+<p>
+由于高速任务使用专用寄存器组，
+切换过程中无需像普通任务一样保存和恢复全部R0-R7寄存器，
+从而降低切换开销。
+</p>
+
+
+</section>
+
+
+
+<section class="section">
+
+<h2>四、上下文切换过程</h2>
+
+
+<div class="code">
+当前任务运行
+
+        ↓
+
+保存当前执行现场
+
+        ↓
+
+更新任务运行状态
+
+        ↓
+
+选择目标任务
+
+        ↓
+
+恢复目标任务上下文
+
+        ↓
+
+继续执行目标任务
+</div>
+
+
+<p>
+上下文切换由系统运行状态变化触发，例如任务主动让出CPU、
+任务状态变化或系统调度过程。
+</p>
+
+
+</section>
+
+
+
+<section class="section">
+
+<h2>五、任务上下文设计特点</h2>
+
+<ul>
+
+<li>标准任务与高速任务采用不同上下文结构</li>
+
+<li>任务拥有独立执行栈，保证任务运行隔离</li>
+
+<li>高速任务利用专用寄存器组降低切换成本</li>
+
+<li>上下文管理与任务生命周期紧密结合</li>
+
+<li>中断上下文机制由Interrupt模块独立管理</li>
+
+</ul>
+
+
+</section>
+
+
+</div>
+
+
+
+<aside class="sidebar">
+
+
+<div class="box">
+
+<h3>目录</h3>
+
+<a href="#overview">上下文概念</a>
+<a href="#standard">标准任务</a>
+<a href="#fast">高速任务</a>
+<a href="#flow">切换流程</a>
+
+</div>
+
+
+
+<div class="box">
+
+<h3>相关模块</h3>
+
+<a href="/docs/modules/task/index.html">Task</a>
+
+<a href="/docs/modules/wait/index.html">Wait</a>
+
+<a href="/docs/modules/interrupt/index.html">Interrupt</a>
+
+</div>
+
+
+</aside>
+
+
+</div>
+
+
+<footer class="footer">
+© 2017–2026 HRTOS. Context Switch Documentation.
+</footer>
+
 
 </main>
+
+
 <script src="https://hrtos.com/header.js"></script>
+
 </body>
 </html>

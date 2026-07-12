@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>任务生命周期（Task Lifecycle） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS任务生命周期机制说明，包括任务创建、就绪、运行、阻塞与终止状态转换模型。" />
+<meta name="description" content="HRTOS任务生命周期机制说明，包括任务创建、运行、挂起、删除请求以及空闲任务资源回收机制。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -24,374 +24,482 @@
 *{box-sizing:border-box}
 
 body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+margin:0;
+background:var(--bg);
+color:var(--text);
+font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+line-height:1.75;
 }
-
-a{color:inherit;text-decoration:none}
 
 .page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-  display:grid;
-  gap:34px;
+width:min(1180px,calc(100% - 40px));
+margin:0 auto;
+padding:96px 0 56px;
+display:grid;
+gap:34px;
 }
 
-/* hero */
+.breadcrumb{
+font-size:.92rem;
+color:var(--muted);
+}
+
+.breadcrumb a{
+color:#7dd3fc;
+}
+
 .hero{
-  display:grid;
-  gap:10px;
+display:grid;
+gap:10px;
 }
 
 .hero-label{
-  display:inline-block;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.24);
-  color:#bae6fd;
-  font-size:.9rem;
-  justify-self:start;
+display:inline-block;
+padding:8px 14px;
+border-radius:999px;
+border:1px solid rgba(56,189,248,.24);
+color:#bae6fd;
+font-size:.9rem;
 }
 
 .hero h1{
-  margin:0;
-  font-size:clamp(2.2rem,5vw,3.6rem);
-  line-height:1.1;
+margin:0;
+font-size:clamp(2.2rem,5vw,3.6rem);
 }
 
 .hero p{
-  margin:0;
-  color:var(--muted);
+margin:0;
+color:var(--muted);
 }
 
-/* layout */
 .layout{
-  display:grid;
-  grid-template-columns:1fr 280px;
-  gap:26px;
+display:grid;
+grid-template-columns:1fr 280px;
+gap:26px;
 }
 
 .section{
-  display:grid;
-  gap:12px;
-  padding:22px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.55);
-  box-shadow:var(--shadow);
+display:grid;
+gap:12px;
+padding:22px;
+border:1px solid var(--border);
+border-radius:var(--radius);
+background:rgba(30,41,59,.55);
+box-shadow:var(--shadow);
 }
 
 .section h2{
-  margin:0;
-  font-size:1.25rem;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
+margin:0;
+border-left:3px solid var(--accent);
+padding-left:10px;
+font-size:1.25rem;
 }
 
 .section p{
-  margin:0;
-  color:var(--muted);
-  font-size:.95rem;
+margin:0;
+color:var(--muted);
 }
 
 .code{
-  background:#020617;
-  border:1px solid rgba(56,189,248,.12);
-  border-radius:8px;
-  padding:14px;
-  font-family:Consolas,monospace;
-  font-size:.9rem;
-  color:#7dd3fc;
-  white-space:pre-wrap;
+background:#020617;
+border:1px solid rgba(56,189,248,.12);
+border-radius:8px;
+padding:14px;
+font-family:Consolas,monospace;
+font-size:.9rem;
+color:#7dd3fc;
+white-space:pre-wrap;
 }
 
 .note{
-  padding:12px 14px;
-  border-left:3px solid var(--accent);
-  background:rgba(15,23,42,.6);
-  color:var(--muted);
-  border-radius:6px;
-  font-size:.92rem;
+padding:12px 14px;
+border-left:3px solid var(--accent);
+background:rgba(15,23,42,.6);
+color:var(--muted);
+border-radius:6px;
 }
 
-/* sidebar */
 .sidebar{
-  display:grid;
-  gap:14px;
+display:grid;
+gap:14px;
 }
 
 .box{
-  padding:16px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.5);
+padding:16px;
+border:1px solid var(--border);
+border-radius:var(--radius);
+background:rgba(30,41,59,.5);
 }
 
 .box h3{
-  margin:0 0 10px;
-  font-size:.95rem;
+margin:0 0 10px;
+font-size:.95rem;
 }
 
 .box a{
-  display:block;
-  font-size:.9rem;
-  color:#7dd3fc;
-  margin-bottom:6px;
+display:block;
+font-size:.9rem;
+color:#7dd3fc;
+margin-bottom:6px;
 }
 
-/* footer */
 .footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:var(--muted);
-  font-size:.9rem;
+text-align:center;
+padding-top:18px;
+border-top:1px solid rgba(148,163,184,.14);
+color:var(--muted);
+font-size:.9rem;
 }
 
 @media(max-width:980px){
-  .layout{grid-template-columns:1fr;}
+.layout{
+grid-template-columns:1fr;
+}
 }
 </style>
+
 </head>
+
 
 <body data-header="docs">
 
+
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/task/index.html">Task</a> /
-    <span>Lifecycle</span>
-  </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS Task</span>
-    <h1>任务生命周期（Task Lifecycle）</h1>
-    <p>任务生命周期定义任务在系统中的状态流转，是调度、同步与资源管理的基础模型。</p>
-  </section>
+<nav class="breadcrumb">
+<a href="/docs/index.html">Docs</a> /
+<a href="/docs/modules/index.html">Modules</a> /
+<a href="/docs/modules/task/index.html">Task</a> /
+<span>Lifecycle</span>
+</nav>
 
-  <div class="layout">
 
-    <div class="content">
 
-      <section class="section" id="overview">
-        <h2>概述</h2>
+<section class="hero">
 
-        <p>
-          HRTOS任务生命周期由 <b>OS_TCB.state</b> 驱动，配合调度器与同步模块完成状态迁移。
-        </p>
+<span class="hero-label">HRTOS Task</span>
 
-        <p>
-          系统任务状态包括 READY / RUNNING / WAIT / SUSPEND / DEAD，
-          其中 WAIT 由资源或时间事件触发。
-        </p>
+<h1>任务生命周期（Task Lifecycle）</h1>
 
-        <p>
-          生命周期的本质是：任务在 CPU 执行权与系统资源之间的动态切换过程。
-        </p>
-      </section>
+<p>
+任务生命周期描述任务从创建、运行、控制到删除回收的完整过程，
+是HRTOS任务管理的基础模型。
+</p>
 
-      <section class="section" id="model">
-        <h2>状态模型</h2>
+</section>
 
-        <p>
-          HRTOS采用简化状态机模型，所有任务必须处于以下状态之一：
-        </p>
 
-        <div class="code">
-READY     // 就绪态
-RUNNING   // 运行态
-WAIT      // 等待态（资源/延时/事件）
-SUSPEND   // 挂起态
-DEAD      // 删除态
-        </div>
 
-        <div class="note">
-          WAIT态由 wait_type 决定具体阻塞原因（mutex / sem / msg / event）
-        </div>
-      </section>
+<div class="layout">
 
-      <section class="section" id="transition">
-        <h2>状态转换机制</h2>
 
-        <p>
-          状态转换由调度器、ISR与同步对象共同驱动。
-        </p>
+<div class="content">
 
-        <p>
-          READY → RUNNING：调度器选择最高优先级任务执行（cur_prio）
-        </p>
 
-        <p>
-          RUNNING → WAIT：任务调用 os_mutex_lock / os_sem_wait / delay
-        </p>
+<section class="section" id="overview">
 
-        <p>
-          WAIT → READY：资源释放 / ISR唤醒 / 超时触发
-        </p>
+<h2>概述</h2>
 
-        <p>
-          RUNNING → SUSPEND：os_task_suspend()主动挂起
-        </p>
+<p>
+HRTOS任务生命周期围绕任务控制信息、任务栈以及调度状态展开。
+每个任务在系统中拥有独立的执行环境，并通过任务管理接口进行控制。
+</p>
 
-        <p>
-          任意状态 → DEAD：os_task_delete()或任务退出
-        </p>
-      </section>
+<p>
+任务模块负责描述任务本身的存在状态，
+而等待机制（Wait）负责描述任务因资源、事件或时间条件产生的阻塞过程。
+</p>
 
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
+</section>
 
-        <div class="code">
+
+
+<section class="section" id="model">
+
+<h2>生命周期模型</h2>
+
+<p>
+HRTOS任务主要经历以下生命周期阶段：
+</p>
+
+
+<div class="code">
 CREATE
   ↓
 READY
   ↓
-SCHEDULER SELECT
-  ↓
 RUNNING
   ↓
-WAIT / SUSPEND
+SUSPEND
   ↓
 READY
+
+
+RUNNING
+  ↓
+DELETE REQUEST
+  ↓
+IDLE CLEANUP
   ↓
 DEAD
-        </div>
+</div>
 
-        <p>
-          调度触发点包括：tick中断 / ISR退出 / 资源释放 / 优先级变化。
-        </p>
-      </section>
 
-      <section class="section" id="interface">
-        <h2>关键结构（基于 HRTOS_CONFIG）</h2>
+<div class="note">
+WAIT属于任务运行过程中的等待机制，由Wait模块统一管理，不作为Task生命周期状态。
+</div>
 
-        <div class="code">
-typedef struct {
-    u8 id;
-    u8 base_prio;
-    u8 cur_prio;
-    u8 state;
 
-    u8 wait_type;
-    u8 wait_flag;
-    u8 wait_obj;
-    u16 wait_tick;
-} OS_TCB;
-        </div>
+</section>
 
-        <div class="note">
-          cur_prio 可能被 mutex 优先级继承临时提升
-        </div>
-      </section>
 
-      <section class="section" id="api">
-        <h2>任务控制接口（task.h）</h2>
 
-        <div class="code">
-os_task_suspend(id)
-os_task_resume(id)
+<section class="section" id="create">
+
+<h2>任务创建</h2>
+
+
+<p>
+任务通过 os_task_create() 注册到系统。
+创建过程中系统完成任务编号检查、优先级检查以及任务栈空间分配。
+</p>
+
+
+<div class="code">
+os_task_create(
+    addr,
+    id,
+    pr,
+    sd
+)
+</div>
+
+
+<p>
+创建成功后，系统保存任务入口地址、任务栈信息以及调度属性，
+使任务具备被调度执行的条件。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="running">
+
+<h2>运行与控制</h2>
+
+
+<p>
+任务进入系统后，根据自身优先级参与运行。
+HRTOS支持普通任务与高速任务两类执行单元。
+</p>
+
+
+<div class="code">
+普通任务:
+ID 0 ~ OS_PROCESS_MAX-1
+
+高速任务:
+ID OS_PROCESS_MAX ~ OS_PROCESS_MAX+1
+</div>
+
+
+<p>
+任务运行过程中可以通过任务控制接口主动让出CPU、
+暂停执行或恢复运行。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="delete">
+
+<h2>任务删除机制</h2>
+
+
+<p>
+HRTOS采用删除请求与资源清理分离的方式。
+任务删除不会立即破坏当前执行环境，而是先标记删除请求。
+</p>
+
+
+<div class="code">
 os_task_delete(id)
 
-os_task_yield()
+        ↓
+
+OS_TASK_EVENT[id]
+|
+|-- OS_EVENT_DELETE_REQ
+
+        ↓
+
+IDLE任务检测
+
+        ↓
+
+os_task_cleanup()
+
+        ↓
+
+资源释放
+</div>
+
+
+<p>
+该机制避免运行中的任务立即释放自身资源导致系统状态异常。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="state">
+
+<h2>任务状态查询</h2>
+
+
+<div class="code">
+os_task_get_state(id)
+
+
+返回:
+
+0  删除
+
+1  当前运行
+
+2  就绪
+
+3  挂起
+
+4  最近一次切出任务
+</div>
+
+
+<p>
+状态查询接口用于调试、Shell以及系统运行状态监控。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="api">
+
+<h2>任务生命周期接口</h2>
+
+
+<div class="code">
+os_task_suspend(id)
+
+os_task_resume(id)
+
+os_task_delete(id)
+
 os_task_exit()
-        </div>
 
-        <p>
-          suspend/resume 控制 SUSPEND ↔ READY，
-          delete 将任务置为 DEAD 并回收资源。
-        </p>
-      </section>
+os_task_yield()
 
-      <section class="section" id="resource">
-        <h2>等待与资源模型</h2>
+os_task_self()
+</div>
 
-        <p>
-          WAIT状态由 OS_RESOURCE 驱动统一管理。
-        </p>
 
-        <div class="code">
-typedef struct {
-    u8 value;
-    u8 owner;
+<p>
+这些接口提供任务暂停、恢复、退出以及主动调度控制能力。
+</p>
 
-    u8 wait_cnt;
-    u16 wait_mask;
 
-    u8 pending_signal;
-} OS_RESOURCE;
-        </div>
+</section>
 
-        <p>
-          wait_mask 用位图记录等待任务，支持 O(1) 唤醒。
-        </p>
-      </section>
 
-      <section class="section" id="analysis">
-        <h2>生命周期特性</h2>
 
-        <ul style="margin:0;padding-left:18px;color:var(--muted);">
-          <li>状态切换原子化（critical section保护）</li>
-          <li>WAIT统一抽象（delay / sem / mutex / msg / event）</li>
-          <li>调度驱动状态流转（priority + ready queue）</li>
-          <li>ISR可直接触发READY唤醒</li>
-        </ul>
+<section class="section">
 
-        <div class="note">
-          生命周期的核心目标：保证任务状态始终可预测、可追踪、可恢复
-        </div>
-      </section>
+<h2>生命周期特点</h2>
 
-      <section class="section" id="faq">
-        <h2>常见问题</h2>
 
-        <p><b>WAIT 和 SUSPEND 有什么区别？</b></p>
-        <p>WAIT是资源驱动阻塞，SUSPEND是主动暂停，两者恢复机制不同。</p>
+<ul style="margin:0;padding-left:18px;color:var(--muted);">
 
-        <p><b>任务为什么会卡住？</b></p>
-        <p>通常是 wait_type 对应资源未释放或事件未触发。</p>
+<li>任务状态可查询、可追踪</li>
 
-        <p><b>DEAD状态还能恢复吗？</b></p>
-        <p>不能，DEAD表示任务生命周期结束，资源已回收。</p>
-      </section>
+<li>删除采用延迟清理机制，提高系统稳定性</li>
 
-    </div>
+<li>任务栈与上下文独立管理</li>
 
-    <aside class="sidebar">
+<li>支持普通任务和高速任务两种执行模型</li>
 
-      <div class="box">
-        <h3>目录</h3>
-        <a href="#overview">概述</a>
-        <a href="#model">状态模型</a>
-        <a href="#transition">状态转换</a>
-        <a href="#flow">流程</a>
-        <a href="#interface">结构</a>
-        <a href="#api">接口</a>
-        <a href="#resource">资源</a>
-      </div>
+<li>等待机制与任务生命周期分离设计</li>
 
-      <div class="box">
-        <h3>相关模块</h3>
-        <a href="/docs/modules/task/index.html">Task</a>
-        <a href="/docs/modules/scheduler/index.html">Scheduler</a>
-        <a href="/docs/modules/ipc/index.html">IPC</a>
-      </div>
+</ul>
 
-    </aside>
 
-  </div>
+<div class="note">
+生命周期设计目标：保证任务状态变化可控、资源释放安全、系统长期稳定运行。
+</div>
 
-  <footer class="footer">
-    © 2017–2026 HRTOS. Embedded RTOS documentation.
-  </footer>
+
+</section>
+
+
+
+</div>
+
+
+
+<aside class="sidebar">
+
+
+<div class="box">
+
+<h3>目录</h3>
+
+<a href="#overview">概述</a>
+<a href="#model">生命周期模型</a>
+<a href="#create">任务创建</a>
+<a href="#running">运行控制</a>
+<a href="#delete">删除机制</a>
+<a href="#state">状态查询</a>
+<a href="#api">接口</a>
+
+</div>
+
+
+<div class="box">
+
+<h3>相关模块</h3>
+
+<a href="/docs/modules/task/index.html">Task</a>
+
+<a href="/docs/modules/wait/index.html">Wait</a>
+
+<a href="/docs/modules/interrupt/index.html">Interrupt</a>
+
+</div>
+
+
+</aside>
+
+
+</div>
+
+
+<footer class="footer">
+© 2017–2026 HRTOS. Embedded RTOS documentation.
+</footer>
+
 
 </main>
 
+
 <script src="https://hrtos.com/header.js"></script>
+
 </body>
+
 </html>

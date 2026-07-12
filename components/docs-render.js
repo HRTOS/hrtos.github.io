@@ -65,7 +65,8 @@ const data = {
       card("调度管理", "优先级、轮转与实时调度机制", "modules/scheduler/index.html"),
       card("时间管理", "延时、Tick 与定时器系统", "modules/time/index.html"),
       card("内存管理", "分配、碎片与内存保护", "modules/memory/index.html"),
-      card("通信机制", "消息队列、信号量与互斥锁", "modules/ipc/index.html")
+      card("通信机制", "消息队列、信号量与互斥锁", "modules/ipc/index.html"),
+      card("等待管理", "任务阻塞、资源等待与统一 Wait 机制", "modules/wait/index.html")
     ],
 
     featured: [

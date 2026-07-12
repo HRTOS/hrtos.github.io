@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>任务状态模型（Task State Model） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS任务状态模型说明，基于TCB与调度器实现，包括就绪、运行、等待、挂起与删除状态及其转换机制。" />
+<meta name="description" content="HRTOS任务状态模型说明，包括任务运行状态、就绪状态、挂起状态以及任务删除状态管理机制。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -24,338 +24,505 @@
 *{box-sizing:border-box}
 
 body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+margin:0;
+background:var(--bg);
+color:var(--text);
+font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+line-height:1.75;
 }
-
-a{color:inherit;text-decoration:none}
 
 .page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-  display:grid;
-  gap:36px;
+width:min(1180px,calc(100% - 40px));
+margin:0 auto;
+padding:96px 0 56px;
+display:grid;
+gap:36px;
 }
 
-/* breadcrumb */
 .breadcrumb{
-  font-size:.92rem;
-  color:var(--muted);
+font-size:.92rem;
+color:var(--muted);
 }
 
-/* hero */
+.breadcrumb a{
+color:#7dd3fc;
+}
+
 .hero{
-  display:grid;
-  gap:10px;
+display:grid;
+gap:10px;
 }
 
 .hero-label{
-  display:inline-block;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.24);
-  color:#bae6fd;
-  font-size:.9rem;
-  margin-bottom:18px;
-  justify-self:start;
+display:inline-block;
+padding:8px 14px;
+border-radius:999px;
+border:1px solid rgba(56,189,248,.24);
+color:#bae6fd;
+font-size:.9rem;
+margin-bottom:18px;
+justify-self:start;
 }
 
 .hero h1{
-  margin:0;
-  font-size:clamp(2.2rem,5vw,3.6rem);
-  line-height:1.1;
+margin:0;
+font-size:clamp(2.2rem,5vw,3.6rem);
+line-height:1.1;
 }
 
 .hero p{
-  margin:0;
-  max-width:820px;
-  color:var(--muted);
-}
-
-/* section */
-.section{
-  display:grid;
-  gap:12px;
-}
-
-.section h2{
-  margin:0;
-  font-size:1.35rem;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
-}
-
-.section p{
-  margin:0;
-  color:var(--muted);
-}
-
-/* code */
-.code{
-  background:#020617;
-  border:1px solid rgba(56,189,248,.14);
-  border-radius:8px;
-  padding:14px;
-  font-family:Consolas,monospace;
-  font-size:.92rem;
-  color:#7dd3fc;
-  white-space:pre-wrap;
-}
-
-/* note */
-.note{
-  padding:12px 14px;
-  border-left:3px solid var(--accent);
-  background:rgba(15,23,42,.6);
-  color:var(--muted);
-  border-radius:6px;
-  font-size:.92rem;
+margin:0;
+max-width:820px;
+color:var(--muted);
 }
 
 .layout{
-  display:grid;
-  grid-template-columns:1fr 280px;
-  gap:26px;
+display:grid;
+grid-template-columns:1fr 280px;
+gap:26px;
+}
+
+.section{
+display:grid;
+gap:12px;
+}
+
+.section h2{
+margin:0;
+font-size:1.35rem;
+border-left:3px solid var(--accent);
+padding-left:10px;
+}
+
+.section p{
+margin:0;
+color:var(--muted);
+}
+
+.code{
+background:#020617;
+border:1px solid rgba(56,189,248,.14);
+border-radius:8px;
+padding:14px;
+font-family:Consolas,monospace;
+font-size:.92rem;
+color:#7dd3fc;
+white-space:pre-wrap;
+}
+
+.note{
+padding:12px 14px;
+border-left:3px solid var(--accent);
+background:rgba(15,23,42,.6);
+color:var(--muted);
+border-radius:6px;
+font-size:.92rem;
 }
 
 .sidebar{
-  display:grid;
-  gap:14px;
+display:grid;
+gap:14px;
 }
 
 .box{
-  padding:16px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.5);
+padding:16px;
+border:1px solid var(--border);
+border-radius:var(--radius);
+background:rgba(30,41,59,.5);
 }
 
 .box a{
-  display:block;
-  color:#7dd3fc;
-  font-size:.9rem;
-  margin-bottom:6px;
+display:block;
+color:#7dd3fc;
+font-size:.9rem;
+margin-bottom:6px;
 }
 
 .footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:var(--muted);
-  font-size:.9rem;
+text-align:center;
+padding-top:18px;
+border-top:1px solid rgba(148,163,184,.14);
+color:var(--muted);
+font-size:.9rem;
 }
 
 @media(max-width:900px){
-  .layout{grid-template-columns:1fr;}
+.layout{grid-template-columns:1fr;}
 }
+
 </style>
+
 </head>
+
 
 <body data-header="docs">
 
+
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/task/index.html">Task</a> /
-    <span>State Model</span>
-  </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS Task</span>
-    <h1>任务状态模型（Task State Model）</h1>
-    <p>
-      任务状态模型基于TCB与调度器实现，用于描述任务在运行、就绪与等待之间的切换逻辑。
-    </p>
-  </section>
-
-  <div class="layout">
-
-    <div class="content">
-
-      <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          
-          在HRTOS中，任务状态由OS_TCB.state字段维护，
-          并由调度器、中断与同步对象共同驱动。
-        </p>
-        <p>
-
-        </p>
-      </section>
-
-      <section class="section" id="model">
-        <h2>状态定义（基于实现）</h2>
-
-        <div class="code">
-#define READY     0   // 就绪
-#define WAIT      1   // 等待（资源/事件）
-#define RUNNING   2   // 运行
-#define SUSPEND   3   // 挂起
-#define DEAD      4   // 删除
-
-这些状态直接对应OS_TCB.state字段，不存在额外“虚拟状态层”。
-WAIT不是单一阻塞，而是统一资源等待态（信号量 / mutex / msg / event）。
-        </div>
-
-       
-
-        
- <p>
-          
-        </p>
-      </section>
-
-      <section class="section" id="mechanism">
-        <h2>状态判定机制</h2>
-
-        <p></p>
-
-        <div class="code">
-核心接口：os_task_get_state()
-
-0 = DEAD（未激活 / 已删除）
-1 = RUNNING（当前执行任务）
-2 = READY（就绪队列中）
-3 = SUSPEND（显式挂起）
-4 = PREEMPTED（最近被切出任务）
-
-实际逻辑来源于三类判断：
-1）OS_PROCESS_OK：任务是否存在
-2）OS_CURRENT_TASK / OS_PREV_TASK：运行态追踪
-3）资源位图 / 快速任务标志：判断等待或挂起
-        </div>
+<nav class="breadcrumb">
+<a href="/docs/index.html">Docs</a> /
+<a href="/docs/modules/index.html">Modules</a> /
+<a href="/docs/modules/task/index.html">Task</a> /
+<span>State Model</span>
+</nav>
 
 
-        
-      </section>
 
-      <section class="section" id="transition">
-        <h2>状态转换模型</h2>
+<section class="hero">
 
-        <div class="code">
-READY  → RUNNING   (调度器选择)
-RUNNING → READY    (时间片 / 抢占)
-RUNNING → WAIT     (资源等待)
-WAIT   → READY     (资源释放/中断唤醒)
-RUNNING → SUSPEND  (主动挂起)
-ANY    → DEAD      (删除)
+<span class="hero-label">HRTOS Task</span>
 
-所有转换必须在临界区内完成，避免调度竞争与状态错乱。
-        </div>
+<h1>任务状态模型（Task State Model）</h1>
 
-       
-      </section>
+<p>
+任务状态模型用于描述任务当前执行状态以及任务管理状态，
+是HRTOS任务控制、调试和系统监控的重要基础。
+</p>
 
-      <section class="section" id="wait">
-        <h2>等待体系（WAIT扩展）</h2>
+</section>
 
-        <div class="code">
-WAIT_DELAY
-WAIT_SEM
-WAIT_MUTEX
-WAIT_MSG_SEND
-WAIT_MSG_RECV
-WAIT_EVENT
-WAIT_MAILBOX
 
-WAIT态不是单一阻塞，而是统一等待模型，由OS_RESOURCE.wait_mask管理。
-        </div>
 
-       
-      </section>
+<div class="layout">
 
-      <section class="section" id="interface">
-        <h2>关键接口</h2>
 
-        <div class="code">
-os_task_suspend()
-os_task_resume()
-os_task_block()
-os_task_unblock()
+<div class="content">
+
+
+<section class="section" id="overview">
+
+<h2>概述</h2>
+
+<p>
+HRTOS任务状态由任务控制信息以及运行环境共同决定。
+系统通过任务控制标志、当前任务编号以及任务事件信息判断任务状态。
+</p>
+
+<p>
+任务状态模型关注任务本身是否能够参与运行，
+而任务等待原因由Wait模块单独管理。
+</p>
+
+</section>
+
+
+
+<section class="section" id="model">
+
+<h2>状态定义</h2>
+
+
+<div class="code">
+os_task_get_state()
+
+
+返回值:
+
+0
+任务不存在 / 已删除
+
+
+1
+当前运行任务
+
+
+2
+就绪任务
+
+
+3
+挂起任务
+
+
+4
+最近一次被切出的任务
+</div>
+
+
+<div class="note">
+HRTOS采用简化状态表示，不额外增加大量中间状态。
+</div>
+
+
+</section>
+
+
+
+<section class="section" id="mechanism">
+
+<h2>状态判定机制</h2>
+
+
+<p>
+任务状态查询由多个核心控制信息共同决定。
+</p>
+
+
+<div class="code">
+OS_PROCESS_OK
+
+任务是否注册以及启动状态
+
+
+OS_CURRENT_TASK
+
+当前运行任务编号
+
+
+OS_PREV_TASK
+
+最近一次运行任务编号
+
+
+OS_KUAI_PROCESS_A/B
+
+高速任务运行标志
+</div>
+
+
+<p>
+普通任务与高速任务采用不同状态判断方式，
+但统一通过任务接口向外提供查询能力。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="transition">
+
+<h2>状态转换模型</h2>
+
+
+<div class="code">
+CREATE
+
+ ↓
+
+READY
+
+ ↓
+
+RUNNING
+
+ ↓
+
+SUSPEND
+
+ ↓
+
+READY
+
+
+RUNNING
+
+ ↓
+
+DELETE REQUEST
+
+ ↓
+
+IDLE CLEANUP
+
+ ↓
+
+DEAD
+</div>
+
+
+<p>
+任务状态转换由任务控制接口、系统运行状态以及资源管理机制共同影响。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="wait">
+
+<h2>与等待机制的关系</h2>
+
+
+<p>
+任务在等待资源、消息、事件或者时间条件时，
+会暂时失去运行资格。
+</p>
+
+
+<div class="code">
+WAIT模块负责:
+
+delay
+
+semaphore
+
+mutex
+
+message
+
+event
+
+mailbox
+</div>
+
+
+<div class="note">
+WAIT描述“为什么暂停”，Task状态描述“任务当前处于什么管理状态”。
+</div>
+
+
+</section>
+
+
+
+<section class="section" id="interface">
+
+<h2>关键接口</h2>
+
+
+<div class="code">
 os_task_get_state(id)
 
-suspend/resume：控制生命周期
-block/unblock：资源驱动调度
-get_state：状态查询与调试接口
-        </div>
+os_task_suspend(id)
 
-        <p>
-          
-        </p>
-      </section>
+os_task_resume(id)
 
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
+os_task_delete(id)
 
-        <div class="code">
-CREATE → READY → RUNNING
-              ↓
-           WAIT / READY
-              ↓
-           DEAD
+os_task_exit()
+</div>
 
-状态流转由调度器 + 中断 + 资源系统共同驱动，不存在独立状态线程。
-        </div>
 
-        <p>
-          
-        </p>
-      </section>
-
-      <section class="section" id="extension">
-        <h2>设计说明</h2>
-
-        
-
-        <ul>
-          <li>状态最小化：减少调度判断成本</li>
-          <li>资源驱动等待：统一WAIT模型</li>
-          <li>TCB直接控制：避免中间抽象层</li>
-          <li>中断可恢复性：WAIT → READY可由ISR触发</li>
-        </ul>
 <p>
-          HRTOS采用“轻状态模型”，避免复杂多状态爆炸，
-          所有复杂行为由WAIT资源体系实现，而不是扩展状态数量。
-        </p>
-      </section>
+这些接口用于任务状态控制以及运行状态查询。
+</p>
 
-    </div>
 
-    <aside class="sidebar">
+</section>
 
-      <div class="box">
-        <h3>目录</h3>
-        <a href="#overview">概述</a>
-        <a href="#model">状态定义</a>
-        <a href="#mechanism">状态判定</a>
-        <a href="#transition">状态转换</a>
-        <a href="#interface">接口</a>
-      </div>
 
-      <div class="box">
-        <h3>相关模块</h3>
-        <a href="/docs/modules/scheduler/index.html">调度器</a>
-        <a href="/docs/modules/task/lifecycle.html">任务生命周期</a>
-        <a href="/docs/modules/ipc/index.html">IPC</a>
-      </div>
 
-    </aside>
+<section class="section" id="flow">
 
-  </div>
+<h2>运行流程</h2>
 
-  <footer class="footer">
-    © 2017–2026 HRTOS. Embedded RTOS documentation.
-  </footer>
+
+<div class="code">
+任务创建
+
+ ↓
+
+注册任务信息
+
+ ↓
+
+进入就绪状态
+
+ ↓
+
+获得CPU执行
+
+ ↓
+
+运行 / 挂起 / 删除
+
+ ↓
+
+资源清理
+</div>
+
+
+</section>
+
+
+
+<section class="section" id="extension">
+
+<h2>设计特点</h2>
+
+
+<ul style="margin:0;padding-left:18px;color:var(--muted);">
+
+<li>状态模型简单，降低任务管理开销</li>
+
+<li>任务状态与等待机制分离</li>
+
+<li>支持普通任务和高速任务统一管理</li>
+
+<li>状态信息可通过API查询</li>
+
+<li>删除采用延迟清理方式保证稳定性</li>
+
+</ul>
+
+
+<div class="note">
+HRTOS通过简洁状态模型保证任务行为可预测，复杂同步行为由Wait模块扩展完成。
+</div>
+
+
+</section>
+
+
+
+</div>
+
+
+
+<aside class="sidebar">
+
+
+<div class="box">
+
+<h3>目录</h3>
+
+<a href="#overview">概述</a>
+<a href="#model">状态定义</a>
+<a href="#mechanism">判定机制</a>
+<a href="#transition">状态转换</a>
+<a href="#wait">等待关系</a>
+<a href="#interface">接口</a>
+
+</div>
+
+
+<div class="box">
+
+<h3>相关模块</h3>
+
+<a href="/docs/modules/task/lifecycle.html">
+任务生命周期
+</a>
+
+<a href="/docs/modules/wait/index.html">
+Wait
+</a>
+
+
+
+</div>
+
+
+</aside>
+
+
+</div>
+
+
+<footer class="footer">
+© 2017–2026 HRTOS. Embedded RTOS documentation.
+</footer>
+
 
 </main>
 
+
 <script src="https://hrtos.com/header.js"></script>
+
 </body>
+
 </html>

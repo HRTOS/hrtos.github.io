@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>任务优先级（Task Priority） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS任务优先级机制说明，包括优先级定义、调度规则、抢占行为与优先级继承机制。" />
+<meta name="description" content="HRTOS任务优先级机制说明，包括普通任务、高速任务以及特殊执行级别的优先级划分。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -24,315 +24,461 @@
 *{box-sizing:border-box}
 
 body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+margin:0;
+background:var(--bg);
+color:var(--text);
+font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+line-height:1.75;
 }
-
-a{color:inherit;text-decoration:none}
 
 .page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-  display:grid;
-  gap:36px;
+width:min(1180px,calc(100% - 40px));
+margin:0 auto;
+padding:96px 0 56px;
+display:grid;
+gap:36px;
 }
 
-/* breadcrumb */
 .breadcrumb{
-  font-size:.92rem;
-  color:var(--muted);
+font-size:.92rem;
+color:var(--muted);
 }
 
-/* hero */
+.breadcrumb a{
+color:#7dd3fc;
+}
+
 .hero{
-  display:grid;
-  gap:12px;
+display:grid;
+gap:12px;
 }
 
 .hero-label{
-  display:inline-block;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.24);
-  color:#bae6fd;
-  font-size:.9rem;
-  margin-bottom:18px;
-  justify-self:start;
+display:inline-block;
+padding:8px 14px;
+border-radius:999px;
+border:1px solid rgba(56,189,248,.24);
+color:#bae6fd;
+font-size:.9rem;
+margin-bottom:18px;
+justify-self:start;
 }
 
 .hero h1{
-  margin:0;
-  font-size:clamp(2.2rem,5vw,3.6rem);
-  line-height:1.1;
+margin:0;
+font-size:clamp(2.2rem,5vw,3.6rem);
+line-height:1.1;
 }
 
 .hero p{
-  margin:0;
-  color:var(--muted);
+margin:0;
+color:var(--muted);
 }
 
-/* layout */
 .layout{
-  display:grid;
-  grid-template-columns:1fr 280px;
-  gap:26px;
+display:grid;
+grid-template-columns:1fr 280px;
+gap:26px;
 }
 
 .section{
-  display:grid;
-  gap:12px;
-  padding:22px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.55);
-  box-shadow:var(--shadow);
+display:grid;
+gap:12px;
+padding:22px;
+border:1px solid var(--border);
+border-radius:var(--radius);
+background:rgba(30,41,59,.55);
+box-shadow:var(--shadow);
 }
 
 .section h2{
-  margin:0;
-  font-size:1.3rem;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
+margin:0;
+font-size:1.3rem;
+border-left:3px solid var(--accent);
+padding-left:10px;
 }
 
 .section p{
-  margin:0;
-  color:var(--muted);
-  font-size:.95rem;
+margin:0;
+color:var(--muted);
+font-size:.95rem;
 }
 
 .code{
-  background:#020617;
-  border:1px solid rgba(56,189,248,.12);
-  border-radius:8px;
-  padding:14px;
-  font-family:Consolas,monospace;
-  font-size:.9rem;
-  color:#7dd3fc;
-  white-space:pre-wrap;
+background:#020617;
+border:1px solid rgba(56,189,248,.12);
+border-radius:8px;
+padding:14px;
+font-family:Consolas,monospace;
+font-size:.9rem;
+color:#7dd3fc;
+white-space:pre-wrap;
 }
 
 .note{
-  padding:12px 14px;
-  border-left:3px solid var(--accent);
-  background:rgba(15,23,42,.6);
-  color:var(--muted);
-  border-radius:6px;
-  font-size:.92rem;
+padding:12px 14px;
+border-left:3px solid var(--accent);
+background:rgba(15,23,42,.6);
+color:var(--muted);
+border-radius:6px;
+font-size:.92rem;
 }
 
-/* sidebar */
 .sidebar{
-  display:grid;
-  gap:14px;
+display:grid;
+gap:14px;
 }
 
 .box{
-  padding:16px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.5);
+padding:16px;
+border:1px solid var(--border);
+border-radius:var(--radius);
+background:rgba(30,41,59,.5);
 }
 
 .box h3{
-  margin:0 0 10px;
-  font-size:.95rem;
+margin:0 0 10px;
+font-size:.95rem;
 }
 
 .box a{
-  display:block;
-  font-size:.9rem;
-  color:#7dd3fc;
-  margin-bottom:6px;
+display:block;
+font-size:.9rem;
+color:#7dd3fc;
+margin-bottom:6px;
 }
 
-/* footer */
 .footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:var(--muted);
-  font-size:.9rem;
+text-align:center;
+padding-top:18px;
+border-top:1px solid rgba(148,163,184,.14);
+color:var(--muted);
+font-size:.9rem;
 }
 
 @media(max-width:980px){
-  .layout{grid-template-columns:1fr}
+.layout{grid-template-columns:1fr}
 }
 </style>
+
 </head>
+
 
 <body data-header="docs">
 
+
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/task/index.html">Task</a> /
-    <span>Priority</span>
-  </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS Task</span>
-    <h1>任务优先级（Task Priority）</h1>
-    <p>
-      任务优先级用于决定CPU调度顺序，是抢占式调度的核心依据。
-    </p>
-  </section>
+<nav class="breadcrumb">
+<a href="/docs/index.html">Docs</a> /
+<a href="/docs/modules/index.html">Modules</a> /
+<a href="/docs/modules/task/index.html">Task</a> /
+<span>Priority</span>
+</nav>
 
-  <div class="layout">
 
-    <div class="content">
 
-      <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          HRTOS优先级定义来自OS_TCB.cur_prio / base_prio，
-          由调度器在READY队列中进行比较选择。
-        </p>
-        <p>
-          优先级数值越大表示优先级越高（系统约定），
-          高优先级任务可抢占低优先级任务。
-        </p>
-        <p>
-          系统优先级范围由 OS_SCHED_LEVEL_MAX 定义（0~10），
-          高位用于内核/中断级任务，低位用于普通应用任务。
-        </p>
-      </section>
+<section class="hero">
 
-      <section class="section" id="mechanism">
-        <h2>调度机制</h2>
-        <p>
-          调度器维护按优先级划分的READY队列，
-          始终选择最高优先级任务运行。
-        </p>
+<span class="hero-label">HRTOS Task</span>
 
-        <div class="note">
-          READY队列按优先级组织，调度复杂度为O(1)（位图选择）。
-        </div>
+<h1>任务优先级（Task Priority）</h1>
 
-        <p>
-          当更高优先级任务进入READY状态（os_task_unblock / 中断唤醒），
-          当前任务会被立即抢占。
-        </p>
-        <p>
-          同优先级任务按时间片轮转（OS_TIME_ONCE_DEFAULT）。
-        </p>
-      </section>
+<p>
+任务优先级用于描述任务执行级别，是HRTOS任务管理和调度的重要属性。
+</p>
 
-      <section class="section" id="rule">
-        <h2>调度规则</h2>
+</section>
 
-        <div class="code">
-1. 选择最高cur_prio任务执行
-2. 同优先级任务时间片轮转
-3. 高优先级READY立即抢占
-4. WAIT/SUSPEND不参与调度
-        </div>
 
-        <p>
-          WAIT态任务由资源事件唤醒进入READY。
-        </p>
-      </section>
 
-      <section class="section" id="interface">
-        <h2>关键接口</h2>
+<div class="layout">
 
-        <div class="code">
-os_task_set_priority(id, prio)
+
+<div class="content">
+
+
+<section class="section" id="overview">
+
+<h2>概述</h2>
+
+<p>
+HRTOS采用多级优先级模型，不同任务类型拥有不同执行级别。
+优先级数值越大表示任务级别越高。
+</p>
+
+
+<p>
+系统通过任务创建时指定的优先级参数，
+确定任务所属执行层级。
+</p>
+
+
+<div class="code">
+优先级范围:
+
+0 ~ 7
+普通任务
+
+8
+高速任务
+
+9
+中断任务
+
+10
+中断嵌套任务
+</div>
+
+
+</section>
+
+
+
+<section class="section" id="level">
+
+<h2>优先级层级划分</h2>
+
+
+<p>
+HRTOS根据任务特点划分不同执行级别。
+</p>
+
+
+<div class="code">
+普通任务:
+
+Priority 0 ~ 7
+
+
+高速任务:
+
+Priority 8
+
+
+特殊执行级:
+
+Priority 9
+Interrupt
+
+Priority 10
+Nested Interrupt
+</div>
+
+
+<div class="note">
+中断相关机制属于Interrupt模块，本页面仅介绍其优先级层级关系。
+</div>
+
+
+</section>
+
+
+
+<section class="section" id="normal">
+
+<h2>普通任务优先级</h2>
+
+
+<p>
+0~7级用于普通应用任务。
+任务可以根据实时性要求分配不同优先级。
+</p>
+
+
+<div class="code">
+os_task_create(
+    addr,
+    id,
+    pr,
+    sd
+)
+
+pr = 0 ~ 7
+</div>
+
+
+<p>
+普通任务采用标准任务上下文模型，
+通过任务管理接口进行控制。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="fast">
+
+<h2>高速任务优先级</h2>
+
+
+<p>
+优先级8用于高速任务。
+高速任务拥有独立执行环境，与普通任务采用不同上下文管理方式。
+</p>
+
+
+<div class="code">
+Priority 8
+
+OS_KUAI_SP[]
+
+OS_FAST_CONTEXT[]
+
+
+独立工作寄存器组
+</div>
+
+
+<p>
+由于使用专用工作寄存器组，
+高速任务切换过程中减少部分寄存器保存恢复开销。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="interface">
+
+<h2>任务优先级接口</h2>
+
+
+<div class="code">
+os_task_set_priority(
+    id,
+    pr
+)
+
+
 os_task_get_priority(id)
+</div>
 
-OS_TCB:
-  u8 base_prio;
-  u8 cur_prio;
-  u8 state;
-        </div>
 
-        <p>
-          set_priority修改cur_prio；
-          get_priority返回当前调度优先级（可能为继承值）。
-        </p>
+<p>
+set接口用于修改任务优先级，
+get接口用于查询任务当前优先级。
+</p>
 
-        <div class="note">
-          priority可能来源：base_prio 或 mutex继承提升值
-        </div>
-      </section>
 
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
+<div class="note">
+普通任务优先级范围：0~7；高速任务固定为8。
+</div>
 
-        <div class="code">
-create task
-  ↓
-assign base_prio
-  ↓
-READY queue insert
-  ↓
-scheduler select highest prio
-  ↓
-RUNNING
-  ↓
-preempt / block / yield
-        </div>
 
-        <p>
-          调度触发点：任务就绪 / 中断退出 / 资源释放 / tick中断。
-        </p>
-      </section>
+</section>
 
-      <section class="section" id="inherit">
-        <h2>优先级继承</h2>
 
-        <p>
-          当高优先级任务等待mutex时，
-          持锁任务临时提升至更高优先级。
-        </p>
 
-        <div class="note">
-          继承优先级存储在cur_prio中，释放锁后恢复base_prio
-        </div>
+<section class="section" id="flow">
 
-        <div class="code">
-WAIT_MUTEX → inherit prio
-unlock     → restore base_prio
-        </div>
-      </section>
+<h2>优先级作用流程</h2>
 
-    </div>
 
-    <aside class="sidebar">
+<div class="code">
+创建任务
 
-      <div class="box">
-        <h3>目录</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">调度机制</a>
-        <a href="#rule">调度规则</a>
-        <a href="#interface">接口</a>
-        <a href="#flow">流程</a>
-        <a href="#inherit">继承</a>
-      </div>
+↓
 
-      <div class="box">
-        <h3>相关模块</h3>
-        <a href="/docs/modules/scheduler/index.html">调度器</a>
-        <a href="/docs/modules/task/index.html">Task</a>
-        <a href="/docs/modules/ipc/index.html">IPC</a>
-      </div>
+设置任务优先级
 
-    </aside>
+↓
 
-  </div>
+任务进入系统
 
-  <footer class="footer">
-    © 2017–2026 HRTOS. Embedded RTOS documentation.
-  </footer>
+↓
+
+调度依据优先级选择执行对象
+
+↓
+
+任务运行
+</div>
+
+
+<p>
+优先级决定任务执行级别，
+实际运行过程由系统调度机制统一管理。
+</p>
+
+
+</section>
+
+
+
+<section class="section" id="inherit">
+
+<h2>优先级继承</h2>
+
+
+<p>
+HRTOS支持资源同步场景下的优先级继承机制，
+用于降低高优先级任务等待低优先级任务持有资源时产生的问题。
+</p>
+
+
+<div class="note">
+优先级继承属于同步资源管理机制，详细说明见IPC/Wait模块。
+</div>
+
+
+</section>
+
+
+</div>
+
+
+
+<aside class="sidebar">
+
+
+<div class="box">
+
+<h3>目录</h3>
+
+<a href="#overview">概述</a>
+<a href="#level">层级划分</a>
+<a href="#normal">普通任务</a>
+<a href="#fast">高速任务</a>
+<a href="#interface">接口</a>
+<a href="#flow">流程</a>
+
+</div>
+
+
+<div class="box">
+
+<h3>相关模块</h3>
+
+<a href="/docs/modules/task/index.html">Task</a>
+
+<a href="/docs/modules/interrupt/index.html">Interrupt</a>
+
+<a href="/docs/modules/wait/index.html">Wait</a>
+
+</div>
+
+
+</aside>
+
+
+</div>
+
+
+<footer class="footer">
+© 2017–2026 HRTOS. Embedded RTOS documentation.
+</footer>
+
 
 </main>
 
+
 <script src="https://hrtos.com/header.js"></script>
+
+
 </body>
+
 </html>

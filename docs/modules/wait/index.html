@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>Wait Module | HRTOS Module Documentation</title>
+
+<meta name="description" content="HRTOS等待机制模块文档，包含统一等待模型、状态管理、超时机制以及任务阻塞与唤醒流程。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+
+<style>
+
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --border-strong:rgba(56,189,248,.38);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:10px;
+  color-scheme:dark;
+}
+
+
+*{box-sizing:border-box}
+
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--text);
+ font-family:"Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+ line-height:1.7;
+ overflow-x:hidden;
+}
+
+
+body::before{
+ content:"";
+ position:fixed;
+ inset:0;
+ pointer-events:none;
+ background-image:
+ linear-gradient(rgba(148,163,184,.08) 1px,transparent 1px),
+ linear-gradient(90deg,rgba(148,163,184,.08) 1px,transparent 1px);
+ background-size:28px 28px;
+ opacity:.14;
+}
+
+
+a{
+ color:inherit;
+ text-decoration:none;
+}
+
+
+.page{
+
+ width:min(1180px,calc(100% - 40px));
+ margin:0 auto;
+ padding:96px 0 56px;
+ position:relative;
+ z-index:1;
+
+}
+
+
+
+.breadcrumb{
+
+ margin-bottom:28px;
+ font-size:.92rem;
+ color:var(--muted);
+
+}
+
+
+.breadcrumb a{
+ color:#7dd3fc;
+}
+
+
+
+.hero{
+
+ margin-bottom:56px;
+
+}
+
+
+
+.hero-label{
+
+ display:inline-block;
+ padding:8px 14px;
+ border-radius:999px;
+ border:1px solid rgba(56,189,248,.24);
+ color:#bae6fd;
+ font-size:.9rem;
+ margin-bottom:18px;
+
+}
+
+
+
+.hero h1{
+
+ margin:0 0 16px;
+ font-size:clamp(2.3rem,5vw,4rem);
+ line-height:1.08;
+
+}
+
+
+
+.hero p{
+
+ margin:0;
+ max-width:760px;
+ color:var(--muted);
+
+}
+
+
+
+.meta{
+
+ display:flex;
+ gap:10px;
+ flex-wrap:wrap;
+ margin-top:18px;
+
+}
+
+
+
+.tag{
+
+ padding:6px 12px;
+ border-radius:999px;
+ border:1px solid var(--border);
+ background:rgba(15,23,42,.45);
+ color:#bae6fd;
+ font-size:.84rem;
+
+}
+
+
+
+.section{
+
+ margin-bottom:56px;
+
+}
+
+
+
+.section h2{
+
+ margin:0 0 12px;
+ font-size:1.5rem;
+
+}
+
+
+
+.section p{
+
+ margin:0 0 22px;
+ color:var(--muted);
+
+}
+
+
+
+.grid{
+
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:20px;
+
+}
+
+
+
+.card{
+
+ display:grid;
+ gap:12px;
+ padding:24px 22px;
+ min-height:180px;
+
+ background:linear-gradient(
+ 180deg,
+ rgba(30,41,59,.8),
+ rgba(15,23,42,.92)
+ );
+
+ border:1px solid var(--border);
+ border-radius:var(--radius);
+
+ box-shadow:var(--shadow);
+
+ transition:.22s ease;
+
+}
+
+
+
+.card:hover{
+
+ transform:translateY(-6px);
+ border-color:var(--border-strong);
+ background:rgba(30,64,175,.18);
+
+}
+
+
+
+.card h3{
+
+ margin:0;
+ font-size:1.12rem;
+ color:#f8fafc;
+
+}
+
+
+
+.card p{
+
+ margin:0;
+ font-size:.95rem;
+ color:var(--muted);
+
+}
+
+
+
+.card span{
+
+ margin-top:auto;
+ color:#7dd3fc;
+ font-size:.92rem;
+ font-weight:600;
+
+}
+
+
+
+.footer{
+
+ padding-top:24px;
+ border-top:1px solid rgba(148,163,184,.14);
+ text-align:center;
+ font-size:.9rem;
+ color:#8ea3be;
+
+}
+
+
+
+@media(max-width:900px){
+
+.grid{
+ grid-template-columns:1fr;
+}
+
+}
+
+
+</style>
+
+</head>
+
+
+<body data-header="docs">
+
+
+<main class="page">
+
+
+
+<nav class="breadcrumb">
+
+<a href="/docs/index.html">Docs</a> /
+
+<a href="/docs/modules/index.html">Modules</a> /
+
+<span>Wait（等待机制）</span>
+
+</nav>
+
+
+
+
+<section class="hero">
+
+
+<span class="hero-label">HRTOS Module</span>
+
+
+<h1>Wait 等待机制模块</h1>
+
+
+<p>
+Wait模块是HRTOS任务阻塞与同步的核心基础，
+负责管理任务等待状态、资源等待、超时控制以及唤醒恢复。
+</p>
+
+
+
+<div class="meta">
+
+<span class="tag">4 Topics</span>
+
+<span class="tag">Kernel Core</span>
+
+<span class="tag">Task Synchronization</span>
+
+</div>
+
+
+</section>
+
+
+
+
+
+<section class="section">
+
+
+<h2>核心内容</h2>
+
+
+<p>
+统一描述任务如何进入等待状态，以及等待结束后的恢复流程。
+</p>
+
+
+
+<div class="grid">
+
+
+
+<a class="card" href="mechanism.html">
+
+<h3>等待机制</h3>
+
+<p>
+介绍os_wait核心接口、TCB等待信息以及资源等待队列模型。
+</p>
+
+<span>进入 →</span>
+
+</a>
+
+
+
+<a class="card" href="state-model.html">
+
+<h3>等待状态模型</h3>
+
+<p>
+说明WAIT状态、wait_type以及任务状态转换关系。
+</p>
+
+<span>进入 →</span>
+
+</a>
+
+
+
+<a class="card" href="timeout.html">
+
+<h3>超时机制</h3>
+
+<p>
+描述tick驱动的等待超时处理与任务恢复流程。
+</p>
+
+<span>进入 →</span>
+
+</a>
+
+
+
+<a class="card" href="usage.html">
+
+<h3>使用方式</h3>
+
+<p>
+介绍delay、sem、mutex、message、event等接口如何使用WAIT。
+</p>
+
+<span>进入 →</span>
+
+</a>
+
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+<section class="section">
+
+
+<h2>核心设计</h2>
+
+
+<div class="grid">
+
+
+<a class="card" href="mechanism.html">
+
+<h3>统一等待模型</h3>
+
+<p>
+所有阻塞行为统一映射到WAIT体系，
+减少内核状态复杂度。
+</p>
+
+<span>查看 →</span>
+
+</a>
+
+
+
+<a class="card" href="/docs/modules/task/state-model.html">
+
+<h3>任务状态系统</h3>
+
+<p>
+WAIT作为任务生命周期中的核心状态，
+与调度器共同完成任务切换。
+</p>
+
+<span>查看 →</span>
+
+</a>
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+<section class="section">
+
+
+<h2>相关模块</h2>
+
+
+
+<div class="grid">
+
+
+
+<a class="card" href="/docs/modules/task/index.html">
+
+<h3>Task</h3>
+
+<p>
+任务生命周期、状态模型以及上下文管理。
+</p>
+
+<span>查看 →</span>
+
+</a>
+
+
+
+
+<a class="card" href="/docs/modules/ipc/index.html">
+
+<h3>IPC Communication</h3>
+
+<p>
+信号量、Mutex、消息队列、事件等同步对象。
+</p>
+
+<span>查看 →</span>
+
+</a>
+
+
+
+</div>
+
+
+</section>
+
+
+
+
+<footer class="footer">
+
+© 2017–2026 HRTOS. Embedded real-time system documentation.
+
+</footer>
+
+
+</main>
+
+
+<script src="https://hrtos.com/header.js"></script>
+
+
+</body>
+</html>

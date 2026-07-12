@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>等待机制（Wait Mechanism） | HRTOS Documentation</title>
+<meta name="description" content="HRTOS统一等待机制说明，包括任务阻塞模型、TCB等待上下文、资源等待队列以及唤醒流程。" />
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --radius:10px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 56px;
+}
+
+.breadcrumb{
+  font-size:.92rem;
+  color:var(--muted);
+  margin-bottom:28px;
+}
+
+.breadcrumb a{color:#7dd3fc}
+
+.hero h1{
+  margin:0 0 12px;
+  font-size:clamp(2.2rem,5vw,3.6rem);
+}
+
+.hero p{color:var(--muted);max-width:780px}
+
+.layout{
+  display:grid;
+  grid-template-columns:1fr 280px;
+  gap:28px;
+  margin-top:40px;
+}
+
+.section{
+  background:rgba(30,41,59,.6);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+  margin-bottom:18px;
+}
+
+.section h2{
+  margin:0 0 10px;
+  border-left:3px solid var(--accent);
+  padding-left:10px;
+}
+
+.code{
+  background:#020617;
+  border:1px solid rgba(56,189,248,.18);
+  padding:14px;
+  border-radius:8px;
+  overflow:auto;
+  font-family:Consolas,monospace;
+  font-size:.9rem;
+  color:#7dd3fc;
+  white-space:pre-wrap;
+}
+
+.sidebar .box{
+  background:rgba(30,41,59,.55);
+  border:1px solid var(--border);
+  padding:16px;
+  border-radius:10px;
+  margin-bottom:14px;
+}
+
+.sidebar a{
+  display:block;
+  color:#7dd3fc;
+  font-size:.92rem;
+  margin:6px 0;
+}
+
+.sidebar{
+  display:grid;
+  gap:14px;
+}
+
+.footer{
+  text-align:center;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+.box{
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:rgba(30,59,59,.5);
+}
+
+.box a{
+  display:block;
+  color:#7dd3fc;
+  font-size:.9rem;
+  margin-bottom:6px;
+}
+</style>
+
+</head>
+
+<body>
+
+<main class="page">
+
+<nav class="breadcrumb">
+<a href="/docs/index.html">Docs</a> /
+<a href="/docs/modules/index.html">Modules</a> /
+<a href="/docs/modules/wait/index.html">Wait</a> /
+<span>Mechanism</span>
+</nav>
+
+
+<section class="hero">
+
+<h1>等待机制（Wait Mechanism）</h1>
+
+<p>
+HRTOS等待机制是内核任务阻塞管理核心，通过统一等待模型，
+将延时、同步、通信等不同阻塞场景抽象为统一任务等待流程。
+</p>
+
+</section>
+
+
+<div class="layout">
+
+<div>
+
+
+<section class="section">
+
+<h2>一、统一等待模型设计</h2>
+
+<p>
+传统RTOS通常针对不同内核对象分别实现阻塞逻辑，
+例如信号量、消息队列、事件等待分别维护任务状态。
+HRTOS采用统一WAIT模型，将不同等待源统一映射到任务控制块。
+</p>
+
+
+<div class="code">
+WAIT_NONE       无等待
+
+WAIT_DELAY      时间等待
+
+WAIT_SEM        信号量等待
+
+WAIT_MUTEX      互斥锁等待
+
+WAIT_MSG_SEND   消息发送等待
+
+WAIT_MSG_RECV   消息接收等待
+
+WAIT_EVENT      事件等待
+
+WAIT_MAILBOX    邮箱等待
+</div>
+
+
+<p>
+任务在任意时刻只允许存在一种等待状态，
+等待信息统一保存在TCB中。
+</p>
+
+</section>
+
+
+<section class="section">
+
+<h2>二、任务等待上下文管理</h2>
+
+
+<div class="code">
+
+typedef struct
+{
+    u8 wait_type;   
+    u8 wait_flag;   
+    u8 wait_obj;    
+    u16 wait_tick;  
+
+} OS_TCB;
+
+</div>
+
+
+<p>
+HRTOS将等待上下文直接存储于任务控制块中。
+当任务进入阻塞状态时，内核保存等待类型、
+等待对象以及超时时间。
+</p>
+
+
+<p>
+任务恢复运行后，通过wait_flag判断唤醒原因：
+</p>
+
+
+<div class="code">
+
+WAIT_TIMEOUT   超时唤醒
+
+WAIT_SIGNAL    条件满足唤醒
+
+</div>
+
+</section>
+
+
+<section class="section">
+
+<h2>三、资源等待队列模型</h2>
+
+
+<div class="code">
+
+typedef struct
+{
+    u8 value;
+
+    u8 owner;
+
+    u8  wait_cnt;
+
+    u16 wait_mask;
+
+} OS_RESOURCE;
+
+</div>
+
+
+<p>
+HRTOS所有资源对象采用统一等待队列模型。
+信号量、互斥锁、事件以及消息等待均通过资源等待位图管理。
+</p>
+
+
+<div class="code">
+
+wait_mask
+
+bit0  -> task0
+
+bit1  -> task1
+
+...
+
+bit15 -> task15
+
+</div>
+
+
+<p>
+通过位图方式管理等待任务，
+适用于8051有限资源环境，可降低内存占用。
+</p>
+
+
+</section>
+
+
+<section class="section">
+
+<h2>四、任务进入等待流程</h2>
+
+
+<div class="code">
+
+任务运行
+
+    ↓
+
+调用 os_wait()
+
+    ↓
+
+保存等待信息
+
+(wait_type / wait_obj / wait_tick)
+
+    ↓
+
+加入资源等待队列
+
+    ↓
+
+任务状态变为 WAIT
+
+    ↓
+
+触发调度
+
+    ↓
+
+运行其他任务
+
+</div>
+
+
+<p>
+os_wait()是HRTOS统一阻塞入口，
+所有需要暂停执行的内核操作最终通过该接口进入等待状态。
+</p>
+
+</section>
+
+
+<section class="section">
+
+<h2>五、任务唤醒流程</h2>
+
+
+<div class="code">
+
+事件发生
+
+    ↓
+
+调用 wake_task()
+
+    ↓
+
+移除等待位图
+
+    ↓
+
+设置 wait_flag
+
+    ↓
+
+清除等待信息
+
+    ↓
+
+任务进入 READY
+
+    ↓
+
+重新参与调度
+
+</div>
+
+
+<p>
+wake_task()统一处理任务恢复过程，
+保证不同等待来源拥有一致的唤醒路径。
+</p>
+
+</section>
+
+
+<section class="section">
+
+<h2>六、设计特点</h2>
+
+<ul>
+
+<li>统一等待入口，减少内核重复代码</li>
+
+<li>TCB保存等待上下文，结构清晰</li>
+
+<li>资源对象共享等待队列模型</li>
+
+<li>支持时间等待与事件等待统一管理</li>
+
+<li>适合8051低资源环境</li>
+
+</ul>
+
+</section>
+
+
+</div>
+
+
+<aside class="sidebar">
+
+
+<div class="box">
+
+<h3>目录</h3>
+
+<a href="#overview">统一模型</a>
+
+<a href="#context">等待上下文</a>
+
+<a href="#queue">等待队列</a>
+
+<a href="#flow">等待流程</a>
+
+</div>
+
+
+<div class="box">
+
+<h3>相关模块</h3>
+
+<a href="/docs/modules/task/index.html">Task</a>
+
+<a href="/docs/modules/scheduler/index.html">Scheduler</a>
+
+<a href="/docs/modules/ipc/index.html">IPC</a>
+
+<a href="/docs/modules/time/index.html">Time</a>
+
+</div>
+
+
+</aside>
+
+
+</div>
+
+
+<footer class="footer">
+
+© 2017–2026 HRTOS. Wait Mechanism Documentation.
+
+</footer>
+
+
+</main>
+
+
+<script src="https://hrtos.com/header.js"></script>
+
+</body>
+</html>
