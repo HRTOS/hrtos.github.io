@@ -1,8 +1,8 @@
 # HRTOS - Hard Real-Time Operating System
 
-HRTOS is a lightweight embedded hard real-time operating system designed for resource-constrained and industrial control systems.
+HRTOS is a lightweight hard real-time operating system designed for resource-constrained embedded microcontrollers and industrial control applications.
 
-It provides deterministic scheduling, interrupt handling, task management, and memory control to ensure strict timing constraints in embedded applications.
+It provides deterministic task scheduling, interrupt management, synchronization mechanisms, and communication support to help embedded systems evolve from traditional bare-metal development into structured real-time architectures.
 
 ---
 
@@ -22,16 +22,17 @@ Includes:
 
 - Kernel architecture
 - Task scheduling mechanism
-- Time management system
-- Interrupt handling
-- Memory management
+- Interrupt system
+- Time management
+- Synchronization mechanisms
+- Communication modules
 - API reference
 
 ---
 
 ## 📦 Downloads
 
-Latest releases and binaries:
+Latest releases and source packages:
 
 👉 https://hrtos.com/download/
 
@@ -39,12 +40,26 @@ Latest releases and binaries:
 
 ## ⚙️ Key Features
 
-- Lightweight RTOS kernel
-- Preemptive multitasking
-- Real-time scheduling (priority-based)
+- Lightweight hard real-time kernel
+- Priority-based preemptive scheduling
+- Deterministic task execution
+- Interrupt nesting support
 - Low memory footprint
-- Portable across MCU platforms (ARM / RISC-V)
-- Modular architecture
+- Task and synchronization management
+- Modular hardware port architecture
+- Designed for resource-constrained MCUs
+
+---
+
+## 🔧 Supported Platforms
+
+Current target platform:
+
+- 8051 microcontrollers
+- STC series MCUs
+- Resource-constrained embedded systems
+
+HRTOS focuses on providing reliable real-time capabilities on limited hardware resources.
 
 ---
 
@@ -52,26 +67,31 @@ Latest releases and binaries:
 
 HRTOS is designed for:
 
-- Embedded systems
-- Industrial control systems
-- IoT devices
-- Real-time monitoring systems
+- Embedded control systems
+- Industrial automation
+- Real-time monitoring devices
+- Small-scale intelligent equipment
 
 Core design goals:
 
 - Deterministic execution
-- Minimal latency
-- High portability
-- Simple API interface
+- Low interrupt latency
+- Efficient resource utilization
+- Simple and consistent API design
 
 ---
 
 ## 🧩 Architecture
 
-- Kernel Layer
-- Scheduling Layer
-- Hardware Abstraction Layer (HAL)
+HRTOS adopts a layered architecture:
+
+- Application Layer
 - System API Layer
+- Kernel Layer
+- Scheduler Layer
+- Hardware Port Layer
+
+The architecture separates hardware-dependent code from kernel logic, improving portability and maintainability.
 
 ---
 
@@ -87,27 +107,29 @@ Core design goals:
 
 This repository is part of the HRTOS ecosystem.
 
-The official website is regularly updated and optimized for search engines including:
+The official website provides technical documentation, API references, examples, and project updates.
 
-- Bing Search
+The project is indexed by major search engines including:
+
 - Google Search
+- Bing Search
 
-Structured data and sitemap are available on the official site.
+Structured metadata and sitemap support are provided on the official website.
 
 ---
 
 ## 📌 Keywords
 
-RTOS, Real-Time Operating System, Embedded OS, Microcontroller OS, ARM RTOS, RISC-V RTOS, Lightweight OS
+RTOS, Hard Real-Time Operating System, Embedded OS, 8051 RTOS, Microcontroller OS, Lightweight RTOS, Industrial Control, Real-Time Embedded System
 
 ---
 
 ## 📄 License
 
-This project is for educational and embedded system development purposes.
+This project is intended for embedded system development, learning, and research purposes.
 
 ---
 
 ## ⭐ Project Status
 
-Actively maintained.
+Actively developed and maintained.
