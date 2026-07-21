@@ -215,11 +215,7 @@ char os_task_set_priority(unsigned char id, unsigned char pr)
             return -1;
         }
 
-        if((OS_TASK[id].state != READY) && (OS_TASK[id].state != DEAD))
-        {
-            IE = K;
-            return -1;
-        }
+        
 
         if(id == 0)
         {

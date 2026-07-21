@@ -174,48 +174,53 @@ u32 os_uptime_ms()
     u16 tick_h;
     u16 tick_l;
     u16 tick_value;
-    u32 TS;
 
-    float tick_ms;
-    float total_tick;
-    float total_ms;
+    u32 total_tick;
+    u32 tick_us;
+    u32 tick_ms;
 
-    u16 result_h;
-    u16 result_l;
 
+    /*
+     * 读取32位tick计数
+     */
     EA = 0;
+
     tick_h = OS_TICK_COUNT_H;
     tick_l = OS_TICK_COUNT_L;
+
     EA = 1;
 
+
+    /*
+     * 组合tick数量
+     */
+    total_tick = ((u32)tick_h << 16) | tick_l;
+
+
+    /*
+     * 获取单tick时间(us)
+     */
     tick_value = OS_T0_TH0;
     tick_value <<= 8;
     tick_value += OS_T0_TL0;
 
-    tick_ms = (65536.0 - tick_value) / 1000.0;
 
-    if(tick_ms <= 0)
+    tick_us = 65536 - tick_value;
+
+
+    /*
+     * 转换为毫秒
+     */
+    tick_ms = tick_us / 1000;
+
+
+    if(tick_ms == 0)
     {
         tick_ms = 1;
     }
 
-    total_tick = ((float)tick_h * 65536.0) + tick_l;
 
-    total_ms = total_tick * tick_ms;
-
-    if(total_ms > 4294967295.0)
-    {
-        total_ms = 4294967295.0;
-    }
-
-    result_h = (u16)(total_ms / 65536.0);
-    result_l = (u16)(total_ms - ((float)result_h * 65536.0));
-
-    TS = result_h;
-    TS <<= 16;
-    TS += result_l;
-
-    return TS;
+    return total_tick * tick_ms;
 }
     </div>
 

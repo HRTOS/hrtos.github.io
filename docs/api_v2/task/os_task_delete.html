@@ -188,31 +188,30 @@ char os_task_delete(unsigned char id)
     {
         return -1;
     }
-
-    EA = 0;
-
+    EA=0;
     /* 标记删除请求 */
     OS_TASK_EVENT[id] |= OS_EVENT_DELETE_REQ;
-
     /* 从调度器移除 */
     if(id >= OS_PROCESS_MAX)
     {
         if(id == OS_PROCESS_MAX)
         {
             OS_KUAI_PROCESS_A = 0;
+			      OS_WAIT_DI2[0] = 0;
         }
         else if(id == OS_PROCESS_MAX + 1)
         {
             OS_KUAI_PROCESS_B = 0;
+			      OS_WAIT_DI2[1] = 0;
         }
     }
     else
     {
         OS_PROCESS_OK[id] &= 0xfe;
+		    OS_TASK[id].state = DEAD;//删除态避免被激活
+		    OS_TASK[id].wait_tick = 0;
     }
-
-    EA = 1;
-
+    EA=1;
     return 1;
 }
     </div>
