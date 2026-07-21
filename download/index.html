@@ -6,7 +6,7 @@
 
 <title>HRTOS Download Center | RTOS Kernel & Embedded System</title>
 
-<meta name="description" content="Download HRTOS Hard Real-Time Operating System (RTOS), including kernel release packages, embedded system examples, and development resources.">
+<meta name="description" content="Download HRTOS Hard Real-Time Operating System (RTOS), including kernel release packages, embedded system examples, Shell debugging and Modbus RTU communication resources.">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -22,7 +22,9 @@
   --shadow:0 20px 50px rgba(2,6,23,.35);
 }
 
-*{box-sizing:border-box}
+*{
+  box-sizing:border-box
+}
 
 body{
   margin:0;
@@ -39,7 +41,9 @@ body{
   gap:50px;
 }
 
+
 /* hero */
+
 .hero{
   display:grid;
   gap:14px;
@@ -66,7 +70,9 @@ body{
   max-width:800px;
 }
 
+
 /* grid */
+
 .grid{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
@@ -98,7 +104,9 @@ body{
   font-size:.95rem;
 }
 
+
 /* download box */
+
 .download-box{
   grid-column:span 3;
   display:flex;
@@ -125,7 +133,9 @@ body{
   color:var(--muted);
 }
 
+
 /* button */
+
 .btn{
   display:inline-flex;
   align-items:center;
@@ -144,7 +154,9 @@ body{
   filter:brightness(1.05);
 }
 
+
 /* footer */
+
 .footer{
   text-align:center;
   color:#8ea3be;
@@ -153,12 +165,11 @@ body{
   border-top:1px solid rgba(148,163,184,.15);
 }
 
-@media(max-width:900px){
-  .grid{
-    grid-template-columns:1fr;
-  }
+
+/* responsive */
 
 @media(max-width:1024px){
+
   .grid{
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
@@ -166,77 +177,184 @@ body{
   .download-box{
     grid-column:span 2;
   }
+
 }
 
+
 @media(max-width:640px){
+
   .grid{
     grid-template-columns:1fr;
   }
 
   .download-box{
     grid-column:span 1;
-  }
-}
-
-  .download-box{
     flex-direction:column;
     gap:16px;
     align-items:flex-start;
   }
+
 }
+
 </style>
 </head>
 
+
 <body data-header="docs">
+
 
 <main class="page">
 
-  <!-- HERO -->
-  <section class="hero">
-    <span class="badge">HRTOS Download Center</span>
-    <h1>HRTOS 系统下载中心</h1>
-    <p>
-      提供 HRTOS 内核发行版本、嵌入式示例工程与开发资源包。
-      用于任务调度、中断系统与实时应用开发实践。
-    </p>
-  </section>
-  <!-- download main -->
-  <section class="grid">
 
+<!-- HERO -->
+
+<section class="hero">
+
+<span class="badge">
+HRTOS Download Center
+</span>
+
+<h1>
+HRTOS 系统下载中心
+</h1>
+
+<p>
+提供 HRTOS 内核发行版本、嵌入式示例工程与开发资源包。
+支持任务调度、中断管理、Shell调试、Modbus RTU工业通信及实时应用开发。
+</p>
+
+</section>
+
+
+
+<!-- download main -->
+
+<section class="grid">
+
+
+
+
+
+
+<div class="card">
+
+<h3>
+HRTOS 内核体系
+</h3>
+
+<p>
+提供任务调度、时间管理、中断处理、IPC通信与资源管理机制，面向资源受限8051平台的实时应用开发。
+</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>
+COOP 协作内核
+</h3>
+
+<p>
+轻量协作式内核实现，包含任务调度与基础 wait 机制，用于帮助开发者理解实时系统调度模型。
+</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>
+Myos 自调度演示
+</h3>
+
+<p>
+基于HRTOS实现的自定义调度策略演示模块，展示如何利用系统接口实现属于自己的任务调度方案。
+</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>
+Shell 人机交互
+</h3>
+
+<p>
+提供串口命令交互功能，支持系统状态查看、任务调试及功能扩展，方便嵌入式开发调试。
+</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>
+Modbus RTU 工业通信
+</h3>
+
+<p>
+集成标准Modbus RTU通信模块，支持常用功能码，实现嵌入式设备与工业控制设备的数据交互。
+</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>
+测试与开发体系
+</h3>
+
+<p>
+提供完整测试框架、API文档、Demo示例及开发环境，支持开发者快速验证和二次开发。
+</p>
+
+</div>
 <div class="download-box">
-  <div class="version">
-    <strong>HRTOS V3.31</strong>
-    <span>稳定发布版本 · 嵌入式实时操作系统内核 · 集成任务调度 / IPC / 测试框架 / 示例工程</span>
-  </div>
-  <a class="btn" href="HRTOS V3.31.7z" download>
-    立即下载
-  </a>
+
+<div class="version">
+
+<strong>
+HRTOS V3.32
+</strong>
+
+<span>
+正式发布版本 · 嵌入式实时操作系统内核 · 集成任务调度 / Shell / Modbus RTU / 示例工程
+</span>
+
 </div>
 
 
-<div class="card">
-  <h3>HRTOS 内核体系</h3>
-  <p>提供任务调度、时间管理、中断处理与基础 IPC 机制，面向嵌入式实时系统的基础运行环境。</p>
+<a class="btn" href="HRTOS_V3.32.7z" download>
+立即下载
+</a>
+
+
 </div>
 
-<div class="card">
-  <h3>COOP 协作内核</h3>
-  <p>轻量协作式内核实现，包含任务调度与简单 wait 机制，仅提供基础调度模型验证示例。</p>
-</div>
 
-<div class="card">
-  <h3>测试与开发体系</h3>
-  <p>HRTOS 完整测试框架与用户手册体系，提供系统级验证工具、API 文档与嵌入式开发支持环境。</p>
-</div>
+</section>
 
-  </section>
 
-  <footer class="footer">
-    © 2017–2026 HRTOS · Hard Real-Time Operating System
-  </footer>
+
+<footer class="footer">
+
+© 2017–2026 HRTOS · Hard Real-Time Operating System
+
+</footer>
+
 
 </main>
 
+
 <script src="https://hrtos.com/header.js"></script>
+
 </body>
 </html>
