@@ -341,35 +341,6 @@ for(; OS_HRTOS<m; OS_HRTOS++)
 - 栈溢出检测有限
 - 不处理内存碎片（静态分配）
 
-## 栈溢出保护
-
-### 检测机制
-
-```c
-if(OS_INSIDE_STACK_USE_MAXIMUM>i+sd*2)
-{
-    OS_INSIDE_STACK_USE_MAXIMUM=i+sd*2;
-    if(OS_INSIDE_STACK_USE_MAXIMUM>OS_USER_RAM_EXIT)
-    {
-        if(OS_INSIDE_STACK_USE_MAXIMUM>=OS_APP_STACK_MAX)
-        {
-            // 严重溢出 - 重置系统
-            #pragma asm
-            MOV DPTR,#0
-            MOV A,#0
-            JMP @A+DPTR
-            #pragma endasm
-        }
-    }
-}
-```
-
-### 保护级别
-
-- **警告**：栈超过 `OS_USER_RAM_EXIT`（127）
-- **严重**：栈超过 `OS_APP_STACK_MAX`（0x80）
-- **重置**：严重溢出时系统重置
-
 ## 内存使用摘要
 
 ### DATA 段使用
@@ -382,8 +353,8 @@ if(OS_INSIDE_STACK_USE_MAXIMUM>i+sd*2)
 
 ### IDATA 段使用
 
-- 内核状态：8 字节（0xE0-0xE7）
-- 总计：8 字节
+- 内核状态：13 字节（0xDB-0xE7）
+- 总计：13 字节
 
 ### XDATA 段使用
 

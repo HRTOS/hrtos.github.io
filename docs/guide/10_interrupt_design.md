@@ -245,23 +245,24 @@ graph TD
 
 ```mermaid
 graph TD
+    flowchart TD
     A[硬件中断] --> B[ISR 入口]
     B --> C[读取硬件状态]
     C --> D[调用 ISR 安全 API]
     D --> E{API 类型?}
     E -->|事件| F[os_event_set_from_isr]
     E -->|信号量| G[os_semaphore_post_from_isr]
-    E -->|消息| H[os_msgq_send_from_isr]
-    F --> I[设置资源值]
+    E -->|消息| H[os_msgq_send_from_isr]   
+    F --> I[更新资源状态]
     G --> I
-    H --> I
-    I --> J[os_schedule_request]
-    J --> K[设置 OS_SCHED_REASON=1]
-    K --> L[设置 TF0=1]
-    L --> M[ISR 退出]
-    M --> N[Timer0 中断]
-    N --> O[调度器处理]
-    O --> P[任务唤醒]
+    H --> I   
+    I --> J[设置 OS_SCHED_REASON]
+    J --> K[ISR 退出]
+    K --> L[内核中断退出处理]
+    L --> M{检查 OS_SCHED_REASON}
+    M -->|需要调度| N[执行任务唤醒与调度]
+    M -->|无需调度| O[恢复被中断任务]    
+    N --> P[切换到就绪任务]
     P --> Q[任务处理事件]
 ```
 
