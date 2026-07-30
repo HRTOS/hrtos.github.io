@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRTOS 示例 - 邮箱通信 | HRTOS Communication Model</title>
+  <meta name="description" content="邮箱通信实验：基于HRTOS通信模型，演示任务间通过邮箱进行消息发送与接收的异步通信机制。">
+  <meta name="keywords" content="HRTOS, mailbox, IPC, task communication, RTOS, embedded system">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#0f172a">
+  <meta property="og:title" content="HRTOS 示例 - 邮箱通信 / HRTOS Mailbox Communication">
+  <meta property="og:description" content="基于HRTOS通信模型，演示任务间通过邮箱进行消息发送与接收的异步通信机制。">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "HRTOS 示例 - 邮箱通信",
+    "description": "基于HRTOS通信模型，演示任务间通过邮箱进行消息发送与接收的异步通信机制。",
+    "keywords": [
+      "HRTOS",
+      "mailbox",
+      "IPC",
+      "task communication",
+      "RTOS",
+      "embedded system"
+    ],
+    "inLanguage": "zh-CN",
+    "articleSection": [
+      "示例简介",
+      "机制定义",
+      "执行流程",
+      "核心代码",
+      "运行结果",
+      "注意事项"
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-strong: #111c34;
+      --panel-soft: #17233d;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --border: rgba(148, 163, 184, 0.18);
+      --shadow: 0 28px 70px rgba(2, 6, 23, 0.46);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --max: 1000px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 28%),
+        linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      line-height: 1.72;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    code,
+    pre {
+      font-family: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -48px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #00111c;
+      border-radius: 999px;
+      z-index: 100;
+      transition: top 0.2s ease;
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(15, 23, 42, 0.86);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar-inner {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #67e8f9, var(--accent));
+      box-shadow: 0 10px 24px rgba(56, 189, 248, 0.25);
+    }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .topnav a:hover,
+    .topnav a:focus-visible {
+      color: var(--text);
+    }
+
+    .page {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 42%),
+        linear-gradient(180deg, rgba(17, 28, 52, 0.96), rgba(15, 23, 42, 0.9));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -90px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #bfe9ff;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      line-height: 1.22;
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    h1 {
+      margin-top: 18px;
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      letter-spacing: -0.04em;
+      max-width: 11ch;
+    }
+
+    .hero-lead {
+      max-width: 64ch;
+      margin: 18px 0 0;
+      font-size: 1.08rem;
+      color: #c9d8ea;
+    }
+
+    .hero-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 18px;
+    }
+
+    .hero-card,
+    .mini-card,
+    .doc-card,
+    .toc,
+    .flow-card,
+    .code-card {
+      border: 1px solid var(--border);
+      background: rgba(17, 28, 52, 0.8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 22px;
+    }
+
+    .hero-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .capability-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .capability-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #d9eefb;
+    }
+
+    .check {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #7dd3fc, var(--accent));
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: rgba(8, 15, 32, 0.52);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .stat strong {
+      display: block;
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 20px;
+      margin-top: 24px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 88px;
+      padding: 20px;
+      background: rgba(10, 18, 36, 0.86);
+    }
+
+    .toc h2 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .toc ol {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .toc a {
+      transition: color 0.2s ease;
+    }
+
+    .toc a:hover,
+    .toc a:focus-visible,
+    .toc a.active {
+      color: var(--accent);
+    }
+
+    .content {
+      display: grid;
+      gap: 20px;
+    }
+
+    .doc-card {
+      padding: 28px;
+      scroll-margin-top: 98px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-head p,
+    .doc-card > p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .kicker {
+      color: var(--accent);
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .two-col,
+    .three-col {
+      display: grid;
+      gap: 16px;
+    }
+
+    .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mini-card {
+      padding: 20px;
+      background: rgba(12, 20, 39, 0.9);
+    }
+
+    .mini-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+    }
+
+    .mini-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .summary-strip {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.35));
+    }
+
+    .summary-strip strong {
+      color: #dff6ff;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .timeline-step {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(8, 15, 31, 0.68);
+    }
+
+    .timeline-step span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    .function-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .function-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: rgba(9, 16, 31, 0.84);
+    }
+
+    .function-card h3 {
+      margin-bottom: 14px;
+      font-size: 1.1rem;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+    }
+
+    .detail-list p {
+      margin: 0;
+    }
+
+    .detail-list strong {
+      color: var(--text);
+    }
+
+    .code-stack {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .code-card {
+      padding: 20px;
+      background: rgba(10, 16, 29, 0.88);
+    }
+
+    .code-card h3 {
+      font-size: 1.04rem;
+      margin-bottom: 8px;
+    }
+
+    .code-card p {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+
+    pre {
+      margin: 0;
+      padding: 18px;
+      overflow: auto;
+      border-radius: var(--radius-md);
+      background: #081120;
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      color: #d7effd;
+      font-size: 0.93rem;
+      line-height: 1.65;
+    }
+
+    .flow-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .flow-card {
+      padding: 18px 20px;
+      background: rgba(8, 15, 31, 0.84);
+    }
+
+    .flow-card strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .flow-chain {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.16);
+      background: rgba(56, 189, 248, 0.07);
+      color: #dff6ff;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .scenario {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(10, 17, 32, 0.84);
+    }
+
+    .scenario h3 {
+      font-size: 1.02rem;
+      margin-bottom: 8px;
+    }
+
+    .scenario p,
+    .footer p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .seo-note {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px dashed rgba(56, 189, 248, 0.28);
+      background: rgba(8, 15, 31, 0.66);
+    }
+
+    .footer {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto 40px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .layout,
+      .two-col,
+      .three-col {
+        grid-template-columns: 1fr;
+      }
+
+      .toc {
+        position: static;
+        top: auto;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page,
+      .topbar-inner,
+      .footer {
+        width: min(calc(100% - 24px), var(--max));
+      }
+
+      .hero,
+      .doc-card {
+        padding: 22px;
+      }
+
+      .topnav {
+        gap: 12px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到正文</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html" aria-label="跳转到 HRTOS 示例首页">
+        <span class="brand-mark">H</span>
+        <span>HRTOS 示例</span>
+      </a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="#overview">示例简介</a>
+        <a href="#definition">机制定义</a>
+        <a href="#flow">执行流程</a>
+        <a href="#code">核心代码</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="page">
+    <header id="overview" class="hero">
+      <span class="eyebrow">Communication Core</span>
+      <h1>邮箱通信</h1>
+      <p class="hero-lead">
+        邮箱机制用于实现任务间异步消息通信：发送任务写入数据，接收任务阻塞等待，
+        实现任务同步与数据传递。邮箱是 HRTOS 通信模型中的核心 IPC 机制之一。
+      </p>
+
+      <div class="hero-grid">
+        <section class="hero-card">
+          <h2>示例目标</h2>
+          <p>
+            系统运行两个任务：sender 发送任务与 receiver 接收任务，通过邮箱机制实现消息传递。
+            发送任务持续写入数据，接收任务阻塞等待消息到达，验证任务间异步通信能力。
+          </p>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <strong>核心API</strong>
+              <span>os_mailbox_send</span>
+            </div>
+            <div class="stat">
+              <strong>接收机制</strong>
+              <span>阻塞等待</span>
+            </div>
+            <div class="stat">
+              <strong>通信方式</strong>
+              <span>异步消息</span>
+            </div>
+            <div class="stat">
+              <strong>缓冲机制</strong>
+              <span>邮箱缓冲区</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hero-card">
+          <h2>核心机制</h2>
+          <ul class="capability-list">
+            <li><span class="check">✓</span><span>消息发送与接收</span></li>
+            <li><span class="check">✓</span><span>任务阻塞与唤醒</span></li>
+            <li><span class="check">✓</span><span>邮箱缓冲区管理</span></li>
+            <li><span class="check">✓</span><span>任务同步机制</span></li>
+          </ul>
+        </section>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="toc" aria-label="章节目录">
+        <h2>章节目录</h2>
+        <ol>
+          <li><a href="#overview">示例简介</a></li>
+          <li><a href="#definition">机制定义</a></li>
+          <li><a href="#flow">执行流程</a></li>
+          <li><a href="#code">核心代码</a></li>
+          <li><a href="#result">运行结果</a></li>
+          <li><a href="#notes">注意事项</a></li>
+          <li><a href="#links">相关链接</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="definition" class="doc-card" aria-labelledby="definition-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Mechanism Definition</div>
+              <h2 id="definition-title">机制定义</h2>
+            </div>
+            <p>邮箱通信的核心组成与工作原理</p>
+          </div>
+
+          <p>
+            邮箱（Mailbox）是 HRTOS 中实现任务间异步通信的核心机制，由发送、缓冲、接收和任务同步四个关键部分组成。
+            它提供轻量级的数据交换能力，是进程间通信（IPC）的基础机制之一。
+          </p>
+
+          <div class="summary-strip">
+            <strong>核心公式：</strong>
+            Mailbox = Send + Buffer + Receive + Task Sync
+          </div>
+
+          <div class="two-col">
+            <article class="mini-card">
+              <h3>发送机制</h3>
+              <p>
+                发送任务通过 os_mailbox_send API 将数据写入邮箱缓冲区。
+                如果缓冲区已满，发送任务可以选择阻塞或返回错误，确保数据不会丢失。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>缓冲管理</h3>
+              <p>
+                邮箱维护一个固定大小的缓冲区，用于暂存待接收的消息。
+                缓冲区采用 FIFO（先进先出）策略，确保消息按发送顺序被接收。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>接收机制</h3>
+              <p>
+                接收任务通过 os_mailbox_receive API 从邮箱读取数据。
+                如果缓冲区为空，接收任务进入阻塞状态，等待消息到达。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>任务同步</h3>
+              <p>
+                当消息到达邮箱时，系统自动唤醒阻塞的接收任务，使其从 BLOCKED 状态转换为 READY 状态，
+                实现任务间的同步与协调。
+              </p>
+            </article>
+          </div>
+
+          <div class="summary-strip" style="margin-top: 18px;">
+            <strong>核心判断：</strong>
+            邮箱通信是 HRTOS 中实现任务间异步通信的关键机制，通过缓冲区和任务同步机制，
+            实现了发送任务与接收任务的解耦，是嵌入式实时系统中任务间数据传递的基础。
+          </div>
+        </section>
+
+        <section id="flow" class="doc-card" aria-labelledby="flow-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Workflow</div>
+              <h2 id="flow-title">执行流程</h2>
+            </div>
+            <p>邮箱通信的完整执行路径</p>
+          </div>
+
+          <div class="timeline">
+            <div class="timeline-step"><span>1</span>初始化邮箱：hrtos_main 中调用 os_mailbox_init 创建邮箱缓冲区</div>
+            <div class="timeline-step"><span>2</span>发送任务运行：sender 任务循环调用 os_mailbox_send 写入消息</div>
+            <div class="timeline-step"><span>3</span>接收任务阻塞：receiver 任务调用 os_mailbox_receive，因无消息而阻塞</div>
+            <div class="timeline-step"><span>4</span>消息到达唤醒：新消息写入邮箱后，系统唤醒阻塞的接收任务</div>
+            <div class="timeline-step"><span>5</span>数据处理：receiver 任务获取消息并处理，更新 LED 状态</div>
+          </div>
+
+          <div class="flow-chain">
+            hrtos_main → os_mailbox_init → os_task_create → sender 发送消息 → 邮箱缓冲区 → 接收任务阻塞 → 消息唤醒 → receiver 读取处理 → LED 更新
+          </div>
+        </section>
+
+        <section id="code" class="doc-card" aria-labelledby="code-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Core Code</div>
+              <h2 id="code-title">核心代码</h2>
+            </div>
+            <p>邮箱通信的完整实现</p>
+          </div>
+
+          <div class="code-stack">
+            <article class="code-card">
+              <h3>发送任务实现</h3>
+              <p>sender 任务函数，持续发送消息到邮箱</p>
+              <pre><code>#include "hrtos.h"
+
+#define MAILBOX_ID 0
+
+void sender(void)
+{
+    u8 msg = 0x55;
+
+    while(1)
+    {
+        os_mailbox_send(MAILBOX_ID, msg);
+        msg++;
+
+        os_delay(5);
+    }
+}</code></pre>
+            </article>
+
+            <article class="code-card">
+              <h3>接收任务实现</h3>
+              <p>receiver 任务函数，阻塞等待并处理消息</p>
+              <pre><code>void receiver(void)
+{
+    int msg;
+
+    while(1)
+    {
+        msg = os_mailbox_receive(MAILBOX_ID);
+
+        if(msg >= 0)
+        {
+            P1 = (P1 & 0xFC) | (msg & 0x03);
+        }
+
+        os_delay(1);
+    }
+}</code></pre>
+            </article>
+
+            <article class="code-card">
+              <h3>系统初始化与任务创建</h3>
+              <p>hrtos_main 函数，初始化邮箱并创建任务</p>
+              <pre><code>void hrtos_main(void)
+{
+    os_mailbox_init(MAILBOX_ID);
+
+    os_task_create((unsigned int)sender,   1, 3, 5);
+    os_task_create((unsigned int)receiver, 2, 2, 5);
+}</code></pre>
+            </article>
+          </div>
+        </section>
+
+        <section id="result" class="doc-card" aria-labelledby="result-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Expected Result</div>
+              <h2 id="result-title">运行结果</h2>
+            </div>
+            <p>示例执行后的预期行为</p>
+          </div>
+
+          <div class="flow-grid">
+            <div class="flow-card">
+              <strong>消息传递</strong>
+              sender 任务持续发送递增的消息值，receiver 任务按顺序接收
+            </div>
+            <div class="flow-card">
+              <strong>任务同步</strong>
+              receiver 任务在无消息时阻塞，消息到达后立即被唤醒
+            </div>
+            <div class="flow-card">
+              <strong>LED 状态</strong>
+              接收到的消息低两位用于控制 LED 状态变化
+            </div>
+          </div>
+
+          <div class="summary-strip" style="margin-top: 18px;">
+            <strong>系统本质：</strong>
+            本示例的核心不是 LED 控制，而是验证 HRTOS 中：两个独立任务通过邮箱机制实现异步消息通信，
+            展示任务间数据传递与同步的能力。
+          </div>
+        </section>
+
+        <section id="notes" class="doc-card" aria-labelledby="notes-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Important Notes</div>
+              <h2 id="notes-title">注意事项</h2>
+            </div>
+            <p>使用本示例时需要关注的关键点</p>
+          </div>
+
+          <div class="scenario-list">
+            <div class="scenario">
+              <h3>邮箱缓冲区大小</h3>
+              <p>
+                邮箱缓冲区大小需要在初始化时配置，缓冲区过小会导致发送任务频繁阻塞，
+                缓冲区过大会占用过多内存。应根据实际消息频率和数据大小合理配置。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>任务优先级设置</h3>
+              <p>
+                sender 任务优先级为 3，receiver 任务优先级为 2。
+                优先级设置影响任务调度行为，需要根据系统需求调整，确保消息及时处理。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>阻塞超时处理</h3>
+              <p>
+                接收任务在邮箱为空时会阻塞等待。在实际应用中，可以设置超时参数，
+                避免任务无限期阻塞，提高系统的健壮性。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>消息数据格式</h3>
+              <p>
+                本示例使用简单的 u8 类型消息。实际应用中，可以定义结构体或复杂数据类型，
+                通过邮箱传递更丰富的信息，但需要注意数据大小限制。
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="links" class="doc-card" aria-labelledby="links-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Related Links</div>
+              <h2 id="links-title">相关链接</h2>
+            </div>
+            <p>深入学习的相关资源</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>核心 API</h3>
+              <div class="detail-list">
+                <p><strong>os_mailbox_init</strong> - 初始化邮箱缓冲区</p>
+                <p><strong>os_mailbox_send</strong> - 发送消息到邮箱</p>
+                <p><strong>os_mailbox_receive</strong> - 从邮箱接收消息</p>
+                <p><strong>os_task_create</strong> - 创建任务并加入就绪队列</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>相关示例</h3>
+              <div class="detail-list">
+                <p><strong><a href="./message-queue.html">消息队列</a></strong> - 了解消息队列通信机制</p>
+                <p><strong><a href="./mutex.html">互斥锁</a></strong> - 学习资源同步机制</p>
+                <p><strong><a href="./index.html">通信模型</a></strong> - 返回分类首页</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>© 2017–2026 HRTOS · Mailbox Module</p>
+    <p style="margin-top: 8px;">
+      <a href="./index.html">返回分类首页</a> · 
+      <a href="../index.html">返回示例主页</a>
+    </p>
+  </footer>
+</body>
+</html>

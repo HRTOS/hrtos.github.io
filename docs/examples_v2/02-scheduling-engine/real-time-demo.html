@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRTOS 示例 - 实时调度演示 | HRTOS Scheduling Engine</title>
+  <meta name="description" content="实时调度实验：基于HRTOS v2 Tick + WAIT机制的周期任务调度模型，任务在周期性 WAIT/READY 切换中形成可预测执行节奏。">
+  <meta name="keywords" content="HRTOS, real-time scheduling, tick-driven, RTOS, embedded system">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#0f172a">
+  <meta property="og:title" content="HRTOS 示例 - 实时调度演示 / HRTOS Real-Time Scheduling Demo">
+  <meta property="og:description" content="基于HRTOS v2 Tick + WAIT机制的周期任务调度模型，任务在周期性 WAIT/READY 切换中形成可预测执行节奏。">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "HRTOS 示例 - 实时调度演示",
+    "description": "基于HRTOS v2 Tick + WAIT机制的周期任务调度模型，任务在周期性 WAIT/READY 切换中形成可预测执行节奏。",
+    "keywords": [
+      "HRTOS",
+      "real-time scheduling",
+      "tick-driven",
+      "RTOS",
+      "embedded system"
+    ],
+    "inLanguage": "zh-CN",
+    "articleSection": [
+      "示例简介",
+      "实时模型定义",
+      "执行行为",
+      "演示代码",
+      "系统意义",
+      "注意事项",
+      "相关链接"
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-strong: #111c34;
+      --panel-soft: #17233d;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --border: rgba(148, 163, 184, 0.18);
+      --shadow: 0 28px 70px rgba(2, 6, 23, 0.46);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --max: 1000px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 28%),
+        linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      line-height: 1.72;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    code,
+    pre {
+      font-family: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -48px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #00111c;
+      border-radius: 999px;
+      z-index: 100;
+      transition: top 0.2s ease;
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(15, 23, 42, 0.86);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar-inner {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #67e8f9, var(--accent));
+      box-shadow: 0 10px 24px rgba(56, 189, 248, 0.25);
+    }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .topnav a:hover,
+    .topnav a:focus-visible {
+      color: var(--text);
+    }
+
+    .page {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 42%),
+        linear-gradient(180deg, rgba(17, 28, 52, 0.96), rgba(15, 23, 42, 0.9));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -90px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #bfe9ff;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      line-height: 1.22;
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    h1 {
+      margin-top: 18px;
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      letter-spacing: -0.04em;
+      max-width: 11ch;
+    }
+
+    .hero-lead {
+      max-width: 64ch;
+      margin: 18px 0 0;
+      font-size: 1.08rem;
+      color: #c9d8ea;
+    }
+
+    .hero-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 18px;
+    }
+
+    .hero-card,
+    .mini-card,
+    .doc-card,
+    .toc,
+    .flow-card,
+    .code-card {
+      border: 1px solid var(--border);
+      background: rgba(17, 28, 52, 0.8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 22px;
+    }
+
+    .hero-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .capability-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .capability-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #d9eefb;
+    }
+
+    .check {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #7dd3fc, var(--accent));
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: rgba(8, 15, 32, 0.52);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .stat strong {
+      display: block;
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 20px;
+      margin-top: 24px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 88px;
+      padding: 20px;
+      background: rgba(10, 18, 36, 0.86);
+    }
+
+    .toc h2 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .toc ol {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .toc a {
+      transition: color 0.2s ease;
+    }
+
+    .toc a:hover,
+    .toc a:focus-visible,
+    .toc a.active {
+      color: var(--accent);
+    }
+
+    .content {
+      display: grid;
+      gap: 20px;
+    }
+
+    .doc-card {
+      padding: 28px;
+      scroll-margin-top: 98px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-head p,
+    .doc-card > p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .kicker {
+      color: var(--accent);
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .two-col,
+    .three-col {
+      display: grid;
+      gap: 16px;
+    }
+
+    .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mini-card {
+      padding: 20px;
+      background: rgba(12, 20, 39, 0.9);
+    }
+
+    .mini-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+    }
+
+    .mini-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .summary-strip {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.35));
+    }
+
+    .summary-strip strong {
+      color: #dff6ff;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .timeline-step {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(8, 15, 31, 0.68);
+    }
+
+    .timeline-step span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    .function-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .function-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: rgba(9, 16, 31, 0.84);
+    }
+
+    .function-card h3 {
+      margin-bottom: 14px;
+      font-size: 1.1rem;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+    }
+
+    .detail-list p {
+      margin: 0;
+    }
+
+    .detail-list strong {
+      color: var(--text);
+    }
+
+    .code-stack {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .code-card {
+      padding: 20px;
+      background: rgba(10, 16, 29, 0.88);
+    }
+
+    .code-card h3 {
+      font-size: 1.04rem;
+      margin-bottom: 8px;
+    }
+
+    .code-card p {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+
+    pre {
+      margin: 0;
+      padding: 18px;
+      overflow: auto;
+      border-radius: var(--radius-md);
+      background: #081120;
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      color: #d7effd;
+      font-size: 0.93rem;
+      line-height: 1.65;
+    }
+
+    .flow-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .flow-card {
+      padding: 18px 20px;
+      background: rgba(8, 15, 31, 0.84);
+    }
+
+    .flow-card strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .flow-chain {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.16);
+      background: rgba(56, 189, 248, 0.07);
+      color: #dff6ff;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .scenario {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(10, 17, 32, 0.84);
+    }
+
+    .scenario h3 {
+      font-size: 1.02rem;
+      margin-bottom: 8px;
+    }
+
+    .scenario p,
+    .footer p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .seo-note {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px dashed rgba(56, 189, 248, 0.28);
+      background: rgba(8, 15, 31, 0.66);
+    }
+
+    .footer {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto 40px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .layout,
+      .two-col,
+      .three-col {
+        grid-template-columns: 1fr;
+      }
+
+      .toc {
+        position: static;
+        top: auto;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page,
+      .topbar-inner,
+      .footer {
+        width: min(calc(100% - 24px), var(--max));
+      }
+
+      .hero,
+      .doc-card {
+        padding: 22px;
+      }
+
+      .topnav {
+        gap: 12px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到正文</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html" aria-label="跳转到 HRTOS 示例首页">
+        <span class="brand-mark">H</span>
+        <span>HRTOS 示例</span>
+      </a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="#overview">示例简介</a>
+        <a href="#definition">实时模型</a>
+        <a href="#behavior">执行行为</a>
+        <a href="#code">演示代码</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="page">
+    <header id="overview" class="hero">
+      <span class="eyebrow">Real-Time Core</span>
+      <h1>实时调度演示</h1>
+      <p class="hero-lead">
+        HRTOS v2 的实时性建立在 Tick 驱动 + WAIT恢复机制之上，
+        任务在周期性 WAIT/READY 切换中形成可预测执行节奏。
+        通过 Tick 驱动和 WAIT 恢复机制，保证任务响应能力和执行节奏的稳定性。
+      </p>
+
+      <div class="hero-grid">
+        <section class="hero-card">
+          <h2>示例目标</h2>
+          <p>
+            系统运行一个实时任务，通过周期性的 WAIT/READY 切换展示 HRTOS v2 的实时调度机制。
+            任务在运行窗口和等待周期之间循环，体现可预测的执行节奏，验证 Tick + WAIT 恢复机制的有效性。
+          </p>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <strong>核心API</strong>
+              <span>os_delay</span>
+            </div>
+            <div class="stat">
+              <strong>驱动机制</strong>
+              <span>Tick驱动</span>
+            </div>
+            <div class="stat">
+              <strong>状态转换</strong>
+              <span>WAIT ↔ READY</span>
+            </div>
+            <div class="stat">
+              <strong>执行节奏</strong>
+              <span>周期性可预测</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hero-card">
+          <h2>核心机制</h2>
+          <ul class="capability-list">
+            <li><span class="check">✓</span><span>Tick驱动调度</span></li>
+            <li><span class="check">✓</span><span>WAIT周期阻塞</span></li>
+            <li><span class="check">✓</span><span>READY窗口执行</span></li>
+            <li><span class="check">✓</span><span>可预测执行节奏</span></li>
+          </ul>
+        </section>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="toc" aria-label="章节目录">
+        <h2>章节目录</h2>
+        <ol>
+          <li><a href="#overview">示例简介</a></li>
+          <li><a href="#definition">实时模型定义</a></li>
+          <li><a href="#behavior">执行行为</a></li>
+          <li><a href="#code">演示代码</a></li>
+          <li><a href="#significance">系统意义</a></li>
+          <li><a href="#notes">注意事项</a></li>
+          <li><a href="#links">相关链接</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="definition" class="doc-card" aria-labelledby="definition-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Real-Time Model</div>
+              <h2 id="definition-title">实时模型定义（v2）</h2>
+            </div>
+            <p>HRTOS v2 实时调度的核心定义</p>
+          </div>
+
+          <p>
+            HRTOS v2 的实时性不依赖独立调度器，而是由 Tick 驱动和 WAIT 恢复机制共同保证执行节奏的稳定性。
+            通过这三个关键环节，实现可预测的实时任务调度。
+          </p>
+
+          <div class="summary-strip">
+            <strong>实时公式：</strong>
+            Real-Time = Tick驱动 + WAIT周期阻塞 + READY窗口执行
+          </div>
+
+          <div class="two-col" style="margin-top: 18px;">
+            <article class="mini-card">
+              <h3>Tick驱动</h3>
+              <p>
+                系统时钟 Tick 提供时间基准，驱动整个调度系统。
+                Tick 中断定期触发，为任务调度提供时间精度保障。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>WAIT周期阻塞</h3>
+              <p>
+                任务通过 os_delay 进入 WAIT 状态，在阻塞队列中等待。
+                WAIT 状态下任务不占用 CPU，允许其他任务执行。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>READY窗口执行</h3>
+              <p>
+                Tick 计数到期后，任务从 WAIT 恢复到 READY 状态，
+                进入就绪队列等待调度器选择执行。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>可预测节奏</h3>
+              <p>
+                通过周期性的 WAIT/READY 切换，任务形成稳定的执行节奏。
+                这种可预测性是实时系统的重要特征。
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section id="behavior" class="doc-card" aria-labelledby="behavior-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Execution Behavior</div>
+              <h2 id="behavior-title">执行行为</h2>
+            </div>
+            <p>实时任务的完整执行周期</p>
+          </div>
+
+          <div class="timeline">
+            <div class="timeline-step"><span>1</span>RUNNING阶段：任务占用CPU执行逻辑</div>
+            <div class="timeline-step"><span>2</span>WAIT阶段：调用 os_delay 进入阻塞队列</div>
+            <div class="timeline-step"><span>3</span>Tick恢复：系统Tick递减等待计数</div>
+            <div class="timeline-step"><span>4</span>READY重新调度：恢复后进入READY队列等待执行</div>
+          </div>
+
+          <div class="flow-chain">
+            Tick → WAIT计数更新 → READY恢复 → os_dispatch → os_switch
+          </div>
+
+          <div class="flow-grid">
+            <div class="flow-card">
+              <strong>RUNNING状态</strong>
+              任务占用CPU执行核心逻辑，这是任务的活跃执行阶段
+            </div>
+            <div class="flow-card">
+              <strong>WAIT状态</strong>
+              任务进入阻塞队列，不占用CPU，等待Tick计数到期
+            </div>
+            <div class="flow-card">
+              <strong>READY恢复</strong>
+              Tick计数到期后，任务从WAIT恢复到READY状态
+            </div>
+          </div>
+        </section>
+
+        <section id="code" class="doc-card" aria-labelledby="code-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Demo Code</div>
+              <h2 id="code-title">演示代码</h2>
+            </div>
+            <p>实时调度的完整实现</p>
+          </div>
+
+          <div class="code-stack">
+            <article class="code-card">
+              <h3>实时任务函数实现</h3>
+              <p>task_rt 任务函数，通过周期性的 WAIT/READY 切换展示实时调度特性</p>
+              <pre><code>#include "hrtos.h"
+
+sbit LED_RT = P1^0;
+
+void task_rt(void)
+{
+    while(1)
+    {
+        LED_RT = 1;      // 运行窗口
+        os_delay(10);     // 模拟实时执行窗口
+
+        LED_RT = 0;      // 等待周期
+        os_delay(40);
+    }
+}</code></pre>
+            </article>
+
+            <article class="code-card">
+              <h3>系统初始化与任务创建</h3>
+              <p>hrtos_main 函数，创建实时任务并启动调度系统</p>
+              <pre><code>void hrtos_main(void)
+{
+    LED_RT = 0;
+
+    os_task_create((unsigned int)task_rt, 1, 2, 5);
+}</code></pre>
+            </article>
+          </div>
+        </section>
+
+        <section id="significance" class="doc-card" aria-labelledby="significance-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">System Significance</div>
+              <h2 id="significance-title">系统意义</h2>
+            </div>
+            <p>实时调度在 HRTOS 中的重要作用</p>
+          </div>
+
+          <div class="flow-grid">
+            <div class="flow-card">
+              <strong>不依赖独立调度器</strong>
+              实时性在 HRTOS v2 中不依赖独立调度器，简化系统设计
+            </div>
+            <div class="flow-card">
+              <strong>Tick + WAIT机制</strong>
+              由 Tick + WAIT恢复机制共同保证执行节奏稳定性
+            </div>
+            <div class="flow-card">
+              <strong>可预测执行</strong>
+              任务在周期性 WAIT/READY 切换中形成可预测执行节奏
+            </div>
+          </div>
+
+          <div class="summary-strip" style="margin-top: 18px;">
+            <strong>核心价值：</strong>
+            实时性在 HRTOS v2 中不依赖独立调度器，而由 Tick + WAIT恢复机制共同保证执行节奏稳定性，
+            为实时系统提供了简洁而可靠的调度机制。
+          </div>
+        </section>
+
+        <section id="notes" class="doc-card" aria-labelledby="notes-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Important Notes</div>
+              <h2 id="notes-title">注意事项</h2>
+            </div>
+            <p>使用本示例时需要关注的关键点</p>
+          </div>
+
+          <div class="scenario-list">
+            <div class="scenario">
+              <h3>Tick 配置</h3>
+              <p>
+                系统 Tick 频率直接影响实时任务的精度。合理配置 Tick 频率对保证实时性至关重要，
+                过高会增加系统开销，过低会影响调度精度。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>延时参数</h3>
+              <p>
+                示例中使用 os_delay(10) 和 os_delay(40) 分别模拟运行窗口和等待周期。
+                实际应用中应根据任务需求调整延时参数，确保执行节奏满足实时性要求。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>WAIT 阻塞机制</h3>
+              <p>
+                WAIT 状态下任务不占用 CPU，这是实现多任务并发的基础。
+                理解 WAIT 阻塞机制有助于优化任务设计和系统性能。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>READY 窗口执行</h3>
+              <p>
+                任务恢复到 READY 状态后，需要等待调度器选择才能执行。
+                READY 窗口的长度取决于系统负载和调度策略，需要合理规划。
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="links" class="doc-card" aria-labelledby="links-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Related Links</div>
+              <h2 id="links-title">相关链接</h2>
+            </div>
+            <p>深入学习的相关资源</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>核心 API</h3>
+              <div class="detail-list">
+                <p><strong>os_delay</strong> - 任务延时函数，进入WAIT状态</p>
+                <p><strong>os_ms_to_tick</strong> - 毫秒转换为Tick计数</p>
+                <p><strong>os_tick_get</strong> - 获取系统时钟计数</p>
+                <p><strong>os_wait</strong> - 等待指定事件或条件</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>相关示例</h3>
+              <div class="detail-list">
+                <p><strong><a href="./index.html">调度引擎</a></strong> - 返回分类首页</p>
+                <p><strong><a href="./priority-demo.html">优先级调度</a></strong> - 了解优先级调度机制</p>
+                <p><strong><a href="../01-task-execution/context-switch.html">上下文切换</a></strong> - 了解上下文切换机制</p>
+                <p><strong><a href="../index.html">返回示例主页</a></strong> - 返回示例首页</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>© 2017–2026 HRTOS · Real Time Demo Module</p>
+    <p style="margin-top: 8px;">
+      <a href="./index.html">返回分类首页</a> · 
+      <a href="../index.html">返回示例主页</a>
+    </p>
+  </footer>
+</body>
+</html>

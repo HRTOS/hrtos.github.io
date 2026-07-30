@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRTOS 示例 - 信号量机制 | HRTOS Communication Model</title>
+  <meta name="description" content="信号量机制实验：演示任务同步、资源计数、阻塞与唤醒机制，理解RTOS任务间协作与资源管理。">
+  <meta name="keywords" content="HRTOS, semaphore, synchronization, resource counting, task blocking, RTOS, embedded system">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#0f172a">
+  <meta property="og:title" content="HRTOS 示例 - 信号量机制 / HRTOS Semaphore">
+  <meta property="og:description" content="演示任务同步、资源计数、阻塞与唤醒机制，理解RTOS任务间协作与资源管理。">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "HRTOS 示例 - 信号量机制",
+    "description": "演示任务同步、资源计数、阻塞与唤醒机制，理解RTOS任务间协作与资源管理。",
+    "keywords": [
+      "HRTOS",
+      "semaphore",
+      "synchronization",
+      "resource counting",
+      "task blocking",
+      "RTOS",
+      "embedded system"
+    ],
+    "inLanguage": "zh-CN",
+    "articleSection": [
+      "示例简介",
+      "原理说明",
+      "HRTOS实现机制",
+      "工作流程",
+      "核心代码",
+      "运行结果",
+      "注意事项"
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-strong: #111c34;
+      --panel-soft: #17233d;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --border: rgba(148, 163, 184, 0.18);
+      --shadow: 0 28px 70px rgba(2, 6, 23, 0.46);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --max: 1000px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 28%),
+        linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      line-height: 1.72;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    code,
+    pre {
+      font-family: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -48px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #00111c;
+      border-radius: 999px;
+      z-index: 100;
+      transition: top 0.2s ease;
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(15, 23, 42, 0.86);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar-inner {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #67e8f9, var(--accent));
+      box-shadow: 0 10px 24px rgba(56, 189, 248, 0.25);
+    }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .topnav a:hover,
+    .topnav a:focus-visible {
+      color: var(--text);
+    }
+
+    .page {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 42%),
+        linear-gradient(180deg, rgba(17, 28, 52, 0.96), rgba(15, 23, 42, 0.9));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -90px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #bfe9ff;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      line-height: 1.22;
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    h1 {
+      margin-top: 18px;
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      letter-spacing: -0.04em;
+      max-width: 11ch;
+    }
+
+    .hero-lead {
+      max-width: 64ch;
+      margin: 18px 0 0;
+      font-size: 1.08rem;
+      color: #c9d8ea;
+    }
+
+    .hero-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 18px;
+    }
+
+    .hero-card,
+    .mini-card,
+    .doc-card,
+    .toc,
+    .flow-card,
+    .code-card {
+      border: 1px solid var(--border);
+      background: rgba(17, 28, 52, 0.8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 22px;
+    }
+
+    .hero-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .capability-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .capability-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #d9eefb;
+    }
+
+    .check {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #7dd3fc, var(--accent));
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: rgba(8, 15, 32, 0.52);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .stat strong {
+      display: block;
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 20px;
+      margin-top: 24px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 88px;
+      padding: 20px;
+      background: rgba(10, 18, 36, 0.86);
+    }
+
+    .toc h2 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .toc ol {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .toc a {
+      transition: color 0.2s ease;
+    }
+
+    .toc a:hover,
+    .toc a:focus-visible,
+    .toc a.active {
+      color: var(--accent);
+    }
+
+    .content {
+      display: grid;
+      gap: 20px;
+    }
+
+    .doc-card {
+      padding: 28px;
+      scroll-margin-top: 98px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-head p,
+    .doc-card > p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .kicker {
+      color: var(--accent);
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .two-col,
+    .three-col {
+      display: grid;
+      gap: 16px;
+    }
+
+    .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mini-card {
+      padding: 20px;
+      background: rgba(12, 20, 39, 0.9);
+    }
+
+    .mini-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+    }
+
+    .mini-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .summary-strip {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.35));
+    }
+
+    .summary-strip strong {
+      color: #dff6ff;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .timeline-step {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(8, 15, 31, 0.68);
+    }
+
+    .timeline-step span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    .function-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .function-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: rgba(9, 16, 31, 0.84);
+    }
+
+    .function-card h3 {
+      margin-bottom: 14px;
+      font-size: 1.1rem;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+    }
+
+    .detail-list p {
+      margin: 0;
+    }
+
+    .detail-list strong {
+      color: var(--text);
+    }
+
+    .code-stack {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .code-card {
+      padding: 20px;
+      background: rgba(10, 16, 29, 0.88);
+    }
+
+    .code-card h3 {
+      font-size: 1.04rem;
+      margin-bottom: 8px;
+    }
+
+    .code-card p {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+
+    pre {
+      margin: 0;
+      padding: 18px;
+      overflow: auto;
+      border-radius: var(--radius-md);
+      background: #081120;
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      color: #d7effd;
+      font-size: 0.93rem;
+      line-height: 1.65;
+    }
+
+    .flow-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .flow-card {
+      padding: 18px 20px;
+      background: rgba(8, 15, 31, 0.84);
+    }
+
+    .flow-card strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .flow-chain {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.16);
+      background: rgba(56, 189, 248, 0.07);
+      color: #dff6ff;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .scenario {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(10, 17, 32, 0.84);
+    }
+
+    .scenario h3 {
+      font-size: 1.02rem;
+      margin-bottom: 8px;
+    }
+
+    .scenario p,
+    .footer p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .footer {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto 40px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .layout,
+      .two-col,
+      .three-col {
+        grid-template-columns: 1fr;
+      }
+
+      .toc {
+        position: static;
+        top: auto;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page,
+      .topbar-inner,
+      .footer {
+        width: min(calc(100% - 24px), var(--max));
+      }
+
+      .hero,
+      .doc-card {
+        padding: 22px;
+      }
+
+      .topnav {
+        gap: 12px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到正文</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html" aria-label="跳转到 HRTOS 示例首页">
+        <span class="brand-mark">H</span>
+        <span>HRTOS 示例</span>
+      </a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="#overview">示例简介</a>
+        <a href="#principle">原理说明</a>
+        <a href="#mechanism">HRTOS实现</a>
+        <a href="#flow">工作流程</a>
+        <a href="#code">核心代码</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="page">
+    <header id="overview" class="hero">
+      <span class="eyebrow">Synchronization Core</span>
+      <h1>信号量机制</h1>
+      <p class="hero-lead">
+        信号量用于任务同步与资源管理，通过计数机制控制并发访问，
+        实现阻塞、唤醒与调度协作。信号量是 RTOS 并发控制的基础机制之一。
+      </p>
+
+      <div class="hero-grid">
+        <section class="hero-card">
+          <h2>示例目标</h2>
+          <p>
+            系统运行生产者任务与消费者任务，通过信号量实现任务间同步。
+            生产者释放资源，消费者等待并获取资源，验证信号量的阻塞与唤醒机制。
+          </p>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <strong>核心API</strong>
+              <span>os_sem_init/wait/post</span>
+            </div>
+            <div class="stat">
+              <strong>同步方式</strong>
+              <span>资源计数 + 阻塞队列</span>
+            </div>
+            <div class="stat">
+              <strong>状态转换</strong>
+              <span>Running → Blocked</span>
+            </div>
+            <div class="stat">
+              <strong>唤醒机制</strong>
+              <span>调度联动恢复</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hero-card">
+          <h2>核心机制</h2>
+          <ul class="capability-list">
+            <li><span class="check">✓</span><span>资源计数管理</span></li>
+            <li><span class="check">✓</span><span>任务阻塞等待</span></li>
+            <li><span class="check">✓</span><span>唤醒调度联动</span></li>
+            <li><span class="check">✓</span><span>并发访问控制</span></li>
+          </ul>
+        </section>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="toc" aria-label="章节目录">
+        <h2>章节目录</h2>
+        <ol>
+          <li><a href="#overview">示例简介</a></li>
+          <li><a href="#principle">原理说明</a></li>
+          <li><a href="#mechanism">HRTOS实现机制</a></li>
+          <li><a href="#flow">工作流程</a></li>
+          <li><a href="#code">核心代码</a></li>
+          <li><a href="#result">运行结果</a></li>
+          <li><a href="#notes">注意事项</a></li>
+          <li><a href="#links">相关链接</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="principle" class="doc-card" aria-labelledby="principle-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Principle</div>
+              <h2 id="principle-title">原理说明</h2>
+            </div>
+            <p>信号量是 RTOS 任务同步的核心机制</p>
+          </div>
+
+          <p>
+            信号量（Semaphore）是一种用于任务同步和资源管理的同步原语。
+            通过计数机制控制对共享资源的并发访问，当资源不足时任务会阻塞等待，
+            当资源释放时会唤醒等待的任务，实现任务间的协作与调度联动。
+          </p>
+
+          <div class="summary-strip">
+            <strong>机制定义：</strong>
+            Semaphore = 资源计数 + 阻塞队列 + 唤醒机制 + 调度联动
+          </div>
+
+          <div class="two-col">
+            <article class="mini-card">
+              <h3>资源计数</h3>
+              <p>
+                信号量维护一个计数器，表示可用资源的数量。
+                初始化时设置初始值，wait 操作减少计数，post 操作增加计数。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>阻塞队列</h3>
+              <p>
+                当计数为 0 时，申请资源的任务会被放入阻塞队列等待。
+                阻塞队列维护所有等待该信号量的任务状态。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>唤醒机制</h3>
+              <p>
+                当资源释放（post）时，信号量会从阻塞队列中选择一个任务唤醒。
+                被唤醒的任务重新进入就绪队列，等待调度器执行。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>调度联动</h3>
+              <p>
+                信号量的阻塞和唤醒操作会触发任务调度。
+                任务阻塞时调度器选择其他就绪任务执行，唤醒时可能触发优先级调度。
+              </p>
+            </article>
+          </div>
+
+          <div class="summary-strip" style="margin-top: 18px;">
+            <strong>系统关系模型：</strong>
+            Task → Semaphore → Scheduler → Task
+          </div>
+        </section>
+
+        <section id="mechanism" class="doc-card" aria-labelledby="mechanism-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">HRTOS Implementation</div>
+              <h2 id="mechanism-title">HRTOS 实现机制</h2>
+            </div>
+            <p>HRTOS 如何实现信号量同步</p>
+          </div>
+
+          <p>
+            在 HRTOS 中，信号量的实现围绕资源计数、阻塞队列、唤醒机制和调度联动四个核心环节展开。
+            每个环节都经过精心设计，确保同步机制的高效性和可靠性。
+          </p>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>申请资源（os_sem_wait）</h3>
+              <div class="detail-list">
+                <p><strong>检查计数：</strong>计数 > 0 则获取成功，计数减 1</p>
+                <p><strong>阻塞等待：</strong>计数 = 0 时任务进入阻塞队列</p>
+                <p><strong>状态转换：</strong>任务从 Running 状态进入 Blocked 状态</p>
+                <p><strong>调度触发：</strong>阻塞时触发调度器选择其他任务</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>任务阻塞</h3>
+              <div class="detail-list">
+                <p><strong>队列管理：</strong>任务加入信号量的等待队列</p>
+                <p><strong>状态保存：</strong>保存任务上下文到任务栈</p>
+                <p><strong>超时支持：</strong>支持带超时的等待操作</p>
+                <p><strong>优先级维护：</strong>阻塞队列按优先级排序</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>释放资源（os_sem_post）</h3>
+              <div class="detail-list">
+                <p><strong>计数增加：</strong>信号量计数加 1</p>
+                <p><strong>唤醒检查：</strong>检查是否有等待任务</p>
+                <p><strong>任务唤醒：</strong>从等待队列中选择任务唤醒</p>
+                <p><strong>调度触发：</strong>唤醒时可能触发任务调度</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>任务恢复</h3>
+              <div class="detail-list">
+                <p><strong>状态转换：</strong>任务从 Blocked 状态进入 Ready 状态</p>
+                <p><strong>就绪队列：</strong>任务加入就绪队列等待调度</p>
+                <p><strong>优先级调度：</strong>根据任务优先级决定执行顺序</p>
+                <p><strong>上下文恢复：</strong>调度器选择时恢复任务执行</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="flow" class="doc-card" aria-labelledby="flow-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Workflow</div>
+              <h2 id="flow-title">工作流程</h2>
+            </div>
+            <p>信号量从初始化到任务同步的完整执行路径</p>
+          </div>
+
+          <div class="timeline">
+            <div class="timeline-step"><span>1</span>初始化信号量：hrtos_main 中调用 os_sem_init 设置初始资源数量</div>
+            <div class="timeline-step"><span>2</span>任务创建：创建生产者任务和消费者任务，进入 Ready 状态</div>
+            <div class="timeline-step"><span>3</span>生产者运行：生产者任务执行 os_sem_post 释放资源</div>
+            <div class="timeline-step"><span>4</span>消费者等待：消费者任务调用 os_sem_wait 等待资源</div>
+            <div class="timeline-step"><span>5</span>阻塞与唤醒：资源不足时阻塞，资源释放时唤醒等待任务</div>
+          </div>
+
+          <div class="flow-chain">
+            hrtos_main → os_sem_init → os_task_create → 生产者运行 → os_sem_post → 消费者等待 → os_sem_wait → 阻塞/唤醒 → 任务恢复 → 调度执行
+          </div>
+        </section>
+
+        <section id="code" class="doc-card" aria-labelledby="code-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Core Code</div>
+              <h2 id="code-title">核心代码</h2>
+            </div>
+            <p>信号量同步的完整实现</p>
+          </div>
+
+          <div class="code-stack">
+            <article class="code-card">
+              <h3>生产者与消费者任务</h3>
+              <p>task_A 生产者任务和 task_B 消费者任务，通过信号量实现同步</p>
+              <pre><code>#include "hrtos.h"
+
+#define SEM_ID 0
+
+sbit LED_PRODUCER = P1^0;
+sbit LED_CONSUMER = P1^1;
+sbit LED_SEM      = P1^2;   // semaphore state indicator
+
+/* 生产者任务 */
+void task_A(void)
+{
+    while(1)
+    {
+        os_delay(2);
+
+        os_sem_post(SEM_ID);
+
+        LED_PRODUCER = ~LED_PRODUCER;  // 生产节奏闪烁
+
+        LED_SEM = 1;   // 表示资源"被释放/可用"
+    }
+}
+
+/* 消费者任务 */
+void task_B(void)
+{
+    while(1)
+    {
+        /* 等待资源 */
+        if(os_sem_wait(SEM_ID))
+        {
+            /* 获取资源成功 */
+            LED_CONSUMER = ~LED_CONSUMER;  // 消费节奏
+
+            LED_SEM = 0;   // 表示资源被消耗
+
+            /* 模拟处理 */
+            os_delay(1);
+        }
+
+        os_delay(1);
+    }
+}</code></pre>
+            </article>
+
+            <article class="code-card">
+              <h3>系统初始化与任务创建</h3>
+              <p>hrtos_main 函数，初始化信号量并创建生产者和消费者任务</p>
+              <pre><code>/* 系统入口 */
+void hrtos_main(void)
+{
+    LED_PRODUCER = 0;
+    LED_CONSUMER = 0;
+    LED_SEM = 0;
+
+    os_sem_init(SEM_ID, 0);
+
+    os_task_create((unsigned int)task_A, 1, 3, 5);
+    os_task_create((unsigned int)task_B, 2, 2, 5);
+}</code></pre>
+            </article>
+          </div>
+        </section>
+
+        <section id="result" class="doc-card" aria-labelledby="result-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Expected Result</div>
+              <h2 id="result-title">运行结果</h2>
+            </div>
+            <p>示例执行后的预期行为</p>
+          </div>
+
+          <div class="flow-grid">
+            <div class="flow-card">
+              <strong>LED 状态</strong>
+              LED_PRODUCER 和 LED_CONSUMER 按生产消费节奏交替变化，LED_SEM 指示资源状态
+            </div>
+            <div class="flow-card">
+              <strong>任务同步</strong>
+              生产者释放资源后，消费者才能获取资源，实现任务间同步
+            </div>
+            <div class="flow-card">
+              <strong>阻塞唤醒</strong>
+              资源不足时消费者阻塞，资源释放后消费者被唤醒并恢复执行
+            </div>
+          </div>
+
+          <div class="summary-strip" style="margin-top: 18px;">
+            <strong>系统本质：</strong>
+            本示例的核心不是 LED，而是验证 HRTOS 中信号量的阻塞与唤醒机制，实现任务间的同步协作。
+          </div>
+        </section>
+
+        <section id="notes" class="doc-card" aria-labelledby="notes-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Important Notes</div>
+              <h2 id="notes-title">注意事项</h2>
+            </div>
+            <p>使用本示例时需要关注的关键点</p>
+          </div>
+
+          <div class="scenario-list">
+            <div class="scenario">
+              <h3>信号量与互斥锁的区别</h3>
+              <p>
+                信号量用于任务同步和资源计数，可以跨多个任务使用；互斥锁用于保护共享资源，
+                具有优先级继承机制，主要用于互斥访问。本示例展示的是信号量的同步功能。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>初始计数值设置</h3>
+              <p>
+                本示例中信号量初始值为 0，表示初始无资源，消费者需要等待生产者释放资源。
+                如果初始值 > 0，则表示初始有可用资源，消费者可以直接获取。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>任务优先级设置</h3>
+              <p>
+                生产者任务优先级为 3，消费者任务优先级为 2。
+                优先级设置影响任务调度顺序，需要根据实际应用场景合理配置。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>阻塞队列管理</h3>
+              <p>
+                当多个任务等待同一个信号量时，阻塞队列按任务优先级排序。
+                资源释放时，优先唤醒高优先级的等待任务，确保系统的实时性。
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="links" class="doc-card" aria-labelledby="links-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Related Links</div>
+              <h2 id="links-title">相关链接</h2>
+            </div>
+            <p>深入学习的相关资源</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>核心 API</h3>
+              <div class="detail-list">
+                <p><strong>os_sem_init</strong> - 初始化信号量并设置初始计数值</p>
+                <p><strong>os_sem_wait</strong> - 等待信号量，计数不足时阻塞</p>
+                <p><strong>os_sem_post</strong> - 释放信号量，增加计数并唤醒等待任务</p>
+                <p><strong>os_task_create</strong> - 创建任务并加入就绪队列</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>相关示例</h3>
+              <div class="detail-list">
+                <p><strong><a href="./mailbox.html">邮箱机制</a></strong> - 了解邮箱通信方式</p>
+                <p><strong><a href="./message-queue.html">消息队列</a></strong> - 了解消息队列机制</p>
+                <p><strong><a href="./mutex.html">互斥锁</a></strong> - 了解互斥锁与信号量的区别</p>
+                <p><strong><a href="./index.html">通信模型</a></strong> - 返回分类首页</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>© 2017–2026 HRTOS · Semaphore Module</p>
+    <p style="margin-top: 8px;">
+      <a href="./index.html">返回分类首页</a> · 
+      <a href="../index.html">返回示例主页</a>
+    </p>
+  </footer>
+</body>
+</html>
