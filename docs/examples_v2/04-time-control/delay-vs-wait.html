@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRTOS 示例 - 延时 vs 等待 | HRTOS Time Control</title>
+  <meta name="description" content="延时 vs 等待实验：对比 HRTOS 中 os_delay 时间阻塞与 os_event_wait 事件阻塞机制，分析调度行为、CPU释放方式与实时响应差异。">
+  <meta name="keywords" content="HRTOS, delay, event wait, time blocking, event blocking, RTOS, embedded system">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#0f172a">
+  <meta property="og:title" content="HRTOS 示例 - 延时 vs 等待 / HRTOS Delay vs Wait">
+  <meta property="og:description" content="对比 HRTOS 中 os_delay 时间阻塞与 os_event_wait 事件阻塞机制，分析调度行为、CPU释放方式与实时响应差异。">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "HRTOS 示例 - 延时 vs 等待",
+    "description": "对比 HRTOS 中 os_delay 时间阻塞与 os_event_wait 事件阻塞机制，分析调度行为、CPU释放方式与实时响应差异。",
+    "keywords": [
+      "HRTOS",
+      "delay",
+      "event wait",
+      "time blocking",
+      "event blocking",
+      "RTOS",
+      "embedded system"
+    ],
+    "inLanguage": "zh-CN",
+    "articleSection": [
+      "示例简介",
+      "机制定义",
+      "核心差异",
+      "执行流程",
+      "核心代码",
+      "API对照",
+      "系统意义"
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-strong: #111c34;
+      --panel-soft: #17233d;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --border: rgba(148, 163, 184, 0.18);
+      --shadow: 0 28px 70px rgba(2, 6, 23, 0.46);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --max: 1000px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 28%),
+        linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      line-height: 1.72;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    code,
+    pre {
+      font-family: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -48px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #00111c;
+      border-radius: 999px;
+      z-index: 100;
+      transition: top 0.2s ease;
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(15, 23, 42, 0.86);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar-inner {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #67e8f9, var(--accent));
+      box-shadow: 0 10px 24px rgba(56, 189, 248, 0.25);
+    }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .topnav a:hover,
+    .topnav a:focus-visible {
+      color: var(--text);
+    }
+
+    .page {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 42%),
+        linear-gradient(180deg, rgba(17, 28, 52, 0.96), rgba(15, 23, 42, 0.9));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -90px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #bfe9ff;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      line-height: 1.22;
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    h1 {
+      margin-top: 18px;
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      letter-spacing: -0.04em;
+      max-width: 11ch;
+    }
+
+    .hero-lead {
+      max-width: 64ch;
+      margin: 18px 0 0;
+      font-size: 1.08rem;
+      color: #c9d8ea;
+    }
+
+    .hero-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 18px;
+    }
+
+    .hero-card,
+    .mini-card,
+    .doc-card,
+    .toc,
+    .flow-card,
+    .code-card {
+      border: 1px solid var(--border);
+      background: rgba(17, 28, 52, 0.8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 22px;
+    }
+
+    .hero-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .capability-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .capability-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #d9eefb;
+    }
+
+    .check {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #7dd3fc, var(--accent));
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: rgba(8, 15, 32, 0.52);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .stat strong {
+      display: block;
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 20px;
+      margin-top: 24px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 88px;
+      padding: 20px;
+      background: rgba(10, 18, 36, 0.86);
+    }
+
+    .toc h2 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .toc ol {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .toc a {
+      transition: color 0.2s ease;
+    }
+
+    .toc a:hover,
+    .toc a:focus-visible,
+    .toc a.active {
+      color: var(--accent);
+    }
+
+    .content {
+      display: grid;
+      gap: 20px;
+    }
+
+    .doc-card {
+      padding: 28px;
+      scroll-margin-top: 98px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-head p,
+    .doc-card > p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .kicker {
+      color: var(--accent);
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .two-col,
+    .three-col {
+      display: grid;
+      gap: 16px;
+    }
+
+    .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mini-card {
+      padding: 20px;
+      background: rgba(12, 20, 39, 0.9);
+    }
+
+    .mini-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+    }
+
+    .mini-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .summary-strip {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.35));
+    }
+
+    .summary-strip strong {
+      color: #dff6ff;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .timeline-step {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(8, 15, 31, 0.68);
+    }
+
+    .timeline-step span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    .function-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .function-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: rgba(9, 16, 31, 0.84);
+    }
+
+    .function-card h3 {
+      margin-bottom: 14px;
+      font-size: 1.1rem;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+    }
+
+    .detail-list p {
+      margin: 0;
+    }
+
+    .detail-list strong {
+      color: var(--text);
+    }
+
+    .code-stack {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .code-card {
+      padding: 20px;
+      background: rgba(10, 16, 29, 0.88);
+    }
+
+    .code-card h3 {
+      font-size: 1.04rem;
+      margin-bottom: 8px;
+    }
+
+    .code-card p {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+
+    pre {
+      margin: 0;
+      padding: 18px;
+      overflow: auto;
+      border-radius: var(--radius-md);
+      background: #081120;
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      color: #d7effd;
+      font-size: 0.93rem;
+      line-height: 1.65;
+    }
+
+    .flow-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .flow-card {
+      padding: 18px 20px;
+      background: rgba(8, 15, 31, 0.84);
+    }
+
+    .flow-card strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .flow-chain {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.16);
+      background: rgba(56, 189, 248, 0.07);
+      color: #dff6ff;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .scenario {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(10, 17, 32, 0.84);
+    }
+
+    .scenario h3 {
+      font-size: 1.02rem;
+      margin-bottom: 8px;
+    }
+
+    .scenario p,
+    .footer p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .footer {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto 40px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .layout,
+      .two-col,
+      .three-col {
+        grid-template-columns: 1fr;
+      }
+
+      .toc {
+        position: static;
+        top: auto;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page,
+      .topbar-inner,
+      .footer {
+        width: min(calc(100% - 24px), var(--max));
+      }
+
+      .hero,
+      .doc-card {
+        padding: 22px;
+      }
+
+      .topnav {
+        gap: 12px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到正文</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html" aria-label="跳转到 HRTOS 示例首页">
+        <span class="brand-mark">H</span>
+        <span>HRTOS 示例</span>
+      </a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="#overview">示例简介</a>
+        <a href="#definition">机制定义</a>
+        <a href="#difference">核心差异</a>
+        <a href="#flow">执行流程</a>
+        <a href="#code">核心代码</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="page">
+    <header id="overview" class="hero">
+      <span class="eyebrow">Time Control Core</span>
+      <h1>延时 vs 等待</h1>
+      <p class="hero-lead">
+        在 HRTOS 中，os_delay 和 os_event_wait 代表两种不同的阻塞机制。
+        os_delay 是时间驱动阻塞，由系统 Tick 递减计数唤醒；
+        os_event_wait 是事件驱动阻塞，由事件触发立即唤醒。
+        本示例对比两种机制的调度差异，展示正确时间控制方式对系统实时性的影响。
+      </p>
+
+      <div class="hero-grid">
+        <section class="hero-card">
+          <h2>示例目标</h2>
+          <p>
+            系统运行三个任务：task_delay（时间驱动）、task_wait（事件等待）、task_event_trigger（事件触发）。
+            通过 LED 行为直观验证两种阻塞机制的差异，理解任务让出 CPU 与任务暂停执行的关系。
+          </p>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <strong>核心API</strong>
+              <span>os_delay / os_event_wait</span>
+            </div>
+            <div class="stat">
+              <strong>调度触发</strong>
+              <span>Tick / 事件触发</span>
+            </div>
+            <div class="stat">
+              <strong>阻塞方式</strong>
+              <span>时间队列 / 事件队列</span>
+            </div>
+            <div class="stat">
+              <strong>实时响应</strong>
+              <span>周期性 / 即时响应</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hero-card">
+          <h2>核心机制</h2>
+          <ul class="capability-list">
+            <li><span class="check">✓</span><span>时间驱动阻塞机制</span></li>
+            <li><span class="check">✓</span><span>事件驱动阻塞机制</span></li>
+            <li><span class="check">✓</span><span>Tick 递减唤醒</span></li>
+            <li><span class="check">✓</span><span>事件触发唤醒</span></li>
+          </ul>
+        </section>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="toc" aria-label="章节目录">
+        <h2>章节目录</h2>
+        <ol>
+          <li><a href="#overview">示例简介</a></li>
+          <li><a href="#definition">机制定义</a></li>
+          <li><a href="#difference">核心差异</a></li>
+          <li><a href="#flow">执行流程</a></li>
+          <li><a href="#code">核心代码</a></li>
+          <li><a href="#api">API对照</a></li>
+          <li><a href="#significance">系统意义</a></li>
+          <li><a href="#links">相关链接</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="definition" class="doc-card" aria-labelledby="definition-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Mechanism Definition</div>
+              <h2 id="definition-title">机制定义</h2>
+            </div>
+            <p>两种阻塞机制的基本概念</p>
+          </div>
+
+          <p>
+            在 HRTOS 中，delay 和 wait 代表两种不同的阻塞路径，分别对应时间驱动调度和事件驱动调度。
+            理解这两种机制的区别对于设计实时系统至关重要。
+          </p>
+
+          <div class="two-col">
+            <article class="mini-card">
+              <h3>os_delay（时间驱动阻塞）</h3>
+              <p>
+                任务进入延时队列，由系统 Tick 递减计数，到期后恢复调度。
+                属于"Tick countdown based blocking"，适用于周期性背景任务。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>os_event_wait（事件驱动阻塞）</h3>
+              <p>
+                任务阻塞在事件队列，直到 os_event_write 触发立即唤醒。
+                属于"Event wake-up based blocking"，适用于高实时响应逻辑。
+              </p>
+            </article>
+          </div>
+
+          <div class="summary-strip">
+            <strong>HRTOS 模型：</strong>
+            Tick Scheduler + Time Blocking + Event Blocking + ISR/Task Wake-up Dispatch
+          </div>
+        </section>
+
+        <section id="difference" class="doc-card" aria-labelledby="difference-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Core Differences</div>
+              <h2 id="difference-title">核心行为差异</h2>
+            </div>
+            <p>两种机制的关键区别</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>os_delay（时间任务）</h3>
+              <div class="detail-list">
+                <p><strong>阻塞方式：</strong>任务进入延时队列</p>
+                <p><strong>唤醒机制：</strong>由系统 Tick 递减计数，到期后恢复调度</p>
+                <p><strong>调度触发：</strong>Tick 驱动调度</p>
+                <p><strong>适用场景：</strong>周期性背景任务</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>os_event_wait（事件任务）</h3>
+              <div class="detail-list">
+                <p><strong>阻塞方式：</strong>任务阻塞在事件队列</p>
+                <p><strong>唤醒机制：</strong>直到 os_event_write 触发立即唤醒</p>
+                <p><strong>调度触发：</strong>ISR/任务主动唤醒调度</p>
+                <p><strong>适用场景：</strong>高实时响应逻辑</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>调度触发机制</h3>
+              <div class="detail-list">
+                <p><strong>delay：</strong>Tick 驱动调度，按时间片轮转</p>
+                <p><strong>event：</strong>ISR/任务主动唤醒调度，即时响应</p>
+                <p><strong>优先级：</strong>事件模型优先级更高</p>
+                <p><strong>响应延迟：</strong>事件模型显著低于纯时间模型</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>实时性对比</h3>
+              <div class="detail-list">
+                <p><strong>时间模型：</strong>响应延迟受 Tick 周期限制</p>
+                <p><strong>事件模型：</strong>响应延迟极低，接近即时</p>
+                <p><strong>CPU 利用：</strong>事件模型更高效，避免空转</p>
+                <p><strong>系统设计：</strong>根据实时性要求选择合适机制</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="flow" class="doc-card" aria-labelledby="flow-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Execution Flow</div>
+              <h2 id="flow-title">执行流程</h2>
+            </div>
+            <p>三种任务的执行路径</p>
+          </div>
+
+          <div class="timeline">
+            <div class="timeline-step"><span>1</span>Delay Task：运行 → LED 翻转 → os_delay → Tick 阻塞 → 恢复</div>
+            <div class="timeline-step"><span>2</span>Event Task：等待 → os_event_wait → 阻塞 → os_event_write 触发 → 立即唤醒</div>
+            <div class="timeline-step"><span>3</span>Trigger Task：周期延时 → 写事件 → 唤醒等待任务</div>
+          </div>
+
+          <div class="flow-chain">
+            hrtos_main → os_task_create → task_delay（时间驱动） → task_wait（事件等待） → task_event_trigger（事件触发） → os_delay / os_event_wait → Tick/事件唤醒 → LED 行为验证
+          </div>
+        </section>
+
+        <section id="code" class="doc-card" aria-labelledby="code-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Core Code</div>
+              <h2 id="code-title">核心代码</h2>
+            </div>
+            <p>延时 vs 等待的完整实现</p>
+          </div>
+
+          <div class="code-stack">
+            <article class="code-card">
+              <h3>任务函数实现</h3>
+              <p>task_delay、task_wait 和 task_event_trigger 任务函数</p>
+              <pre><code>#include "hrtos.h"
+
+#define EVENT_ID 1
+
+sbit LED_DELAY  = P1^0;
+sbit LED_WAIT   = P1^1;
+sbit LED_EVENT  = P1^2;
+
+/* 时间驱动任务 */
+void task_delay(void)
+{
+    while(1)
+    {
+        LED_DELAY = ~LED_DELAY;
+        os_delay(10);   // Tick阻塞
+    }
+}
+
+/* 事件等待任务 */
+void task_wait(void)
+{
+    while(1)
+    {
+        if(os_event_wait(EVENT_ID, 0))
+        {
+            LED_WAIT = ~LED_WAIT;
+
+            os_event_delete(EVENT_ID);
+
+            {
+                u16 i = 10000;
+                while(i--);
+            }
+        }
+    }
+}
+
+/* 事件触发任务 */
+void task_event_trigger(void)
+{
+    while(1)
+    {
+        os_delay(20);
+
+        os_event_write(EVENT_ID);
+
+        LED_EVENT = ~LED_EVENT;
+    }
+}</code></pre>
+            </article>
+
+            <article class="code-card">
+              <h3>系统初始化与任务创建</h3>
+              <p>hrtos_main 函数，初始化事件并创建三个任务</p>
+              <pre><code>/* 系统入口 */
+void hrtos_main(void)
+{
+    LED_DELAY = 0;
+    LED_WAIT  = 0;
+    LED_EVENT = 0;
+
+    os_event_init(EVENT_ID);
+
+    os_task_create((unsigned int)task_delay,        1, 2, 5);
+    os_task_create((unsigned int)task_wait,         2, 3, 5);
+    os_task_create((unsigned int)task_event_trigger,3, 2, 5);
+}</code></pre>
+            </article>
+          </div>
+        </section>
+
+        <section id="api" class="doc-card" aria-labelledby="api-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">API Reference</div>
+              <h2 id="api-title">API 对照（v2）</h2>
+            </div>
+            <p>相关的核心 API</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>Time API</h3>
+              <div class="detail-list">
+                <p><strong><a href="/docs/api_v2/time/os_delay.html">os_delay</a></strong> - 时间驱动阻塞函数</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>Event IPC API</h3>
+              <div class="detail-list">
+                <p><strong><a href="/docs/api_v2/ipc/os_event_init.html">os_event_init</a></strong> - 初始化事件对象</p>
+                <p><strong><a href="/docs/api_v2/ipc/os_event_wait.html">os_event_wait</a></strong> - 事件等待阻塞</p>
+                <p><strong><a href="/docs/api_v2/ipc/os_event_write.html">os_event_write</a></strong> - 写入事件触发唤醒</p>
+                <p><strong><a href="/docs/api_v2/ipc/os_event_delete.html">os_event_delete</a></strong> - 删除事件对象</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>Task API</h3>
+              <div class="detail-list">
+                <p><strong><a href="/docs/api_v2/kernel/os_task_create.html">os_task_create</a></strong> - 创建任务并加入就绪队列</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="significance" class="doc-card" aria-labelledby="significance-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">System Significance</div>
+              <h2 id="significance-title">系统意义</h2>
+            </div>
+            <p>机制对系统设计的影响</p>
+          </div>
+
+          <div class="scenario-list">
+            <div class="scenario">
+              <h3>调度路径差异</h3>
+              <p>
+                在 HRTOS 中，delay 属于"时间驱动调度路径"，event 属于"事件驱动调度路径"。
+                两种路径对应不同的调度策略和实时性保证。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>实时性选择</h3>
+              <p>
+                实际系统中，event 模型通常用于高实时响应逻辑（如中断处理、关键事件），
+                delay 用于周期性背景任务（如数据采集、状态监控）。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>CPU 利用效率</h3>
+              <p>
+                事件驱动机制避免了 CPU 空转，提高了系统资源利用率。
+                时间驱动机制适用于需要精确时间控制的场景。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>系统设计原则</h3>
+              <p>
+                正确选择阻塞机制对系统实时性和稳定性至关重要。
+                应根据任务特性和实时性要求，合理使用 delay 和 event 机制。
+              </p>
+            </div>
+          </div>
+
+          <div class="summary-strip" style="margin-top: 18px;">
+            <strong>核心判断：</strong>
+            delay 和 wait 的本质区别在于调度触发方式：delay 基于 Tick 时间片，wait 基于事件触发。
+            事件模型具有更高的实时性和响应速度，适合关键任务；时间模型适合周期性任务。
+          </div>
+        </section>
+
+        <section id="links" class="doc-card" aria-labelledby="links-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Related Links</div>
+              <h2 id="links-title">相关链接</h2>
+            </div>
+            <p>深入学习的相关资源</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>相关示例</h3>
+              <div class="detail-list">
+                <p><strong><a href="./tick-system.html">系统节拍</a></strong> - 了解 Tick 系统驱动机制</p>
+                <p><strong><a href="./timer-demo.html">定时器机制</a></strong> - 学习软件定时器系统</p>
+                <p><strong><a href="./index.html">时间控制</a></strong> - 返回分类首页</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>相关模块</h3>
+              <div class="detail-list">
+                <p><strong><a href="/docs/api_v2/kernel/index.html">内核模块</a></strong> - 时间控制在内核调度中的实现</p>
+                <p><strong><a href="/docs/api_v2/task/index.html">任务模块</a></strong> - 任务延时、阻塞与唤醒机制</p>
+                <p><strong><a href="/docs/api_v2/ipc/index.html">IPC 模块</a></strong> - 事件通信机制</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>© 2017–2026 HRTOS · Time Control Module</p>
+    <p style="margin-top: 8px;">
+      <a href="./index.html">返回分类首页</a> · 
+      <a href="../index.html">返回示例主页</a>
+    </p>
+  </footer>
+</body>
+</html>

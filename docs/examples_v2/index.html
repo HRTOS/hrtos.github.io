@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>HRTOS 实验中心 | RTOS核心机制实验平台</title>
+<meta name="description" content="HRTOS示例系统包含任务执行、调度系统、中断机制与内核行为分析，是RTOS核心原理学习与验证平台。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --surface-hover:rgba(30,41,59,.92);
+  --border:rgba(148,163,184,.18);
+  --border-strong:rgba(56,189,248,.45);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --radius:8px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.7;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
+  background-size:28px 28px;
+  opacity:.14;
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,.65),transparent 90%);
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.page{
+  width:min(1180px,calc(100% - 40px));
+  margin:0 auto;
+  padding:104px 0 56px;
+  display:grid;
+  gap:56px;
+  position:relative;
+  z-index:1;
+}
+
+/* breadcrumb */
+.breadcrumb{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  font-size:.92rem;
+  color:var(--muted);
+  margin-bottom:-24px;
+}
+
+.breadcrumb a{
+  color:#7dd3fc;
+}
+
+.breadcrumb a:hover{
+  text-decoration:underline;
+}
+
+/* hero */
+.hero{
+  display:grid;
+  gap:18px;
+}
+
+.hero-label{
+  display:inline-flex;
+  width:fit-content;
+  padding:8px 14px;
+  border:1px solid rgba(56,189,248,.22);
+  border-radius:999px;
+  color:#bae6fd;
+  font-size:.92rem;
+  font-weight:600;
+}
+
+.hero h1{
+  margin:0;
+  font-size:clamp(2.3rem,5vw,4rem);
+  line-height:1.08;
+}
+
+.hero p{
+  margin:0;
+  max-width:860px;
+  color:var(--muted);
+  font-size:1rem;
+}
+
+/* section */
+.section{
+  display:grid;
+  gap:22px;
+}
+
+.section-header{
+  display:grid;
+  gap:8px;
+}
+
+.section-header h2{
+  margin:0;
+  font-size:clamp(1.4rem,3vw,2rem);
+}
+
+.section-header p{
+  margin:0;
+  color:var(--muted);
+}
+
+/* cards */
+.docs-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:20px;
+}
+
+.doc-card{
+  display:grid;
+  gap:10px;
+  min-height:168px;
+  padding:24px 22px;
+  background:linear-gradient(
+    180deg,
+    rgba(30,41,59,.78),
+    rgba(15,23,42,.92)
+  );
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  transition:
+    transform .22s ease,
+    border-color .22s ease,
+    background .22s ease;
+}
+
+.doc-card:hover{
+  transform:translateY(-6px);
+  border-color:var(--border-strong);
+  background:var(--surface-hover);
+}
+
+.doc-card h3{
+  margin:0;
+  font-size:1.12rem;
+  color:#f8fafc;
+}
+
+.doc-card p{
+  margin:0;
+  color:var(--muted);
+  font-size:.95rem;
+}
+
+.doc-link{
+  margin-top:auto;
+  color:#7dd3fc;
+  font-size:.92rem;
+  font-weight:600;
+}
+
+/* footer */
+.site-footer{
+  padding-top:12px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  text-align:center;
+  font-size:.95rem;
+}
+
+@media(max-width:980px){
+  .docs-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:640px){
+  .docs-grid{
+    grid-template-columns:1fr;
+  }
+
+  .page{
+    width:min(100% - 28px,1180px);
+    padding-top:88px;
+  }
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+
+<!-- breadcrumb -->
+
+<nav class="breadcrumb">
+
+<a href="/">Home</a>
+/
+<a href="/docs/">Docs</a>
+/
+<span>Examples</span>
+
+</nav>
+
+
+
+<!-- hero -->
+
+<section class="hero">
+
+<span class="hero-label">
+Examples
+</span>
+
+
+<h1>
+HRTOS 实验中心
+</h1>
+
+
+<p>
+通过实验页面观察 RTOS 行为与系统运行过程，
+覆盖任务执行、调度系统、中断机制与内核行为分析，
+是理解实时操作系统核心运行逻辑的实验平台。
+</p>
+
+
+</section>
+
+
+
+
+<!-- overview -->
+
+<section class="section">
+
+<div class="section-header">
+
+<h2>
+系统总览
+</h2>
+
+
+<p>
+本模块包含 HRTOS 示例系统的全部实验路径，
+覆盖任务执行、调度系统、中断机制与内核行为分析，
+是理解 RTOS 核心运行逻辑的入口。
+</p>
+
+
+</div>
+
+</section>
+
+
+
+
+
+<!-- architecture -->
+
+<section class="section">
+
+
+<div class="section-header">
+
+<h2>
+系统架构入口
+</h2>
+
+
+<p>
+按 RTOS 核心机制划分的学习路径
+</p>
+
+
+</div>
+
+
+
+<div class="docs-grid">
+
+
+
+<a class="doc-card" href="/docs/examples/01-task-execution/index.html">
+
+<h3>
+任务执行系统
+</h3>
+
+<p>
+任务生命周期、状态切换与上下文执行模型。
+</p>
+
+<span class="doc-link">
+进入 →
+</span>
+
+</a>
+
+
+
+
+<a class="doc-card" href="/docs/examples/02-scheduling-engine/index.html">
+
+<h3>
+调度引擎系统
+</h3>
+
+<p>
+优先级调度、时间片与抢占机制。
+</p>
+
+<span class="doc-link">
+进入 →
+</span>
+
+</a>
+
+
+
+
+<a class="doc-card" href="/docs/examples/03-communication-model/index.html">
+
+<h3>
+通信模型系统
+</h3>
+
+<p>
+消息队列、信号量与互斥锁机制。
+</p>
+
+<span class="doc-link">
+进入 →
+</span>
+
+</a>
+
+
+
+
+<a class="doc-card" href="/docs/examples/04-time-control/index.html">
+
+<h3>
+时间控制系统
+</h3>
+
+<p>
+Tick、Delay 与 Timer 时间管理。
+</p>
+
+<span class="doc-link">
+进入 →
+</span>
+
+</a>
+
+
+
+
+<a class="doc-card" href="/docs/examples/05-system-resource/index.html">
+
+<h3>
+系统资源系统
+</h3>
+
+<p>
+内存管理与系统资源控制实验。
+</p>
+
+<span class="doc-link">
+进入 →
+</span>
+
+</a>
+
+
+
+
+<a class="doc-card" href="/docs/examples/06-interrupt-driven/index.html">
+
+<h3>
+中断驱动系统
+</h3>
+
+<p>
+中断入口、ISR响应与嵌套中断机制。
+</p>
+
+<span class="doc-link">
+进入 →
+</span>
+
+</a>
+
+
+
+
+<a class="doc-card" href="/docs/examples/07-kernel-behavior/index.html">
+
+<h3>
+内核行为系统
+</h3>
+
+<p>
+完整调度链路与内核运行分析。
+</p>
+
+<span class="doc-link">
+进入 →
+</span>
+
+</a>
+
+
+
+</div>
+
+</section>
+
+
+
+
+
+<!-- core -->
+
+<section class="section">
+
+
+<div class="section-header">
+
+<h2>
+核心实验
+</h2>
+
+
+<p>
+聚焦 RTOS 内核关键运行机制。
+</p>
+
+
+</div>
+
+
+
+<div class="docs-grid">
+
+
+<a class="doc-card" href="/docs/examples/01-task-execution/context-switch.html">
+
+<h3>
+上下文切换
+</h3>
+
+<p>
+分析任务切换过程中上下文保存与恢复。
+</p>
+
+<span class="doc-link">
+查看 →
+</span>
+
+</a>
+
+
+
+
+<a class="doc-card" href="/docs/examples/02-scheduling-engine/priority-scheduling.html">
+
+<h3>
+优先级调度
+</h3>
+
+<p>
+分析实时系统任务选择和执行顺序。
+</p>
+
+<span class="doc-link">
+查看 →
+</span>
+
+</a>
+
+
+
+
+<a class="doc-card" href="/docs/examples/06-interrupt-driven/interrupt-entry.html">
+
+<h3>
+中断入口
+</h3>
+
+<p>
+分析 ISR 进入、退出以及任务恢复流程。
+</p>
+
+<span class="doc-link">
+查看 →
+</span>
+
+</a>
+
+
+
+<a class="doc-card" href="/docs/examples/07-kernel-behavior/full-schedule-flow.html">
+
+<h3>
+完整调度流程
+</h3>
+
+<p>
+追踪一次完整调度执行过程。
+</p>
+
+<span class="doc-link">
+查看 →
+</span>
+
+</a>
+
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+<!-- featured -->
+
+<section class="section">
+
+
+<div class="section-header">
+
+<h2>
+推荐内容
+</h2>
+
+
+<p>
+精选实验中心关键页面与深入分析内容。
+</p>
+
+
+</div>
+
+
+
+<div class="docs-grid">
+
+
+<a class="doc-card" href="/docs/examples/07-kernel-behavior/priority-inversion.html">
+
+<h3>
+Priority Inversion
+</h3>
+
+<p>
+优先级反转问题实验。
+</p>
+
+<span class="doc-link">
+查看专题
+</span>
+
+</a>
+
+
+
+
+<a class="doc-card" href="/docs/examples/07-kernel-behavior/full-schedule-flow.html">
+
+<h3>
+Full Schedule Flow
+</h3>
+
+<p>
+完整调度执行链路分析。
+</p>
+
+<span class="doc-link">
+查看专题
+</span>
+
+</a>
+
+
+
+
+<a class="doc-card" href="/docs/examples/myos/index.html">
+
+<h3>
+MyOS
+</h3>
+
+<p>
+简化实时内核学习示例。
+</p>
+
+<span class="doc-link">
+查看专题
+</span>
+
+</a>
+
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+<!-- learning path -->
+
+<section class="section">
+
+
+<div class="section-header">
+
+<h2>
+学习路径
+</h2>
+
+
+<p>
+建议按照以下顺序理解系统结构。
+</p>
+
+
+</div>
+
+
+
+<div class="block">
+
+Task Execution → Scheduling Engine → Interrupt System → Kernel Behavior
+
+</div>
+
+
+</section>
+
+
+
+
+
+<footer class="site-footer">
+
+<p>
+© 2017–2026 HRTOS. Documentation for embedded real-time systems.
+</p>
+
+</footer>
+
+
+
+</main>
+
+
+
+<script src="https://hrtos.com/header.js"></script>
+
+
+</body>
+</html>

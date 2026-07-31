@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRTOS 示例 - 系统节拍机制 | HRTOS Time Control</title>
+  <meta name="description" content="系统节拍机制实验：基于HRTOS v2 Tick时间基准，分析硬件定时器中断驱动、调度触发方式与延时递减机制。">
+  <meta name="keywords" content="HRTOS, tick system, timer interrupt, time base, RTOS, embedded system">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#0f172a">
+  <meta property="og:title" content="HRTOS 示例 - 系统节拍机制 / HRTOS Tick System">
+  <meta property="og:description" content="基于HRTOS v2 Tick时间基准，分析硬件定时器中断驱动、调度触发方式与延时递减机制。">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "HRTOS 示例 - 系统节拍机制",
+    "description": "基于HRTOS v2 Tick时间基准，分析硬件定时器中断驱动、调度触发方式与延时递减机制。",
+    "keywords": [
+      "HRTOS",
+      "tick system",
+      "timer interrupt",
+      "time base",
+      "RTOS",
+      "embedded system"
+    ],
+    "inLanguage": "zh-CN",
+    "articleSection": [
+      "示例简介",
+      "机制定义",
+      "核心作用",
+      "执行流程",
+      "演示代码",
+      "API对照",
+      "系统意义"
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-strong: #111c34;
+      --panel-soft: #17233d;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --border: rgba(148, 163, 184, 0.18);
+      --shadow: 0 28px 70px rgba(2, 6, 23, 0.46);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --max: 1000px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 28%),
+        linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      line-height: 1.72;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    code,
+    pre {
+      font-family: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -48px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #00111c;
+      border-radius: 999px;
+      z-index: 100;
+      transition: top 0.2s ease;
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(15, 23, 42, 0.86);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar-inner {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #67e8f9, var(--accent));
+      box-shadow: 0 10px 24px rgba(56, 189, 248, 0.25);
+    }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .topnav a:hover,
+    .topnav a:focus-visible {
+      color: var(--text);
+    }
+
+    .page {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 42%),
+        linear-gradient(180deg, rgba(17, 28, 52, 0.96), rgba(15, 23, 42, 0.9));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -90px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #bfe9ff;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      line-height: 1.22;
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    h1 {
+      margin-top: 18px;
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      letter-spacing: -0.04em;
+      max-width: 11ch;
+    }
+
+    .hero-lead {
+      max-width: 64ch;
+      margin: 18px 0 0;
+      font-size: 1.08rem;
+      color: #c9d8ea;
+    }
+
+    .hero-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 18px;
+    }
+
+    .hero-card,
+    .mini-card,
+    .doc-card,
+    .toc,
+    .flow-card,
+    .code-card {
+      border: 1px solid var(--border);
+      background: rgba(17, 28, 52, 0.8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 22px;
+    }
+
+    .hero-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .capability-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .capability-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #d9eefb;
+    }
+
+    .check {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #7dd3fc, var(--accent));
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: rgba(8, 15, 32, 0.52);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .stat strong {
+      display: block;
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 20px;
+      margin-top: 24px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 88px;
+      padding: 20px;
+      background: rgba(10, 18, 36, 0.86);
+    }
+
+    .toc h2 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .toc ol {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .toc a {
+      transition: color 0.2s ease;
+    }
+
+    .toc a:hover,
+    .toc a:focus-visible,
+    .toc a.active {
+      color: var(--accent);
+    }
+
+    .content {
+      display: grid;
+      gap: 20px;
+    }
+
+    .doc-card {
+      padding: 28px;
+      scroll-margin-top: 98px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-head p,
+    .doc-card > p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .kicker {
+      color: var(--accent);
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .two-col,
+    .three-col {
+      display: grid;
+      gap: 16px;
+    }
+
+    .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mini-card {
+      padding: 20px;
+      background: rgba(12, 20, 39, 0.9);
+    }
+
+    .mini-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+    }
+
+    .mini-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .summary-strip {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.35));
+    }
+
+    .summary-strip strong {
+      color: #dff6ff;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .timeline-step {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(8, 15, 31, 0.68);
+    }
+
+    .timeline-step span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    .function-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .function-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: rgba(9, 16, 31, 0.84);
+    }
+
+    .function-card h3 {
+      margin-bottom: 14px;
+      font-size: 1.1rem;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+    }
+
+    .detail-list p {
+      margin: 0;
+    }
+
+    .detail-list strong {
+      color: var(--text);
+    }
+
+    .code-stack {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .code-card {
+      padding: 20px;
+      background: rgba(10, 16, 29, 0.88);
+    }
+
+    .code-card h3 {
+      font-size: 1.04rem;
+      margin-bottom: 8px;
+    }
+
+    .code-card p {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+
+    pre {
+      margin: 0;
+      padding: 18px;
+      overflow: auto;
+      border-radius: var(--radius-md);
+      background: #081120;
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      color: #d7effd;
+      font-size: 0.93rem;
+      line-height: 1.65;
+    }
+
+    .flow-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .flow-card {
+      padding: 18px 20px;
+      background: rgba(8, 15, 31, 0.84);
+    }
+
+    .flow-card strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .flow-chain {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.16);
+      background: rgba(56, 189, 248, 0.07);
+      color: #dff6ff;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .scenario {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(10, 17, 32, 0.84);
+    }
+
+    .scenario h3 {
+      font-size: 1.02rem;
+      margin-bottom: 8px;
+    }
+
+    .scenario p,
+    .footer p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .seo-note {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px dashed rgba(56, 189, 248, 0.28);
+      background: rgba(8, 15, 31, 0.66);
+    }
+
+    .footer {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto 40px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .layout,
+      .two-col,
+      .three-col {
+        grid-template-columns: 1fr;
+      }
+
+      .toc {
+        position: static;
+        top: auto;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page,
+      .topbar-inner,
+      .footer {
+        width: min(calc(100% - 24px), var(--max));
+      }
+
+      .hero,
+      .doc-card {
+        padding: 22px;
+      }
+
+      .topnav {
+        gap: 12px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到正文</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html" aria-label="跳转到 HRTOS 示例首页">
+        <span class="brand-mark">H</span>
+        <span>HRTOS 示例</span>
+      </a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="#overview">示例简介</a>
+        <a href="#definition">机制定义</a>
+        <a href="#core">核心作用</a>
+        <a href="#flow">执行流程</a>
+        <a href="#code">演示代码</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="page">
+    <header id="overview" class="hero">
+      <span class="eyebrow">HRTOS Kernel Timing Core</span>
+      <h1>系统节拍机制</h1>
+      <p class="hero-lead">
+        Tick System 是 HRTOS 的唯一时间基准源，由硬件定时器中断驱动，
+        用于调度触发、延时递减与系统时间推进。所有时间行为（delay / timeout / wait）均依赖 Tick 驱动。
+      </p>
+
+      <div class="hero-grid">
+        <section class="hero-card">
+          <h2>示例目标</h2>
+          <p>
+            系统运行一个硬件定时器中断作为 Tick 源，驱动系统时间基准和调度器触发。
+            通过 LED 指示展示 Tick 中断频率、系统运行时间和延时递减过程，验证 Tick 在实时操作系统中的基础作用。
+          </p>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <strong>核心API</strong>
+              <span>os_tick_get / os_uptime_ms</span>
+            </div>
+            <div class="stat">
+              <strong>驱动方式</strong>
+              <span>硬件定时器中断</span>
+            </div>
+            <div class="stat">
+              <strong>时间基准</strong>
+              <span>系统节拍计数</span>
+            </div>
+            <div class="stat">
+              <strong>调度触发</strong>
+              <span>os_interrupt_exit</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hero-card">
+          <h2>核心机制</h2>
+          <ul class="capability-list">
+            <li><span class="check">✓</span><span>硬件定时器中断驱动</span></li>
+            <li><span class="check">✓</span><span>系统时间基准维护</span></li>
+            <li><span class="check">✓</span><span>调度器触发检查</span></li>
+            <li><span class="check">✓</span><span>延时队列递减</span></li>
+          </ul>
+        </section>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="toc" aria-label="章节目录">
+        <h2>章节目录</h2>
+        <ol>
+          <li><a href="#overview">示例简介</a></li>
+          <li><a href="#definition">机制定义</a></li>
+          <li><a href="#core">核心作用</a></li>
+          <li><a href="#flow">执行流程</a></li>
+          <li><a href="#code">演示代码</a></li>
+          <li><a href="#api">API对照</a></li>
+          <li><a href="#significance">系统意义</a></li>
+          <li><a href="#links">相关链接</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="definition" class="doc-card" aria-labelledby="definition-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Definition</div>
+              <h2 id="definition-title">机制定义</h2>
+            </div>
+            <p>Tick 是 HRTOS 的唯一时间基准源</p>
+          </div>
+
+          <p>
+            Tick System 由硬件定时器中断、内核时间基准和调度器触发三部分组成。
+            在 HRTOS 中，所有时间行为（delay / timeout / wait）均依赖 Tick 驱动，而不是软件轮询。
+          </p>
+
+          <div class="summary-strip">
+            <strong>核心公式：</strong>
+            Tick = Hardware Timer Interrupt + Kernel Time Base + Scheduler Trigger
+          </div>
+
+          <div class="two-col" style="margin-top: 18px;">
+            <article class="mini-card">
+              <h3>硬件定时器中断</h3>
+              <p>
+                由硬件定时器（如 Timer1）周期性产生中断，作为 Tick 的物理来源。
+                每次中断代表一个系统节拍，通常配置为 1ms 或其他固定时间间隔。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>内核时间基准</h3>
+              <p>
+                Tick 中断中维护一个全局计数器（g_tick），作为系统时间的唯一基准。
+                所有时间相关的 API（os_tick_get、os_uptime_ms）都基于此计数器。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>调度器触发</h3>
+              <p>
+                Tick 中断结束后通过 os_interrupt_exit 触发调度器检查，
+                判断是否需要进行任务切换。这是时间片调度和延时唤醒的基础。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>延时队列递减</h3>
+              <p>
+                Tick 中断中自动递减 delay 队列中的任务延时计数，
+                当延时到期时将任务从阻塞状态转移到就绪状态。
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section id="core" class="doc-card" aria-labelledby="core-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Core Functions</div>
+              <h2 id="core-title">核心作用</h2>
+            </div>
+            <p>Tick 在 HRTOS 中的四大核心功能</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>时间基准</h3>
+              <div class="detail-list">
+                <p><strong>功能：</strong>提供统一系统时间源</p>
+                <p><strong>API：</strong>os_tick_get / os_uptime_ms</p>
+                <p><strong>作用：</strong>所有时间测量都基于 Tick 计数</p>
+                <p><strong>精度：</strong>由硬件定时器配置决定</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>调度触发</h3>
+              <div class="detail-list">
+                <p><strong>触发时机：</strong>Tick 中断结束后</p>
+                <p><strong>触发方式：</strong>os_interrupt_exit</p>
+                <p><strong>调度检查：</strong>判断是否需要任务切换</p>
+                <p><strong>调度策略：</strong>时间片轮转 + 优先级</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>延时递减</h3>
+              <div class="detail-list">
+                <p><strong>递减对象：</strong>delay 队列中的任务</p>
+                <p><strong>递减频率：</strong>每个 Tick 一次</p>
+                <p><strong>唤醒机制：</strong>延时到期转移到就绪队列</p>
+                <p><strong>阻塞管理：</strong>支持多任务同时延时</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>时间片控制</h3>
+              <div class="detail-list">
+                <p><strong>控制方式：</strong>基于 Tick 计数的时间片</p>
+                <p><strong>抢占机制：</strong>时间片到期触发调度</p>
+                <p><strong>公平调度：</strong>同优先级任务轮转执行</p>
+                <p><strong>实时性：</strong>保证任务响应时间</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="flow" class="doc-card" aria-labelledby="flow-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Execution Flow</div>
+              <h2 id="flow-title">执行流程</h2>
+            </div>
+            <p>Tick 从触发到调度检查的完整路径</p>
+          </div>
+
+          <div class="timeline">
+            <div class="timeline-step"><span>1</span>硬件定时器触发：Timer1 周期性产生 Tick 中断</div>
+            <div class="timeline-step"><span>2</span>Tick计数更新：系统时间递增（kernel time base）</div>
+            <div class="timeline-step"><span>3</span>阻塞队列处理：delay / wait timeout 递减</div>
+            <div class="timeline-step"><span>4</span>调度器检查：判断是否发生任务切换</div>
+          </div>
+
+          <div class="flow-chain">
+            Timer1 中断 → g_tick++ → LED_TICK 翻转 → os_interrupt_exit → 调度器检查 → 任务切换（如需要）
+          </div>
+        </section>
+
+        <section id="code" class="doc-card" aria-labelledby="code-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Demo Code</div>
+              <h2 id="code-title">演示代码</h2>
+            </div>
+            <p>Tick 系统的完整实现示例</p>
+          </div>
+
+          <div class="code-stack">
+            <article class="code-card">
+              <h3>Tick 中断与时间 API</h3>
+              <p>Timer1 中断服务程序作为 Tick 源，维护系统时间基准</p>
+              <pre><code>#include "hrtos.h"
+
+sbit LED_TICK = P1^0;
+sbit LED_1S   = P1^1;
+sbit LED_RUN  = P1^2;
+
+static volatile u32 g_tick = 0;
+
+/* Timer1 ISR = Tick Source */
+void timer1_isr(void)
+{
+    g_tick++;
+
+    LED_TICK = ~LED_TICK;
+
+    os_interrupt_exit();   // 触发调度点
+}
+
+/* uptime API */
+u32 os_uptime_ms(void)
+{
+    return g_tick;
+}
+
+/* busy delay（仅用于演示，不推荐生产） */
+void task_delay_ms(u16 ms)
+{
+    u32 start = g_tick;
+    while ((g_tick - start) < ms);
+}</code></pre>
+            </article>
+
+            <article class="code-card">
+              <h3>演示任务与系统初始化</h3>
+              <p>LED 演示任务展示 Tick 时间基准的使用，hrtos_main 初始化定时器和任务</p>
+              <pre><code>void task_led_demo(void)
+{
+    u32 t1 = 0, t2 = 0;
+
+    while(1)
+    {
+        u32 now = os_uptime_ms();
+
+        if(now - t2 >= 1)
+        {
+            t2 = now;
+            LED_RUN = ~LED_RUN;
+        }
+
+        if(now - t1 >= 10)
+        {
+            t1 = now;
+            LED_1S = ~LED_1S;
+        }
+
+        task_delay_ms(1);
+    }
+}
+
+/* system entry */
+void hrtos_main(void)
+{
+    LED_TICK = 0;
+    LED_1S = 0;
+    LED_RUN = 0;
+
+    g_tick = 0;
+
+    /* Timer1 init */
+    TMOD |= 0x10;
+    TH1 = 0xFC;
+    TL1 = 0x66;
+
+    ET1 = 1;
+    EA  = 1;
+    TR1 = 1;
+
+    /* Tick ISR as kernel task */
+    os_task_create((unsigned int)timer1_isr, 0, 9, 0);
+
+    /* demo task */
+    os_task_create((unsigned int)task_led_demo, 1, 2, 5);
+}</code></pre>
+            </article>
+          </div>
+        </section>
+
+        <section id="api" class="doc-card" aria-labelledby="api-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">API Reference</div>
+              <h2 id="api-title">API 对照（v2）</h2>
+            </div>
+            <p>时间核心 API 与中断核心 API</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>Time Core API</h3>
+              <div class="detail-list">
+                <p><strong><a href="\docs\api_v2\time\os_tick_config.html">os_tick_config</a></strong> - 配置 Tick 参数</p>
+                <p><strong><a href="\docs\api_v2\time\os_tick_get.html">os_tick_get</a></strong> - 获取当前 Tick 计数</p>
+                <p><strong><a href="\docs\api_v2\time\os_uptime_ms.html">os_uptime_ms</a></strong> - 获取系统运行时间</p>
+                <p><strong>os_delay</strong> - 任务延时函数</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>Interrupt Core</h3>
+              <div class="detail-list">
+                <p><strong><a href="\docs\api_v2\interrupt\os_schedule_request.html">os_schedule_request</a></strong> - 请求调度</p>
+                <p><strong><a href="\docs\api_v2\interrupt\os_interrupt_id.html">os_interrupt_id</a></strong> - 获取中断 ID</p>
+                <p><strong>os_interrupt_enter</strong> - 中断入口处理</p>
+                <p><strong>os_interrupt_exit</strong> - 中断出口触发调度</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="significance" class="doc-card" aria-labelledby="significance-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">System Significance</div>
+              <h2 id="significance-title">系统意义</h2>
+            </div>
+            <p>Tick 在实时操作系统中的基础作用</p>
+          </div>
+
+          <div class="flow-grid">
+            <div class="flow-card">
+              <strong>唯一时间源</strong>
+              Tick 是 HRTOS 的"唯一时间源"，所有调度行为最终都回归 Tick 驱动
+            </div>
+            <div class="flow-card">
+              <strong>确定性基础</strong>
+              硬件定时器驱动的 Tick 提供可预测的时间基准，是实时系统确定性的基础
+            </div>
+            <div class="flow-card">
+              <strong>调度驱动</strong>
+              时间片调度、延时唤醒、超时处理都依赖 Tick 中断触发
+            </div>
+            <div class="flow-card">
+              <strong>时间管理</strong>
+              提供 os_uptime_ms 等时间 API，支持任务时间测量和系统运行统计
+            </div>
+          </div>
+
+          <div class="summary-strip" style="margin-top: 18px;">
+            <strong>核心判断：</strong>
+            Tick 是实时操作系统的时间心脏，通过硬件定时器中断驱动，为系统提供统一的时间基准和调度触发机制，是实现多任务时间管理和实时响应的基础。
+          </div>
+        </section>
+
+        <section id="links" class="doc-card" aria-labelledby="links-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Related Links</div>
+              <h2 id="links-title">相关链接</h2>
+            </div>
+            <p>深入学习的相关资源</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>核心 API</h3>
+              <div class="detail-list">
+                <p><strong>os_tick_config</strong> - 配置 Tick 参数</p>
+                <p><strong>os_tick_get</strong> - 获取当前 Tick 计数</p>
+                <p><strong>os_uptime_ms</strong> - 获取系统运行时间</p>
+                <p><strong>os_interrupt_exit</strong> - 中断出口触发调度</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>相关示例</h3>
+              <div class="detail-list">
+                <p><strong><a href="./delay-vs-wait.html">延时与等待</a></strong> - 了解 delay 和 wait 的区别</p>
+                <p><strong><a href="./timer-demo.html">定时器演示</a></strong> - 学习定时器使用</p>
+                <p><strong><a href="./index.html">时间控制</a></strong> - 返回分类首页</p>
+                <p><strong><a href="../index.html">示例主页</a></strong> - 返回示例列表</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>© 2017–2026 HRTOS · Tick System Module</p>
+    <p style="margin-top: 8px;">
+      <a href="./index.html">返回分类首页</a> · 
+      <a href="../index.html">返回示例主页</a>
+    </p>
+  </footer>
+</body>
+</html>

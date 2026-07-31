@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRTOS 示例 - 嵌套中断 | HRTOS Interrupt Driven</title>
+  <meta name="description" content="嵌套中断实验：基于HRTOS中断驱动模型，分析高优先级中断抢占低优先级ISR的响应机制与实时性保障。">
+  <meta name="keywords" content="HRTOS, nested interrupt, interrupt priority, ISR, RTOS, embedded system">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#0f172a">
+  <meta property="og:title" content="HRTOS 示例 - 嵌套中断 / HRTOS Nested Interrupt">
+  <meta property="og:description" content="基于HRTOS中断驱动模型，分析高优先级中断抢占低优先级ISR的响应机制与实时性保障。">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "HRTOS 示例 - 嵌套中断",
+    "description": "基于HRTOS中断驱动模型，分析高优先级中断抢占低优先级ISR的响应机制与实时性保障。",
+    "keywords": [
+      "HRTOS",
+      "nested interrupt",
+      "interrupt priority",
+      "ISR",
+      "RTOS",
+      "embedded system"
+    ],
+    "inLanguage": "zh-CN",
+    "articleSection": [
+      "示例简介",
+      "机制定义",
+      "执行流程",
+      "关键API",
+      "演示代码",
+      "系统意义",
+      "注意事项",
+      "相关链接"
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-strong: #111c34;
+      --panel-soft: #17233d;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --border: rgba(148, 163, 184, 0.18);
+      --shadow: 0 28px 70px rgba(2, 6, 23, 0.46);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --max: 1000px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 28%),
+        linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      line-height: 1.72;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    code,
+    pre {
+      font-family: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -48px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #00111c;
+      border-radius: 999px;
+      z-index: 100;
+      transition: top 0.2s ease;
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(15, 23, 42, 0.86);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar-inner {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #67e8f9, var(--accent));
+      box-shadow: 0 10px 24px rgba(56, 189, 248, 0.25);
+    }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .topnav a:hover,
+    .topnav a:focus-visible {
+      color: var(--text);
+    }
+
+    .page {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 42%),
+        linear-gradient(180deg, rgba(17, 28, 52, 0.96), rgba(15, 23, 42, 0.9));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -90px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #bfe9ff;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      line-height: 1.22;
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    h1 {
+      margin-top: 18px;
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      letter-spacing: -0.04em;
+      max-width: 11ch;
+    }
+
+    .hero-lead {
+      max-width: 64ch;
+      margin: 18px 0 0;
+      font-size: 1.08rem;
+      color: #c9d8ea;
+    }
+
+    .hero-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 18px;
+    }
+
+    .hero-card,
+    .mini-card,
+    .doc-card,
+    .toc,
+    .flow-card,
+    .code-card {
+      border: 1px solid var(--border);
+      background: rgba(17, 28, 52, 0.8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 22px;
+    }
+
+    .hero-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .capability-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .capability-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #d9eefb;
+    }
+
+    .check {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #7dd3fc, var(--accent));
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: rgba(8, 15, 32, 0.52);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .stat strong {
+      display: block;
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 20px;
+      margin-top: 24px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 88px;
+      padding: 20px;
+      background: rgba(10, 18, 36, 0.86);
+    }
+
+    .toc h2 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .toc ol {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .toc a {
+      transition: color 0.2s ease;
+    }
+
+    .toc a:hover,
+    .toc a:focus-visible,
+    .toc a.active {
+      color: var(--accent);
+    }
+
+    .content {
+      display: grid;
+      gap: 20px;
+    }
+
+    .doc-card {
+      padding: 28px;
+      scroll-margin-top: 98px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-head p,
+    .doc-card > p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .kicker {
+      color: var(--accent);
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .two-col,
+    .three-col {
+      display: grid;
+      gap: 16px;
+    }
+
+    .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mini-card {
+      padding: 20px;
+      background: rgba(12, 20, 39, 0.9);
+    }
+
+    .mini-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+    }
+
+    .mini-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .summary-strip {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.35));
+    }
+
+    .summary-strip strong {
+      color: #dff6ff;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .timeline-step {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(8, 15, 31, 0.68);
+    }
+
+    .timeline-step span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    .function-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .function-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: rgba(9, 16, 31, 0.84);
+    }
+
+    .function-card h3 {
+      margin-bottom: 14px;
+      font-size: 1.1rem;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+    }
+
+    .detail-list p {
+      margin: 0;
+    }
+
+    .detail-list strong {
+      color: var(--text);
+    }
+
+    .code-stack {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .code-card {
+      padding: 20px;
+      background: rgba(10, 16, 29, 0.88);
+    }
+
+    .code-card h3 {
+      font-size: 1.04rem;
+      margin-bottom: 8px;
+    }
+
+    .code-card p {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+
+    pre {
+      margin: 0;
+      padding: 18px;
+      overflow: auto;
+      border-radius: var(--radius-md);
+      background: #081120;
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      color: #d7effd;
+      font-size: 0.93rem;
+      line-height: 1.65;
+    }
+
+    .flow-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .flow-card {
+      padding: 18px 20px;
+      background: rgba(8, 15, 31, 0.84);
+    }
+
+    .flow-card strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .flow-chain {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.16);
+      background: rgba(56, 189, 248, 0.07);
+      color: #c9d8ea;
+      font-size: 0.95rem;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .scenario {
+      padding: 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(8, 15, 31, 0.64);
+    }
+
+    .scenario h3 {
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+      color: var(--accent);
+    }
+
+    .scenario p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .footer {
+      margin-top: 48px;
+      padding: 32px 0;
+      border-top: 1px solid rgba(148, 163, 184, 0.12);
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .footer a {
+      color: var(--accent);
+    }
+
+    .footer a:hover {
+      color: var(--accent-strong);
+    }
+
+    @media (max-width: 768px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .toc {
+        position: static;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .two-col,
+      .three-col {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main" class="skip-link">跳转到主要内容</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <span>HRTOS</span>
+      </div>
+      <nav class="topnav">
+        <a href="../index.html">示例主页</a>
+        <a href="./index.html">中断驱动</a>
+        <a href="./interrupt-entry.html">中断入口</a>
+        <a href="./nested-interrupt.html">嵌套中断</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page" id="main">
+    <section class="hero">
+      <div class="eyebrow">Interrupt Driven Model</div>
+      <h1>嵌套中断</h1>
+      <p class="hero-lead">
+        基于 HRTOS 中断驱动模型，展示高优先级中断如何抢占低优先级 ISR 执行，
+        实现实时系统中关键事件的快速响应机制。
+      </p>
+
+      <div class="hero-grid">
+        <article class="hero-card">
+          <h2>核心特性</h2>
+          <ul class="capability-list">
+            <li><span class="check">✓</span>基于硬件优先级的中断嵌套</li>
+            <li><span class="check">✓</span>高优先级中断可抢占低优先级 ISR</li>
+            <li><span class="check">✓</span>自动上下文保存与恢复</li>
+            <li><span class="check">✓</span>实时性上限保障机制</li>
+          </ul>
+        </article>
+
+        <article class="hero-card">
+          <h2>应用场景</h2>
+          <p>
+            嵌套中断机制适用于需要同时处理多个中断源的实时系统，
+            确保高优先级事件（如紧急故障、安全关键信号）能够立即响应，
+            不受低优先级中断处理时间的影响。
+          </p>
+          <div class="hero-stats">
+            <div class="stat">
+              <strong>响应延迟</strong>
+              微秒级
+            </div>
+            <div class="stat">
+              <strong>优先级数</strong>
+              硬件支持
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="toc">
+        <h2>目录导航</h2>
+        <ol>
+          <li><a href="#definition">机制定义</a></li>
+          <li><a href="#flow">执行流程</a></li>
+          <li><a href="#api">关键 API</a></li>
+          <li><a href="#code">演示代码</a></li>
+          <li><a href="#significance">系统意义</a></li>
+          <li><a href="#notes">注意事项</a></li>
+          <li><a href="#links">相关链接</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="definition" class="doc-card" aria-labelledby="definition-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Mechanism Definition</div>
+              <h2 id="definition-title">机制定义</h2>
+            </div>
+            <p>嵌套中断的核心概念与工作原理</p>
+          </div>
+
+          <p>
+            嵌套中断（Nested Interrupt）是指在中断服务程序（ISR）执行过程中，
+            如果出现更高优先级的中断请求，CPU 可以暂停当前 ISR 的执行，
+            转而响应高优先级中断，待高优先级中断处理完成后，再恢复原 ISR 的执行。
+          </p>
+
+          <div class="two-col">
+            <article class="mini-card">
+              <h3>硬件优先级</h3>
+              <p>
+                嵌套中断基于硬件中断优先级机制。每个中断源都有独立的优先级配置，
+                高优先级中断可以自动抢占低优先级中断的执行。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>上下文自动保存</h3>
+              <p>
+                当发生中断嵌套时，CPU 硬件会自动保存当前执行上下文（程序计数器、状态寄存器等），
+                确保中断返回后能够准确恢复执行现场。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>ISR 嵌套执行</h3>
+              <p>
+                多个 ISR 可以形成嵌套调用链，高优先级 ISR 执行完成后，
+                通过中断返回指令依次恢复低优先级 ISR 的执行。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>实时性保障</h3>
+              <p>
+                嵌套中断机制确保关键事件能够立即响应，不受低优先级中断处理时间的影响，
+                是实时系统满足严格时间约束的重要保障。
+              </p>
+            </article>
+          </div>
+
+          <div class="summary-strip">
+            <strong>核心流程：</strong>
+            IRQ High Priority → preempt IRQ Low Priority → context save → ISR nesting → restore
+          </div>
+        </section>
+
+        <section id="flow" class="doc-card" aria-labelledby="flow-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Execution Flow</div>
+              <h2 id="flow-title">执行流程</h2>
+            </div>
+            <p>嵌套中断的完整执行路径</p>
+          </div>
+
+          <div class="timeline">
+            <div class="timeline-step"><span>1</span>INT1（低优先级）进入 ISR，开始执行中断服务程序</div>
+            <div class="timeline-step"><span>2</span>INT0（高优先级）触发，硬件检测到优先级更高</div>
+            <div class="timeline-step"><span>3</span>CPU 自动保存 INT1 的当前上下文到栈中</div>
+            <div class="timeline-step"><span>4</span>跳转执行 INT0 ISR，处理高优先级中断</div>
+            <div class="timeline-step"><span>5</span>INT0 ISR 执行完成，通过中断返回指令恢复 INT1 上下文</div>
+          </div>
+
+          <div class="flow-chain">
+            INT1 触发 → 进入 ISR → INT0 高优先级触发 → 自动保存 INT1 上下文 → 执行 INT0 ISR → INT0 完成 → 恢复 INT1 上下文 → INT1 继续执行
+          </div>
+        </section>
+
+        <section id="api" class="doc-card" aria-labelledby="api-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Key APIs (v2)</div>
+              <h2 id="api-title">关键 API</h2>
+            </div>
+            <p>HRTOS v2 中断管理相关接口</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>中断初始化</h3>
+              <div class="detail-list">
+                <p><strong>函数：</strong>os_interrupt_init()</p>
+                <p><strong>功能：</strong>初始化 HRTOS 中断管理系统</p>
+                <p><strong>参数：</strong>无</p>
+                <p><strong>返回值：</strong>初始化状态</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>中断调度请求</h3>
+              <div class="detail-list">
+                <p><strong>函数：</strong>os_schedule_request()</p>
+                <p><strong>功能：</strong>请求中断后的任务调度</p>
+                <p><strong>参数：</strong>无</p>
+                <p><strong>返回值：</strong>无</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="code" class="doc-card" aria-labelledby="code-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Demo Code</div>
+              <h2 id="code-title">演示代码</h2>
+            </div>
+            <p>嵌套中断的完整实现示例</p>
+          </div>
+
+          <div class="code-stack">
+            <article class="code-card">
+              <h3>中断服务程序实现</h3>
+              <p>高优先级 INT0_ISR 和低优先级 INT1_ISR 的实现</p>
+              <pre><code>#include "hrtos.h"
+
+sbit LED_HIGH = P1^0;
+sbit LED_LOW  = P1^1;
+
+/* =========================
+ * 高优先级中断 INT0
+ * ========================= */
+void INT0_ISR(void)
+{
+    LED_HIGH = ~LED_HIGH;
+
+    // 高优先级执行
+}
+
+/* =========================
+ * 低优先级中断 INT1
+ * ========================= */
+void INT1_ISR(void)
+{
+    LED_LOW = ~LED_LOW;
+
+    // 在执行过程中可能被INT0抢占
+}</code></pre>
+            </article>
+
+            <article class="code-card">
+              <h3>系统初始化与中断配置</h3>
+              <p>hrtos_main 函数，配置中断优先级并启用中断</p>
+              <pre><code>/* =========================
+ * 系统入口
+ * ========================= */
+void hrtos_main(void)
+{
+    IT0 = 1;   // INT0 下降沿触发
+    IT1 = 1;   // INT1 下降沿触发
+
+    PX0 = 1;   // INT0 高优先级
+    PX1 = 0;   // INT1 低优先级
+
+    EX0 = 1;   // 启用 INT0
+    EX1 = 1;   // 启用 INT1
+}</code></pre>
+            </article>
+          </div>
+        </section>
+
+        <section id="significance" class="doc-card" aria-labelledby="significance-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">System Significance</div>
+              <h2 id="significance-title">系统意义</h2>
+            </div>
+            <p>嵌套中断在实时系统中的重要作用</p>
+          </div>
+
+          <div class="flow-grid">
+            <div class="flow-card">
+              <strong>实时性保障</strong>
+              嵌套中断机制保证高优先级事件可立即打断低优先级 ISR 执行，是实时性上限的重要保障。
+            </div>
+            <div class="flow-card">
+              <strong>优先级管理</strong>
+              通过硬件优先级配置，实现中断源的分级管理，确保关键事件优先处理。
+            </div>
+            <div class="flow-card">
+              <strong>响应能力提升</strong>
+              嵌套中断显著提升系统对多中断源的并发响应能力，满足复杂实时应用需求。
+            </div>
+          </div>
+
+          <div class="summary-strip" style="margin-top: 18px;">
+            <strong>系统本质：</strong>
+            嵌套中断是 HRTOS 中断驱动模型的核心机制，通过硬件优先级和自动上下文管理，
+            实现了实时系统中关键事件的快速响应和多中断源的并发处理。
+          </div>
+        </section>
+
+        <section id="notes" class="doc-card" aria-labelledby="notes-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Important Notes</div>
+              <h2 id="notes-title">注意事项</h2>
+            </div>
+            <p>使用嵌套中断时需要关注的关键点</p>
+          </div>
+
+          <div class="scenario-list">
+            <div class="scenario">
+              <h3>优先级配置</h3>
+              <p>
+                必须正确配置中断优先级寄存器（如 PX0、PX1），确保高优先级中断能够正确抢占低优先级中断。
+                优先级配置错误可能导致关键事件无法及时响应。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>栈空间管理</h3>
+              <p>
+                嵌套中断会增加栈空间的使用，每层嵌套都需要保存完整的上下文信息。
+                必须确保系统栈空间足够，避免因栈溢出导致的系统崩溃。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>ISR 执行时间</h3>
+              <p>
+                低优先级 ISR 的执行时间应尽可能短，避免长时间占用 CPU 资源。
+                过长的 ISR 会增加高优先级中断的响应延迟，影响系统实时性。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>共享资源保护</h3>
+              <p>
+                在嵌套中断环境中访问共享资源（如全局变量、硬件寄存器）时，
+                需要使用适当的同步机制（如关中断、信号量）防止数据竞争。
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="links" class="doc-card" aria-labelledby="links-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Related Links</div>
+              <h2 id="links-title">相关链接</h2>
+            </div>
+            <p>深入学习的相关资源</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>核心 API</h3>
+              <div class="detail-list">
+                <p><strong>os_interrupt_init</strong> - 初始化中断管理系统</p>
+                <p><strong>os_schedule_request</strong> - 请求中断后调度</p>
+                <p><strong>os_interrupt_enable</strong> - 启用指定中断源</p>
+                <p><strong>os_interrupt_disable</strong> - 禁用指定中断源</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>相关示例</h3>
+              <div class="detail-list">
+                <p><strong><a href="./interrupt-entry.html">中断入口</a></strong> - 了解中断入口机制</p>
+                <p><strong><a href="./latency-test.html">延迟测试</a></strong> - 测试中断响应延迟</p>
+                <p><strong><a href="./index.html">中断驱动</a></strong> - 返回分类首页</p>
+                <p><strong><a href="../index.html">示例主页</a></strong> - 返回示例主页</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>© 2017–2026 HRTOS · Nested Interrupt Module</p>
+    <p style="margin-top: 8px;">
+      <a href="./index.html">返回分类首页</a> · 
+      <a href="../index.html">返回示例主页</a>
+    </p>
+  </footer>
+</body>
+</html>

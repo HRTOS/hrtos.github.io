@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRTOS 示例 - 内核行为 | HRTOS Kernel Behavior</title>
+  <meta name="description" content="内核行为模块入口页：涵盖调度流程、优先级反转、系统运行轨迹与真实内核执行路径，理解RTOS核心运行机制。">
+  <meta name="keywords" content="HRTOS, kernel behavior, schedule flow, priority inversion, RTOS, embedded system">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#0f172a">
+  <meta property="og:title" content="HRTOS 示例 - 内核行为 / HRTOS Kernel Behavior">
+  <meta property="og:description" content="内核行为模块用于分析RTOS真实运行路径，包括调度流程、优先级反转与上下文切换行为。">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "HRTOS 示例 - 内核行为",
+    "description": "内核行为模块用于分析RTOS真实运行路径，包括调度流程、优先级反转与上下文切换行为。",
+    "keywords": [
+      "HRTOS",
+      "kernel behavior",
+      "schedule flow",
+      "priority inversion",
+      "RTOS",
+      "embedded system"
+    ],
+    "inLanguage": "zh-CN",
+    "articleSection": [
+      "模块介绍",
+      "示例导航",
+      "学习路线",
+      "关联模块"
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-strong: #111c34;
+      --panel-soft: #17233d;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --border: rgba(148, 163, 184, 0.18);
+      --shadow: 0 28px 70px rgba(2, 6, 23, 0.46);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --max: 1000px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 28%),
+        linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      line-height: 1.72;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    code,
+    pre {
+      font-family: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -48px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #00111c;
+      border-radius: 999px;
+      z-index: 100;
+      transition: top 0.2s ease;
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(15, 23, 42, 0.86);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar-inner {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #67e8f9, var(--accent));
+      box-shadow: 0 10px 24px rgba(56, 189, 248, 0.25);
+    }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .topnav a:hover,
+    .topnav a:focus-visible {
+      color: var(--text);
+    }
+
+    .page {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 42%),
+        linear-gradient(180deg, rgba(17, 28, 52, 0.96), rgba(15, 23, 42, 0.9));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -90px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #bfe9ff;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      line-height: 1.22;
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    h1 {
+      margin-top: 18px;
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      letter-spacing: -0.04em;
+      max-width: 11ch;
+    }
+
+    .hero-lead {
+      max-width: 64ch;
+      margin: 18px 0 0;
+      font-size: 1.08rem;
+      color: #c9d8ea;
+    }
+
+    .hero-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 18px;
+    }
+
+    .hero-card,
+    .mini-card,
+    .doc-card,
+    .toc,
+    .flow-card,
+    .code-card {
+      border: 1px solid var(--border);
+      background: rgba(17, 28, 52, 0.8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 22px;
+    }
+
+    .hero-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .capability-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .capability-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #d9eefb;
+    }
+
+    .check {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #7dd3fc, var(--accent));
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: rgba(8, 15, 32, 0.52);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .stat strong {
+      display: block;
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .content {
+      display: grid;
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .doc-card {
+      padding: 28px;
+      scroll-margin-top: 98px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-head p,
+    .doc-card > p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .kicker {
+      color: var(--accent);
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .two-col,
+    .three-col,
+    .four-col {
+      display: grid;
+      gap: 16px;
+    }
+
+    .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .four-col {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .mini-card {
+      padding: 20px;
+      background: rgba(12, 20, 39, 0.9);
+    }
+
+    .mini-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+    }
+
+    .mini-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .summary-strip {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.35));
+    }
+
+    .summary-strip strong {
+      color: #dff6ff;
+    }
+
+    .example-card {
+      display: block;
+      padding: 22px;
+      background: rgba(17, 28, 52, 0.8);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      transition: 0.25s ease;
+      text-decoration: none;
+    }
+
+    .example-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .example-card h3 {
+      margin: 0 0 8px;
+      font-size: 1.08rem;
+      color: #f8fafc;
+    }
+
+    .example-card p {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .example-card span {
+      display: inline-block;
+      margin-top: 12px;
+      color: #7dd3fc;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .flow-chain {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.16);
+      background: rgba(56, 189, 248, 0.07);
+      color: #dff6ff;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .footer {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto 40px;
+      text-align: center;
+    }
+
+    .footer p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .two-col,
+      .three-col,
+      .four-col {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page,
+      .topbar-inner,
+      .footer {
+        width: min(calc(100% - 24px), var(--max));
+      }
+
+      .hero,
+      .doc-card {
+        padding: 22px;
+      }
+
+      .topnav {
+        gap: 12px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到正文</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html" aria-label="跳转到 HRTOS 示例首页">
+        <span class="brand-mark">H</span>
+        <span>HRTOS 示例</span>
+      </a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="#intro">模块介绍</a>
+        <a href="#examples">示例导航</a>
+        <a href="#route">学习路线</a>
+        <a href="#related">关联模块</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="page">
+    <header class="hero">
+      <span class="eyebrow">Kernel Behavior Module</span>
+      <h1>内核行为</h1>
+      <p class="hero-lead">
+        内核行为模块用于分析 RTOS 真实运行路径，包括调度流程、优先级反转与上下文切换行为，
+        是系统级执行观测核心，帮助理解实时操作系统内核运行机制。
+      </p>
+
+      <div class="hero-grid">
+        <section class="hero-card">
+          <h2>模块概述</h2>
+          <p>
+            内核行为（Kernel Behavior）是 RTOS 运行的核心观测维度，涵盖调度流程、上下文切换、
+            中断交互与优先级反转等关键机制，是理解系统实时性保障的基础。
+          </p>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <strong>核心机制</strong>
+              <span>调度流程分析</span>
+            </div>
+            <div class="stat">
+              <strong>关键特性</strong>
+              <span>优先级反转处理</span>
+            </div>
+            <div class="stat">
+              <strong>执行路径</strong>
+              <span>真实内核运行</span>
+            </div>
+            <div class="stat">
+              <strong>观测维度</strong>
+              <span>系统级行为分析</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hero-card">
+          <h2>核心内容</h2>
+          <ul class="capability-list">
+            <li><span class="check">✓</span><span>完整调度流程追踪</span></li>
+            <li><span class="check">✓</span><span>优先级反转分析</span></li>
+            <li><span class="check">✓</span><span>真实系统运行模拟</span></li>
+            <li><span class="check">✓</span><span>内核执行路径观测</span></li>
+          </ul>
+        </section>
+      </div>
+    </header>
+
+    <div class="content">
+      <section id="intro" class="doc-card" aria-labelledby="intro-title">
+        <div class="section-head">
+          <div>
+            <div class="kicker">Module Introduction</div>
+            <h2 id="intro-title">模块介绍</h2>
+          </div>
+          <p>内核行为模块的核心价值</p>
+        </div>
+
+        <p>
+          内核行为系统用于分析 RTOS 真实运行路径，包括调度流程、优先级反转与上下文切换行为，
+          是系统级执行观测核心。通过本模块的学习，可以深入理解实时操作系统内核的决策过程和运行机制。
+        </p>
+
+        <div class="summary-strip">
+          <strong>模块包含：</strong>
+          调度流程（Schedule Flow） + 上下文切换（Context Switch） + 中断交互（Interrupt Interaction） + 优先级反转（Priority Inversion）
+        </div>
+      </section>
+
+      <section id="examples" class="doc-card" aria-labelledby="examples-title">
+        <div class="section-head">
+          <div>
+            <div class="kicker">Example Navigation</div>
+            <h2 id="examples-title">示例导航</h2>
+          </div>
+          <p>内核行为模块的核心示例</p>
+        </div>
+
+        <div class="two-col">
+          <a class="example-card" href="full-schedule-flow.html">
+            <h3>完整调度流程</h3>
+            <p>追踪系统从中断到任务切换路径。</p>
+            <span>进入实验 →</span>
+          </a>
+
+          <a class="example-card" href="priority-inversion.html">
+            <h3>优先级反转</h3>
+            <p>分析锁竞争导致调度异常。</p>
+            <span>进入实验 →</span>
+          </a>
+
+          <a class="example-card" href="real-system-run.html">
+            <h3>真实系统运行</h3>
+            <p>模拟完整 RTOS 运行周期。</p>
+            <span>进入实验 →</span>
+          </a>
+        </div>
+      </section>
+
+      <section id="route" class="doc-card" aria-labelledby="route-title">
+        <div class="section-head">
+          <div>
+            <div class="kicker">Learning Route</div>
+            <h2 id="route-title">学习路线</h2>
+          </div>
+          <p>推荐的学习顺序</p>
+        </div>
+
+        <p>
+          建议按以下顺序学习，可逐步构建完整 RTOS 内核行为理解。
+        </p>
+
+        <div class="flow-chain">
+          os_schedule_request() → os_enter_critical() → os_scheduler_run() → os_task_yield() → os_tick_get()
+        </div>
+
+        <div class="summary-strip" style="margin-top: 18px;">
+          <strong>学习建议：</strong>
+          从调度流程开始，理解内核执行路径，然后学习优先级反转等高级机制，最后通过真实系统运行示例验证理解。
+        </div>
+      </section>
+
+      <section id="related" class="doc-card" aria-labelledby="related-title">
+        <div class="section-head">
+          <div>
+            <div class="kicker">Related Modules</div>
+            <h2 id="related-title">关联模块</h2>
+          </div>
+          <p>深入学习的相关资源</p>
+        </div>
+
+        <div class="two-col">
+          <a class="example-card" href="/docs/examples/01-task-execution/index.html">
+            <h3>任务执行模型</h3>
+            <p>任务生命周期分析。</p>
+            <span>查看 →</span>
+          </a>
+
+          <a class="example-card" href="/docs/examples/02-scheduling-engine/index.html">
+            <h3>调度引擎</h3>
+            <p>调度决策核心。</p>
+            <span>查看 →</span>
+          </a>
+        </div>
+
+        <div style="margin-top: 18px; color: var(--muted);">
+          <strong>相关 API：</strong><br><br>
+          <a href="/docs/api_v2/interrupt/os_schedule_request.html">os_schedule_request</a> ·
+          <a href="/docs/api_v2/interrupt/os_enter_critical.html">os_enter_critical</a> ·
+          <a href="/docs/api_v2/time/os_tick_get.html">os_tick_get</a> ·
+          <a href="/docs/api_v2/kernel/os_slab_overflow.html">os_slab_overflow</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>© 2017–2026 HRTOS · Kernel Behavior Module</p>
+    <p style="margin-top: 8px;">
+      <a href="../index.html">返回示例主页</a>
+    </p>
+  </footer>
+</body>
+</html>

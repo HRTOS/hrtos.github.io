@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRTOS 示例 - 真实系统运行 | HRTOS Kernel Behavior</title>
+  <meta name="description" content="真实系统运行实验：展示HRTOS内核任务创建、调度触发、中断响应与任务切换的真实执行链路。">
+  <meta name="keywords" content="HRTOS, real system run, kernel behavior, task scheduling, RTOS, embedded system">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#0f172a">
+  <meta property="og:title" content="HRTOS 示例 - 真实系统运行 / HRTOS Real System Run">
+  <meta property="og:description" content="展示HRTOS内核任务创建、调度触发、中断响应与任务切换的真实执行链路。">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "HRTOS 示例 - 真实系统运行",
+    "description": "展示HRTOS内核任务创建、调度触发、中断响应与任务切换的真实执行链路。",
+    "keywords": [
+      "HRTOS",
+      "real system run",
+      "kernel behavior",
+      "task scheduling",
+      "RTOS",
+      "embedded system"
+    ],
+    "inLanguage": "zh-CN",
+    "articleSection": [
+      "示例简介",
+      "原理说明",
+      "HRTOS实现机制",
+      "工作流程",
+      "核心API",
+      "运行结果",
+      "注意事项"
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-strong: #111c34;
+      --panel-soft: #17233d;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --border: rgba(148, 163, 184, 0.18);
+      --shadow: 0 28px 70px rgba(2, 6, 23, 0.46);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --max: 1000px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 34%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 28%),
+        linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      line-height: 1.72;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    code,
+    pre {
+      font-family: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -48px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #00111c;
+      border-radius: 999px;
+      z-index: 100;
+      transition: top 0.2s ease;
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(15, 23, 42, 0.86);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar-inner {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #67e8f9, var(--accent));
+      box-shadow: 0 10px 24px rgba(56, 189, 248, 0.25);
+    }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .topnav a:hover,
+    .topnav a:focus-visible {
+      color: var(--text);
+    }
+
+    .page {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 42%),
+        linear-gradient(180deg, rgba(17, 28, 52, 0.96), rgba(15, 23, 42, 0.9));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -90px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #bfe9ff;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      line-height: 1.22;
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    h1 {
+      margin-top: 18px;
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      letter-spacing: -0.04em;
+      max-width: 11ch;
+    }
+
+    .hero-lead {
+      max-width: 64ch;
+      margin: 18px 0 0;
+      font-size: 1.08rem;
+      color: #c9d8ea;
+    }
+
+    .hero-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 18px;
+    }
+
+    .hero-card,
+    .mini-card,
+    .doc-card,
+    .toc,
+    .flow-card,
+    .code-card {
+      border: 1px solid var(--border);
+      background: rgba(17, 28, 52, 0.8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 22px;
+    }
+
+    .hero-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .capability-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .capability-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #d9eefb;
+    }
+
+    .check {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: #00111c;
+      background: linear-gradient(135deg, #7dd3fc, var(--accent));
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: rgba(8, 15, 32, 0.52);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .stat strong {
+      display: block;
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 20px;
+      margin-top: 24px;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 88px;
+      padding: 20px;
+      background: rgba(10, 18, 36, 0.86);
+    }
+
+    .toc h2 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .toc ol {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .toc a {
+      transition: color 0.2s ease;
+    }
+
+    .toc a:hover,
+    .toc a:focus-visible,
+    .toc a.active {
+      color: var(--accent);
+    }
+
+    .content {
+      display: grid;
+      gap: 20px;
+    }
+
+    .doc-card {
+      padding: 28px;
+      scroll-margin-top: 98px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-head p,
+    .doc-card > p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .kicker {
+      color: var(--accent);
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .two-col,
+    .three-col {
+      display: grid;
+      gap: 16px;
+    }
+
+    .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mini-card {
+      padding: 20px;
+      background: rgba(12, 20, 39, 0.9);
+    }
+
+    .mini-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+    }
+
+    .mini-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .summary-strip {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.35));
+    }
+
+    .summary-strip strong {
+      color: #dff6ff;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .timeline-step {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(8, 15, 31, 0.68);
+    }
+
+    .timeline-step span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    .function-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .function-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: rgba(9, 16, 31, 0.84);
+    }
+
+    .function-card h3 {
+      margin-bottom: 14px;
+      font-size: 1.1rem;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+    }
+
+    .detail-list p {
+      margin: 0;
+    }
+
+    .detail-list strong {
+      color: var(--text);
+    }
+
+    .code-stack {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .code-card {
+      padding: 20px;
+      background: rgba(10, 16, 29, 0.88);
+    }
+
+    .code-card h3 {
+      font-size: 1.04rem;
+      margin-bottom: 8px;
+    }
+
+    .code-card p {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+
+    pre {
+      margin: 0;
+      padding: 18px;
+      overflow: auto;
+      border-radius: var(--radius-md);
+      background: #081120;
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      color: #d7effd;
+      font-size: 0.93rem;
+      line-height: 1.65;
+    }
+
+    .flow-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .flow-card {
+      padding: 18px 20px;
+      background: rgba(8, 15, 31, 0.84);
+    }
+
+    .flow-card strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .flow-chain {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.16);
+      background: rgba(56, 189, 248, 0.07);
+      color: #dff6ff;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .scenario {
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(10, 17, 32, 0.84);
+    }
+
+    .scenario h3 {
+      font-size: 1.02rem;
+      margin-bottom: 8px;
+    }
+
+    .scenario p,
+    .footer p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .seo-note {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: var(--radius-md);
+      border: 1px dashed rgba(56, 189, 248, 0.28);
+      background: rgba(8, 15, 31, 0.66);
+    }
+
+    .footer {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto 40px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .layout,
+      .two-col,
+      .three-col {
+        grid-template-columns: 1fr;
+      }
+
+      .toc {
+        position: static;
+        top: auto;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page,
+      .topbar-inner,
+      .footer {
+        width: min(calc(100% - 24px), var(--max));
+      }
+
+      .hero,
+      .doc-card {
+        padding: 22px;
+      }
+
+      .topnav {
+        gap: 12px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到正文</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html" aria-label="跳转到 HRTOS 示例首页">
+        <span class="brand-mark">H</span>
+        <span>HRTOS 示例</span>
+      </a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="#overview">示例简介</a>
+        <a href="#principle">原理说明</a>
+        <a href="#mechanism">HRTOS实现</a>
+        <a href="#flow">工作流程</a>
+        <a href="#api">核心API</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="page">
+    <header id="overview" class="hero">
+      <span class="eyebrow">Kernel Behavior Core</span>
+      <h1>真实系统运行</h1>
+      <p class="hero-lead">
+        本实验展示 HRTOS 在实际运行中的完整链路：任务创建 → 调度触发 → 中断响应 → 任务切换 → 任务执行。
+        真实系统运行体现 RTOS 内核的完整协作机制，是理解调度器行为的基础模型。
+      </p>
+
+      <div class="hero-grid">
+        <section class="hero-card">
+          <h2>示例目标</h2>
+          <p>
+            展示 HRTOS 从启动到任务运行的完整过程，说明系统初始化、任务创建、调度运行之间的关系，
+            展示真实运行环境中的内核行为，帮助用户理解操作系统如何管理实际应用。
+          </p>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <strong>运行链路</strong>
+              <span>任务创建 → 调度触发 → 中断响应 → 任务切换</span>
+            </div>
+            <div class="stat">
+              <strong>核心机制</strong>
+              <span>就绪队列 + 调度器 + 中断临界区</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hero-card">
+          <h2>核心机制</h2>
+          <ul class="capability-list">
+            <li><span class="check">✓</span><span>任务创建与就绪队列管理</span></li>
+            <li><span class="check">✓</span><span>调度请求触发机制</span></li>
+            <li><span class="check">✓</span><span>中断临界区保护</span></li>
+            <li><span class="check">✓</span><span>任务切换与恢复</span></li>
+          </ul>
+        </section>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="toc" aria-label="章节目录">
+        <h2>章节目录</h2>
+        <ol>
+          <li><a href="#overview">示例简介</a></li>
+          <li><a href="#principle">原理说明</a></li>
+          <li><a href="#mechanism">HRTOS实现机制</a></li>
+          <li><a href="#flow">工作流程</a></li>
+          <li><a href="#api">核心API</a></li>
+          <li><a href="#result">运行结果</a></li>
+          <li><a href="#notes">注意事项</a></li>
+          <li><a href="#links">相关链接</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="principle" class="doc-card" aria-labelledby="principle-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Principle</div>
+              <h2 id="principle-title">原理说明</h2>
+            </div>
+            <p>真实系统运行是理解 RTOS 内核行为的基础</p>
+          </div>
+
+          <p>
+            真实系统运行（Real System Run）是指 HRTOS 在实际硬件环境中的完整执行过程，
+            从系统启动、任务创建、调度触发到任务切换和执行的完整链路。
+            通过观察真实系统运行，可以深入理解 RTOS 内核各组件之间的协作机制。
+          </p>
+
+          <div class="two-col">
+            <article class="mini-card">
+              <h3>什么是真实系统运行</h3>
+              <p>
+                真实系统运行是指 HRTOS 在实际硬件上的完整执行过程，
+                包括任务创建、调度触发、中断响应、任务切换等所有内核行为的真实体现。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>为什么需要理解真实运行</h3>
+              <p>
+                理解真实系统运行有助于掌握 RTOS 内核的完整协作机制，
+                是理解调度器行为、中断处理、任务切换等核心概念的基础模型。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>运行链路的核心环节</h3>
+              <p>
+                真实系统运行包含任务创建、就绪队列管理、调度请求触发、中断临界区保护、
+                调度器执行和任务切换等核心环节，每个环节都至关重要。
+              </p>
+            </article>
+            <article class="mini-card">
+              <h3>系统初始化的作用</h3>
+              <p>
+                系统初始化为任务运行提供基础环境，包括硬件初始化、内核数据结构初始化、
+                中断向量表配置等，是系统正常运行的前提。
+              </p>
+            </article>
+          </div>
+
+          <div class="summary-strip">
+            <strong>核心判断：</strong>
+            真实系统运行体现 RTOS 内核的完整协作机制，是理解调度器行为的基础模型，
+            通过观察完整运行链路可以深入理解操作系统如何管理实际应用。
+          </div>
+        </section>
+
+        <section id="mechanism" class="doc-card" aria-labelledby="mechanism-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">HRTOS Implementation</div>
+              <h2 id="mechanism-title">HRTOS 实现机制</h2>
+            </div>
+            <p>HRTOS 如何实现真实系统运行</p>
+          </div>
+
+          <p>
+            在 HRTOS 中，真实系统运行的实现围绕任务创建与就绪队列管理、调度请求触发、
+            中断临界区保护和任务切换四个核心环节展开。每个环节都经过精心设计，确保系统运行的高效性和可靠性。
+          </p>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>任务创建与就绪队列管理</h3>
+              <div class="detail-list">
+                <p><strong>创建方式：</strong>通过 os_task_create 创建任务并加入就绪队列</p>
+                <p><strong>队列管理：</strong>维护所有就绪任务的状态和优先级</p>
+                <p><strong>数据结构：</strong>使用链表或数组管理就绪队列</p>
+                <p><strong>状态转换：</strong>任务从 Created 状态进入 Ready 状态</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>调度请求触发</h3>
+              <div class="detail-list">
+                <p><strong>触发条件：</strong>时间片到期、任务主动让出、中断事件</p>
+                <p><strong>请求方式：</strong>通过 os_schedule_request 发起调度请求</p>
+                <p><strong>中断响应：</strong>通过系统 Tick 中断触发调度</p>
+                <p><strong>调度算法：</strong>基于优先级的轮询调度</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>中断临界区保护</h3>
+              <div class="detail-list">
+                <p><strong>进入临界区：</strong>通过 os_enter_critical 禁用中断</p>
+                <p><strong>保护内容：</strong>调度过程、内核数据结构访问</p>
+                <p><strong>退出临界区：</strong>通过 os_exit_critical 恢复中断</p>
+                <p><strong>设计考虑：</strong>最小化临界区时间，提高系统响应性</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>任务切换与恢复</h3>
+              <div class="detail-list">
+                <p><strong>切换方式：</strong>通过 os_task_yield 主动让出 CPU</p>
+                <p><strong>上下文保存：</strong>保存当前任务寄存器和栈指针</p>
+                <p><strong>上下文恢复：</strong>恢复目标任务执行状态</p>
+                <p><strong>状态转换：</strong>任务从 Running 状态进入 Ready 状态</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="flow" class="doc-card" aria-labelledby="flow-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Workflow</div>
+              <h2 id="flow-title">工作流程</h2>
+            </div>
+            <p>真实系统运行的完整执行路径</p>
+          </div>
+
+          <div class="timeline">
+            <div class="timeline-step"><span>1</span>任务创建阶段：os_task_create 将任务加入 Ready Queue</div>
+            <div class="timeline-step"><span>2</span>调度触发：通过 os_schedule_request 或 Tick 中断触发调度</div>
+            <div class="timeline-step"><span>3</span>中断进入：系统进入 ISR，执行 os_enter_critical 保护调度过程</div>
+            <div class="timeline-step"><span>4</span>调度执行：调度器选择最高优先级任务</div>
+            <div class="timeline-step"><span>5</span>任务切换：通过 yield 或系统调度完成任务切换</div>
+          </div>
+
+          <div class="flow-chain">
+            os_task_create → Ready Queue → os_schedule_request → interrupt → os_enter_critical → scheduler → os_exit_critical
+          </div>
+        </section>
+
+        <section id="api" class="doc-card" aria-labelledby="api-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Core APIs</div>
+              <h2 id="api-title">核心 API</h2>
+            </div>
+            <p>真实系统运行涉及的核心 API</p>
+          </div>
+
+          <div class="flow-grid">
+            <div class="flow-card">
+              <strong>任务创建</strong>
+              <a href="/docs/api_v2/kernel/os_task_create.html">os_task_create</a> - 创建任务并加入就绪队列
+            </div>
+            <div class="flow-card">
+              <strong>调度请求触发</strong>
+              <a href="/docs/api_v2/interrupt/os_schedule_request.html">os_schedule_request</a> - 触发调度请求
+            </div>
+            <div class="flow-card">
+              <strong>进入中断临界区</strong>
+              <a href="/docs/api_v2/interrupt/os_enter_critical.html">os_enter_critical</a> - 进入临界区保护
+            </div>
+            <div class="flow-card">
+              <strong>退出临界区</strong>
+              <a href="/docs/api_v2/interrupt/os_exit_critical.html">os_exit_critical</a> - 退出临界区
+            </div>
+            <div class="flow-card">
+              <strong>任务切换请求</strong>
+              <a href="/docs/api_v2/task/os_task_yield.html">os_task_yield</a> - 主动让出 CPU
+            </div>
+          </div>
+        </section>
+
+        <section id="result" class="doc-card" aria-labelledby="result-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Expected Result</div>
+              <h2 id="result-title">运行结果</h2>
+            </div>
+            <p>示例执行后的预期行为</p>
+          </div>
+
+          <div class="flow-grid">
+            <div class="flow-card">
+              <strong>任务状态</strong>
+              任务从 Created 状态进入 Ready 状态，最终进入 Running 状态
+            </div>
+            <div class="flow-card">
+              <strong>调度行为</strong>
+              调度器根据优先级选择任务，实现公平调度
+            </div>
+            <div class="flow-card">
+              <strong>中断响应</strong>
+              系统能够正确响应中断，进入临界区保护调度过程
+            </div>
+            <div class="flow-card">
+              <strong>任务切换</strong>
+              任务能够正确切换，上下文得到保存和恢复
+            </div>
+          </div>
+
+          <div class="summary-strip" style="margin-top: 18px;">
+            <strong>系统本质：</strong>
+            本示例的核心是展示 HRTOS 在实际运行中的完整链路，体现 RTOS 内核的完整协作机制，
+            是理解调度器行为的基础模型。
+          </div>
+        </section>
+
+        <section id="notes" class="doc-card" aria-labelledby="notes-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Important Notes</div>
+              <h2 id="notes-title">注意事项</h2>
+            </div>
+            <p>使用本示例时需要关注的关键点</p>
+          </div>
+
+          <div class="scenario-list">
+            <div class="scenario">
+              <h3>就绪队列管理</h3>
+              <p>
+                就绪队列是调度器选择任务的基础，需要正确维护队列状态。
+                任务创建后必须正确加入就绪队列，否则调度器无法选择该任务。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>调度请求触发时机</h3>
+              <p>
+                调度请求可以通过时间片到期、任务主动让出或中断事件触发。
+                不同触发方式对应不同的调度策略，需要根据应用场景选择合适的触发方式。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>临界区保护</h3>
+              <p>
+                临界区保护是确保调度过程原子性的关键，需要正确使用 os_enter_critical 和 os_exit_critical。
+                临界区时间过长会影响系统响应性，需要最小化临界区时间。
+              </p>
+            </div>
+            <div class="scenario">
+              <h3>任务切换开销</h3>
+              <p>
+                任务切换需要保存和恢复上下文，存在一定的性能开销。
+                在实时性要求高的场景中，需要合理设置调度策略，平衡切换频率和系统响应性。
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="links" class="doc-card" aria-labelledby="links-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Related Links</div>
+              <h2 id="links-title">相关链接</h2>
+            </div>
+            <p>深入学习的相关资源</p>
+          </div>
+
+          <div class="function-grid">
+            <article class="function-card">
+              <h3>核心 API</h3>
+              <div class="detail-list">
+                <p><strong>os_task_create</strong> - 创建任务并加入就绪队列</p>
+                <p><strong>os_schedule_request</strong> - 触发调度请求</p>
+                <p><strong>os_enter_critical</strong> - 进入临界区保护</p>
+                <p><strong>os_exit_critical</strong> - 退出临界区</p>
+                <p><strong>os_task_yield</strong> - 主动让出 CPU</p>
+              </div>
+            </article>
+
+            <article class="function-card">
+              <h3>相关示例</h3>
+              <div class="detail-list">
+                <p><strong><a href="./full-schedule-flow.html">完整调度流程</a></strong> - 了解完整调度流程</p>
+                <p><strong><a href="./priority-inversion.html">优先级反转</a></strong> - 学习优先级反转机制</p>
+                <p><strong><a href="./index.html">内核行为</a></strong> - 返回分类首页</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>© 2017–2026 HRTOS · Kernel Behavior Module</p>
+    <p style="margin-top: 8px;">
+      <a href="./index.html">返回分类首页</a> · 
+      <a href="../index.html">返回示例主页</a>
+    </p>
+  </footer>
+</body>
+</html>
