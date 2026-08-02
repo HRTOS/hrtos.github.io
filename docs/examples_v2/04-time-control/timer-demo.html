@@ -818,7 +818,7 @@
           </div>
 
           <div class="flow-chain">
-            os_timer_create → os_timer_start → Tick 递增 → Compare Match → timer_callback → os_event_write → task_consumer → os_event_wait → LED_EVENT 翻转
+            os_task_create → os_tick_config → Tick 递增 → Compare Match → timer_callback → os_event_write → task_consumer → os_event_wait → LED_EVENT 翻转
           </div>
         </section>
 
@@ -837,7 +837,7 @@
               <p>Timer 回调函数通过事件解耦，system_init 初始化事件和定时器</p>
               <pre><code>#include "hrtos.h"
 
-#define TIMER_ID 0
+#define TIMER_ID 5
 #define EVENT_ID  1
 
 /* Timer回调（建议：轻量 + 事件触发） */
@@ -851,9 +851,9 @@ void system_init(void)
 {
     os_event_init(EVENT_ID);
 
-    /* 1000ms周期Timer */
-    os_timer_create(TIMER_ID, os_ms_to_tick(1000), timer_callback, 1);
-    os_timer_start(TIMER_ID);
+    
+    os_tick_config(TIMER_ID, 10000);
+    
 }</code></pre>
             </article>
 
@@ -868,6 +868,8 @@ void task_consumer(void)
         os_event_wait(EVENT_ID, 0);  // 永久等待
 
         LED_EVENT = ~LED_EVENT;
+
+        os_event_delete(EVENT_ID);
     }
 }
 
@@ -878,10 +880,6 @@ void hrtos_main(void)
 
     os_task_create((unsigned int)task_consumer, 1, 2, 5);
 
-    while(1)
-    {
-        os_nop();
-    }
 }</code></pre>
             </article>
           </div>
@@ -941,15 +939,7 @@ void hrtos_main(void)
               </div>
             </article>
 
-            <article class="function-card">
-              <h3>Timer API</h3>
-              <div class="detail-list">
-                <p><strong><a href="\docs\api_v2\time\os_timer_create.html">os_timer_create</a></strong> - 创建定时器</p>
-                <p><strong><a href="\docs\api_v2\time\os_timer_start.html">os_timer_start</a></strong> - 启动定时器</p>
-                <p><strong>os_timer_stop</strong> - 停止定时器</p>
-                <p><strong>os_timer_delete</strong> - 删除定时器</p>
-              </div>
-            </article>
+            
 
             <article class="function-card">
               <h3>Event API</h3>
@@ -976,8 +966,8 @@ void hrtos_main(void)
             <article class="function-card">
               <h3>核心 API</h3>
               <div class="detail-list">
-                <p><strong>os_timer_create</strong> - 创建定时器</p>
-                <p><strong>os_timer_start</strong> - 启动定时器</p>
+                <p><strong>os_event_delete</strong> - 删除事件</p>
+                <p><strong>os_event_init</strong> - 初始化事件</p>
                 <p><strong>os_event_write</strong> - 触发事件</p>
                 <p><strong>os_event_wait</strong> - 等待事件</p>
               </div>
