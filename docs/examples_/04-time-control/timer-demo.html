@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>定时器演示 | HRTOS 时间控制系统</title>
+<meta name="description" content="HRTOS Timer机制：基于Tick驱动的周期触发与事件调度模型。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+
+.hero{ margin-bottom:54px; }
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:2.4rem;
+}
+
+.section{ margin-bottom:54px; }
+
+.flow{ display:grid; gap:14px; }
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+footer{
+  text-align:center;
+  color:#8ea3be;
+  margin-top:60px;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/04-time-control/index.html">Time Control</a> /
+  <span>Timer Demo</span>
+</nav>
+
+<section class="hero">
+  <h1>定时器机制（Timer System）</h1>
+  <p>
+    Timer 基于 HRTOS Tick 系统实现周期触发与事件驱动回调，
+    用于实现延时任务、周期任务与事件触发机制。
+  </p>
+</section>
+
+<section class="section">
+  <h2>机制模型</h2>
+
+  <div class="step">
+    Timer = Tick Counter + Compare Match + Callback Dispatch
+  </div>
+
+  <div class="step" style="margin-top:10px;">
+    所有 Timer 行为依赖 os_tick_config / os_tick_get / scheduler dispatch
+  </div>
+</section>
+
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="flow">
+    <div class="step">1. Timer 注册到内核</div>
+    <div class="step">2. Tick递增计数</div>
+    <div class="step">3. Compare Match触发</div>
+    <div class="step">4. 调度器执行回调任务</div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>示例代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">Copy</button>
+<pre><code>
+#include "hrtos.h"
+
+/* =========================================================
+ * LED定义（时间系统可视化）
+ * ========================================================= */
+sbit LED_DELAY = P1^0;   /* delay任务 */
+sbit LED_WAIT  = P1^1;   /* wait状态 */
+sbit LED_EVENT = P1^2;   /* event触发 */
+sbit LED_TICK  = P1^3;   /* tick心跳（辅助观察） */
+
+/* =========================================================
+ * EVENT ID
+ * ========================================================= */
+#define EVENT_ID 1
+
+/* =========================================================
+ * 1. 时间驱动任务（Delay vs Schedule Delay）
+ * ========================================================= */
+void task_delay(void)
+{
+    u32 last = 0;
+
+    while(1)
+    {
+        u32 now = os_uptime_ms();
+
+        /* 500ms节奏闪烁 */
+        if (now - last >= 500)
+        {
+            last = now;
+            LED_DELAY = ~LED_DELAY;
+        }
+
+        /* 释放CPU（关键对比点） */
+        os_delay(os_ms_to_tick(10));
+    }
+}
+
+/* =========================================================
+ * 2. 事件等待任务（Wait）
+ * ========================================================= */
+void task_wait(void)
+{
+    u16 timeout;
+
+    while(1)
+    {
+        LED_WAIT = 0;
+
+        timeout = os_ms_to_tick(100);
+
+        if (os_event_wait(EVENT_ID, timeout))
+        {
+            /* 被事件唤醒 */
+            LED_WAIT = 1;
+
+            /* 可视化脉冲 */
+            os_delay(os_ms_to_tick(50));
+        }
+    }
+}
+
+/* =========================================================
+ * 3. 事件触发任务（Producer）
+ * ========================================================= */
+void task_event_trigger(void)
+{
+    u32 last = 0;
+
+    while(1)
+    {
+        u32 now = os_uptime_ms();
+
+        /* 每1000ms触发一次事件 */
+        if (now - last >= 1000)
+        {
+            last = now;
+
+            os_event_write(EVENT_ID);
+
+            LED_EVENT = ~LED_EVENT;
+        }
+
+        os_delay(os_ms_to_tick(10));
+    }
+}
+
+/* =========================================================
+ * 4. tick可视化辅助任务（增强教学效果）
+ * ========================================================= */
+void task_tick_view(void)
+{
+    while(1)
+    {
+        /* 低频闪烁 = 系统活跃指示 */
+        LED_TICK = ~LED_TICK;
+
+        os_delay(os_ms_to_tick(100));
+    }
+}
+
+
+/* =========================================================
+ * 6. 系统入口（必须）
+ * ========================================================= */
+void hrtos_main(void)
+{
+    /* LED初始化 */
+    LED_DELAY = 0;
+    LED_WAIT  = 0;
+    LED_EVENT = 0;
+    LED_TICK  = 0;
+
+    /* =========================
+     * 初始化事件系统
+     * ========================= */
+    os_event_init(EVENT_ID);
+
+    /* =========================
+     * tick系统配置
+     * ========================= */
+    os_tick_config(1, 10000);  /* 1ms tick */
+
+    /* =========================
+     * 普通任务注册
+     * ========================= */
+    os_task_create((unsigned int)task_delay,        1, 2, 5);
+    os_task_create((unsigned int)task_wait,         2, 3, 5);
+    os_task_create((unsigned int)task_event_trigger,3, 2, 5);
+    os_task_create((unsigned int)task_tick_view,    4, 4, 5);
+}
+</code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统设计原则</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Timer不做重计算</h3>
+      <p>Timer回调应尽量短，仅用于触发事件。</p>
+    </div>
+
+    <div class="step">
+      <h3>推荐事件解耦</h3>
+      <p>Timer → Event → Task，避免ISR阻塞。</p>
+    </div>
+
+    <div class="step">
+      <h3>Tick统一驱动</h3>
+      <p>Timer全部依赖系统Tick，而不是独立计时。</p>
+    </div>
+
+  </div>
+</section>
+
+<section class="section">
+  <h2>API 对照（v2）</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Time API</h3>
+      <p>
+        <a href="\docs\api_v2\time\os_tick_get.html">os_tick_get</a><br/>
+        <a href="\docs\api_v2\time\os_ms_to_tick.html">os_ms_to_tick</a>
+      </p>
+    </div>
+
+    <div class="step">
+      <h3>Timer API</h3>
+      <p>
+        <a href="\docs\api_v2\time\os_tick_config.html">os_timer_create</a><br/>
+        <a href="\docs\api_v2\time\os_delay.html">os_timer_start</a>
+      </p>
+    </div>
+
+    <div class="step">
+      <h3>Event API</h3>
+      <p>
+        <a href="\docs\api_v2\ipc\os_event_init.html">os_event_init</a><br/>
+        <a href="\docs\api_v2\ipc\os_event_wait.html">os_event_wait</a><br/>
+        <a href="\docs\api_v2\ipc\os_event_write.html">os_event_write</a>
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+© 2017–2026 HRTOS · Timer Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
+
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(() => btn.innerText = old, 1000);
+});
+</script>
+<script src="https://hrtos.com/header.js" defer></script>
+</body>
+</html>

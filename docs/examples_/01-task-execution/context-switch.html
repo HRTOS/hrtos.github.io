@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>上下文切换 | HRTOS 实验系统</title>
+<meta name="description" content="上下文切换实验：基于HRTOS v2任务调度机制，分析任务切换触发条件、寄存器保存流程与LED任务交替执行行为。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --radius:12px;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+
+.hero{ margin-bottom:54px; }
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+  line-height:1.1;
+}
+
+.hero p{ margin:0; color:var(--muted); max-width:780px; }
+
+.section{ margin-bottom:54px; }
+
+.section h2{ margin:0 0 10px; }
+
+.section p{ color:var(--muted); }
+
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+}
+
+.flow{ display:grid; gap:14px; }
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{ margin:0 0 8px; }
+
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/01-task-execution/index.html">Task Execution</a> /
+  <span>Context Switch</span>
+</nav>
+
+<section class="hero">
+  <span class="hero-tag">Task Execution Core</span>
+  <h1>上下文切换（Context Switch）</h1>
+  <p>
+    在 HRTOS v2 中，上下文切换由调度器触发，用于在 task_A 与 task_B 之间保存与恢复执行状态，
+    实现 LED 任务的交替运行。
+  </p>
+</section>
+
+<section class="section">
+  <h2>本示例行为定义（基于实际代码）</h2>
+
+  <div class="block">
+    系统运行两个任务：task_A 与 task_B<br>
+    每个任务独立控制一个 LED，并通过延时循环形成可观察的切换效果。
+  </div>
+
+  <p style="margin-top:14px;">
+    相关API：
+    <a href="/docs/api_v2/kernel/os_task_create.html">os_task_create</a> ·
+    <a href="/docs/api_v2/task/os_task_yield.html">os_task_yield</a> ·
+    <a href="/docs/api_v2/kernel/os_task_create.html">kernel task create</a>
+  </p>
+
+  <h3>任务执行模型</h3>
+  <p>
+    task_A 与 task_B 均为无限循环任务，通过 LED 翻转 + 软件延时维持运行节奏，
+    调度器在任务切换点（yield / 时间片）进行上下文切换。
+  </p>
+
+  <h3>上下文切换触发点</h3>
+  <p>
+    本示例中主要触发来源为：
+    <br>• 时间片调度（系统Tick）
+    <br>• task yield 主动让出CPU
+  </p>
+
+  <h3>执行状态变化</h3>
+  <p>
+    Running → Ready → Running 的循环切换，使 LED_A 与 LED_B 交替变化。
+  </p>
+</section>
+
+<section class="section">
+  <h2>运行流程（基于该示例真实行为）</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>1. 任务创建</h3>
+      <p>hrtos_main 中创建 task_A 与 task_B，进入 Ready 状态。</p>
+    </div>
+
+    <div class="step">
+      <h3>2. 调度启动</h3>
+      <p>调度器选择一个任务进入 Running 状态。</p>
+    </div>
+
+    <div class="step">
+      <h3>3. LED运行阶段</h3>
+      <p>任务控制 LED 翻转，并执行软件延时循环。</p>
+    </div>
+
+    <div class="step">
+      <h3>4. 时间片/切换点触发</h3>
+      <p>Tick 或 yield 导致 CPU 让出。</p>
+    </div>
+
+    <div class="step">
+      <h3>5. 上下文保存与恢复</h3>
+      <p>保存当前任务状态，切换到另一个任务继续执行。</p>
+    </div>
+
+  </div>
+
+  <p style="margin-top:14px;">
+    相关API：
+    <a href="/docs/api_v2/task/os_task_yield.html">os_task_yield</a> ·
+    <a href="/docs/api_v2/time/os_delay.html">os_delay</a> ·
+    <a href="/docs/api_v2/kernel/os_task_create.html">os_task_create</a>
+  </p>
+</section>
+
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">Copy</button>
+<pre><code>
+#include "hrtos.h"
+
+#define TASK_A 1
+#define TASK_B 2
+
+sbit LED_A = P1^0;
+sbit LED_B = P1^1;
+
+/* Task A */
+void task_A(void)
+{
+	u16 i;
+	P1=0XFF;
+    while(1)
+    {
+        LED_A = ~LED_A;   // ÇÐ»»AµÆ×´Ì¬
+        i=2000;
+		while(i--);
+
+    }
+}
+
+/* Task B */
+void task_B(void)
+{
+	u16 i;
+    while(1)
+    {
+        LED_B = ~LED_B;   // ÇÐ»»BµÆ×´Ì¬        
+        i=2000;
+		while(i--);        
+		
+    }
+}
+
+/* 系统入口页 */
+void hrtos_main(void)
+{
+
+    os_task_create((unsigned int)task_A, TASK_A, 3, 2);
+    os_task_create((unsigned int)task_B, TASK_B, 3, 2);
+	
+}
+</code></pre>
+  </div>
+
+</section>
+
+<section class="section">
+  <h2>系统本质说明</h2>
+
+  <p>
+    本示例的核心不是 LED，而是验证 HRTOS v2 中：
+    <b>两个独立任务在同一CPU上通过调度器实现交替执行</b>。
+  </p>
+
+  <div class="block">
+    关键机制：
+    <br>• task_A / task_B 独立栈
+    <br>• 调度器基于Ready队列选择任务
+    <br>• 上下文切换保存寄存器 + 恢复执行点
+  </div>
+
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Context Switch Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const box = btn.closest(".code-box");
+  const code = box.querySelector("code");
+
+  navigator.clipboard.writeText(code.innerText);
+
+  btn.innerText = "已复制";
+  setTimeout(() => btn.innerText = "Copy", 1000);
+});
+</script>
+
+<script src="https://hrtos.com/header.js" defer></script>
+</body>
+</html>

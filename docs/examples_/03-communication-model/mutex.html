@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>互斥锁 | HRTOS 实验系统</title>
+<meta name="description" content="HRTOS 互斥锁实验：演示任务间通过互斥锁保护共享资源，避免竞争条件与数据冲突。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="https://hrtos.com/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+
+.hero{ margin-bottom:54px; }
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+.section{ margin-bottom:54px; }
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{
+  margin:0 0 20px;
+  color:var(--muted);
+}
+
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+}
+
+.flow{
+  display:grid;
+  gap:14px;
+}
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{
+  margin:0 0 8px;
+  font-size:1.05rem;
+  color:#f8fafc;
+}
+
+.step p{
+  margin:0;
+  color:var(--muted);
+}
+
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.copy-btn:hover{
+  color:#fff;
+  border-color:#38bdf8;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/03-communication-model/index.html">Communication Model</a> /
+  <span>Mutex</span>
+</nav>
+
+<section class="hero">
+  <span class="hero-tag">Synchronization Core</span>
+  <h1>互斥锁（Mutex）</h1>
+  <p>
+    互斥锁用于保护共享资源，确保同一时刻只有一个任务进入临界区，
+    避免并发访问导致的数据冲突与不一致问题。
+  </p>
+</section>
+
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="block">
+    Mutex = 加锁 → 独占访问 → 解锁 → 任务调度恢复
+  </div>
+</section>
+
+<section class="section">
+  <h2>触发场景</h2>
+  <div class="flow">
+    <div class="step"><h3>共享变量访问</h3><p>多任务同时读写共享数据结构</p></div>
+    <div class="step"><h3>外设访问控制</h3><p>UART / SPI / I2C 资源竞争</p></div>
+    <div class="step"><h3>临界区保护</h3><p>防止中断/切换导致数据破坏</p></div>
+    <div class="step"><h3>任务同步</h3><p>控制执行顺序与资源占用</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>执行流程</h2>
+  <div class="flow">
+    <div class="step"><h3>1. 初始化 Mutex</h3><p>创建互斥锁对象</p></div>
+    <div class="step"><h3>2. 尝试加锁</h3><p>进入竞争或阻塞</p></div>
+    <div class="step"><h3>3. 进入临界区</h3><p>独占访问共享资源</p></div>
+    <div class="step"><h3>4. 释放锁</h3><p>归还资源控制权</p></div>
+    <div class="step"><h3>5. 恢复调度</h3><p>继续任务切换</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">Copy</button>
+<pre><code>
+#include "hrtos.h"
+
+#define MUTEX_ID 0
+
+sbit LED_T1 = P1^0;
+sbit LED_T2 = P1^1;
+sbit LED_CS = P1^2;
+
+void task1(void)
+{
+    while(1)
+    {
+        if(os_mutex_lock(MUTEX_ID))
+        {
+            LED_T1 = 1;
+            LED_CS = 1;
+
+            os_delay(3);
+
+            LED_T1 = 0;
+            LED_CS = 0;
+
+            os_mutex_unlock(MUTEX_ID);
+        }
+        else
+        {
+            LED_T1 = ~LED_T1;
+        }
+
+        os_delay(4);
+    }
+}
+
+void task2(void)
+{
+    while(1)
+    {
+        if(os_mutex_lock(MUTEX_ID))
+        {
+            LED_T2 = 1;
+            LED_CS = 1;
+
+            os_delay(3);
+
+            LED_T2 = 0;
+            LED_CS = 0;
+
+            os_mutex_unlock(MUTEX_ID);
+        }
+        else
+        {
+            LED_T2 = ~LED_T2;
+        }
+
+        os_delay(4);
+    }
+}
+
+void hrtos_main(void)
+{
+    os_mutex_init(MUTEX_ID);
+
+    os_task_create((unsigned int)task1, 1, 3, 5);
+    os_task_create((unsigned int)task2, 2, 2, 5);
+}
+</code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>API 参考</h2>
+  <div class="flow">
+    <div class="step"><h3>初始化</h3><p>os_mutex_init()</p></div>
+    <div class="step"><h3>加锁</h3><p>os_mutex_lock()</p></div>
+    <div class="step"><h3>解锁</h3><p>os_mutex_unlock()</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Mutex vs Semaphore</h2>
+  <div class="flow">
+    <div class="step"><h3>Mutex</h3><p>具有所有权的互斥访问机制</p></div>
+    <div class="step"><h3>Semaphore</h3><p>资源计数型同步机制</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    Mutex 是 RTOS 核心同步机制，用于保证共享资源一致性，
+    避免竞态条件，提高系统可靠性。
+  </p>
+</section>
+
+<section class="section">
+  <h2>相关导航</h2>
+  <div class="flow">
+    <div class="step"><p><a href="/docs/examples/03-communication-model/index.html">Communication Model</a></p></div>
+    <div class="step"><p><a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a></p></div>
+    <div class="step"><p><a href="/docs/modules/task/lifecycle.html">Task Lifecycle</a></p></div>
+  </div>
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Mutex Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
+
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(() => btn.innerText = old, 1000);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>真实系统运行 | HRTOS 实验系统</title>
+<meta name="description" content="真实系统运行实验：展示HRTOS内核任务创建、调度触发、中断响应与任务切换的真实执行链路。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="https://hrtos.com/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+
+.hero{ margin-bottom:54px; }
+
+.hero h1{
+  font-size:2.6rem;
+  margin:0 0 10px;
+}
+
+.hero p{ color:var(--muted); }
+
+.section{ margin-bottom:54px; }
+
+.block{
+  padding:18px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+}
+
+.flow{ display:grid; gap:14px; }
+
+.step{
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{ margin:0 0 6px; }
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/07-kernel-behavior/index.html">Kernel Behavior</a> /
+  <span>Real System Run</span>
+</nav>
+
+<section class="hero">
+  <h1>真实系统运行（Real System Run）</h1>
+  <p>
+    本实验展示 HRTOS 在实际运行中的完整链路：
+    任务创建 → 调度触发 → 中断响应 → 任务切换 → 任务执行
+  </p>
+</section>
+
+<section class="section">
+  <h2>运行链路（真实内核行为）</h2>
+
+  <div class="block">
+    os_task_create → Ready Queue → os_schedule_request → interrupt → os_enter_critical → scheduler → os_exit_critical
+  </div>
+</section>
+
+<section class="section">
+  <h2>核心API映射（真实版本）</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>任务创建</h3>
+      <p><a href="/docs/api_v2/kernel/os_task_create.html">os_task_create</a></p>
+    </div>
+
+    <div class="step">
+      <h3>调度请求触发</h3>
+      <p><a href="/docs/api_v2/interrupt/os_schedule_request.html">os_schedule_request</a></p>
+    </div>
+
+    <div class="step">
+      <h3>进入中断临界区</h3>
+      <p><a href="/docs/api_v2/interrupt/os_enter_critical.html">os_enter_critical</a></p>
+    </div>
+
+    <div class="step">
+      <h3>退出临界区</h3>
+      <p><a href="/docs/api_v2/interrupt/os_exit_critical.html">os_exit_critical</a></p>
+    </div>
+
+    <div class="step">
+      <h3>任务切换请求</h3>
+      <p><a href="/docs/api_v2/task/os_task_yield.html">os_task_yield</a></p>
+    </div>
+
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统运行流程</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>任务创建阶段</h3>
+      <p>os_task_create 将任务加入 Ready Queue。</p>
+    </div>
+
+    <div class="step">
+      <h3>调度触发</h3>
+      <p>通过 os_schedule_request 或 Tick 中断触发调度。</p>
+    </div>
+
+    <div class="step">
+      <h3>中断进入</h3>
+      <p>系统进入 ISR，执行 os_enter_critical 保护调度过程。</p>
+    </div>
+
+    <div class="step">
+      <h3>调度执行</h3>
+      <p>调度器选择最高优先级任务。</p>
+    </div>
+
+    <div class="step">
+      <h3>任务切换</h3>
+      <p>通过 yield 或系统调度完成任务切换。</p>
+    </div>
+
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+
+  <div class="block">
+    真实系统运行体现 RTOS 内核的完整协作机制，是理解调度器行为的基础模型。
+  </div>
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Kernel Behavior Module 
+</footer>
+
+</main>
+
+</body>
+</html>

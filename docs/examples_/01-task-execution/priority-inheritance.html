@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>优先级继承 | HRTOS 文档系统</title>
+<meta name="description" content="优先级继承机制实验：基于HRTOS v2 mutex锁机制，分析高低优先级任务竞争资源时的调度行为变化。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+
+.hero{ margin-bottom:54px; }
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+}
+
+.hero p{ margin:0; color:var(--muted); max-width:780px; }
+
+.section{ margin-bottom:54px; }
+
+.section h2{ margin:0 0 10px; }
+
+.section p{ color:var(--muted); }
+
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+}
+
+.flow{ display:grid; gap:14px; }
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{ margin:0 0 8px; }
+
+.code-box{
+  position:relative;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.7);
+}
+
+.code-box pre{
+  margin:0;
+  padding:18px;
+  font-size:.9rem;
+  color:#cbd5e1;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/modules/index.html">Modules</a> /
+  <a href="/docs/modules/ipc/index.html">IPC</a> /
+  <span>优先级继承</span>
+</nav>
+
+<section class="hero">
+  <span class="hero-tag">IPC Core</span>
+  <h1>优先级继承</h1>
+  <p>
+    在 HRTOS v2 中，当高优先级任务竞争 mutex 时，系统会临时提升低优先级持锁任务的调度优先级，
+    防止其被其他任务抢占，从而避免优先级反转。
+  </p>
+</section>
+
+<section class="section">
+  <h2>真实系统行为</h2>
+
+  <div class="block">
+    低优先级 task_low 持锁 → 占用资源 → 延迟释放<br>
+    高优先级 task_high 尝试获取锁 → 阻塞等待<br>
+    系统检测到竞争 → 提升 task_low 优先级 → 加速释放
+  </div>
+
+  <p style="margin-top:14px;">
+核心 API：
+<a href="/docs/api_v2/ipc/os_mutex_lock.html">os_mutex_lock</a> ·
+<a href="/docs/api_v2/ipc/os_mutex_unlock.html">os_mutex_unlock</a> ·
+<a href="/docs/api_v2/time/os_delay.html">os_delay</a>
+  </p>
+
+  <h3>关键机制不是“公式”，而是调度变化</h3>
+  <p>
+    优先级继承发生在 mutex lock 阻塞链路中，
+    调度器会临时改变 task_low 的运行优先级，使其优先完成临界区执行。
+  </p>
+</section>
+
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>1. task_low 持锁</h3>
+      <p>进入临界区，占用 RES_LOCK_ID</p>
+    </div>
+
+    <div class="step">
+      <h3>2. task_high 请求锁</h3>
+      <p>调用 os_mutex_lock 被阻塞</p>
+    </div>
+
+    <div class="step">
+      <h3>3. 触发优先级继承</h3>
+      <p>task_low 优先级临时提升</p>
+    </div>
+
+    <div class="step">
+      <h3>4. task_low 加速执行</h3>
+      <p>完成 os_delay 后释放 mutex</p>
+    </div>
+
+    <div class="step">
+      <h3>5. task_high 恢复运行</h3>
+      <p>成功获取锁并继续执行</p>
+    </div>
+
+  </div>
+
+  <p style="margin-top:14px;">
+关联API：
+<a href="/docs/api_v2/ipc/os_mutex_lock.html">os_mutex_lock</a> ·
+<a href="/docs/api_v2/ipc/os_mutex_unlock.html">os_mutex_unlock</a> ·
+<a href="/docs/api_v2/task/os_task_yield.html">os_task_yield</a>
+  </p>
+</section>
+
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">复制</button>
+    <pre><code>
+#include "hrtos.h"
+
+#define RES_LOCK_ID  1
+
+sbit LED_LOW  = P1^0;
+sbit LED_HIGH = P1^1;
+
+/* 低优先级任务：持锁 + 长时间执行 */
+void task_low(void)
+{
+    os_mutex_lock(RES_LOCK_ID);
+
+    LED_LOW = 1;   // 进入临界区标记
+
+    /* 模拟临界区占用资源 */
+    os_delay(30);
+
+    LED_LOW = 0;
+
+    os_mutex_unlock(RES_LOCK_ID);
+
+    while(1)
+    {
+        os_task_yield();
+    }
+}
+
+/* 高优先级任务：尝试频繁获取锁 */
+void task_high(void)
+{
+    while(1)
+    {
+        if(os_mutex_lock(RES_LOCK_ID) == 0)
+        {
+            LED_HIGH = 1;   // 成功获取锁（说明低任务已释放）
+            os_delay(5);
+            LED_HIGH = 0;
+
+            os_mutex_unlock(RES_LOCK_ID);
+        }
+        else
+        {
+            LED_HIGH = ~LED_HIGH;
+            os_delay(2);
+        }
+
+        os_task_yield();
+    }
+}
+
+/* 系统入口 */
+void hrtos_main(void)
+{
+    LED_LOW = 0;
+    LED_HIGH = 0;
+
+    os_mutex_init(RES_LOCK_ID);
+
+    os_task_create((unsigned int)task_low,  1, 1, 5);
+    os_task_create((unsigned int)task_high, 2, 3, 5);
+}
+    </code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+
+  <p>
+    优先级继承保证 HRTOS 在资源竞争情况下仍然保持确定性调度行为。
+  </p>
+
+  <div class="block">
+    核心结果：
+    <br>• 防止高优先级任务被长期阻塞
+    <br>• 减少不可预测调度延迟
+    <br>• 保持实时系统稳定性
+  </div>
+
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Priority Inheritance Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function(e){
+  const btn = e.target.closest(".copy-btn");
+  if(!btn) return;
+
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
+
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(()=>btn.innerText = old, 1200);
+});
+</script>
+<script src="https://hrtos.com/header.js" defer></script>
+</body>
+</html>

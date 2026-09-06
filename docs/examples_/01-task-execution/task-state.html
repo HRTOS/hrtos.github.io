@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>任务状态 | HRTOS 文档系统</title>
+<meta name="description" content="任务状态机制实验：基于HRTOS v2 WAIT统一模型，分析任务在READY、RUNNING与WAIT阻塞之间的调度转换行为。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+
+.hero{ margin-bottom:54px; }
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+.section{ margin-bottom:54px; }
+
+.section h2{
+  margin:0 0 10px;
+}
+
+.section p{
+  color:var(--muted);
+}
+
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+}
+
+.flow{ display:grid; gap:14px; }
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{ margin:0 0 8px; }
+
+.code-box{
+  position:relative;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.7);
+}
+
+.code-box pre{
+  margin:0;
+  padding:18px;
+  font-size:.9rem;
+  color:#cbd5e1;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/modules/index.html">Modules</a> /
+  <a href="/docs/modules/task/index.html">Task</a> /
+  <span>任务状态</span>
+</nav>
+
+<section class="hero">
+  <span class="hero-tag">Task Core</span>
+  <h1>任务状态</h1>
+  <p>
+    在 HRTOS v2 中，任务状态不是静态分类，而是调度器基于 READY 与 WAIT 系统动态推导的运行结果。
+  </p>
+</section>
+
+<section class="section">
+  <h2>状态模型（v2真实定义）</h2>
+
+  <div class="block">
+    RUNNING ←→ READY ←→ WAIT（统一阻塞模型）
+  </div>
+
+  <p style="margin-top:14px;">
+核心API：
+<a href="/docs/api_v2/task/os_task_get_state.html">os_task_get_state</a> ·
+<a href="/docs/api_v2/time/os_delay.html">os_delay</a> ·
+<a href="/docs/api_v2/wait/os_wait.html">os_wait</a> ·
+<a href="/docs/api_v2/task/os_task_yield.html">os_task_yield</a>
+</p>
+
+  <h3>状态本质</h3>
+  <p>
+READY：可调度<br>
+RUNNING：正在执行<br>
+WAIT：因 delay / event / mutex 等统一阻塞
+  </p>
+
+  <h3>设计核心</h3>
+  <p>
+HRTOS v2 不再区分多种 BLOCKED 子状态，而统一进入 WAIT 队列，由资源系统恢复。
+  </p>
+</section>
+
+<section class="section">
+  <h2>状态转换行为</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>RUNNING → WAIT</h3>
+      <p>调用 os_delay / os_wait / mutex 等</p>
+    </div>
+
+    <div class="step">
+      <h3>WAIT → READY</h3>
+      <p>时间到或事件满足</p>
+    </div>
+
+    <div class="step">
+      <h3>READY → RUNNING</h3>
+      <p>调度器选择最高优先级任务</p>
+    </div>
+
+    <div class="step">
+      <h3>RUNNING → READY</h3>
+      <p>os_task_yield 或时间片抢占</p>
+    </div>
+
+  </div>
+
+</section>
+
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">复制</button>
+    <pre><code>
+#include "hrtos.h"
+
+sbit LED_RUN = P1^0;
+
+/* 任务：状态演示 */
+void task_demo(void)
+{
+    while(1)
+    {
+        /* 运行态：进入CPU */
+        LED_RUN = 1;
+
+        os_delay(3);   // 进入延时 → 阻塞态
+
+        /* 从延时恢复 */
+        LED_RUN = 0;
+
+        os_delay(3);
+    }
+}
+
+/* 系统入口 */
+void hrtos_main(void)
+{
+    LED_RUN = 0;
+
+    os_task_create((unsigned int)task_demo, 1, 2, 5);
+}
+    </code></pre>
+  </div>
+
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+
+  <p>
+任务状态机制的核心价值在于：用统一 WAIT 模型替代传统多分类阻塞状态。
+  </p>
+
+  <div class="block">
+    ✔ 状态简化为调度结果<br>
+    ✔ WAIT统一管理所有阻塞来源<br>
+    ✔ READY仅表示“可运行”
+  </div>
+
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Task State Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function(e){
+  const btn = e.target.closest(".copy-btn");
+  if(!btn) return;
+
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
+
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(()=>btn.innerText = old, 1200);
+});
+</script>
+<script src="https://hrtos.com/header.js" defer></script>
+</body>
+</html>

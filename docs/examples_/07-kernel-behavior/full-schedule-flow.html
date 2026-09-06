@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>完整调度流程 | HRTOS 内核行为</title>
+<meta name="description" content="完整调度流程实验：解析HRTOS内核从中断触发到任务切换的完整调度路径与执行链路。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="https://hrtos.com/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+
+.hero{ margin-bottom:54px; }
+.hero h1{ margin:0 0 12px; font-size:2.4rem; }
+.hero p{ color:var(--muted); }
+
+.section{ margin-bottom:54px; }
+.section h2{ font-size:1.4rem; margin-bottom:10px; }
+.section p{ color:var(--muted); }
+
+.block{
+  padding:18px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+}
+
+.flow{ display:grid; gap:14px; }
+
+.step{
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{ margin:0 0 6px; }
+
+.code-box{
+  position:relative;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  padding:18px;
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">示例系统</a> /
+  <a href="/docs/examples/07-kernel-behavior/index.html">内核行为</a> /
+  <span>完整调度流程</span>
+</nav>
+
+<section class="hero">
+  <h1>完整调度流程（Full Schedule Flow）</h1>
+  <p>
+    本页面描述 HRTOS 内核从中断触发到任务切换的完整调度链路，
+    覆盖中断、调度决策、上下文切换与任务恢复全过程。
+  </p>
+</section>
+
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="block">
+    Full Schedule Flow = Interrupt → Schedule → Select → Switch → Restore
+  </div>
+</section>
+
+<section class="section">
+  <h2>内核决策模型</h2>
+  <div class="block">
+    Kernel Decision = ISR Context + Ready Queue + Priority + Switch Condition
+  </div>
+</section>
+
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>1. 中断触发</h3>
+      <p>SysTick 或外部中断进入内核调度入口。</p>
+    </div>
+
+    <div class="step">
+      <h3>2. 保存上下文</h3>
+      <p>当前任务寄存器与栈状态保存。</p>
+    </div>
+
+    <div class="step">
+      <h3>3. 调度判断</h3>
+      <p>评估 Ready Queue 中任务优先级。</p>
+    </div>
+
+    <div class="step">
+      <h3>4. 任务切换</h3>
+      <p>选择最高优先级任务进入运行态。</p>
+    </div>
+
+    <div class="step">
+      <h3>5. 恢复执行</h3>
+      <p>恢复目标任务上下文并继续执行。</p>
+    </div>
+
+  </div>
+</section>
+
+<section class="section">
+  <h2>内核API执行链</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>os_task_create</h3>
+      <p>任务创建接口</p>
+      <a href="/docs/api_v2/kernel/os_task_create.html">API文档</a>
+    </div>
+
+    <div class="step">
+      <h3>os_schedule_request</h3>
+      <p>触发调度请求</p>
+      <a href="/docs/api_v2/interrupt/os_schedule_request.html">API文档</a>
+    </div>
+
+    <div class="step">
+      <h3>os_enter_critical</h3>
+      <p>进入临界区保护</p>
+      <a href="/docs/api_v2/interrupt/os_enter_critical.html">API文档</a>
+    </div>
+
+    <div class="step">
+      <h3>os_exit_critical</h3>
+      <p>退出临界区</p>
+      <a href="/docs/api_v2/interrupt/os_exit_critical.html">API文档</a>
+    </div>
+
+  </div>
+</section>
+
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">复制</button>
+    <pre><code>
+#include "hrtos.h"
+
+sbit LED_A = P1^0;
+sbit LED_B = P1^1;
+sbit LED_C = P1^2;
+
+static void task_a(void)
+{
+    while(1)
+    {
+        LED_A = ~LED_A;
+        os_delay(5);
+    }
+}
+
+static void task_b(void)
+{
+    while(1)
+    {
+        LED_B = ~LED_B;
+        os_delay(20);
+    }
+}
+
+static void task_c(void)
+{
+    volatile u16 i;
+
+    while(1)
+    {
+        LED_C = ~LED_C;
+
+        for(i = 0; i < 3000; i++);
+
+        os_delay(50);
+    }
+}
+
+void hrtos_main(void)
+{
+    LED_A = 0;
+    LED_B = 0;
+    LED_C = 0;
+
+    os_task_create((unsigned int)task_a, 1, 2, 5);
+    os_task_create((unsigned int)task_b, 2, 3, 5);
+    os_task_create((unsigned int)task_c, 3, 4, 5);
+}
+    </code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+  <p>
+    调度流程决定 RTOS 实时性上限，是中断、任务与CPU切换的核心执行链路。
+  </p>
+</section>
+
+<section class="section">
+  <h2>相关API入口</h2>
+
+  <div class="flow">
+    <div class="step">
+      <a href="/docs/api_v2/task/index.html">Task API</a>
+    </div>
+    <div class="step">
+      <a href="/docs/api_v2/interrupt/index.html">Interrupt API</a>
+    </div>
+    <div class="step">
+      <a href="/docs/api_v2/kernel/index.html">Kernel API</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · Kernel Behavior Module · 权力声明
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
+
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(()=>btn.innerText=old,1000);
+});
+</script>
+
+</body>
+</html>

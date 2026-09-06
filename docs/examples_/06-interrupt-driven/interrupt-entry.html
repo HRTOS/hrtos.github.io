@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>中断入口机制 | HRTOS 中断驱动系统</title>
+<meta name="description" content="HRTOS中断入口机制：基于ISR-to-task映射模型的中断处理流程与事件驱动架构。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+
+<!-- 固定要求 -->
+<script src="https://hrtos.com/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --border:rgba(148,163,184,.18);
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+
+.breadcrumb a{ color:#7dd3fc; }
+
+.hero h1{ font-size:2.4rem; margin:0 0 14px; }
+
+.section{ margin-bottom:54px; }
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+footer{
+  text-align:center;
+  color:#8ea3be;
+  margin-top:60px;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<!-- breadcrumb（修复 api_v2 风格统一） -->
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/06-interrupt-driven/index.html">Interrupt Driven</a> /
+  <span>Interrupt Entry</span>
+</nav>
+
+<!-- 标题 -->
+<section class="hero">
+  <h1>中断入口机制（ISR → Task Model）</h1>
+  <p>HRTOS采用“中断事件化”设计：ISR仅负责投递事件，实际逻辑由高优先级任务执行。</p>
+</section>
+
+<!-- 核心定义 -->
+<section class="section">
+  <h2>机制定义</h2>
+  <div class="step">
+    Interrupt Entry = 硬件触发 → ISR最小化处理 → 事件投递 → 任务接管执行
+  </div>
+</section>
+
+<!-- 架构说明 -->
+<section class="section">
+  <h2>设计原则</h2>
+
+  <div class="step">ISR只做三件事：采样 / 投递 / 退出</div>
+  <div class="step">禁止ISR中执行复杂逻辑</div>
+  <div class="step">中断逻辑统一迁移至Task层处理</div>
+</section>
+
+<!-- API（全部修正为 api_v2） -->
+<section class="section">
+  <h2>相关 API（v2）</h2>
+
+  <div class="step">
+    <h3>ISR事件投递</h3>
+    <p><a href="/docs/api_v2/interrupt/os_event_set_from_isr.html">os_event_set_from_isr()</a></p>
+  </div>
+
+  <div class="step">
+    <h3>中断状态查询</h3>
+    <p><a href="/docs/api_v2/interrupt/os_in_isr.html">os_in_isr()</a></p>
+  </div>
+
+  <div class="step">
+    <h3>中断调度请求</h3>
+    <p><a href="/docs/api_v2/interrupt/os_schedule_request.html">os_schedule_request()</a></p>
+  </div>
+</section>
+
+<!-- 执行模型 -->
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="step">
+    IRQ Trigger → ISR Entry → os_event_set_from_isr() → ISR Exit → Scheduler → Task Run
+  </div>
+</section>
+
+<!-- 示例代码（修正为真实模型） -->
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">复制</button>
+<pre><code>#include "hrtos.h"
+
+sbit LED_INT  = P1^0;
+sbit LED_TASK = P1^1;
+
+#define TASK_WAIT   1
+#define TASK_INT    2
+#define PRIO_WAIT   6
+#define PRIO_INT    9
+#define STACK_SIZE  5
+
+#define EVENT_IRQ   1
+
+static u16 irq_count = 0;
+
+/* =========================
+ * 任务：处理IRQ事件
+ * ========================= */
+void wait_task(void)
+{
+    while(1)
+    {
+        os_event_wait(EVENT_IRQ, 0);
+
+        irq_count++;
+        LED_TASK = ~LED_TASK;
+    }
+}
+
+/* =========================
+ * INT0 ISR（极简）
+ * ========================= */
+void INT0_ISR(void)
+{
+    os_event_set_from_isr(EVENT_IRQ);
+    LED_INT = ~LED_INT;
+
+    os_schedule_request();   // 可选：请求调度
+}
+
+/* =========================
+ * 系统入口
+ * ========================= */
+void hrtos_main(void)
+{
+    LED_INT = 0;
+    LED_TASK = 0;
+
+    os_event_init(EVENT_IRQ);
+
+    os_task_create(wait_task, TASK_WAIT, PRIO_WAIT, STACK_SIZE);
+
+    IT0 = 1;
+    EX0 = 1;
+}
+</code></pre>
+  </div>
+</section>
+
+<!-- 系统意义 -->
+<section class="section">
+  <h2>系统意义</h2>
+  <div class="step">
+    将中断处理从“执行逻辑”转为“事件触发”，显著降低ISR执行时间，提高系统实时性与可预测性。
+  </div>
+</section>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
+
+  const old = btn.innerText;
+  btn.innerText = "已复制";
+  setTimeout(()=>btn.innerText = old, 1000);
+});
+</script>
+<footer class="footer">
+  © HRTOS Project 2017–2026 · Real-Time Operating System Documentation
+</footer>
+</body>
+</html>

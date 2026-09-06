@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>时间片轮转演示 | HRTOS 实验系统</title>
+<meta name="description" content="时间片轮转实验：演示HRTOS中Round Robin调度机制、时间片切换与同优先级公平调度模型。">
+
+<link rel="stylesheet" href="https://hrtos.com/global.css">
+<script src="https://hrtos.com/header.js" defer></script>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.72);
+  --border:rgba(148,163,184,.18);
+  --accent:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  color-scheme:dark;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  line-height:1.75;
+}
+
+.page{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 64px;
+}
+
+.breadcrumb{
+  margin-bottom:26px;
+  font-size:.92rem;
+  color:var(--muted);
+}
+.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a:hover{ color:var(--accent); }
+
+.hero{ margin-bottom:54px; }
+
+.hero-tag{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.28);
+  color:#bae6fd;
+  font-size:.88rem;
+  margin-bottom:16px;
+}
+
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+}
+
+.hero p{
+  margin:0;
+  max-width:780px;
+  color:var(--muted);
+}
+
+.section{ margin-bottom:54px; }
+
+.section h2{
+  margin:0 0 10px;
+  font-size:1.4rem;
+}
+
+.section p{
+  margin:0 0 20px;
+  color:var(--muted);
+}
+
+.block{
+  padding:18px 20px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:10px;
+  color:var(--muted);
+}
+
+.flow{
+  display:grid;
+  gap:14px;
+}
+
+.step{
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(30,41,59,.45);
+}
+
+.step h3{
+  margin:0 0 8px;
+  font-size:1.05rem;
+  color:#f8fafc;
+}
+
+.step p{
+  margin:0;
+  color:var(--muted);
+}
+
+.code-box{
+  position:relative;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.6);
+  overflow:auto;
+}
+
+.copy-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:6px 10px;
+  font-size:.85rem;
+  border:1px solid rgba(56,189,248,.4);
+  background:transparent;
+  color:#7dd3fc;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.copy-btn:hover{
+  color:#fff;
+  border-color:#38bdf8;
+}
+
+.footer{
+  margin-top:60px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.14);
+  text-align:center;
+  font-size:.9rem;
+  color:#8ea3be;
+}
+</style>
+</head>
+
+<body data-header="docs">
+
+<main class="page">
+
+<nav class="breadcrumb">
+  <a href="/docs/index.html">Docs</a> /
+  <a href="/docs/examples/index.html">Examples</a> /
+  <a href="/docs/examples/02-scheduling-engine/index.html">Scheduling Engine</a> /
+  <span>RR Demo</span>
+</nav>
+
+<section class="hero">
+  <span class="hero-tag">Scheduling Core</span>
+  <h1>时间片轮转演示（Round Robin）</h1>
+  <p>
+    时间片轮转用于验证同优先级任务的公平调度机制。
+    在相同优先级下，通过Tick驱动实现任务轮流执行。
+  </p>
+</section>
+
+<section class="section">
+  <h2>机制定义</h2>
+
+  <div class="block">
+    Round Robin = 同优先级Ready队列 + 时间片计数 + Tick触发调度 + os_switch切换
+  </div>
+
+  <p style="margin-top:14px;">
+相关API（API_V2）：
+<a href="/docs/api_v2/task/os_task_yield.html">os_switch</a> ·
+<a href="/docs/api_v2/kernel/os_dispatch_select.html">os_dispatch_id</a> ·
+<a href="/docs/api_v2/time/os_delay.html">os_delay</a> ·
+<a href="/docs/api_v2/time/os_tick_get.html">os_tick_get</a>
+</p>
+</section>
+
+<section class="section">
+  <h2>调度特性</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>同优先级任务队列</h3>
+      <p>多个任务进入同一Ready链表。</p>
+    </div>
+
+    <div class="step">
+      <h3>时间片轮转执行</h3>
+      <p>每个任务占用固定时间片运行。</p>
+    </div>
+
+    <div class="step">
+      <h3>Tick驱动切换</h3>
+      <p>系统Tick触发调度器重新选择任务。</p>
+    </div>
+
+    <div class="step">
+      <h3>公平调度模型</h3>
+      <p>所有任务平均获得CPU时间。</p>
+    </div>
+
+  </div>
+
+  <div class="block" style="margin-top:18px;">
+RR链路：Ready Queue → Time Slice → Tick Interrupt → os_dispatch_id → os_switch → Next Task
+  </div>
+</section>
+
+<section class="section">
+  <h2>执行流程</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>任务创建</h3>
+      <p>三个同优先级任务进入系统。</p>
+    </div>
+
+    <div class="step">
+      <h3>调度启动</h3>
+      <p>系统进入Round Robin模式。</p>
+    </div>
+
+    <div class="step">
+      <h3>时间片运行</h3>
+      <p>每个任务按Tick轮流执行。</p>
+    </div>
+
+    <div class="step">
+      <h3>持续循环</h3>
+      <p>任务不断在CPU之间切换。</p>
+    </div>
+
+  </div>
+</section>
+
+<section class="section">
+  <h2>演示代码</h2>
+
+  <div class="code-box">
+    <button class="copy-btn">Copy</button>
+<pre><code>
+#include "hrtos.h"
+
+sbit LED_A = P1^0;
+sbit LED_B = P1^1;
+sbit LED_C = P1^2;
+
+void task_a(void)
+{
+    while(1)
+    {
+        LED_A = ~LED_A;
+        os_task_yield();
+    }
+}
+
+void task_b(void)
+{
+    while(1)
+    {
+        LED_B = ~LED_B;
+        os_task_yield();
+    }
+}
+
+void task_c(void)
+{
+    while(1)
+    {
+        LED_C = ~LED_C;
+        os_task_yield();
+    }
+}
+
+void hrtos_main(void)
+{
+    LED_A = LED_B = LED_C = 0;
+
+    os_task_create((unsigned int)task_a, 1, 1, 5);
+    os_task_create((unsigned int)task_b, 2, 1, 5);
+    os_task_create((unsigned int)task_c, 3, 1, 5);
+}
+</code></pre>
+  </div>
+</section>
+
+<section class="section">
+  <h2>系统意义</h2>
+
+  <p>
+时间片轮转解决同优先级任务饥饿问题，实现CPU资源公平分配与稳定响应。
+  </p>
+
+  <p style="margin-top:14px;">
+内核机制：
+<a href="/docs/api_v2/task/os_task_yield.html">os_switch</a> ·
+<a href="/docs/modules/scheduler/round-robin.html">Round Robin</a> ·
+<a href="/docs/system/scheduling-flow.html">Scheduling Flow</a>
+</p>
+</section>
+
+<section class="section">
+  <h2>相关导航</h2>
+
+  <div class="flow">
+
+    <div class="step">
+      <h3>Task Execution</h3>
+      <p><a href="/docs/examples/01-task-execution/index.html">进入</a></p>
+    </div>
+
+    <div class="step">
+      <h3>Scheduling Engine</h3>
+      <p><a href="/docs/examples/02-scheduling-engine/index.html">进入</a></p>
+    </div>
+
+    <div class="step">
+      <h3>Interrupt Flow</h3>
+      <p><a href="/docs/system/interrupt-flow.html">进入</a></p>
+    </div>
+
+    <div class="step">
+      <h3>Task Lifecycle</h3>
+      <p><a href="/docs/modules/task/lifecycle.html">进入</a></p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  © 2017–2026 HRTOS · RR Demo Module
+</footer>
+
+</main>
+
+<script>
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+
+  const code = btn.closest(".code-box").querySelector("code");
+  navigator.clipboard.writeText(code.innerText);
+
+  btn.innerText = "已复制";
+  setTimeout(() => btn.innerText = "Copy", 1000);
+});
+</script>
+
+</body>
+</html>
