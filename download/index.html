@@ -154,7 +154,25 @@ body{
   filter:brightness(1.05);
 }
 
+.section-title{
+  grid-column:span 3;
+  display:grid;
+  gap:6px;
+  margin-top:20px;
+  padding-top:20px;
+  border-top:1px solid rgba(148,163,184,.15);
+}
 
+.section-title h2{
+  margin:0;
+  font-size:1.8rem;
+}
+
+.section-title p{
+  margin:0;
+  color:var(--muted);
+  font-size:.95rem;
+}
 /* footer */
 
 .footer{
@@ -193,6 +211,21 @@ body{
     gap:16px;
     align-items:flex-start;
   }
+  @media(max-width:1024px){
+
+  .section-title{
+    grid-column:span 2;
+  }
+
+}
+
+@media(max-width:640px){
+
+  .section-title{
+    grid-column:span 1;
+  }
+
+}
 
 }
 
@@ -253,11 +286,11 @@ HRTOS 内核体系
 <div class="card">
 
 <h3>
-COOP 协作内核
+HRTOS 驱动库
 </h3>
 
 <p>
-轻量协作式内核实现，包含任务调度与基础 wait 机制，用于帮助开发者理解实时系统调度模型。
+提供面向 8051 单片机的常用外设驱动与硬件抽象接口，涵盖基础外设、显示、传感器、通信及控制等应用，帮助开发者快速构建和复用嵌入式应用。
 </p>
 
 </div>
@@ -339,6 +372,70 @@ HRTOS V4.0.0 LTS
 
 </div>
 
+<div class="section-title">
+
+<h2>
+HRTOS COOP
+</h2>
+
+<p>
+HRTOS COOP 是一款专为 8051 单片机设计的轻量级协作式实时操作系统，采用 Cooperative Round-Robin 调度机制，以极低的资源占用实现清晰、可靠的多任务运行。
+</p>
+
+</div>
+
+<div class="card">
+
+<h3>
+极致轻量
+</h3>
+
+<p>
+专为 8051 资源受限平台设计，以极低的资源占用实现多任务运行。
+</p>
+
+</div>
+<div class="card">
+
+<h3>
+简洁高效
+</h3>
+
+<p>
+采用 Cooperative Round-Robin 协作式调度，核心机制清晰，API 简洁，适合小型嵌入式应用。
+</p>
+
+</div>
+<div class="card">
+
+<h3>
+长期维护
+</h3>
+
+<p>
+专注 8051 平台，持续维护与完善，面向实际应用而非一次性实验项目。
+</p>
+
+</div>
+<div class="download-box">
+
+<div class="version">
+
+<strong>
+HRTOS COOP V1.0
+</strong>
+
+<span>
+正式发布版本 · 极简 8051 协作式实时操作系统 · Cooperative Round-Robin · Keil C51
+</span>
+
+</div>
+
+<a class="btn" href="HRTOS COOP V1.0.7z" download>
+立即下载
+</a>
+
+</div>
 
 </section>
 
