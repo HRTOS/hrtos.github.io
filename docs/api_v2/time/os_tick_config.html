@@ -186,33 +186,71 @@ char os_tick_config(u8 slice_count, u16 tick_value);
     <h2>源码实现</h2>
 
     <div class="code">
-char os_tick_config(u8 slice_count, u16 tick_value)
+
+/*------------------------------------------------------------------------
+|                            FILE DESCRIPTION                            |
+------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------
+|  - File name     : tick_config.c
+|  - Author        : 谭舒
+|  - Update date   : 2026-09-19
+|  - Copyright(C)  : 2026 HRTOS. All rights reserved.
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+|                                INCLUDES                                |
+------------------------------------------------------------------------*/
+
+#include "hrtos_internal.h"
+
+/*------------------------------------------------------------------------
+|                            API FUNCTIONS                               |
+------------------------------------------------------------------------*/
+
+/**
+ * @brief     配置系统 Tick 定时参数。
+ *
+ * @param[in] slice_count    时间片包含的 Tick 数量。
+ * @param[in] tick_value     Timer0 定时器计数值。
+ *
+ * @return    操作结果。
+ * @retval    0      Tick 定时参数配置成功。
+ * @retval    -1     参数无效。
+ *
+ * @note      配置系统时间片参数及 Timer0 重载值，并清零系统 Tick 计数。
+ *            slice_count 不允许为 0。
+ *            tick_value 必须大于 1000。
+ */
+char os_tick_config(u8 slice_count, u16 tick_value) //系统定时器时间设置,slice_count:时间片的片数;tick_value:时间片的大小
 {
-    if(tick_value == 0)
+    if(slice_count==0)
     {
         return -1;
     }
-
-    OS_TICK_COUNT_H = 0;
-    OS_TICK_COUNT_L = 0;
-
-    OS_TIME_ONCE = slice_count;
-
-    tick_value = 65535 - tick_value;
-    tick_value++;
-
-    if(tick_value <= 1000)
+    
+    OS_TIME_ONCE=slice_count;
+    
+    if(tick_value<=1000)
     {
         return -1;
     }
     else
     {
-        OS_T0_TH0 = tick_value >> 8;
-        OS_T0_TL0 = tick_value & 0xff;
+        OS_TICK_COUNT_H=0;//系统时钟计数高16位
+		OS_TICK_COUNT_L=0;//系统时钟计数低16位
+		tick_value=65535-tick_value;
+		tick_value++;
+		OS_T0_TH0=tick_value>>8;
+        OS_T0_TL0=tick_value&0xff;
     }
-
     return 0;
 }
+
+/*------------------------------------------------------------------------
+|                    END OF FILE: tick_config.c                           |
+------------------------------------------------------------------------*/
+
+
     </div>
 
   </div>

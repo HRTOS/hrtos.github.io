@@ -177,26 +177,58 @@ void os_xdata_to_data(u16 addr2, u8 addr);
     <h2>源码实现</h2>
 
     <div class="code">
-void os_xdata_to_data(u16 addr2, u8 addr)
+
+/*------------------------------------------------------------------------
+|                            FILE DESCRIPTION                            |
+------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------
+|  - File name     : os_xdata.c
+|  - Author        : 谭舒
+|  - Update date   : 2026-09-19
+|  - Copyright(C)  : 2026 HRTOS. All rights reserved.
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+|                                INCLUDES                                |
+------------------------------------------------------------------------*/
+
+#include"hrtos_internal.h"
+
+/*------------------------------------------------------------------------
+|                            API FUNCTIONS                               |
+------------------------------------------------------------------------*/
+
+/**
+ * @brief     将 XDATA 数据区的数据读取到指定数据区地址。
+ *
+ * @param[in] addr2    XDATA 源地址。
+ * @param[in] addr     数据区目标地址。
+ *
+ * @return    None。
+ *
+ * @note      函数执行过程中临时关闭中断，以保证数据访问过程不被中断打断。
+ *            数据读取完成后恢复进入函数前的中断使能状态。
+ */
+void os_xdata_to_data(u16 addr2,u8 addr)//
 {
     u8 i;
-
-    i = IE;
-    EA = 0;
-
-    OS_HRTOS = addr;
-
-    __asm mov R1, OS_HRTOS
-
-    OS_HRTOS = addr2 & 0xff;
-    DPH = addr2 >> 8;
-    DPL = OS_HRTOS;
-
-    __asm MOVX A, @DPTR
-    __asm MOV @R1, A
-
-    IE = i;
+    i=IE;
+    EA=0;
+    OS_HRTOS=addr;
+    __asm mov R1,OS_HRTOS
+    OS_HRTOS=addr2&0xff;
+    DPH=addr2>>8;
+    DPL=OS_HRTOS;
+    __asm MOVX A,@DPTR
+    __asm MOV @R1,A
+    IE=i;
 }
+
+/*------------------------------------------------------------------------
+|                    END OF FILE: os_xdata.c                             |
+------------------------------------------------------------------------*/
+
+
     </div>
 
   </div>
@@ -208,7 +240,7 @@ void os_xdata_to_data(u16 addr2, u8 addr)
     <div class="code">
 void demo_copy(void)
 {
-    os_xdata_to_data(0x1234, 5);
+    os_xdata_to_data(0x12, 5);
 }
     </div>
 

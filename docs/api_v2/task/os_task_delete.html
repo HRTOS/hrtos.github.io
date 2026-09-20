@@ -182,9 +182,47 @@ char os_task_delete(unsigned char id);
     <h2>源码实现</h2>
 
     <div class="code">
-char os_task_delete(unsigned char id)
+
+/*------------------------------------------------------------------------
+|                            FILE DESCRIPTION                            |
+------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------
+|  - File name     : task_delete.c
+|  - Author        : 谭舒
+|  - Update date   : 2026-09-19
+|  - Copyright(C)  : 2026 HRTOS. All rights reserved.
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+|                                INCLUDES                                |
+------------------------------------------------------------------------*/
+
+#include "hrtos_internal.h"
+
+#define OS_TASK_TOTAL (OS_PROCESS_MAX + OS_FAST_TASK_MAX)
+
+/*------------------------------------------------------------------------
+|                            API FUNCTIONS                               |
+------------------------------------------------------------------------*/
+
+/**
+ * @brief     请求删除指定任务。
+ *
+ * @param[in] id    待删除的任务编号。
+ *
+ * @return    操作结果。
+ * @retval    1      删除请求设置成功。
+ * @retval    -1     任务编号无效。
+ *
+ * @note      该函数仅设置任务删除请求，并将任务从调度器中移除。
+ *            普通任务同时被设置为删除态并清除等待时间。
+ *            任务实际运行资源的释放由系统后续的任务清理流程完成。
+ *            任务编号 0 不允许执行删除操作。
+ */
+char os_task_delete(unsigned char id) //
 {
-    if(id == 0 || id >= OS_TASK_TOTAL)
+    //u8 obj;
+	if(id == 0 || id >= OS_TASK_TOTAL)
     {
         return -1;
     }
@@ -197,23 +235,30 @@ char os_task_delete(unsigned char id)
         if(id == OS_PROCESS_MAX)
         {
             OS_KUAI_PROCESS_A = 0;
-			      OS_WAIT_DI2[0] = 0;
+			OS_WAIT_DI2[0] = 0;
         }
         else if(id == OS_PROCESS_MAX + 1)
         {
             OS_KUAI_PROCESS_B = 0;
-			      OS_WAIT_DI2[1] = 0;
+			OS_WAIT_DI2[1] = 0;
         }
     }
     else
     {
         OS_PROCESS_OK[id] &= 0xfe;
-		    OS_TASK[id].state = DEAD;//删除态避免被激活
-		    OS_TASK[id].wait_tick = 0;
+		OS_TASK[id].state = DEAD;//删除态避免被激活
+		OS_TASK[id].wait_tick = 0;
+		
     }
     EA=1;
     return 1;
 }
+
+/*------------------------------------------------------------------------
+|                    END OF FILE: task_delete.c                          |
+------------------------------------------------------------------------*/
+
+
     </div>
 
   </div>

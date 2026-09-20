@@ -169,33 +169,67 @@ void os_task_suspend_self(void);
     <h2>源码实现</h2>
 
     <div class="code">
-void os_task_suspend_self()
+
+/*------------------------------------------------------------------------
+|                            FILE DESCRIPTION                            |
+------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------
+|  - File name     : task_suspend_self.c
+|  - Author        : 谭舒
+|  - Update date   : 2026-09-19
+|  - Copyright(C)  : 2026 HRTOS. All rights reserved.
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+|                                INCLUDES                                |
+------------------------------------------------------------------------*/
+
+#include "hrtos_internal.h"
+
+/*------------------------------------------------------------------------
+|                            API FUNCTIONS                               |
+------------------------------------------------------------------------*/
+
+/**
+ * @brief     挂起当前任务，并请求系统进行任务调度。
+ *
+ * @param[in] None
+ *
+ * @return    None。
+ *
+ * @note      将当前任务从就绪状态中移除，使其暂停参与系统调度。
+ *            对于高速任务，清除对应的高速任务运行标志。
+ *            函数执行完成后请求系统重新进行任务调度。
+ */
+void os_task_suspend_self()//主动挂起自己，让出CPU触发调度
 {
     u8 id;
-
-    id = OS_CURRENT_TASK;
-
-    if(id >= OS_PROCESS_MAX)
+    id=OS_CURRENT_TASK;
+    if(id>=OS_PROCESS_MAX)
     {
-        id %= OS_PROCESS_MAX;
-
-        if(id == 1)
+        id%=OS_PROCESS_MAX;
+        if(id==1)
         {
-            OS_KUAI_PROCESS_B = 0;
+            OS_KUAI_PROCESS_B=0;
         }
         else
         {
-            OS_KUAI_PROCESS_A = 0;
+            OS_KUAI_PROCESS_A=0;
         }
     }
     else
     {
-        OS_PROCESS_OK[id] &= 0xFE;
+        OS_PROCESS_OK[id]&=0xfe;
     }
-
-    OS_SCHED_REASON = 1;
-    TF0 = 1;
+    OS_SCHED_REASON=1;//调度触发位
+    TF0=1;//T0中断
 }
+
+/*------------------------------------------------------------------------
+|                    END OF FILE: task_suspend_self.c                    |
+------------------------------------------------------------------------*/
+
+
     </div>
 
   </div>

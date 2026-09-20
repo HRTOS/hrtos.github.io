@@ -182,36 +182,72 @@ char os_task_suspend(unsigned char id);
     <h2>源码实现</h2>
 
     <div class="code">
-char os_task_suspend(unsigned char id)
+
+/*------------------------------------------------------------------------
+|                            FILE DESCRIPTION                            |
+------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------
+|  - File name     : task_suspend.c
+|  - Author        : 谭舒
+|  - Update date   : 2026-09-19
+|  - Copyright(C)  : 2026 HRTOS. All rights reserved.
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+|                                INCLUDES                                |
+------------------------------------------------------------------------*/
+
+#include "hrtos_internal.h"
+
+/*------------------------------------------------------------------------
+|                            API FUNCTIONS                               |
+------------------------------------------------------------------------*/
+
+/**
+ * @brief     挂起指定任务。
+ *
+ * @param[in] id    待挂起的任务编号。
+ *
+ * @return    操作结果。
+ * @retval    1      任务挂起成功。
+ * @retval    -1     任务编号无效。
+ *
+ * @note      挂起任务后，该任务将停止参与系统调度。
+ *            函数执行完成后请求系统重新进行任务调度。
+ *            对于高速任务，根据任务编号清除对应的高速任务运行标志。
+ */
+char os_task_suspend(unsigned char id)//把任务状态变为挂起状态（暂停运行，不参与调度）
 {
-    if(id > OS_PROCESS_MAX + 1)
+    if(id>OS_PROCESS_MAX+1)
     {
         return -1;
     }
-
-    if(id >= OS_PROCESS_MAX)
+    if(id>=OS_PROCESS_MAX)
     {
-        id %= OS_PROCESS_MAX;
-
-        if(id == 1)
+        id%=OS_PROCESS_MAX;
+        if(id==1)
         {
-            OS_KUAI_PROCESS_B = 0;
+            OS_KUAI_PROCESS_B=0;
         }
         else
         {
-            OS_KUAI_PROCESS_A = 0;
+            OS_KUAI_PROCESS_A=0;
         }
     }
     else
     {
-        OS_PROCESS_OK[id] &= 0xFE;
+        OS_PROCESS_OK[id]&=0xfe;
     }
-
-    OS_SCHED_REASON = 1;
-    TF0 = 1;
-
+    OS_SCHED_REASON=1;//调度触发位
+    TF0=1;//T0中断
     return 1;
 }
+
+/*------------------------------------------------------------------------
+|                    END OF FILE: task_suspend.c                         |
+------------------------------------------------------------------------*/
+
+
     </div>
 
   </div>

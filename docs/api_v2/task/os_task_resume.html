@@ -182,50 +182,82 @@ char os_task_resume(unsigned char id);
     <h2>源码实现</h2>
 
     <div class="code">
-char os_task_resume(unsigned char id)
+
+/*------------------------------------------------------------------------
+|                            FILE DESCRIPTION                            |
+------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------
+|  - File name     : task_resume.c
+|  - Author        : 谭舒
+|  - Update date   : 2026-09-19
+|  - Copyright(C)  : 2026 HRTOS. All rights reserved.
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+|                                INCLUDES                                |
+------------------------------------------------------------------------*/
+
+#include "hrtos_internal.h"
+
+/*------------------------------------------------------------------------
+|                            API FUNCTIONS                               |
+------------------------------------------------------------------------*/
+
+/**
+ * @brief     恢复指定任务运行。
+ *
+ * @param[in] id    待恢复的任务编号。
+ *
+ * @return    操作结果。
+ * @retval    1      任务恢复成功。
+ * @retval    -1     任务编号无效或任务不存在。
+ *
+ * @note      将指定任务由挂起状态恢复为就绪状态，使其重新参与系统调度。
+ *            对于高速任务，恢复对应的高速任务运行标志。
+ *            函数执行完成后请求系统重新进行任务调度。
+ */
+char os_task_resume(unsigned char id)//将任务编号为id的任务，由挂起状态变为就绪状态
 {
     u8 i;
-
-    i = 1;
-
-    if(id > OS_PROCESS_MAX + 1)
+    i=1;
+	if(id>OS_PROCESS_MAX+1)
     {
         return -1;
     }
-
-    if(id >= OS_PROCESS_MAX)
+    if(id>=OS_PROCESS_MAX)
     {
-        id %= OS_PROCESS_MAX;
-
-        if(OS_KUAI_SP[id] == 0)
+        id%=OS_PROCESS_MAX;
+        if(OS_KUAI_SP[id]==0)
         {
             return -1;
         }
-
-        if(id == 1)
+        if(id==1)
         {
-            OS_KUAI_PROCESS_B = 1;
+            OS_KUAI_PROCESS_B=1;
         }
         else
         {
-            OS_KUAI_PROCESS_A = 1;
+            OS_KUAI_PROCESS_A=1;
         }
     }
     else
     {
-        if(OS_PROCESS_OK[id] == 0)
+        if(OS_PROCESS_OK[id]==0)
         {
             return -1;
         }
-
-        OS_PROCESS_OK[id] |= 0x01;
+        OS_PROCESS_OK[id]|=0x01;
     }
-
-    OS_SCHED_REASON = 1;
-    TF0 = 1;
-
+    OS_SCHED_REASON=1;//调度触发位
+    TF0=1;//T0中断
     return i;
 }
+
+/*------------------------------------------------------------------------
+|                    END OF FILE: task_resume.c                          |
+------------------------------------------------------------------------*/
+
+
     </div>
 
   </div>

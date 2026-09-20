@@ -188,141 +188,244 @@ char os_task_set_priority(unsigned char id, unsigned char pr);
     <h2>源码实现</h2>
 
     <div class="code">
-char os_task_set_priority(unsigned char id, unsigned char pr)
+
+/*------------------------------------------------------------------------
+|                            FILE DESCRIPTION                            |
+------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------
+|  - File name     : task_set_priority.c
+|  - Author        : 谭舒
+|  - Update date   : 2026-09-19
+|  - Copyright(C)  : 2026 HRTOS. All rights reserved.
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+|                                INCLUDES                                |
+------------------------------------------------------------------------*/
+
+#include "hrtos_internal.h"
+
+/*------------------------------------------------------------------------
+|                            API FUNCTIONS                               |
+------------------------------------------------------------------------*/
+
+/**
+ * @brief     设置指定任务的调度优先级。
+ *
+ * @param[in] id    任务编号。
+ * @param[in] pr    目标优先级。
+ *                  0~7：标准任务优先级。
+ *                  8：高速任务优先级。
+ *
+ * @return    操作结果。
+ * @retval    0      优先级设置成功，任务类型未发生变化。
+ * @retval    1~n    优先级设置成功，并返回重新分配后的任务编号。
+ * @retval    -1     参数无效、任务不存在、任务处于删除状态或任务状态不允许修改。
+ *
+ * @note      标准任务可在标准优先级范围内直接修改优先级。
+ *            当任务在标准优先级与高速优先级之间切换时，系统会重新分配对应的任务编号。
+ *            修改优先级后请求系统重新进行任务调度。
+ *            Idle 任务不允许修改优先级。
+ */
+char os_task_set_priority(unsigned char id,unsigned char pr)  // 优先级修改:任务编号为ID的优先级修改为pr（0-7自然优先级，8高优先级）-1失败，0成功，其他为申请到的新编号
 {
     char i,j,K,x;
-
-    K = IE;
-    EA = 0;
-
-    if((id > OS_PROCESS_MAX + 1) || (pr >= OS_SCHED_LEVEL_MAX - 1))
+    K=IE;
+    EA=0;
+	if((id>OS_PROCESS_MAX+1)||(pr>=OS_SCHED_LEVEL_MAX-1))
     {
-        IE = K;
+        IE=K;
         return -1;
     }
-
-    if(OS_TASK_EVENT[id] & OS_EVENT_DELETE_REQ)
+	if(OS_TASK_EVENT[id] & OS_EVENT_DELETE_REQ)//不能是准备删除清理的任务
+	{
+		IE=K;
+		return -1;		
+	}
+	if(id < OS_PROCESS_MAX)//不能是阻塞或者未注册
+	{
+		if(OS_PROCESS_OK[id] == 0)
+		{
+			IE=K;
+			return -1;
+		}
+		/*if((OS_TASK[id].state != READY) && (OS_TASK[id].state != DEAD))//不能是阻塞态；不是初始态，也不是运行态;
+		{
+			IE=K;
+			return -1;		
+		}*/
+		
+		if(id == 0)//不能是IDLE
+		{
+			IE=K;
+			return -1;		
+		}
+	}
+	if(id == OS_PROCESS_MAX)
+	{
+		if(OS_SP_KUAI_BEI[0] == 0)
+		{
+			IE=K;
+			return -1;		
+		}
+		if(OS_WAIT_DI2[0] == 0)
+		{
+			IE=K;
+			return -1;		
+		}
+	}
+    if(id == OS_PROCESS_MAX+1)
+	{
+		if(OS_SP_KUAI_BEI[1] == 0)
+		{
+			IE=K;
+			return -1;		
+		}
+		if(OS_WAIT_DI2[1] == 0)
+		{
+			IE=K;
+			return -1;		
+		}
+	}
+	if((id < OS_PROCESS_MAX)&&(pr < (OS_SCHED_LEVEL_MAX-2)))//标准优先级到标准优先级
     {
-        IE = K;
-        return -1;
-    }
-
-    if(id < OS_PROCESS_MAX)
-    {
-        if(OS_PROCESS_OK[id] == 0)
-        {
-            IE = K;
-            return -1;
-        }
-
-        
-
-        if(id == 0)
-        {
-            IE = K;
-            return -1;
-        }
-    }
-
-    /* ===== 普通任务 ===== */
-    if(id < OS_PROCESS_MAX && pr < (OS_SCHED_LEVEL_MAX - 2))
-    {
-        OS_PROCESS_OK[id] &= 0xF1;
-        pr <<= 1;
-        OS_PROCESS_OK[id] |= pr;
-
-        OS_SCHED_REASON = 1;
-        IE = K;
-        TF0 = 1;
-
+        OS_PROCESS_OK[id]&=0XF1;
+        pr<<=1;
+        OS_PROCESS_OK[id]|=pr;
+        OS_SCHED_REASON=1;//调度触发位
+        IE=K;
+		TF0=1;//T0中断
         return 0;
     }
-
-    /* ===== 普通 → 高速任务 ===== */
-    else if(id < OS_PROCESS_MAX && pr == (OS_SCHED_LEVEL_MAX - 2))
+    else if((id < OS_PROCESS_MAX)&&(pr==(OS_SCHED_LEVEL_MAX-2)))//标准优先级到高优先级
     {
-        i = 0;
-
-        if(OS_KUAI_SP[0] == 0) i = 1;
-        else if(OS_KUAI_SP[1] == 0) i = 2;
-
-        if(i != 0)
+        i=0;//申请任务空间
+        if(OS_KUAI_SP[0]==0)
+        {
+            i=1;
+        }
+        else if(OS_KUAI_SP[1]==0)
+        {
+            i=2;
+        }
+        if(i!=0)//如果成功
         {
             i--;
-
-            if(OS_CURRENT_TASK == id)
+            if(OS_CURRENT_TASK==id)
             {
-                OS_CURRENT_TASK = OS_PROCESS_MAX + i;
+                OS_CURRENT_TASK=OS_PROCESS_MAX+i;
             }
-
-            OS_HRTOS = OS_JINCHENG_SP[id];
-            OS_KUAI_SP[i] = OS_HRTOS;
-
-            OS_HRTOS = OS_JINCHENG_JILU_SP[id];
-            OS_SP_KUAI_BEI[i] = OS_HRTOS;
-
-            OS_HRTOS = (OS_PROCESS_OK[id] >> 4) & 7;
-            OS_SP_KUAI_BEI2[i] = OS_HRTOS;
-
-            for(j = 0; j < OS_KUAI_SHENDU; j++)
+            OS_HRTOS=OS_JINCHENG_SP[id];//现在SP值
+            OS_KUAI_SP[i]=OS_HRTOS;
+            OS_HRTOS=OS_JINCHENG_JILU_SP[id];//初始值
+            OS_SP_KUAI_BEI[i]=OS_HRTOS;
+            OS_HRTOS=OS_PROCESS_OK[id]>>4;//堆栈大小
+            OS_HRTOS&=7;
+            OS_SP_KUAI_BEI2[i]=OS_HRTOS;
+            for(j=0; j< OS_KUAI_SHENDU; j++)
             {
-                OS_FAST_CONTEXT[i][j] = OS_TASK_CONTEXT[id][j];
+                OS_HRTOS=OS_TASK_CONTEXT[id][j];
+                OS_FAST_CONTEXT[i][j]=OS_HRTOS;
             }
-
-            OS_SCHED_REASON = 1;
-            IE = K;
-            TF0 = 1;
-
-            return i + OS_PROCESS_MAX;
+            j=i << 3;
+            j|=7;
+            j++;
+            for(x=OS_KUAI_SHENDU; x< OS_JINCHENG_SHENDU; x++)
+            {
+                os_xdata_to_data((u16)&OS_TASK_CONTEXT[id][x],j+x-OS_KUAI_SHENDU);
+            }
+            if((OS_PROCESS_OK[id]&1)!=0)
+            {
+                if(i==0)
+                {
+                    OS_KUAI_PROCESS_A=1;
+                }
+                else
+                {
+                    OS_KUAI_PROCESS_B=1;
+                }
+            }
+            i+=OS_PROCESS_MAX;//
+            OS_SCHED_REASON=1;//调度触发位
+            IE=K;
+			TF0=1;//T0中断
+            return i;
         }
-
-        IE = K;
+        IE=K;
         return -1;
     }
-
-    /* ===== 高速 → 普通任务 ===== */
-    else if(id >= OS_PROCESS_MAX && pr < (OS_SCHED_LEVEL_MAX - 2))
+    else if((id>=OS_PROCESS_MAX)&&(pr<(OS_SCHED_LEVEL_MAX-2)))//高优先级到标准优先级
     {
-        for(i = 0; i < OS_PROCESS_MAX; i++)
+        for(i=0; i < OS_PROCESS_MAX; i++) //申请任务号
         {
-            if(OS_PROCESS_OK[i] == 0)
+            if(OS_PROCESS_OK[i]==0)
             {
                 break;
             }
         }
-
-        if(i < OS_PROCESS_MAX)
+        if(i< OS_PROCESS_MAX) //申请成功
         {
-            if(OS_CURRENT_TASK == id)
+            if(OS_CURRENT_TASK==id)
             {
-                OS_CURRENT_TASK = i;
+                OS_CURRENT_TASK=i;
             }
-
-            id -= OS_PROCESS_MAX;
-
-            OS_PROCESS_OK[i] = (pr << 1);
-
-            OS_SCHED_REASON = 1;
-            IE = K;
-            TF0 = 1;
-
+            id-=OS_PROCESS_MAX;
+            OS_HRTOS=OS_KUAI_SP[id];//现在值
+            OS_JINCHENG_SP[i]=OS_HRTOS;
+            OS_HRTOS=OS_SP_KUAI_BEI[id];//初始值
+            OS_JINCHENG_JILU_SP[i]=OS_HRTOS;
+            OS_HRTOS=OS_SP_KUAI_BEI2[id] << 4;//堆栈大小
+            pr << =1;
+            OS_HRTOS|=pr;
+            if((id==0)&&(OS_KUAI_PROCESS_A))
+            {
+                OS_HRTOS++;
+            }
+            else if((id==1)&&(OS_KUAI_PROCESS_B))
+            {
+                OS_HRTOS++;
+            }
+            OS_PROCESS_OK[i]=OS_HRTOS;
+            for(j=0; j< OS_KUAI_SHENDU; j++)
+            {
+                OS_HRTOS=OS_FAST_CONTEXT[id][j];
+                OS_TASK_CONTEXT[i][j]=OS_HRTOS;
+            }
+            if(id)
+            {
+                j=23;
+            }
+            else
+            {
+                j=15;
+            }
+            for(pr=OS_JINCHENG_SHENDU-1; pr>=OS_KUAI_SHENDU; pr--,j--)
+            {
+                os_data_to_xdata(j,(u16)&OS_TASK_CONTEXT[i][pr]);
+            }
+            id+=OS_PROCESS_MAX;
+            OS_SCHED_REASON=1;//调度触发位
+			IE=K;
+            TF0=1;//T0中断        
             return i;
         }
-
-        IE = K;
+        IE=K;
         return -1;
     }
-
-    /* ===== 高速 → 高速 ===== */
-    if((id >= OS_PROCESS_MAX) && (pr == (OS_SCHED_LEVEL_MAX - 2)))
+    if((id>=OS_PROCESS_MAX)&&(pr==(OS_SCHED_LEVEL_MAX-2)))//高优先级到高优先级
     {
-        IE = K;
+        IE=K;
         return 0;
     }
-
-    IE = K;
+    IE=K;
     return -1;
 }
+
+/*------------------------------------------------------------------------
+|                    END OF FILE: task_set_priority.c                    |
+------------------------------------------------------------------------*/
+
+
     </div>
 
   </div>

@@ -182,58 +182,89 @@ char os_task_set_next(unsigned char id);
     <h2>源码实现</h2>
 
     <div class="code">
-char os_task_set_next(unsigned char id)
+
+/*------------------------------------------------------------------------
+|                            FILE DESCRIPTION                            |
+------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------
+|  - File name     : task_scheduler.c
+|  - Author        : 谭舒
+|  - Update date   : 2026-09-19
+|  - Copyright(C)  : 2026 HRTOS. All rights reserved.
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+|                                INCLUDES                                |
+------------------------------------------------------------------------*/
+
+#include "hrtos_internal.h"
+
+/*------------------------------------------------------------------------
+|                            API FUNCTIONS                               |
+------------------------------------------------------------------------*/
+
+/**
+ * @brief     指定下一次调度运行的任务。
+ *
+ * @param[in] id    下一次调度运行的任务编号。
+ *
+ * @return    操作结果。
+ * @retval    1      下一运行任务设置成功。
+ * @retval    -1     任务编号无效、任务未处于就绪状态或当前调度请求已设置。
+ *
+ * @note      该接口用于指定系统下一次调度时运行的任务。
+ *            设置成功后记录当前任务及目标任务，并请求系统通过 Timer0 中断执行调度。
+ *            每次调度周期仅允许设置一次下一运行任务。
+ *            该接口会改变系统正常调度选择结果，应谨慎使用。
+ */
+char os_task_set_next(unsigned char id)  //指定下个运行的进程（终止调度，强行切换），ID为任务编号;建议未来删除或限制
 {
-    if(id > OS_PROCESS_MAX + 1)
+    
+	if(id>OS_PROCESS_MAX+1)//任务序号不符合系统要求
     {
         return -1;
     }
-
     if(id < OS_PROCESS_MAX)
     {
-        if((OS_PROCESS_OK[id] && 0x01) == 0)
+        if((OS_PROCESS_OK[id] & 0x01)==0)//非就绪状态
         {
             return -1;
         }
     }
-
-    if(id == OS_PROCESS_MAX)
+    if( id==OS_PROCESS_MAX )
     {
-        if(!OS_KUAI_PROCESS_A)
+        if(!OS_KUAI_PROCESS_A)//非就绪状态
         {
             return -1;
         }
     }
-
-    if(id == OS_PROCESS_MAX + 1)
+    if( id==OS_PROCESS_MAX+1 )
     {
-        if(!OS_KUAI_PROCESS_B)
+        if(!OS_KUAI_PROCESS_B)//非就绪状态
         {
             return -1;
         }
     }
-
-    if(id == OS_CURRENT_TASK)
+	
+    if(OS_JINCHENG_CUNCHU==0)//只能指定一次，执行后内核将OS_JINCHENG_CUNCHU清零
     {
-        OS_TIME_XY = 0;
+        OS_JINCHENG_CUNCHU=1;//下一个调度不会运行
+        OS_PREV_TASK=OS_CURRENT_TASK;//将本次运行任务进行保存
+        OS_CURRENT_TASK=id;//将要下一次执行的任务进行保存
+        OS_SCHED_REASON=1;//调度触发位
+        TF0=1;//T0中断
+		
         return 1;
     }
-
-    if(OS_JINCHENG_CUNCHU == 0)
-    {
-        OS_JINCHENG_CUNCHU = 1;
-
-        OS_PREV_TASK = OS_CURRENT_TASK;
-        OS_CURRENT_TASK = id;
-
-        OS_SCHED_REASON = 1;
-        TF0 = 1;
-
-        return 1;
-    }
-
+	
     return -1;
 }
+
+/*------------------------------------------------------------------------
+|                    END OF FILE: task_scheduler.c                        |
+------------------------------------------------------------------------*/
+
+
     </div>
 
   </div>

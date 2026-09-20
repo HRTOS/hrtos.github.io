@@ -186,95 +186,133 @@ char os_task_get_state(unsigned char id);
     <h2>源码实现</h2>
 
     <div class="code">
-char os_task_get_state(unsigned char id)
-{
-    u8 I, J;
 
-    if(id > OS_PROCESS_MAX + 1)
+/*------------------------------------------------------------------------
+|                            FILE DESCRIPTION                            |
+------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------
+|  - File name     : task_get_state.c
+|  - Author        : 谭舒
+|  - Update date   : 2026-09-19
+|  - Copyright(C)  : 2026 HRTOS. All rights reserved.
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+|                                INCLUDES                                |
+------------------------------------------------------------------------*/
+
+#include "hrtos_internal.h"
+
+/*------------------------------------------------------------------------
+|                            API FUNCTIONS                               |
+------------------------------------------------------------------------*/
+
+/**
+ * @brief     查询指定任务的当前状态。
+ *
+ * @param[in] id    任务编号。
+ *
+ * @return    任务状态。
+ * @retval    0      任务已删除或未创建。
+ * @retval    1      任务正在运行。
+ * @retval    2      任务处于就绪状态。
+ * @retval    3      任务处于挂起状态。
+ * @retval    4      任务为最近一次被切出的任务。
+ * @retval    -1     任务编号无效。
+ *
+ * @note      对于标准任务，根据任务运行状态及当前任务、前一任务信息确定状态。
+ *            对于高速任务，根据任务运行状态及对应的高速任务运行标志确定状态。
+ *            当任务同时满足多个状态条件时，按照当前任务、前一任务及任务运行状态的优先级进行判断。
+ */
+char  os_task_get_state(unsigned char id)//任务状态查询：0删除 1运行 2就绪 3挂起 4 = 最近一次被切出的任务
+{
+    u8 I,J;
+    if(id>OS_PROCESS_MAX+1)
     {
         return -1;
-    }
-
+    }    
     if(id < OS_PROCESS_MAX)
     {
-        if(OS_PROCESS_OK[id] == 0)
+        if(OS_PROCESS_OK[id]==0)
         {
-            I = 0;
+            I=0;
             goto OS_AAAA1;
         }
-        else if(id == OS_CURRENT_TASK)
+        else if(id==OS_CURRENT_TASK)
         {
-            I = 1;
+            I=1;
             goto OS_AAAA1;
         }
-        else if(id == OS_PREV_TASK)
+        else    if(id==OS_PREV_TASK)
         {
-            I = 4;
+            I=4;
             goto OS_AAAA1;
         }
-        else if(OS_PROCESS_OK[id] & 0x01)
+        else if(OS_PROCESS_OK[id]&0x01)
         {
-            I = 2;
+            I=2;
             goto OS_AAAA1;
         }
         else
         {
-            I = 3;
+            I=3;
             goto OS_AAAA1;
         }
     }
     else
     {
-        if(id == OS_CURRENT_TASK)
+        if(id==OS_CURRENT_TASK)
         {
-            I = 1;
+            I=1;
             goto OS_AAAA1;
         }
-        else if(id == OS_PREV_TASK)
+        else if(id==OS_PREV_TASK)
         {
-            I = 4;
+            I=4;
             goto OS_AAAA1;
         }
         else
         {
-            J = id - OS_PROCESS_MAX;
-
-            if(OS_SP_KUAI_BEI[J] == 0)
+            J=id-OS_PROCESS_MAX;
+            if(OS_SP_KUAI_BEI[J]==0)
             {
-                I = 0;
+                I=0;
                 goto OS_AAAA1;
             }
-
-            if(J == 0)
+            if(J==0)
             {
                 if(OS_KUAI_PROCESS_A)
                 {
-                    I = 2;
+                    I=2;
                 }
                 else
                 {
-                    I = 3;
+                    I=3;
                 }
             }
             else
             {
                 if(OS_KUAI_PROCESS_B)
                 {
-                    I = 2;
+                    I=2;
                 }
                 else
                 {
-                    I = 3;
+                    I=3;
                 }
             }
-
             goto OS_AAAA1;
         }
     }
-
-OS_AAAA1:
+	OS_AAAA1:
     return I;
 }
+
+/*------------------------------------------------------------------------
+|                    END OF FILE: task_get_state.c                       |
+------------------------------------------------------------------------*/
+
+
     </div>
 
   </div>

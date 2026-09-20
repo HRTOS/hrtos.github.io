@@ -172,24 +172,64 @@ char os_set_scheduler(unsigned char id);
     <h2>源码实现</h2>
 
     <div class="code">
-char os_set_scheduler(unsigned char id)
-{
-    if((id == 0) && (OS_INTERRUPT_T0 == 0))
-    {
-        OS_INTERRUPT_T0 = 1;
-        OS_TIME_ONCE_BACKUP = OS_TIME_ONCE;
-        return 1;
-    }
-    else if((id == 1) && (OS_INTERRUPT_T0 == 1))
-    {
-        OS_INTERRUPT_T0 = 0;
-        OS_TIME_XY = OS_TIME_XY + OS_TIME_ONCE_BACKUP - OS_TIME_ONCE;
-        OS_TIME_ONCE = OS_TIME_ONCE_BACKUP;
-        return 1;
-    }
 
+/*------------------------------------------------------------------------
+|                            FILE DESCRIPTION                            |
+------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------
+|  - File name     : scheduler_mode.c
+|  - Author        : 谭舒
+|  - Update date   : 2026-09-19
+|  - Copyright(C)  : 2026 HRTOS. All rights reserved.
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+|                                INCLUDES                                |
+------------------------------------------------------------------------*/
+
+#include"hrtos_internal.h"
+
+/*------------------------------------------------------------------------
+|                            API FUNCTIONS                               |
+------------------------------------------------------------------------*/
+
+/**
+ * @brief     设置系统调度器运行模式。
+ *
+ * @param[in] id    调度器模式。
+ *                  0：HRTOS 调度器。
+ *                  1：MYOS 调度器。
+ *
+ * @return    操作结果。
+ * @retval    1      调度器模式切换成功。
+ * @retval    -1     调度器模式无效或当前已经处于指定模式。
+ *
+ * @note      切换到 HRTOS 调度模式时保存当前时间参数。
+ *            切换到 MYOS 调度模式时恢复保存的时间参数，并调整相关时间计数。
+ */
+char os_set_scheduler(unsigned char id)     
+{
+    if((id==0)&&(OS_INTERRUPT_T0==0))
+    {
+        OS_INTERRUPT_T0=1;
+        OS_TIME_ONCE_BACKUP=OS_TIME_ONCE;
+        return 1;
+    }
+    else if((id==1)&&(OS_INTERRUPT_T0==1))
+    {
+        OS_INTERRUPT_T0=0;
+        OS_TIME_XY=OS_TIME_XY+OS_TIME_ONCE_BACKUP-OS_TIME_ONCE;
+        OS_TIME_ONCE=OS_TIME_ONCE_BACKUP;
+        return 1;
+    }
     return -1;
 }
+
+/*------------------------------------------------------------------------
+|                    END OF FILE: scheduler_mode.c                      |
+------------------------------------------------------------------------*/
+
+
     </div>
 
   </div>

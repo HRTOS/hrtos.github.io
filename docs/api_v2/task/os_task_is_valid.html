@@ -183,14 +183,46 @@ signed char os_task_is_valid(u8 id);
     <h2>源码实现</h2>
 
     <div class="code">
-signed char os_task_is_valid(u8 id)
+
+/*------------------------------------------------------------------------
+|                            FILE DESCRIPTION                            |
+------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------
+|  - File name     : task_is_valid.c
+|  - Author        : 谭舒
+|  - Update date   : 2026-09-19
+|  - Copyright(C)  : 2026 HRTOS. All rights reserved.
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+|                                INCLUDES                                |
+------------------------------------------------------------------------*/
+
+#include "hrtos_internal.h"
+
+/*------------------------------------------------------------------------
+|                            API FUNCTIONS                               |
+------------------------------------------------------------------------*/
+
+/**
+ * @brief     查询指定任务是否已注册。
+ *
+ * @param[in] id    任务编号。
+ *
+ * @return    任务注册状态。
+ * @retval    1      任务已注册。
+ * @retval    0      任务未注册。
+ * @retval    -1     任务编号无效。
+ *
+ * @note      该接口同时支持标准任务和高速任务的注册状态查询。
+ */
+signed char os_task_is_valid(u8 id)//任务是否存在/注册检查-1参数异常，0未注册，1已注册
 {
-    if(id > OS_PROCESS_MAX + 1)
+    if(id>OS_PROCESS_MAX+1)
     {
         return -1;
     }
-
-    if(id == OS_PROCESS_MAX + 1)
+    if(id==OS_PROCESS_MAX+1)
     {
         if(OS_SP_KUAI_BEI[1])
         {
@@ -201,8 +233,7 @@ signed char os_task_is_valid(u8 id)
             return 0;
         }
     }
-
-    if(id == OS_PROCESS_MAX)
+    if(id==OS_PROCESS_MAX)
     {
         if(OS_SP_KUAI_BEI[0])
         {
@@ -213,14 +244,18 @@ signed char os_task_is_valid(u8 id)
             return 0;
         }
     }
-
-    if(OS_PROCESS_OK[id] != 0)
+    if(OS_PROCESS_OK[id]!=0)/*已注册*/
     {
         return 1;
     }
-
     return 0;
 }
+
+/*------------------------------------------------------------------------
+|                    END OF FILE: task_is_valid.c                        |
+------------------------------------------------------------------------*/
+
+
     </div>
 
   </div>
