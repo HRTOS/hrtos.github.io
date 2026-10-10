@@ -1,11 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>调度基础 | HRTOS 学习模块</title>
-<meta name="description" content="介绍RTOS调度基础概念，包括任务调度策略、优先级机制、抢占行为与实时系统调度模型。" />
+<title>RTOS 调度基础：任务状态、优先级与抢占机制 | HRTOS</title>
+<meta name="description" content="系统介绍 RTOS 调度基础，包括任务状态、就绪与阻塞、优先级调度、抢占式与协作式调度、时间片以及实时性分析。"/>
+<meta name="robots" content="index,follow"/>
+<link rel="canonical" href="https://hrtos.com/docs/learn/scheduling-basics.html"/>
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -36,12 +39,16 @@ a{
   text-decoration:none;
 }
 
+a:hover{
+  color:#7dd3fc;
+}
+
 .page{
   width:min(1180px, calc(100% - 40px));
   margin:0 auto;
   padding:96px 0 56px;
   display:grid;
-  gap:40px;
+  gap:36px;
 }
 
 .breadcrumb{
@@ -70,7 +77,8 @@ a{
 
 .hero h1{
   margin:0;
-  font-size:42px;
+  font-size:clamp(30px,4vw,42px);
+  line-height:1.3;
 }
 
 .hero p{
@@ -96,12 +104,18 @@ a{
 
 .section{
   display:grid;
-  gap:12px;
+  gap:14px;
 }
 
 .section h2{
   margin:0;
   font-size:22px;
+  line-height:1.4;
+}
+
+.section h3{
+  margin:0 0 8px;
+  font-size:17px;
 }
 
 .section p{
@@ -114,25 +128,26 @@ a{
   border-radius:10px;
   border:1px solid rgba(56,189,248,.18);
   background:rgba(15,23,42,.6);
-  font-family:Consolas, monospace;
-  color:#7dd3fc;
+  color:#bae6fd;
+  font-family:Consolas,"Courier New",monospace;
   font-size:14px;
-  line-height:1.8;
-  white-space: pre-wrap;
-  word-break: break-word;
+  line-height:1.9;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
 }
 
 .grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+  gap:18px;
 }
 
 .card{
+  min-width:0;
   padding:22px;
   border-radius:10px;
   border:1px solid var(--border);
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  background:linear-gradient(180deg,rgba(30,41,59,.8),rgba(15,23,42,.92));
 }
 
 .card h3{
@@ -144,6 +159,64 @@ a{
   margin:0;
   color:var(--muted);
   font-size:14px;
+}
+
+.table-wrap{
+  width:100%;
+  overflow-x:auto;
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:620px;
+  font-size:14px;
+}
+
+th,td{
+  padding:13px 15px;
+  text-align:left;
+  vertical-align:top;
+  border-bottom:1px solid var(--border);
+}
+
+th{
+  color:#bae6fd;
+  background:rgba(30,41,59,.72);
+  font-weight:600;
+}
+
+td{
+  color:var(--muted);
+}
+
+tbody tr:last-child td{
+  border-bottom:none;
+}
+
+strong{
+  color:#e2e8f0;
+  font-weight:600;
+}
+
+.note{
+  padding:16px 18px;
+  border-left:3px solid var(--accent);
+  background:rgba(56,189,248,.06);
+  border-radius:0 8px 8px 0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.link-list{
+  display:grid;
+  gap:10px;
+}
+
+.link-list a{
+  color:#7dd3fc;
 }
 
 .footer{
@@ -159,6 +232,22 @@ a{
     grid-template-columns:1fr;
   }
 }
+
+@media(max-width:600px){
+  .page{
+    width:calc(100% - 28px);
+    padding-top:76px;
+    gap:28px;
+  }
+
+  .block,.card{
+    padding:17px;
+  }
+
+  .section h2{
+    font-size:20px;
+  }
+}
 </style>
 </head>
 
@@ -166,7 +255,7 @@ a{
 
 <main class="page">
 
-  <nav class="breadcrumb">
+  <nav class="breadcrumb" aria-label="面包屑导航">
     <a href="/docs/index.html">文档中心</a> /
     <a href="/docs/learn/index.html">学习模块</a> /
     <span>调度基础</span>
@@ -178,195 +267,436 @@ a{
     <h1>调度基础（Scheduling Fundamentals）</h1>
 
     <p>
-      调度是RTOS的核心控制机制，决定CPU在任意时刻执行哪个任务。
-      它直接影响系统是否满足实时约束，而不是单纯的运行效率问题。
+      调度机制决定操作系统在任务之间如何分配处理器执行机会。
+      在 RTOS 中，任务状态、优先级、抢占规则和阻塞机制共同影响任务何时运行，
+      而系统能否满足实时约束，还需要结合执行时间、资源竞争、中断开销与实际负载进行分析。
     </p>
 
     <div class="meta">
-      <span class="tag">Scheduling</span>
-      <span class="tag">RTOS Core</span>
-      <span class="tag">Deterministic Execution</span>
+      <span class="tag">Task Scheduling</span>
+      <span class="tag">Priority</span>
+      <span class="tag">Preemption</span>
+      <span class="tag">Real-Time Analysis</span>
     </div>
   </section>
 
   <section class="section">
-    <h2>一、调度本质</h2>
+    <h2>一、调度器的职责是什么？</h2>
 
     <p>
-      通用系统优化“整体效率”，RTOS优化“时间可预测性”。
-      调度的核心不是资源分配，而是时间约束是否成立。
+      调度器的直接职责，是依据操作系统的调度规则，从具备运行条件的任务中选择下一执行任务。
+      它并不一定在每次调度时计算所有任务是否能够满足截止时间。
     </p>
 
-    <div class="block">
-调度 = 时间约束决策机制
+    <div class="block">调度器的典型职责：
 
-目标：
-- 满足截止时间
-- 控制最坏延迟
-- 保证执行可预测
+1. 维护或识别任务的运行状态
+2. 确定哪些任务当前具备执行条件
+3. 按照调度策略选择下一执行任务
+4. 在规定的调度时机处理任务切换
+5. 配合内核完成必要的上下文保存与恢复
 
-关键点：
-- 优先级 ≠ 执行顺序保证
-- 可运行 ≠ 可调度成功
-- 高优先级 ≠ 一定执行
-    </div>
+实时性分析还需要考虑：
 
-    <p>
-      RTOS调度器本质是“时间可行性判断器”，而不是简单的任务排序器。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>二、任务状态链路</h2>
+- 任务执行时间与截止时间
+- 中断响应和中断处理开销
+- 资源阻塞与优先级反转
+- 调度开销、系统负载及任务到达模式</div>
 
     <p>
-      任务状态不是线性流程，而是被中断、资源与时间事件不断打断的动态系统。
-    </p>
-
-    <div class="block">
-状态流：
-
-创建 → 就绪 → 运行 → 阻塞 → 就绪 → 终止
-
-触发因素：
-- 中断
-- 时间片
-- 资源释放
-- 超时
-- 优先级变化
-    </div>
-
-    <p>
-      每次状态变化都可能触发一次调度，因此状态设计直接影响系统稳定性。
+      因此，<strong>任务选择是调度机制的直接工作，时间约束是否成立则是系统分析与验证的问题。</strong>
+      某些调度算法可以结合任务参数进行可调度性分析，但不能据此认为所有 RTOS 调度器都会实时执行这种分析。
     </p>
   </section>
 
   <section class="section">
-    <h2>三、调度模型类型</h2>
+    <h2>二、任务状态与调度时机</h2>
+
+    <p>
+      任务状态描述任务当前能否参与调度。不同 RTOS 对状态名称和内部数据结构的定义可能不同，
+      但通常可以用以下模型理解任务的执行过程。
+    </p>
+
+    <div class="block">创建任务
+   ↓
+就绪（Ready） ── 被调度选中 ──→ 运行（Running）
+   ↑                                  │
+   │                                  ├── 等待事件 / 资源 → 阻塞（Blocked）
+   │                                  │                         │
+   ├──────── 事件满足 / 超时 ──────────┘                         │
+   │                                                            │
+   └────────────────────────────────────────────────────────────┘
+
+其他可能的状态变化：
+- 运行任务被抢占：运行 → 就绪
+- 运行任务主动让出处理器：运行 → 就绪
+- 任务结束或删除：进入终止或非活动状态</div>
 
     <div class="grid">
+      <div class="card">
+        <h3>就绪（Ready）</h3>
+        <p>
+          任务已具备运行条件，但当前尚未获得处理器。
+          就绪任务不一定立即运行，具体取决于优先级、调度策略和其他调度约束。
+        </p>
+      </div>
 
       <div class="card">
-        <h3>优先级调度</h3>
+        <h3>运行（Running）</h3>
         <p>
-          基于优先级选择任务。
-          RTOS核心模型，但不等于实时性本身。
-          需要配合执行时间约束才能成立。
+          任务当前正在处理器上执行。在单核系统中，同一时刻通常只有一个普通任务处于运行状态；
+          中断处理过程需要单独考虑。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>阻塞（Blocked）</h3>
+        <p>
+          任务正在等待某个事件、资源、消息或时间条件。
+          等待条件满足后，任务通常重新进入就绪状态。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>终止或非活动</h3>
+        <p>
+          任务已结束、被删除，或尚未被激活。
+          具体状态模型取决于操作系统的任务管理设计。
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      注意：中断发生不一定导致任务切换。中断可能只完成事件处理；
+      只有在相应的调度条件成立且系统允许切换时，才可能进一步切换任务。
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>三、优先级调度</h2>
+
+    <p>
+      优先级用于表达任务在调度选择中的相对重要程度。
+      在常见的固定优先级调度模型中，当多个任务同时就绪时，调度器会按照优先级规则选择任务。
+      但优先级数值的含义、相同优先级的处理方式以及是否允许抢占，都由具体系统决定。
+    </p>
+
+    <div class="block">示例：假设数值越大，优先级越高
+
+任务 A：优先级 5，处于就绪状态
+任务 B：优先级 3，处于就绪状态
+任务 C：优先级 7，处于就绪状态
+
+如果当前调度规则要求选择最高优先级的就绪任务，
+且不存在其他限制，则任务 C 优先获得执行机会。
+
+这并不意味着：
+- 任务 C 永远不会被阻塞
+- 任务 C 不受中断和内核开销影响
+- 任务 C 一定能够满足截止时间
+- 所有系统都采用相同的优先级数值方向</div>
+
+    <p>
+      优先级决定的是调度中的相对顺序，而不是任务执行时间，也不是对截止时间的自动保证。
+      如果高优先级任务长期持续就绪，低优先级任务可能长时间得不到执行机会。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>四、常见调度模型</h2>
+
+    <div class="grid">
+      <div class="card">
+        <h3>固定优先级调度</h3>
+        <p>
+          任务使用预先配置或由系统规则确定的优先级。
+          实现相对直接，适用于需要明确区分任务重要程度的系统。
+          是否能够满足时间约束，仍需结合任务负载与阻塞情况分析。
         </p>
       </div>
 
       <div class="card">
         <h3>抢占式调度</h3>
         <p>
-          高优先级任务可中断低优先级任务。
-          用于保证响应时间上界。
-          代价是上下文切换成本增加。
+          在允许抢占的调度点，当符合规则的更高优先级任务就绪时，
+          系统可以暂停当前任务并切换执行对象。
+          实际响应还受到中断屏蔽区间、内核临界区和切换开销等因素影响。
         </p>
       </div>
 
       <div class="card">
-        <h3>时间片调度</h3>
+        <h3>协作式调度</h3>
         <p>
-          CPU按时间轮转分配。
-          强公平性，但弱实时性。
-          适用于后台任务。
+          任务通常在主动让出处理器、等待事件或到达约定调度点时交出执行权。
+          设计简单，但如果任务长时间不让出处理器，其他任务的响应可能受到影响。
         </p>
       </div>
 
       <div class="card">
-        <h3>事件驱动调度</h3>
+        <h3>时间片轮转</h3>
         <p>
-          由中断、消息、信号触发。
-          是RTOS与中断系统耦合的主要方式。
+          在适用的任务集合中，为任务分配轮转执行机会。
+          时间片有助于分配处理器使用权，但公平轮转本身并不等于满足实时截止时间。
         </p>
       </div>
 
+      <div class="card">
+        <h3>动态优先级调度</h3>
+        <p>
+          任务优先级可根据时间、任务状态或调度策略变化。
+          例如，EDF 按绝对截止时间的先后选择任务。
+          其效果取决于算法假设与系统实现。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>事件驱动执行</h3>
+        <p>
+          外部事件、中断、消息或定时器可以使任务进入就绪状态。
+          事件驱动描述的是任务被触发或激活的方式，并不代表唯一的一种调度算法。
+        </p>
+      </div>
     </div>
   </section>
 
   <section class="section">
-    <h2>四、调度决策逻辑</h2>
+    <h2>五、抢占与协作：执行权如何转移？</h2>
 
     <p>
-      调度不是“选最高优先级任务”，而是判断“谁在约束内仍可执行”。
+      抢占式与协作式的主要区别，在于任务是否可以在没有主动让出处理器的情况下，
+      被调度机制转移执行权。两种模型都能用于构建实时系统，但需要采用不同的任务设计和时序分析方法。
     </p>
 
-    <div class="block">
-调度判断流程：
-
-1. 是否就绪
-2. 是否满足资源条件
-3. 是否满足时间约束
-4. 是否被更高优先级抢占
-5. 选择最优可执行任务
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>比较维度</th>
+            <th>抢占式调度</th>
+            <th>协作式调度</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>执行权转移</td>
+            <td>满足抢占条件时，可由内核转移执行权</td>
+            <td>通常在任务主动让出或约定调度点转移</td>
+          </tr>
+          <tr>
+            <td>高优先级任务响应</td>
+            <td>通常更容易限制就绪后的等待时间，但并非瞬时响应</td>
+            <td>可能受到当前任务连续执行时间的影响</td>
+          </tr>
+          <tr>
+            <td>共享数据保护</td>
+            <td>需要处理并发访问、临界区与资源竞争</td>
+            <td>仍需考虑中断、重入和任务交接时的数据一致性</td>
+          </tr>
+          <tr>
+            <td>上下文切换</td>
+            <td>可能发生于更多调度时机</td>
+            <td>切换时机通常更受任务主动行为控制</td>
+          </tr>
+          <tr>
+            <td>实时性</td>
+            <td>不自动保证截止时间</td>
+            <td>也可以进行时间分析，但必须约束任务执行与让出行为</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <p>
-      调度本质是约束满足问题，而不是排序问题。
+      无论采用哪种模型，都需要分析任务最迟何时能够运行。
+      对抢占式系统，要考虑阻塞、不可抢占区间和调度开销；
+      对协作式系统，还要特别关注任务连续占用处理器的最长时间。
     </p>
   </section>
 
   <section class="section">
-    <h2>五、抢占代价</h2>
+    <h2>六、调度与上下文切换</h2>
 
     <p>
-      抢占提升实时性，但带来系统成本：切换、缓存失效与抖动。
+      调度决策与上下文切换是相关但不同的两个过程。
+      调度机制确定下一步应该执行哪个任务；上下文切换则负责保存当前执行状态，并恢复目标任务的状态。
     </p>
 
-    <div class="block">
-主要代价：
-- 上下文切换
-- 缓存失效
-- 调度抖动
-- 锁竞争
+    <div class="block">典型的任务切换过程（概念模型）
+
+事件或调度条件出现
+        ↓
+判断是否需要重新调度
+        ↓
+确定下一执行任务
+        ↓
+保存当前任务所需的执行上下文
+        ↓
+恢复目标任务的执行上下文
+        ↓
+目标任务继续执行
+
+具体实现可能将其中部分步骤合并、延后，
+或通过中断返回路径完成任务恢复。</div>
+
+    <p>
+      上下文通常涉及程序执行位置、堆栈和架构相关寄存器状态。
+      实际保存内容取决于处理器架构、编译器约定与内核实现，不能把某一处理器的切换过程直接套用到所有平台。
+    </p>
+
+    <div class="note">
+      在 8051 这类资源受限的处理器上，堆栈空间、寄存器组使用、上下文保存方式和中断返回路径都可能影响切换成本。
+      应以目标芯片、编译配置及实际汇编实现为准。
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>七、调度开销与资源竞争</h2>
+
+    <p>
+      调度机制本身会消耗处理器时间。任务切换、中断处理、临界区以及共享资源竞争，
+      都可能影响任务实际获得处理器的时机。
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>上下文切换开销</h3>
+        <p>
+          保存和恢复执行状态需要时间。切换频率过高时，内核管理开销可能占据更多处理器时间。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>中断与临界区</h3>
+        <p>
+          中断处理和暂时禁止抢占或中断的代码区间，可能延迟任务调度。
+          相关影响需要结合实际执行路径测量或分析。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>资源阻塞</h3>
+        <p>
+          任务等待锁、信号量或其他资源时，即使优先级较高，也可能暂时无法继续执行。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>优先级反转</h3>
+        <p>
+          低优先级任务持有高优先级任务所需的资源时，中优先级任务可能间接延长高优先级任务的等待时间。
+          是否需要优先级继承等机制，取决于资源模型与系统设计。
+        </p>
+      </div>
     </div>
 
     <p>
-      高频抢占会吞噬执行时间，因此任务粒度必须受控。
+      需要注意，缓存失效是部分具有缓存的处理器上的潜在成本，不是所有 RTOS 或 8051 系统都具有的通用切换开销。
     </p>
   </section>
 
   <section class="section">
-    <h2>六、实时性关系</h2>
+    <h2>八、调度与实时性分析</h2>
 
     <p>
-      实时性由调度保证，而不是CPU性能决定。
+      实时系统不仅关心任务能否执行，还关心任务能否在规定时间内完成。
+      调度策略影响任务的等待、抢占和阻塞，但实时性结论必须建立在明确的工作负载和时间参数之上。
     </p>
 
-    <div class="block">
-实时条件：
+    <div class="block">常用时间参数：
 
-执行时间 + 调度延迟 ≤ 截止时间
+C   = 任务执行时间
+R   = 任务响应时间
+D   = 任务相对截止时间
+B   = 资源阻塞等因素引入的等待时间
+J   = 任务释放时间抖动（适用时）
 
-所有阻塞与中断开销必须计入预算
-    </div>
+对单个任务，常见的截止时间目标是：
+
+响应时间 R ≤ 相对截止时间 D
+
+在具体系统中，响应时间的计算还需要明确：
+- 执行时间的定义与取值依据
+- 更高优先级任务或其他任务的干扰
+- 中断、调度及上下文切换开销
+- 资源阻塞与临界区
+- 任务释放模式和系统负载</div>
 
     <p>
-      评价RTOS不能看平均性能，而必须看最坏情况。
+      这里的公式是概念性的分析入口，并不是适用于所有调度算法的通用响应时间计算公式。
+      对不同任务模型，应采用与其调度策略和假设相匹配的分析方法。
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>平均执行时间</h3>
+        <p>
+          用于观察常见运行条件下的性能，但不能单独证明最坏情况下能够满足截止时间。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>最坏情况执行时间（WCET）</h3>
+        <p>
+          在给定硬件、软件路径与分析假设下，估计或证明一次任务执行所需时间的上界。
+          它是实时性分析的重要输入之一，但不是完整的响应时间结论。
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      可预测的调度行为有助于分析，但确定性本身不等于可调度性。
+      是否满足截止时间，仍需考虑完整执行路径、任务干扰、阻塞和分析假设，并通过适当的验证支撑结论。
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>九、如何理解 HRTOS 的调度机制？</h2>
+
+    <p>
+      对 8051 实时操作系统，调度设计不仅涉及任务优先级，还涉及有限的 RAM、任务堆栈、
+      中断响应、上下文保存和任务切换路径。
+      这些因素需要放在同一个工程模型中分析。
+    </p>
+
+    <div class="block">分析一个具体的 RTOS 调度实现，可以依次检查：
+
+1. 哪些事件会触发调度判断？
+2. 哪些任务状态可以参与调度？
+3. 优先级如何定义，同优先级任务如何处理？
+4. 抢占和时间片规则分别是什么？
+5. 任务切换通过什么执行路径完成？
+6. 中断、临界区和资源等待会引入哪些延迟？
+7. 相关时间结论是否有目标平台上的测试或分析证据？</div>
+
+    <p>
+      对 HRTOS 的具体行为，应以对应版本的内核实现、配置、目标芯片和测试结果为准。
+      通用调度理论用于建立分析框架，不能代替对真实执行路径的核验。
     </p>
   </section>
 
   <section class="section">
-    <h2>七、结论</h2>
+    <h2>十、总结与延伸阅读</h2>
 
-    <div class="block">
-RTOS调度本质：
+    <div class="block">理解 RTOS 调度，需要区分四个层面：
 
-不是资源优化，而是时间约束验证系统
+任务状态：任务当前是否具备执行条件
+调度策略：系统按照什么规则选择任务
+上下文切换：系统如何转移任务执行状态
+实时性分析：任务能否在规定时间内完成
 
-每个任务都必须被当作“带截止时间的执行请求”
-    </div>
+调度策略影响实时性，但不单独构成实时性保证。</div>
 
     <div class="card">
-      <h3>学习路径</h3>
-      <p>
-        建议顺序理解：<br/><br/>
-        → <a href="/docs/learn/interrupt-basics.html">中断基础</a><br/>
-        → <a href="/docs/learn/rtos-vs-linux.html">RTOS vs Linux</a><br/>
-        → <a href="/docs/learn/ipc-basics.html">IPC基础</a><br/>
-        → <a href="/docs/learn/preemptive-vs-cooperative.html">抢占 vs 协作</a><br/>
-        → <a href="/docs/learn/real-time-systems.html">实时系统基础</a>
-      </p>
+      <h3>推荐学习路径</h3>
+      <div class="link-list">
+        <a href="/docs/learn/what-is-rtos.html">→ 什么是 RTOS：理解实时操作系统</a>
+        <a href="/docs/learn/preemptive-vs-cooperative.html">→ 抢占式与协作式调度</a>
+        <a href="/docs/learn/context-switch-basics.html">→ 上下文切换基础</a>
+        <a href="/docs/learn/interrupt-basics.html">→ 中断基础与实时响应</a>
+        <a href="/docs/learn/ipc-basics.html">→ IPC：任务通信与同步</a>
+        <a href="/docs/learn/real-time-systems.html">→ 实时系统基础与时间约束</a>
+        <a href="/docs/learn/rtos-vs-linux.html">→ RTOS 与 Linux 的设计目标对比</a>
+      </div>
     </div>
   </section>
 

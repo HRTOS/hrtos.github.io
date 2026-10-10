@@ -1,11 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>抢占式 vs 协作式 | HRTOS 学习模块</title>
-<meta name="description" content="HRTOS 中抢占式调度与协作式调度的区别、工作机制与实时系统中的适用场景。" />
+<title>抢占式与协作式调度：机制、实时性与适用场景 | HRTOS</title>
+<meta name="description" content="了解 RTOS 抢占式与协作式调度的核心区别、任务切换条件、实时性影响与适用场景，并认识调度机制与 WCET、响应时间和确定性的关系。" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/learn/preemptive-vs-cooperative.html" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -23,6 +26,8 @@
 
 *{box-sizing:border-box}
 
+html{scroll-behavior:smooth}
+
 body{
   margin:0;
   background:var(--bg);
@@ -36,12 +41,18 @@ a{
   text-decoration:none;
 }
 
+a:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:4px;
+  border-radius:4px;
+}
+
 .page{
   width:min(1180px, calc(100% - 40px));
   margin:0 auto;
   padding:96px 0 56px;
   display:grid;
-  gap:40px;
+  gap:36px;
 }
 
 .breadcrumb{
@@ -49,9 +60,8 @@ a{
   color:var(--muted);
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
-}
+.breadcrumb a{color:#7dd3fc}
+.breadcrumb a:hover{text-decoration:underline}
 
 .hero{
   display:grid;
@@ -61,22 +71,25 @@ a{
 .hero-label{
   display:inline-flex;
   width:fit-content;
-  padding:8px 14px;
+  padding:7px 13px;
   border-radius:999px;
-  border:1px solid rgba(56,189,248,.22);
+  border:1px solid rgba(56,189,248,.25);
   color:#bae6fd;
-  font-size:14px;
+  font-size:13px;
 }
 
 .hero h1{
   margin:0;
-  font-size:42px;
+  font-size:clamp(30px,4vw,42px);
+  line-height:1.25;
+  letter-spacing:-.025em;
 }
 
 .hero p{
   margin:0;
-  max-width:860px;
+  max-width:900px;
   color:var(--muted);
+  font-size:16px;
 }
 
 .meta{
@@ -86,22 +99,28 @@ a{
 }
 
 .tag{
-  padding:6px 12px;
+  padding:5px 11px;
   border:1px solid var(--border);
   border-radius:999px;
-  font-size:13px;
+  font-size:12px;
   color:#bae6fd;
   background:rgba(15,23,42,.4);
 }
 
 .section{
   display:grid;
-  gap:12px;
+  gap:15px;
+  min-width:0;
 }
 
 .section h2{
   margin:0;
-  font-size:22px;
+  font-size:clamp(20px,2.5vw,24px);
+  line-height:1.4;
+}
+
+.section h3{
+  line-height:1.45;
 }
 
 .section p{
@@ -109,41 +128,107 @@ a{
   color:var(--muted);
 }
 
+.section p+p{margin-top:2px}
+
 .block{
   padding:22px;
   border-radius:10px;
   border:1px solid rgba(56,189,248,.18);
   background:rgba(15,23,42,.6);
-  font-family:Consolas, monospace;
-  color:#7dd3fc;
+  font-family:Consolas,"Courier New",monospace;
+  color:#bae6fd;
   font-size:14px;
-  line-height:1.8;
-  white-space: pre-wrap;
-  word-break: break-word;
+  line-height:1.9;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  overflow-x:auto;
 }
 
 .grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+  gap:16px;
 }
 
 .card{
-  padding:22px;
+  min-width:0;
+  padding:21px;
   border-radius:10px;
   border:1px solid var(--border);
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  background:linear-gradient(180deg,rgba(30,41,59,.8),rgba(15,23,42,.92));
 }
 
 .card h3{
-  margin:0 0 10px;
-  font-size:18px;
+  margin:0 0 9px;
+  font-size:17px;
 }
 
 .card p{
   margin:0;
   color:var(--muted);
   font-size:14px;
+}
+
+.card a,
+a.card{
+  transition:border-color .18s ease,transform .18s ease;
+}
+
+a.card:hover{
+  border-color:rgba(56,189,248,.5);
+  transform:translateY(-2px);
+}
+
+.note{
+  padding:17px 19px;
+  border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;
+  background:rgba(56,189,248,.06);
+  color:#cbd5e1;
+  font-size:14px;
+}
+
+.note strong{color:#e0f2fe}
+
+.table-wrap{
+  width:100%;
+  overflow-x:auto;
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:620px;
+  font-size:14px;
+}
+
+th,td{
+  padding:14px 16px;
+  text-align:left;
+  vertical-align:top;
+  border-bottom:1px solid var(--border);
+}
+
+th{
+  background:rgba(30,41,59,.85);
+  color:#e2e8f0;
+  font-weight:600;
+}
+
+td{color:var(--muted)}
+tr:last-child td{border-bottom:none}
+td:first-child{color:#cbd5e1;font-weight:500}
+
+.inline-code{
+  padding:2px 6px;
+  border-radius:4px;
+  background:rgba(148,163,184,.12);
+  color:#bae6fd;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:.92em;
+  overflow-wrap:anywhere;
 }
 
 .footer{
@@ -155,7 +240,19 @@ a{
 }
 
 @media(max-width:900px){
-  .grid{grid-template-columns:1fr;}
+  .grid{grid-template-columns:1fr}
+}
+
+@media(max-width:600px){
+  .page{
+    width:calc(100% - 28px);
+    padding:82px 0 38px;
+    gap:28px;
+  }
+
+  .block{padding:16px;font-size:13px}
+  .card{padding:18px}
+  .meta{gap:7px}
 }
 </style>
 </head>
@@ -164,201 +261,402 @@ a{
 
 <main class="page">
 
-  <nav class="breadcrumb">
+  <nav class="breadcrumb" aria-label="面包屑导航">
     <a href="/docs/index.html">文档中心</a> /
     <a href="/docs/learn/index.html">学习模块</a> /
-    <span>抢占式 vs 协作式</span>
+    <span aria-current="page">抢占式与协作式调度</span>
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS 学习模块</span>
+    <span class="hero-label">RTOS Learning · Scheduling</span>
 
-    <h1>抢占式 vs 协作式调度模型</h1>
+    <h1>抢占式与协作式调度</h1>
 
     <p>
-      调度模型定义系统“CPU控制权归属方式”。
-      抢占式与协作式的核心区别在于：系统是否允许任务自行决定CPU释放时机。
+      抢占式与协作式描述的是任务执行权如何交接。
+      抢占式系统允许内核在满足相应条件时暂停当前任务并调度其他任务；
+      协作式系统则主要依靠当前任务主动让出执行权、进入等待状态或返回调度器。
+      两种机制会影响系统响应能力、任务设计方式和时间分析方法，但都不能单独决定系统是否满足实时约束。
     </p>
 
     <div class="meta">
       <span class="tag">Scheduling Model</span>
-      <span class="tag">RTOS Core Concept</span>
-      <span class="tag">Deterministic Behavior</span>
+      <span class="tag">Task Execution</span>
+      <span class="tag">Real-Time Analysis</span>
     </div>
   </section>
 
   <section class="section">
-    <h2>一、调度模型本质：CPU控制权归属</h2>
+    <h2>一、核心区别：任务何时能够失去执行权？</h2>
 
     <p>
-      调度模型的核心不是“任务如何切换”，而是“切换由谁决定”。
-    </p>
-
-    <div class="block">
-CPU 控制权：
-
-内核控制 → 抢占式
-任务控制 → 协作式
-
-控制权决定时间边界
-    </div>
-
-    <p>
-      因此，yield()、阻塞调用与中断返回点，都是控制权交接位置。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>二、抢占式调度（Preemptive）</h2>
-
-    <p>
-      抢占式调度由内核统一控制执行顺序，高优先级任务可随时中断低优先级任务。
-    </p>
-
-    <div class="block">
-[抢占式]
-
-高优先级任务触发
-   ↓
-强制切换当前任务
-
-内核决定执行顺序
-    </div>
-
-    <p>
-      本质：控制权始终在内核，不依赖任务行为。
+      判断调度模型，关键不是任务是否发生切换，而是当前任务运行时，
+      内核能否在任务没有主动让出 CPU 的情况下，因调度条件成立而切换到另一个任务。
     </p>
 
     <div class="grid">
       <div class="card">
-        <h3>时间控制</h3>
-        <p>由内核统一控制任务切换。</p>
+        <h3>抢占式调度</h3>
+        <p>
+          在允许抢占的执行点，当更高优先级任务就绪等条件满足时，
+          内核可以暂停当前任务，保存必要的执行上下文，再调度其他任务。
+        </p>
       </div>
 
       <div class="card">
-        <h3>实时性</h3>
-        <p>可保证高优先级任务快速响应。</p>
+        <h3>协作式调度</h3>
+        <p>
+          任务通常需要主动让出 CPU、进入阻塞状态或结束当前执行阶段，
+          调度器才能获得执行机会并选择下一个任务。
+        </p>
+      </div>
+    </div>
+
+    <div class="block">抢占式：
+当前任务运行
+    ↓
+满足抢占条件
+    ↓
+内核进行调度判断
+    ↓
+必要时切换任务
+
+协作式：
+当前任务运行
+    ↓
+任务主动让出执行权 / 阻塞 / 返回
+    ↓
+调度器选择下一个任务</div>
+
+    <div class="note">
+      <strong>注意：</strong>
+      抢占式不意味着任意时刻都能立即切换。关中断区、调度锁、不可抢占区和具体内核实现，
+      都可能影响真正发生任务切换的时机。
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>二、抢占式调度如何工作？</h2>
+
+    <p>
+      抢占式调度常与优先级调度结合使用。当高优先级任务由阻塞状态转为就绪状态时，
+      内核会根据当前调度规则判断是否需要抢占正在运行的任务。
+    </p>
+
+    <div class="block">任务 A 正在运行（较低优先级）
+    ↓
+外部事件发生
+    ↓
+中断服务程序处理事件
+    ↓
+任务 B 变为就绪（较高优先级）
+    ↓
+内核判断是否需要重新调度
+    ↓
+满足抢占条件？
+    ├─ 是：保存 A 的上下文，运行 B
+    └─ 否：按当前内核规则继续执行
+</div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>响应能力</h3>
+        <p>
+          高优先级任务不必等待低优先级任务主动让出 CPU，
+          因而通常更有利于控制事件响应延迟。
+        </p>
       </div>
 
       <div class="card">
-        <h3>复杂度</h3>
-        <p>需要处理并发与优先级问题。</p>
+        <h3>并发管理</h3>
+        <p>
+          共享数据、临界区、资源竞争和优先级反转等问题需要认真处理，
+          避免任务交错执行造成错误或不可预期的延迟。
+        </p>
       </div>
 
       <div class="card">
-        <h3>确定性</h3>
-        <p>具备可分析的时间上界。</p>
+        <h3>时间分析</h3>
+        <p>
+          需要分析中断、抢占、阻塞和高优先级任务干扰等因素，
+          不能只测量任务自身的执行时间。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>实现成本</h3>
+        <p>
+          内核通常需要管理任务上下文、就绪状态和调度时机，
+          对资源有限的 MCU 尤其要关注代码量、RAM 和堆栈开销。
+        </p>
       </div>
     </div>
   </section>
 
   <section class="section">
-    <h2>三、协作式调度（Cooperative）</h2>
+    <h2>三、协作式调度如何工作？</h2>
 
     <p>
-      协作式调度依赖任务主动释放CPU，内核不会强制中断执行。
+      协作式调度将任务交接更多地交给任务自身安排。
+      任务在适当位置主动让出 CPU、等待事件或完成一个执行阶段后，
+      调度器才有机会选择其他任务。
     </p>
 
-    <div class="block">
-[协作式]
+    <div class="block">任务 A 运行
+    ↓
+执行一段工作
+    ↓
+主动让出 CPU / 等待事件 / 返回调度器
+    ↓
+调度器选择任务 B
+    ↓
+任务 B 运行</div>
 
-任务运行 → 必须 yield()
+    <div class="grid">
+      <div class="card">
+        <h3>实现相对简单</h3>
+        <p>
+          某些协作式内核不需要完整的任意任务抢占机制，
+          可以减少部分上下文管理与并发控制负担。
+        </p>
+      </div>
 
-不让出CPU → 系统无法切换
+      <div class="card">
+        <h3>执行行为直观</h3>
+        <p>
+          任务可以在设计好的交接点释放 CPU，
+          便于组织短小、分阶段执行的工作流程。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>任务必须配合</h3>
+        <p>
+          如果任务长时间运行而不让出 CPU，
+          其他任务可能无法及时获得执行机会。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>时间上界仍可分析</h3>
+        <p>
+          如果任务执行时间、让出点、阻塞条件和调度规则都有明确约束，
+          协作式系统也可以进行实时性分析。
+        </p>
+      </div>
     </div>
 
+    <div class="note">
+      <strong>重要区别：</strong>
+      协作式系统并非一定要求每个任务调用名为 <span class="inline-code">yield()</span> 的 API。
+      有的内核通过等待事件、延时、任务返回或其他接口交接执行权；
+      具体方式取决于内核设计。
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>四、抢占式与协作式的主要差异</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>比较维度</th>
+            <th>抢占式调度</th>
+            <th>协作式调度</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>任务交接</td>
+            <td>内核可在符合条件时主动抢占当前任务</td>
+            <td>主要依赖任务主动交接或进入等待状态</td>
+          </tr>
+          <tr>
+            <td>高优先级任务响应</td>
+            <td>通常更容易缩短等待低优先级任务让出 CPU 的时间</td>
+            <td>可能需要等待当前任务到达交接点</td>
+          </tr>
+          <tr>
+            <td>任务执行约束</td>
+            <td>需要正确处理抢占与共享资源访问</td>
+            <td>需要控制任务运行时长并合理设置交接点</td>
+          </tr>
+          <tr>
+            <td>并发风险</td>
+            <td>需考虑任务交错执行、竞争和优先级反转</td>
+            <td>部分任务间交错风险可能较低，但中断与共享资源问题仍然存在</td>
+          </tr>
+          <tr>
+            <td>内核开销</td>
+            <td>取决于上下文保存、调度策略和抢占实现</td>
+            <td>部分实现更轻量，但不代表必然更快或占用更少资源</td>
+          </tr>
+          <tr>
+            <td>实时性分析</td>
+            <td>需分析抢占、阻塞、优先级干扰和中断等因素</td>
+            <td>需分析任务执行上界、交接点与最长不可让出时间等因素</td>
+          </tr>
+          <tr>
+            <td>适用场景</td>
+            <td>对高优先级事件响应和任务优先级管理有较强要求的系统</td>
+            <td>任务结构简单、执行阶段可控、能够明确约束交接时间的系统</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>五、调度模型与实时性是什么关系？</h2>
+
     <p>
-      系统行为取决于任务是否“自律”。
+      实时系统不仅要求结果正确，还要求结果在规定的时间约束内产生。
+      抢占式调度能够提供更灵活的任务执行权管理，但不能自动保证截止时间；
+      协作式调度虽然限制了任务交接时机，也不代表它一定无法满足严格的实时约束。
     </p>
 
     <div class="grid">
       <div class="card">
-        <h3>执行方式</h3>
-        <p>任务主动让出CPU。</p>
+        <h3>最坏情况执行时间（WCET）</h3>
+        <p>
+          估计或分析任务、代码路径在明确目标和假设下可能需要的最长执行时间。
+          WCET 是实时分析的重要输入，但不是完整的系统响应时间。
+        </p>
       </div>
 
       <div class="card">
-        <h3>实现复杂度</h3>
-        <p>简单，但依赖规范约束。</p>
+        <h3>中断与调度延迟</h3>
+        <p>
+          从事件发生到中断处理、调度决策以及目标任务真正开始运行，
+          可能经历多个阶段，各阶段都需要单独分析。
+        </p>
       </div>
 
       <div class="card">
-        <h3>风险</h3>
-        <p>单任务阻塞可拖垮系统。</p>
+        <h3>阻塞与资源竞争</h3>
+        <p>
+          任务可能因为共享资源、临界区或同步操作而等待。
+          即使采用抢占式调度，也必须评估这些阻塞对截止时间的影响。
+        </p>
       </div>
 
       <div class="card">
-        <h3>实时性</h3>
-        <p>无法保证严格时间上界。</p>
+        <h3>最坏响应时间</h3>
+        <p>
+          需要综合任务执行、调度干扰、中断、阻塞和系统开销等因素，
+          再与任务截止时间进行比较。
+        </p>
       </div>
+    </div>
+
+    <div class="block">能否满足实时约束
+    ≠ 是否采用抢占式调度
+
+实时性分析通常需要考虑：
+任务执行时间
++ 高优先级任务干扰
++ 中断与调度开销
++ 阻塞与资源竞争
++ 其他相关系统开销
+
+最终判断：最坏响应时间是否满足截止时间</div>
+
+    <div class="note">
+      <strong>工程结论：</strong>
+      抢占式调度通常更方便构建基于优先级的响应机制，
+      但可证明的时间上界仍需要建立在明确的系统模型、执行时间数据和资源访问约束之上。
     </div>
   </section>
 
   <section class="section">
-    <h2>四、本质差异</h2>
-
-    <div class="block">
-抢占式：内核控制执行
-协作式：任务参与控制
-
-差异 = 控制权位置不同
-    </div>
+    <h2>六、8051 等资源受限平台需要考虑什么？</h2>
 
     <p>
-      不是性能差异，而是系统控制模型差异。
+      在 8051 这类 RAM、堆栈和处理能力都比较有限的 MCU 上，
+      调度模型不仅是理论选择，也直接关系到上下文保存、寄存器使用、任务堆栈和中断处理。
     </p>
-  </section>
-
-  <section class="section">
-    <h2>五、RTOS影响</h2>
 
     <div class="grid">
       <div class="card">
-        <h3>抢占式</h3>
-        <p>适用于硬实时系统。</p>
+        <h3>上下文保存与恢复</h3>
+        <p>
+          需要确认哪些寄存器和执行状态由硬件自动保存，
+          哪些必须由内核软件保存，以及任务切换路径的实际开销。
+        </p>
       </div>
 
       <div class="card">
-        <h3>协作式</h3>
-        <p>适用于简单嵌入式系统。</p>
+        <h3>中断与任务调度</h3>
+        <p>
+          中断发生不等于任务一定立即切换。
+          中断服务程序、任务状态变化和调度判断之间的关系，
+          应以具体内核实现为准。
+        </p>
       </div>
 
       <div class="card">
-        <h3>风险</h3>
-        <p>内核复杂 vs 任务失控。</p>
+        <h3>堆栈与 RAM 预算</h3>
+        <p>
+          任务上下文、中断嵌套、函数调用和局部变量都会影响资源使用。
+          应通过代码审查、编译结果和目标硬件测试核实实际开销。
+        </p>
       </div>
 
       <div class="card">
-        <h3>确定性</h3>
-        <p>抢占式具备可证明上界。</p>
+        <h3>可验证的执行路径</h3>
+        <p>
+          对时间敏感的路径，可以结合反汇编、指令周期、路径分析和硬件测量，
+          明确分析范围及其假设。
+        </p>
       </div>
     </div>
   </section>
 
   <section class="section">
-    <h2>六、结论</h2>
-
-    <div class="block">
-抢占式 = 受控系统
-协作式 = 自管理系统
-    </div>
+    <h2>七、如何理解 HRTOS 中的调度行为？</h2>
 
     <p>
-      HRTOS默认采用抢占式调度，因为实时系统的核心是“时间可证明性”。
+      评价具体 RTOS 时，应区分调度理论、内核提供的机制和目标配置下的实际行为。
+      不能仅根据“抢占式”这一标签，就推断系统的最大中断延迟、任务切换时间或最坏响应时间。
+    </p>
+
+    <div class="block">理解 HRTOS 调度行为的建议顺序：
+
+1. 确认当前版本与调度配置
+2. 明确任务优先级、就绪与阻塞状态
+3. 确认中断入口、退出与调度判断路径
+4. 检查上下文保存和恢复实现
+5. 分析临界区、不可抢占区与资源等待
+6. 结合反汇编和目标硬件测量验证时间开销</div>
+
+    <p>
+      对 HRTOS 这样的 8051 专用系统而言，调度机制的价值不只在于能够切换任务，
+      还在于能否把任务状态、中断行为、上下文管理和时间分析放在同一个可核查的执行模型中。
+      具体性能与实时性结论仍应对应到明确的版本、配置和测试条件。
     </p>
   </section>
 
   <section class="section">
-    <h2>七、RTOS执行链路</h2>
+    <h2>八、总结</h2>
 
-    <p>调度模型处于RTOS执行流程核心位置。</p>
+    <div class="block">抢占式：
+内核可以在满足条件时主动切换任务
 
-    <div class="block">
-Interrupt → 状态变化 → 调度决策 → 模型 → 切换 → 执行
-    </div>
+协作式：
+任务主要通过主动交接来释放执行权
+
+共同要求：
+明确的执行约束
++ 可分析的任务行为
++ 合理的资源管理
++ 可验证的时间预算
+
+实时性取决于整个系统，而不是单一调度标签。</div>
 
     <p>
-      模型决定“何时切换”，切换决定“如何执行”。
+      选择调度模型时，应结合任务响应要求、执行时间、共享资源、内存预算和验证成本。
+      对任何实时系统而言，真正重要的是能否在目标工作负载和明确假设下，证明或验证关键任务满足时间约束。
     </p>
   </section>
 
@@ -368,17 +666,27 @@ Interrupt → 状态变化 → 调度决策 → 模型 → 切换 → 执行
     <div class="grid">
       <a class="card" href="scheduling-basics.html">
         <h3>调度器基础</h3>
-        <p>调度决策机制</p>
+        <p>理解就绪任务、优先级和调度决策机制。</p>
       </a>
 
       <a class="card" href="context-switch-basics.html">
         <h3>上下文切换</h3>
-        <p>任务切换实现</p>
+        <p>了解任务执行状态如何保存、恢复与交接。</p>
       </a>
 
       <a class="card" href="interrupt-basics.html">
         <h3>中断基础</h3>
-        <p>系统触发源</p>
+        <p>理解中断服务、嵌套与任务调度之间的关系。</p>
+      </a>
+
+      <a class="card" href="real-time-systems.html">
+        <h3>实时系统基础</h3>
+        <p>进一步认识截止时间、响应时间与确定性。</p>
+      </a>
+
+      <a class="card" href="what-is-rtos.html">
+        <h3>什么是 RTOS</h3>
+        <p>从系统目标和执行模型理解实时操作系统。</p>
       </a>
     </div>
   </section>

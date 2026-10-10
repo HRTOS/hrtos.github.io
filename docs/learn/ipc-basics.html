@@ -1,267 +1,712 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>IPC基础 | HRTOS 学习模块</title>
-<meta name="description" content="HRTOS IPC机制的系统结构解析，包括任务协同、消息流、同步模型与实时影响。" />
+<title>RTOS IPC 基础：消息队列、信号量与任务同步 | HRTOS</title>
+<meta name="description" content="学习 RTOS 任务间通信与同步机制，理解消息队列、信号量、互斥锁、共享数据及其对任务阻塞、调度行为和实时响应时间的影响。" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/learn/ipc-basics.html" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
-body{
-  margin:0;
-  background:#0f172a;
-  color:#e2e8f0;
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
+:root {
+  --bg: #0f172a;
+  --panel: rgba(15, 23, 42, .72);
+  --border: rgba(148, 163, 184, .18);
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-soft: rgba(56, 189, 248, .08);
+  --radius: 12px;
+  color-scheme: dark;
 }
 
-.page{
-  width:min(1100px, calc(100% - 40px));
-  margin:0 auto;
-  padding:90px 0;
-  display:grid;
-  gap:40px;
+* {
+  box-sizing: border-box;
 }
 
-h1{
-  font-size:42px;
-  margin:0;
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
 }
 
-.hero p{ color:#94a3b8; }
-
-a{ color:#7dd3fc; text-decoration:none; }
-
-.meta span{
-  display:inline-block;
-  margin-right:8px;
-  font-size:13px;
-  padding:4px 10px;
-  border:1px solid rgba(56,189,248,.25);
-  border-radius:999px;
-  color:#bae6fd;
+a {
+  color: #7dd3fc;
+  text-decoration: none;
 }
 
-.block{
-  padding:20px 22px;
-  border:1px solid rgba(148,163,184,.18);
-  border-radius:12px;
-  background:rgba(15,23,42,.6);
-  white-space:pre-wrap;
+a:hover {
+  text-decoration: underline;
 }
 
-.node{
-  display:grid;
-  gap:8px;
+.page {
+  width: min(1080px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 64px 0 48px;
+  display: grid;
+  gap: 30px;
 }
 
-.node h2{
-  margin:0;
-  font-size:20px;
-  color:#bae6fd;
+.breadcrumb {
+  color: var(--muted);
+  font-size: 13px;
 }
 
-.node p{
-  margin:0;
-  color:#94a3b8;
+.hero {
+  display: grid;
+  gap: 15px;
+  padding: 30px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at top right, rgba(56, 189, 248, .10), transparent 55%),
+    var(--panel);
 }
 
-.flow{
-  padding:20px;
-  border-radius:12px;
-  border:1px solid rgba(56,189,248,.18);
-  background:rgba(15,23,42,.5);
-  font-family:Consolas, monospace;
-  color:#7dd3fc;
+.eyebrow {
+  width: fit-content;
+  padding: 5px 11px;
+  border: 1px solid rgba(56, 189, 248, .25);
+  border-radius: 999px;
+  color: #bae6fd;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:20px;
+h1 {
+  margin: 0;
+  font-size: clamp(29px, 4.5vw, 42px);
+  line-height: 1.3;
+  letter-spacing: -.025em;
 }
 
-.card{
-  padding:20px;
-  border-radius:12px;
-  border:1px solid rgba(148,163,184,.18);
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+.hero p {
+  max-width: 850px;
+  margin: 0;
+  color: var(--muted);
 }
 
-footer{
-  margin-top:40px;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:#64748b;
-  font-size:13px;
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: #bae6fd;
+  background: rgba(15, 23, 42, .45);
+  font-size: 12px;
+}
+
+.callout {
+  padding: 15px 17px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 9px 9px 0;
+  background: var(--accent-soft);
+  font-size: 14px;
+}
+
+.section {
+  display: grid;
+  gap: 14px;
+}
+
+.section-heading {
+  display: grid;
+  gap: 5px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 23px;
+  line-height: 1.45;
+}
+
+.section-desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.prose {
+  display: grid;
+  gap: 12px;
+  color: var(--muted);
+}
+
+.prose p {
+  margin: 0;
+}
+
+.prose strong {
+  color: var(--text);
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.flow-item {
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 18px 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--panel);
+}
+
+.flow-item strong {
+  color: #bae6fd;
+  font-size: 14px;
+}
+
+.flow-item span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.card {
+  min-width: 0;
+  padding: 21px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(30, 41, 59, .72), rgba(15, 23, 42, .92));
+}
+
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.card ul {
+  margin: 9px 0 0;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.card li + li {
+  margin-top: 5px;
+}
+
+.code-block {
+  overflow-x: auto;
+  padding: 20px;
+  border: 1px solid rgba(56, 189, 248, .18);
+  border-radius: var(--radius);
+  background: rgba(2, 6, 23, .32);
+  color: #bae6fd;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: 13px;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+th,
+td {
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+th {
+  background: rgba(30, 41, 59, .65);
+  color: #bae6fd;
+  font-weight: 700;
+}
+
+td {
+  color: var(--muted);
+}
+
+td strong {
+  color: var(--text);
+}
+
+tr:last-child td {
+  border-bottom: 0;
+}
+
+.related-list {
+  display: grid;
+  gap: 10px;
+}
+
+.related-item {
+  padding: 15px 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.related-item p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.summary {
+  padding: 23px;
+  border: 1px solid rgba(56, 189, 248, .22);
+  border-radius: 14px;
+  background: var(--accent-soft);
+}
+
+.summary h2 {
+  margin-bottom: 10px;
+}
+
+.summary p {
+  margin: 0;
+}
+
+footer {
+  margin-top: 12px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(148, 163, 184, .14);
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 800px) {
+  .flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .page {
+    width: calc(100% - 28px);
+    padding-top: 34px;
+    gap: 23px;
+  }
+
+  .hero {
+    padding: 22px 18px;
+  }
+
+  h2 {
+    font-size: 21px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .flow {
+    grid-template-columns: 1fr;
+  }
+
+  th,
+  td {
+    padding: 11px 12px;
+  }
 }
 </style>
 </head>
 
-<body>
+<body data-header="docs">
 
 <main class="page">
 
-<nav class="breadcrumb">
-  <a href="/docs/index.html">文档中心</a> /
-  <a href="/docs/learn/index.html">学习模块</a> /
-  <span>IPC基础</span>
-</nav>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a> /
+    <a href="/docs/learn/index.html">学习模块</a> /
+    <span aria-current="page">IPC 基础</span>
+  </nav>
 
-<header class="hero">
-  <h1>IPC基础（Inter-Process Communication）</h1>
-  <p>
-    IPC不是通信机制集合，而是RTOS内部任务协同结构的语义层。
-    它定义任务之间如何形成数据关系、同步关系与执行依赖关系。
-  </p>
+  <header class="hero">
+    <span class="eyebrow">HRTOS · LEARNING MODULE</span>
 
-  <div class="meta">
-    <span>IPC Layer</span>
-    <span>Task Coordination</span>
-    <span>RTOS Structure</span>
-  </div>
-</header>
+    <h1>IPC 基础：任务间通信与同步</h1>
 
-<!-- 系统语义块1 -->
-<section class="node">
-  <h2>任务协同本质</h2>
-  <p>
-    在RTOS中，任务默认是隔离执行单元。
-    IPC的作用不是“连接任务”，而是定义它们之间的依赖关系。
-  </p>
+    <p>
+      在 RTOS 中，多个任务通常需要交换数据、等待事件或协调资源访问。
+      进程间通信（IPC）这一传统术语也广泛用于描述任务间通信与同步机制。
+      选择何种机制，不仅影响数据如何传递，也会影响阻塞行为、资源竞争与任务响应时间。
+    </p>
 
-  <div class="block">
-IPC不是让任务“互相说话”，
-而是规定：
-
-1. 谁等谁（同步关系）
-2. 谁给谁数据（数据路径）
-3. 等多久（时间约束）
-  </div>
-</section>
-
-<!-- 系统语义块2 -->
-<section class="node">
-  <h2>为什么必须存在IPC</h2>
-  <p>
-    多任务系统如果没有IPC，本质上是不可控并发系统。
-    问题不在“能不能通信”，而在“是否能保证一致性”。
-  </p>
-
-  <div class="block">
-无IPC → 系统退化为：
-
-- 数据竞争不可控
-- 状态无法同步
-- 执行顺序不可预测
-- 实时性失效
-  </div>
-</section>
-
-<!-- 系统语义块3 -->
-<section class="node">
-  <h2>IPC的四种语义模型</h2>
-
-<div class="flow">
-  <div><b>消息队列</b> → 数据流</div>
-  <div><b>信号量</b> → 资源控制</div>
-  <div><b>共享内存</b> → 状态共享</div>
-  <div><b>管道</b> → 连续流</div>
-</div>
-</section>
-
-<!-- 系统语义块4 -->
-<section class="node">
-  <h2>通信机制的真实职责</h2>
-  <p>
-    IPC组件的差异不在“实现方式”，而在“系统语义”：
-  </p>
-
-  <div class="grid">
-
-    <div class="card">
-      消息队列：解耦时间关系（生产/消费模型）
+    <div class="meta">
+      <span class="tag">Inter-Task Communication</span>
+      <span class="tag">Synchronization</span>
+      <span class="tag">Message Queue</span>
+      <span class="tag">Real-Time Scheduling</span>
     </div>
 
-    <div class="card">
-      信号量：控制资源访问顺序（互斥/同步）
+    <div class="callout">
+      IPC 不是单一机制。消息队列、信号量、互斥锁、事件通知和共享数据解决的问题并不完全相同，实际可用机制取决于 RTOS 的接口与实现。
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="section-heading">
+      <h2>一、任务为什么需要通信与同步？</h2>
+      <p class="section-desc">任务可以独立执行，但系统功能通常需要它们协同完成。</p>
     </div>
 
-    <div class="card">
-      共享内存：最高性能，但依赖外部一致性控制
+    <div class="prose">
+      <p>
+        一个嵌入式系统可能由采集、协议处理、控制和状态管理等任务组成。
+        这些任务需要交换采样值、传递处理结果、等待外部事件，或者协调对共享资源的访问。
+      </p>
+      <p>
+        <strong>通信</strong>主要解决数据或信息如何从一个执行单元传递到另一个执行单元；
+        <strong>同步</strong>主要解决执行条件、事件时序和资源访问顺序。
+        有些机制可以同时承担这两类职责，但不能把所有机制视为等价替代品。
+      </p>
     </div>
 
-    <div class="card">
-      管道：适用于连续数据流场景
+    <div class="flow">
+      <div class="flow-item">
+        <strong>数据产生</strong>
+        <span>采集任务或 ISR 获得新数据</span>
+      </div>
+      <div class="flow-item">
+        <strong>信息传递</strong>
+        <span>通过队列、通知或共享数据传递</span>
+      </div>
+      <div class="flow-item">
+        <strong>条件满足</strong>
+        <span>接收任务获得数据或事件</span>
+      </div>
+      <div class="flow-item">
+        <strong>后续处理</strong>
+        <span>任务继续执行应用逻辑</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <h2>二、常见 IPC 与同步机制</h2>
+      <p class="section-desc">先理解机制语义，再选择适合应用需求的实现。</p>
     </div>
 
-  </div>
-</section>
+    <div class="grid">
+      <article class="card">
+        <h3>消息队列（Message Queue）</h3>
+        <p>
+          在发送方与接收方之间保存待处理的消息，支持生产者与消费者解耦。
+          队列容量、消息大小、复制方式和满队列策略都会影响内存占用与处理延迟。
+        </p>
+      </article>
 
-<!-- 系统语义块5 -->
-<section class="node">
-  <h2>IPC与实时性的关系</h2>
+      <article class="card">
+        <h3>信号量（Semaphore）</h3>
+        <p>
+          通过计数或令牌表示某种可用条件，常用于任务同步、事件计数或资源数量管理。
+          二值信号量可以用于某些同步场景，但不能自动等同于互斥锁。
+        </p>
+      </article>
 
-  <p>
-    IPC不会提升实时性，但决定实时性是否稳定。
-    问题通常来自阻塞、队列长度与临界区设计。
-  </p>
+      <article class="card">
+        <h3>互斥锁（Mutex）</h3>
+        <p>
+          用于协调对共享资源的互斥访问。部分 RTOS 的互斥锁支持优先级继承等机制，
+          以减轻特定条件下的优先级反转问题。
+        </p>
+      </article>
 
-  <div class="block">
-实时风险来源：
+      <article class="card">
+        <h3>事件与任务通知</h3>
+        <p>
+          用于表达某个条件已经发生或需要某个任务继续运行。
+          具体可以表示单个事件、事件组合或计数状态，取决于内核提供的接口。
+        </p>
+      </article>
 
-- 阻塞行为
-- 资源竞争
-- 拷贝开销
-- 切换放大
-  </div>
-</section>
+      <article class="card">
+        <h3>共享数据（Shared Data）</h3>
+        <p>
+          多个执行单元访问同一份数据，可减少某些数据复制，但必须明确访问规则。
+          需要考虑原子性、一致性、临界区和并发读写。
+        </p>
+      </article>
 
-<!-- 系统语义块6 -->
-<section class="node">
-  <h2>系统位置</h2>
+      <article class="card">
+        <h3>管道或数据流机制</h3>
+        <p>
+          某些系统通过管道或环形缓冲区传递连续数据流。
+          这类机制并非所有小型 RTOS 都提供，缓冲区容量和生产消费速率同样重要。
+        </p>
+      </article>
+    </div>
+  </section>
 
-  <div class="flow">
-中断 → 唤醒/更新状态 → 调度器决策 → 上下文切换 → 任务执行 → IPC协同
-  </div>
-</section>
-
-<!-- 系统语义块7 -->
-<section class="node">
-  <h2>设计本质总结</h2>
-
-  <div class="block">
-IPC不是通信工具，而是：RTOS任务关系的结构定义层，决定系统是“独立任务集合”，还是“可预测协同系统”
-  </div>
-</section>
-
-<!-- 关联 -->
-<section class="node">
-  <h2>系统关联路径</h2>
-
-  <div class="grid">
-
-    <div class="card">
-      <a href="interrupt-basics.html">中断基础 → 事件入口</a>
+  <section class="section">
+    <div class="section-heading">
+      <h2>三、几种机制的职责有什么区别？</h2>
+      <p class="section-desc">不同机制有不同的语义边界，不能只按“快不快”进行选择。</p>
     </div>
 
-    <div class="card">
-      <a href="context-switch-basics.html">上下文切换 → 执行迁移</a>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>机制</th>
+            <th>主要用途</th>
+            <th>设计时重点检查</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>消息队列</strong></td>
+            <td>传递消息、缓冲待处理工作</td>
+            <td>容量、消息尺寸、队列满时的处理方式</td>
+          </tr>
+          <tr>
+            <td><strong>信号量</strong></td>
+            <td>事件同步、计数资源或令牌</td>
+            <td>计数语义、等待条件、释放时机</td>
+          </tr>
+          <tr>
+            <td><strong>互斥锁</strong></td>
+            <td>保护需要互斥访问的共享资源</td>
+            <td>持锁时间、锁顺序、优先级反转</td>
+          </tr>
+          <tr>
+            <td><strong>事件通知</strong></td>
+            <td>通知任务条件或事件已发生</td>
+            <td>事件是否会合并、丢失或累计</td>
+          </tr>
+          <tr>
+            <td><strong>共享数据</strong></td>
+            <td>让多个执行单元访问同一数据</td>
+            <td>并发访问、原子性、数据一致性</td>
+          </tr>
+          <tr>
+            <td><strong>环形缓冲区等数据流</strong></td>
+            <td>连续数据的暂存和传递</td>
+            <td>读写并发、溢出策略、生产消费速率</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <h2>四、IPC 如何影响任务执行？</h2>
+      <p class="section-desc">一次通信操作可能改变任务状态，但不一定导致立即切换。</p>
     </div>
 
-    <div class="card">
-      <a href="scheduling-basics.html">调度器 → 决策层</a>
+    <div class="code-block">任务 A 发送消息
+      ↓
+内核检查队列状态
+      ↓
+消息入队或按规则处理失败
+      ↓
+如果任务 B 正在等待该消息：
+      更新任务 B 的可运行状态
+      ↓
+内核根据调度策略决定后续执行
+      ↓
+继续运行任务 A，或在适当时机切换到任务 B</div>
+
+    <div class="prose">
+      <p>
+        如果接收任务已经在等待消息，发送操作可能使其具备运行条件。
+        但任务是否立即获得处理器，还取决于优先级、调度策略、当前执行上下文和内核接口语义。
+      </p>
+      <p>
+        如果队列已满，发送方可能失败、等待空间或采取其他由 API 定义的行为。
+        因此，理解 IPC 不仅要看正常的数据流，还要看满队列、超时、资源不足与异常路径。
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <h2>五、IPC 与实时性的关系</h2>
+      <p class="section-desc">IPC 能帮助组织协作，但它本身不会自动提供实时保证。</p>
     </div>
 
-  </div>
-</section>
+    <div class="grid">
+      <article class="card">
+        <h3>阻塞与等待</h3>
+        <p>
+          任务等待消息、事件或资源时，可能进入阻塞状态。
+          等待条件、超时设置和唤醒路径都会影响任务的响应时间。
+        </p>
+      </article>
 
-<footer style="text-align:center; padding-top:18px; border-top:1px solid rgba(148,163,184,.14); color:#64748b; font-size:13px;">
-  © 2017–2026 HRTOS · IPC System Layer · Real-Time Coordination Model
-</footer>
+      <article class="card">
+        <h3>资源竞争</h3>
+        <p>
+          多个任务争用共享资源时，可能出现等待与优先级反转。
+          需要结合锁机制、持有时间和任务优先级分析影响。
+        </p>
+      </article>
+
+      <article class="card">
+        <h3>缓冲区容量</h3>
+        <p>
+          队列太小可能造成溢出或发送失败，队列过大则会增加内存占用，
+          并可能积累排队延迟。
+        </p>
+      </article>
+
+      <article class="card">
+        <h3>处理与复制开销</h3>
+        <p>
+          消息复制、数据搬运、临界区以及相关内核调用都会产生开销。
+          实际成本需要根据消息尺寸、存储位置和具体实现判断。
+        </p>
+      </article>
+    </div>
+
+    <div class="callout">
+      实时分析需要同时考虑通信机制的执行时间、阻塞上界、资源竞争和任务调度关系，而不能仅凭“使用了消息队列”或“使用了共享内存”判断系统是否具有确定性。
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <h2>六、没有专门 IPC API，就无法进行任务协作吗？</h2>
+      <p class="section-desc">不能把机制的缺失直接等同于系统不可控。</p>
+    </div>
+
+    <div class="prose">
+      <p>
+        简单的嵌入式系统可以使用单任务主循环、固定执行顺序、标志位或受控的共享数据完成协作。
+        这些方法同样需要明确数据访问规则和执行顺序，但不一定需要独立的消息队列或信号量 API。
+      </p>
+      <p>
+        当任务之间的依赖关系变多，或者系统需要等待事件、缓冲数据、协调资源时，
+        明确的通信与同步机制通常更容易维护，也更有利于分析并发行为。
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <h2>七、IPC 在 RTOS 系统中的位置</h2>
+      <p class="section-desc">IPC、调度与上下文切换是相互关联但职责不同的部分。</p>
+    </div>
+
+    <div class="code-block">事件或数据产生
+      ↓
+ISR 或任务处理事件
+      ↓
+IPC 操作：发送消息、通知、等待或访问共享数据
+      ↓
+任务状态可能改变
+      ↓
+调度器根据内核策略选择后续执行任务
+      ↓
+必要时发生上下文切换
+      ↓
+目标任务继续执行</div>
+
+    <div class="prose">
+      <p>
+        IPC 定义任务之间如何交换信息、等待条件和协调资源；
+        调度器决定处理器接下来运行哪个任务；
+        上下文切换负责保存与恢复执行现场。
+        三者共同影响系统行为，但不能互相替代。
+      </p>
+    </div>
+  </section>
+
+  <section class="summary">
+    <h2>八、核心总结</h2>
+    <p>
+      IPC 是任务协作的重要组成部分，主要用于数据传递、事件同步和资源协调。
+      消息队列、信号量、互斥锁、事件通知与共享数据具有不同的语义和适用条件。
+      <br><br>
+      对实时系统而言，关键不是简单地增加通信机制，而是明确每种机制的等待条件、
+      资源消耗、失败路径与时间影响。只有把这些行为与调度策略和任务截止时间结合起来，
+      才能判断任务协作是否满足系统要求。
+    </p>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <h2>系统关联路径</h2>
+      <p class="section-desc">从任务协作继续学习中断、上下文切换和调度机制。</p>
+    </div>
+
+    <div class="related-list">
+      <article class="related-item">
+        <a class="related-link" href="/docs/learn/interrupt-basics.html">中断基础：事件入口与 ISR</a>
+        <p>理解外部事件如何进入系统，以及中断如何影响任务状态。</p>
+      </article>
+
+      <article class="related-item">
+        <a class="related-link" href="/docs/learn/context-switch-basics.html">上下文切换基础</a>
+        <p>理解任务切换时执行现场的保存与恢复。</p>
+      </article>
+
+      <article class="related-item">
+        <a class="related-link" href="/docs/learn/scheduling-basics.html">任务调度基础</a>
+        <p>理解任务就绪、优先级关系和调度决策。</p>
+      </article>
+
+      <article class="related-item">
+        <a class="related-link" href="/docs/learn/preemptive-vs-cooperative.html">抢占式与协作式调度</a>
+        <p>比较不同调度模型下的任务运行与让出处理器方式。</p>
+      </article>
+
+      <article class="related-item">
+        <a class="related-link" href="/system-view/04-scheduler-cycle.html">调度周期与系统执行模型</a>
+        <p>从系统级视图理解任务状态变化、调度与执行之间的关系。</p>
+      </article>
+    </div>
+
+    <p class="section-desc">
+      建议阅读顺序：中断基础 → IPC 基础 → 任务调度 → 上下文切换。
+    </p>
+  </section>
+
+  <footer>
+    © 2017–2026 HRTOS · IPC System Layer · Real-Time Coordination Model
+  </footer>
 
 </main>
 

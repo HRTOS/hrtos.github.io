@@ -1,11 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>实时系统基础 | HRTOS 学习模块</title>
-<meta name="description" content="深入理解实时系统（Real-Time Systems）的本质，包括时间约束模型、系统分类、调度约束与HRTOS设计逻辑。" />
+<title>实时系统基础：截止时间、WCET 与响应时间 | HRTOS</title>
+<meta name="description" content="系统学习实时系统的时间约束、硬实时与软实时分类、WCET、最坏响应时间、中断延迟和调度确定性，理解如何分析 8051 RTOS 的实时行为。" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/learn/real-time-systems.html" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -21,6 +24,8 @@
 
 *{box-sizing:border-box}
 
+html{scroll-behavior:smooth}
+
 body{
   margin:0;
   background:var(--bg);
@@ -29,80 +34,193 @@ body{
   line-height:1.7;
 }
 
-a{color:inherit;text-decoration:none;}
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+a:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:4px;
+}
 
 .page{
-  width:min(1180px, calc(100% - 40px));
+  width:min(1180px,calc(100% - 40px));
   margin:0 auto;
   padding:96px 0 56px;
   display:grid;
-  gap:40px;
+  gap:36px;
 }
 
-.breadcrumb{font-size:14px;color:var(--muted);}
-.breadcrumb a{color:#7dd3fc;}
+.breadcrumb{
+  font-size:14px;
+  color:var(--muted);
+}
 
-.hero{display:grid;gap:16px;}
+.breadcrumb a{color:#7dd3fc}
+.breadcrumb a:hover{text-decoration:underline}
+
+.hero{display:grid;gap:16px}
 
 .hero-label{
   display:inline-flex;
   width:fit-content;
-  padding:8px 14px;
+  padding:7px 13px;
   border-radius:999px;
   border:1px solid rgba(56,189,248,.22);
   color:#bae6fd;
-  font-size:14px;
+  font-size:13px;
 }
 
-.hero h1{margin:0;font-size:42px;}
+.hero h1{
+  margin:0;
+  font-size:clamp(30px,4vw,42px);
+  line-height:1.25;
+  letter-spacing:-.025em;
+}
 
-.hero p{margin:0;max-width:900px;color:var(--muted);}
+.hero p{
+  margin:0;
+  max-width:900px;
+  color:var(--muted);
+  font-size:16px;
+}
 
-.meta{display:flex;gap:10px;flex-wrap:wrap;}
+.meta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
 
 .tag{
-  padding:6px 12px;
+  padding:5px 11px;
   border:1px solid var(--border);
   border-radius:999px;
-  font-size:13px;
+  font-size:12px;
   color:#bae6fd;
   background:rgba(15,23,42,.4);
 }
 
-.section{display:grid;gap:12px;}
+.section{
+  display:grid;
+  gap:15px;
+  min-width:0;
+}
 
-.section h2{margin:0;font-size:22px;}
+.section h2{
+  margin:0;
+  font-size:clamp(20px,2.5vw,24px);
+  line-height:1.4;
+}
 
-.section p{margin:0;color:var(--muted);}
+.section p{
+  margin:0;
+  color:var(--muted);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+
+.card{
+  min-width:0;
+  padding:21px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(30,41,59,.8),rgba(15,23,42,.92));
+}
+
+.card h3{
+  margin:0 0 9px;
+  font-size:17px;
+  line-height:1.45;
+}
+
+.card p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+a.card{
+  transition:border-color .18s ease,transform .18s ease;
+}
+
+a.card:hover{
+  border-color:rgba(56,189,248,.5);
+  transform:translateY(-2px);
+}
 
 .block{
   padding:22px;
   border-radius:10px;
   border:1px solid rgba(56,189,248,.18);
   background:rgba(15,23,42,.6);
-  font-family:Consolas, monospace;
-  color:#7dd3fc;
+  font-family:Consolas,"Courier New",monospace;
+  color:#bae6fd;
   font-size:14px;
-  line-height:1.8;
-  white-space: pre-wrap;
+  line-height:1.9;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  overflow-x:auto;
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+.note{
+  padding:17px 19px;
+  border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;
+  background:rgba(56,189,248,.06);
+  color:#cbd5e1;
+  font-size:14px;
 }
 
-.card{
-  padding:22px;
-  border-radius:10px;
+.note strong{color:#e0f2fe}
+
+.table-wrap{
+  width:100%;
+  overflow-x:auto;
   border:1px solid var(--border);
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  border-radius:10px;
 }
 
-.card h3{margin:0 0 10px;font-size:18px;}
+table{
+  width:100%;
+  min-width:620px;
+  border-collapse:collapse;
+  font-size:14px;
+}
 
-.card p{margin:0;color:var(--muted);font-size:14px;}
+th,td{
+  padding:14px 16px;
+  text-align:left;
+  vertical-align:top;
+  border-bottom:1px solid var(--border);
+}
+
+th{
+  background:rgba(30,41,59,.85);
+  color:#e2e8f0;
+  font-weight:600;
+}
+
+td{color:var(--muted)}
+tr:last-child td{border-bottom:none}
+td:first-child{
+  color:#cbd5e1;
+  font-weight:500;
+}
+
+.inline-code{
+  padding:2px 6px;
+  border-radius:4px;
+  background:rgba(148,163,184,.12);
+  color:#bae6fd;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:.92em;
+  overflow-wrap:anywhere;
+}
 
 .footer{
   text-align:center;
@@ -113,7 +231,22 @@ a{color:inherit;text-decoration:none;}
 }
 
 @media(max-width:900px){
-  .grid{grid-template-columns:1fr;}
+  .grid{grid-template-columns:1fr}
+}
+
+@media(max-width:600px){
+  .page{
+    width:calc(100% - 28px);
+    padding:82px 0 38px;
+    gap:28px;
+  }
+
+  .block{
+    padding:16px;
+    font-size:13px;
+  }
+
+  .card{padding:18px}
 }
 </style>
 </head>
@@ -122,192 +255,480 @@ a{color:inherit;text-decoration:none;}
 
 <main class="page">
 
-  <nav class="breadcrumb">
+  <nav class="breadcrumb" aria-label="面包屑导航">
     <a href="/docs/index.html">文档中心</a> /
     <a href="/docs/learn/index.html">学习模块</a> /
-    <span>实时系统基础</span>
+    <span aria-current="page">实时系统基础</span>
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS 学习模块</span>
+    <span class="hero-label">RTOS Learning · Real-Time Fundamentals</span>
 
     <h1>实时系统基础（Real-Time Systems）</h1>
 
     <p>
-      实时系统是一种以“时间约束”为核心正确性标准的计算模型。
-      系统正确性不仅取决于结果是否正确，还取决于结果是否在截止时间内完成。
+      实时系统的关键，不只是计算结果是否正确，还包括结果是否在规定的时间约束内产生。
+      实时性关注的是任务对时间的要求，以及系统能否在明确的工作负载和运行条件下满足这些要求。
+      理解实时系统，需要从截止时间、执行时间、响应时间、中断和调度机制共同分析。
     </p>
 
     <div class="meta">
-      <span class="tag">Time Constraint</span>
-      <span class="tag">Deterministic System</span>
-      <span class="tag">HRTOS Foundation</span>
+      <span class="tag">Time Constraints</span>
+      <span class="tag">WCET &amp; WCRT</span>
+      <span class="tag">Scheduling</span>
+      <span class="tag">8051 RTOS</span>
     </div>
   </section>
 
   <section class="section">
-    <h2>一、实时系统定义</h2>
+    <h2>一、什么是实时系统？</h2>
 
     <p>
-      实时系统要求任务在规定时间窗口内完成，否则结果失效或系统行为错误。
+      实时系统（Real-Time System）是其正确性或服务质量与时间约束密切相关的计算系统。
+      一个任务即使最终得出了正确结果，如果结果产生得太晚，也可能无法满足系统需求。
     </p>
 
-    <div class="block">
-正确性 = 逻辑正确性 + 时间正确性
+    <div class="block">系统任务的正确性通常涉及两个方面：
 
-截止时间：执行时间 ≤ 截止时间
+逻辑正确性：结果是否正确
+时间正确性：结果是否在要求的时间内产生
 
-超时 = 系统级错误
+实时系统需要同时考虑：
+功能要求 + 时间约束</div>
+
+    <p>
+      例如，控制系统需要在规定时间内处理传感器输入并更新控制输出；
+      通信设备需要在协议规定的时间窗口内完成相应处理。
+      具体允许的延迟取决于应用需求，而不是由“RTOS”这个名称自动决定。
+    </p>
+
+    <div class="note">
+      <strong>核心概念：</strong>
+      实时性不是单纯追求更快的平均执行速度，而是关注系统能否在规定时间内完成关键工作。
     </div>
-
-    <p>
-      实时系统的核心边界是“时间约束是否可验证”。
-    </p>
   </section>
 
   <section class="section">
-    <h2>二、时间约束模型</h2>
+    <h2>二、任务的时间约束模型</h2>
 
     <p>
-      在实时系统中，时间是核心资源，所有任务都必须映射为时间约束模型。
+      实时任务通常需要描述任务何时释放、需要多少处理器执行时间，以及最晚何时完成。
+      这为调度分析和截止时间验证提供了基础。
     </p>
 
-    <div class="block">
-任务模型：
-任务 =（开始时间，执行时间，截止时间）
+    <div class="block">常见任务时间参数：
 
-约束：
-开始时间 + 执行时间 ≤ 截止时间
-    </div>
+r：任务释放时间（Release Time）
+C：任务执行时间（Execution Time）
+d：绝对截止时间（Absolute Deadline）
+f：任务完成时间（Finish Time）
+
+响应时间：
+R = f - r
+
+任务满足截止时间：
+f ≤ d
+
+相对截止时间：
+D = d - r</div>
 
     <p>
-      实时系统设计本质是时间预算分配问题，而不是单纯任务实现问题。
+      这里的执行时间 C 是任务实际占用处理器执行的时间；
+      响应时间 R 则从任务释放开始计算，通常还会受到排队等待、抢占、阻塞和系统开销的影响。
+      两者不能直接视为同一个指标。
     </p>
-  </section>
-
-  <section class="section">
-    <h2>三、实时系统分类</h2>
 
     <div class="grid">
-
       <div class="card">
-        <h3>硬实时</h3>
-        <p>超时即系统失败，必须保证严格时间上界。</p>
+        <h3>执行时间（Execution Time）</h3>
+        <p>
+          任务在处理器上实际执行所消耗的时间。
+          在实时分析中，需要关注与指定输入、路径和目标平台相关的执行时间上界。
+        </p>
       </div>
 
       <div class="card">
-        <h3>软实时</h3>
-        <p>允许延迟，性能随延迟下降。</p>
+        <h3>响应时间（Response Time）</h3>
+        <p>
+          从任务释放到任务完成所经过的时间。
+          它包括任务自身执行时间，也可能包含等待、阻塞和被其他工作打断所产生的时间。
+        </p>
       </div>
 
       <div class="card">
-        <h3>固实时</h3>
-        <p>超时结果失效，但系统继续运行。</p>
+        <h3>截止时间（Deadline）</h3>
+        <p>
+          任务必须完成的时间界限。
+          截止时间可以相对于任务释放时刻定义，也可以表示为具体的绝对时刻。
+        </p>
       </div>
 
       <div class="card">
-        <h3>非实时</h3>
-        <p>以吞吐量与公平性为核心。</p>
+        <h3>周期与释放间隔</h3>
+        <p>
+          周期任务会按一定周期重复释放；事件驱动任务则可能在外部事件发生时释放。
+          不同释放模式会影响调度分析的方法和假设。
+        </p>
       </div>
+    </div>
 
+    <div class="note">
+      <strong>分析注意：</strong>
+      只有在没有额外等待、抢占和其他开销等条件下，才能直接用执行时间推导简单的完成时间。
+      对实际 RTOS，必须明确任务释放、阻塞和调度条件。
     </div>
   </section>
 
   <section class="section">
-    <h2>四、关键评价指标</h2>
-
-    <div class="block">
-1. WCET（最坏执行时间）
-2. WCRT（最坏响应时间）
-3. 中断延迟上界
-4. 调度确定性
-5. 抖动（Jitter）
-    </div>
+    <h2>三、硬实时、固实时与软实时</h2>
 
     <p>
-      实时系统设计必须基于最坏情况分析，而不是平均性能。
+      实时系统常根据错过截止时间的后果进行分类。
+      分类重点在于超时意味着什么，而不是处理器速度或操作系统名称。
     </p>
-  </section>
-
-  <section class="section">
-    <h2>五、系统执行模型</h2>
-
-    <div class="block">
-中断触发 → 调度决策 → 任务选择 → 上下文切换 → 截止时间验证
-    </div>
-
-    <p>
-      系统正确性依赖整条执行链的时间上界，而不是单点性能。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>六、HRTOS中的位置</h2>
-
-    <p>
-      实时系统是HRTOS的约束层，它定义所有执行机制必须满足的时间规则。
-      系统设计目标是减少时间不确定性扩散。
-    </p>
-
-    <div class="block">
-体系结构：
-
-应用
- ↓
-任务
- ↓
-调度
- ↓
-中断
- ↓
-实时约束层
- ↓
-时间确定性模型
-    </div>
-  </section>
-
-  <section class="section">
-    <h2>七、总结模型</h2>
-
-    <div class="block">
-RTOS：
-系统 =（任务，调度器，中断，约束）
-
-∀ 任务：完成时间 ≤ 截止时间
-∀ 中断：延迟存在上界约束
-∀ 调度器：行为具有确定性
-    </div>
-
-    <p>
-      实时系统本质是“时间约束计算模型”，而不是软件类型分类。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>学习路径</h2>
 
     <div class="grid">
+      <div class="card">
+        <h3>硬实时（Hard Real-Time）</h3>
+        <p>
+          对规定的关键任务而言，错过截止时间属于不可接受的系统失效。
+          设计需要在明确假设下证明或充分验证相关时间约束能够得到满足。
+        </p>
+      </div>
 
-      <a class="card" href="interrupt-basics.html">
-        <h3>中断机制</h3>
-        <p>时间事件入口</p>
+      <div class="card">
+        <h3>固实时（Firm Real-Time）</h3>
+        <p>
+          结果超过截止时间后通常失去使用价值，但偶发超时不一定意味着整个系统立即失效。
+          是否允许超时以及允许多少次，取决于具体应用要求。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>软实时（Soft Real-Time）</h3>
+        <p>
+          超时会降低服务质量或使用体验，但结果通常仍有一定价值。
+          系统往往关注延迟分布、超时比例和整体服务质量。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>非实时系统</h3>
+        <p>
+          系统可能更关注吞吐量、交互体验、公平性或资源利用率，
+          但仍然可能存在延迟目标和性能要求。
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>分类并非简单的性能排名：</strong>
+      硬实时、固实时和软实时的区别主要是超时后果。
+      同一设备也可能同时包含不同严格程度的任务。
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>四、实时系统的关键评价指标</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>指标</th>
+            <th>含义</th>
+            <th>主要用途</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>WCET</td>
+            <td>最坏情况执行时间（Worst-Case Execution Time）</td>
+            <td>分析任务或代码路径的执行时间上界。</td>
+          </tr>
+          <tr>
+            <td>WCRT</td>
+            <td>最坏情况响应时间（Worst-Case Response Time）</td>
+            <td>评估任务在指定假设下，从释放到完成可能经历的最长时间。</td>
+          </tr>
+          <tr>
+            <td>中断延迟</td>
+            <td>从中断请求产生到处理程序开始执行之间的延迟，具体边界需明确</td>
+            <td>分析外部事件进入系统后的响应起点。</td>
+          </tr>
+          <tr>
+            <td>调度延迟</td>
+            <td>调度请求产生到目标任务获得执行机会之间的延迟，具体定义依实现而定</td>
+            <td>评估任务状态变化、调度判断和任务交接的开销。</td>
+          </tr>
+          <tr>
+            <td>抖动（Jitter）</td>
+            <td>事件、任务释放或输出时刻相对于理想时序的变化</td>
+            <td>分析周期任务和控制输出的时间稳定性。</td>
+          </tr>
+          <tr>
+            <td>截止时间裕量</td>
+            <td>截止时间与实际或分析得到的完成时间之间的余量</td>
+            <td>判断任务是否满足时间约束，以及剩余时间预算。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      WCET 是实时分析的重要基础，但它并不等于最坏响应时间。
+      即使任务自身执行时间很短，如果需要等待资源、受到高优先级任务干扰，
+      或者经历较长的中断屏蔽区，也可能无法及时完成。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>五、从事件到任务完成：系统执行链</h2>
+
+    <p>
+      对事件驱动的嵌入式实时系统，可以从事件发生开始，沿着中断处理、任务就绪、
+      调度决策、上下文切换和任务执行逐步分析时间开销。
+      这是一种通用分析模型，具体内核可能采用不同的执行路径。
+    </p>
+
+    <div class="block">外部事件或定时器事件
+        ↓
+中断请求与中断响应
+        ↓
+中断服务程序（ISR）
+        ↓
+任务状态发生变化
+        ↓
+调度器判断是否需要重新调度
+        ↓
+必要时进行上下文切换
+        ↓
+目标任务获得 CPU
+        ↓
+任务执行并完成工作
+        ↓
+检查是否满足截止时间</div>
+
+    <p>
+      并非每次中断都会引起任务切换，也并非所有任务都由中断触发。
+      对周期任务，释放事件可能来自系统时钟；对轮询任务，执行机会则可能由主循环或调度机制决定。
+    </p>
+
+    <div class="note">
+      <strong>关键点：</strong>
+      应分别分析中断响应、调度开销、上下文切换和任务执行时间，再结合阻塞与任务干扰评估端到端响应时间。
+      不应把某一个局部测量值直接当作系统整体的最坏响应时间。
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>六、确定性不等于速度快</h2>
+
+    <p>
+      确定性强调系统行为是否具有明确、可预测或可分析的边界。
+      一个系统即使平均执行速度很快，如果关键路径存在无法约束的延迟，
+      仍然难以证明它能满足严格的实时要求。
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>平均性能</h3>
+        <p>
+          反映常见工作负载下的执行效率，
+          适合用于评估吞吐量和典型运行表现。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>最坏情况分析</h3>
+        <p>
+          关注明确分析范围内的最不利执行路径、任务干扰和系统开销，
+          用于判断时间约束是否能够得到满足。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>可预测性</h3>
+        <p>
+          要求关键执行行为有清楚的条件、边界和状态转换，
+          使系统行为能够被理解、测试和分析。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>时间保证</h3>
+        <p>
+          需要结合执行时间上界、调度策略、资源访问约束和运行假设，
+          不能仅凭一次测试或平均值作出结论。
+        </p>
+      </div>
+    </div>
+
+    <div class="block">平均执行时间：描述典型表现
+
+WCET：描述指定范围内的最坏执行时间上界
+
+WCRT：描述指定假设下的最坏响应时间
+
+实时性判断：
+分析或验证得到的响应时间
+是否满足任务截止时间</div>
+  </section>
+
+  <section class="section">
+    <h2>七、调度模型会影响哪些时间约束？</h2>
+
+    <p>
+      抢占式与协作式调度采用不同的任务交接机制，因此会影响等待时间、任务干扰和分析方法。
+      但任何一种调度模型都需要明确任务执行时间和系统运行约束。
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>抢占式调度</h3>
+        <p>
+          高优先级任务可以在符合内核规则的时机抢占当前任务。
+          分析时需要考虑抢占开销、优先级干扰、阻塞和不可抢占区。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>协作式调度</h3>
+        <p>
+          任务通常在主动交接或进入等待状态后才释放执行权。
+          分析时需要特别关注最长连续执行时间和最迟交接点。
+        </p>
+      </div>
+    </div>
+
+    <p>
+      调度机制决定任务如何竞争处理器资源，但系统能否满足截止时间，
+      仍然取决于任务集、执行时间、释放模式、资源竞争和具体调度规则。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>八、实时系统分析如何落地到 HRTOS？</h2>
+
+    <p>
+      对运行在 8051 等资源受限平台上的 RTOS，时间分析需要进一步落实到具体处理器、
+      编译器、内核版本和配置。仅知道任务优先级或系统时钟频率，
+      还不足以确定真实的最坏响应时间。
+    </p>
+
+    <div class="block">建议的工程分析步骤：
+
+1. 明确目标 MCU、时钟配置与编译工具链
+2. 确认内核版本、调度策略和中断配置
+3. 定位关键任务与关键代码路径
+4. 检查汇编指令、分支路径和循环边界
+5. 分析中断、临界区、阻塞与任务切换开销
+6. 明确 WCET / WCRT 的计算边界与假设
+7. 结合目标硬件测量进行交叉验证
+8. 对照任务截止时间评估时间裕量</div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>代码与反汇编</h3>
+        <p>
+          C 语言代码的结构不一定能直接体现实际指令执行路径。
+          对时间敏感代码，需要结合编译产物和目标处理器指令周期分析。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>中断与上下文</h3>
+        <p>
+          需要确认中断入口、寄存器保存、返回路径和任务上下文切换的实际实现，
+          而不是直接套用其他处理器的机制。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>资源约束</h3>
+        <p>
+          RAM、堆栈、寄存器组和临界区设计会影响可用的执行机制，
+          也可能影响最坏执行路径和系统响应。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>分析结论的边界</h3>
+        <p>
+          应说明目标配置、输入范围、分析假设和未覆盖路径。
+          只有结论的适用范围清晰，时间分析结果才有工程意义。
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>对 HRTOS 的意义：</strong>
+      实时性分析应逐步把调度机制、中断路径、上下文切换和关键代码执行时间联系起来。
+      对具体版本能达到什么时间指标，应由相应的代码分析、计算和目标硬件验证支持。
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>九、总结：从时间要求到可验证的系统行为</h2>
+
+    <div class="block">实时系统分析框架：
+
+应用需求
+    ↓
+任务与截止时间模型
+    ↓
+执行时间与资源约束
+    ↓
+中断和调度行为
+    ↓
+最坏响应时间分析
+    ↓
+截止时间验证
+
+核心问题：
+系统能否在明确的运行条件下
+满足关键任务的时间约束？</div>
+
+    <p>
+      实时系统不只是一个软件类别，也是一种围绕时间约束组织和验证计算行为的工程方法。
+      对 HRTOS 而言，理解这一模型有助于把内核机制与可测量、可分析的时间指标联系起来，
+      并为后续的 WCET 和系统响应时间研究建立统一基础。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>相关阅读与学习路径</h2>
+
+    <div class="grid">
+      <a class="card" href="what-is-rtos.html">
+        <h3>什么是 RTOS</h3>
+        <p>了解实时操作系统的目标、职责与基本组成。</p>
       </a>
 
       <a class="card" href="scheduling-basics.html">
-        <h3>调度器</h3>
-        <p>时间约束下的任务选择</p>
+        <h3>调度器基础</h3>
+        <p>理解任务状态、优先级和调度决策。</p>
+      </a>
+
+      <a class="card" href="preemptive-vs-cooperative.html">
+        <h3>抢占式与协作式调度</h3>
+        <p>比较不同任务交接模型对响应时间的影响。</p>
+      </a>
+
+      <a class="card" href="interrupt-basics.html">
+        <h3>中断基础</h3>
+        <p>了解中断响应、ISR 与任务调度之间的关系。</p>
       </a>
 
       <a class="card" href="context-switch-basics.html">
         <h3>上下文切换</h3>
-        <p>执行状态迁移机制</p>
+        <p>分析执行状态保存、恢复与切换开销。</p>
       </a>
 
       <a class="card" href="ipc-basics.html">
-        <h3>IPC通信</h3>
-        <p>任务间时间协作</p>
+        <h3>IPC 基础</h3>
+        <p>理解任务通信、同步、阻塞与资源竞争。</p>
       </a>
-
     </div>
   </section>
 

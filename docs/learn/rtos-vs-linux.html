@@ -1,11 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>RTOS vs Linux | HRTOS 学习模块</title>
-<meta name="description" content="从系统设计哲学层面对比RTOS与Linux的调度模型、实时性差异与时间确定性本质。" />
+<title>RTOS vs Linux：实时性、调度与系统设计目标 | HRTOS</title>
+<meta name="description" content="从系统目标、调度策略、中断处理、响应延迟和最坏情况分析等维度，对比 RTOS 与 Linux，理解实时 Linux、PREEMPT_RT 以及 8051 专用 RTOS 的工程定位。" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/learn/rtos-vs-linux.html" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
@@ -16,12 +19,12 @@
   --text:#e2e8f0;
   --muted:#94a3b8;
   --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
   color-scheme:dark;
 }
 
 *{box-sizing:border-box}
+
+html{scroll-behavior:smooth}
 
 body{
   margin:0;
@@ -36,12 +39,17 @@ a{
   text-decoration:none;
 }
 
+a:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:4px;
+}
+
 .page{
-  width:min(1180px, calc(100% - 40px));
+  width:min(1180px,calc(100% - 40px));
   margin:0 auto;
   padding:96px 0 56px;
   display:grid;
-  gap:40px;
+  gap:36px;
 }
 
 .breadcrumb{
@@ -49,9 +57,8 @@ a{
   color:var(--muted);
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
-}
+.breadcrumb a{color:#7dd3fc}
+.breadcrumb a:hover{text-decoration:underline}
 
 .hero{
   display:grid;
@@ -61,22 +68,25 @@ a{
 .hero-label{
   display:inline-flex;
   width:fit-content;
-  padding:8px 14px;
+  padding:7px 13px;
   border-radius:999px;
   border:1px solid rgba(56,189,248,.22);
   color:#bae6fd;
-  font-size:14px;
+  font-size:13px;
 }
 
 .hero h1{
   margin:0;
-  font-size:42px;
+  font-size:clamp(30px,4vw,42px);
+  line-height:1.25;
+  letter-spacing:-.025em;
 }
 
 .hero p{
   margin:0;
-  max-width:860px;
+  max-width:900px;
   color:var(--muted);
+  font-size:16px;
 }
 
 .meta{
@@ -86,22 +96,24 @@ a{
 }
 
 .tag{
-  padding:6px 12px;
+  padding:5px 11px;
   border:1px solid var(--border);
   border-radius:999px;
-  font-size:13px;
+  font-size:12px;
   color:#bae6fd;
   background:rgba(15,23,42,.4);
 }
 
 .section{
   display:grid;
-  gap:12px;
+  gap:15px;
+  min-width:0;
 }
 
 .section h2{
   margin:0;
-  font-size:22px;
+  font-size:clamp(20px,2.5vw,24px);
+  line-height:1.4;
 }
 
 .section p{
@@ -109,26 +121,39 @@ a{
   color:var(--muted);
 }
 
-.table{
+.grid{
   display:grid;
-  gap:12px;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
 }
 
-.row{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  gap:12px;
-  padding:16px 18px;
-  border:1px solid var(--border);
+.card{
+  min-width:0;
+  padding:21px;
   border-radius:10px;
-  background:rgba(15,23,42,.6);
+  border:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(30,41,59,.8),rgba(15,23,42,.92));
 }
 
-.row.head{
-  background:rgba(56,189,248,.08);
-  border-color:rgba(56,189,248,.25);
-  font-weight:600;
-  color:#bae6fd;
+.card h3{
+  margin:0 0 9px;
+  font-size:17px;
+  line-height:1.45;
+}
+
+.card p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+a.card{
+  transition:border-color .18s ease,transform .18s ease;
+}
+
+a.card:hover{
+  border-color:rgba(56,189,248,.5);
+  transform:translateY(-2px);
 }
 
 .block{
@@ -136,12 +161,69 @@ a{
   border-radius:10px;
   border:1px solid rgba(56,189,248,.18);
   background:rgba(15,23,42,.6);
-  font-family:Consolas, monospace;
-  color:#7dd3fc;
+  font-family:Consolas,"Courier New",monospace;
+  color:#bae6fd;
   font-size:14px;
-  line-height:1.8;
-  white-space: pre-wrap;
-  word-break: break-word;
+  line-height:1.9;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  overflow-x:auto;
+}
+
+.note{
+  padding:17px 19px;
+  border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;
+  background:rgba(56,189,248,.06);
+  color:#cbd5e1;
+  font-size:14px;
+}
+
+.note strong{color:#e0f2fe}
+
+.table-wrap{
+  width:100%;
+  overflow-x:auto;
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+
+table{
+  width:100%;
+  min-width:680px;
+  border-collapse:collapse;
+  font-size:14px;
+}
+
+th,td{
+  padding:14px 16px;
+  text-align:left;
+  vertical-align:top;
+  border-bottom:1px solid var(--border);
+}
+
+th{
+  background:rgba(30,41,59,.85);
+  color:#e2e8f0;
+  font-weight:600;
+}
+
+td{color:var(--muted)}
+tr:last-child td{border-bottom:none}
+
+td:first-child{
+  color:#cbd5e1;
+  font-weight:500;
+}
+
+.inline-code{
+  padding:2px 6px;
+  border-radius:4px;
+  background:rgba(148,163,184,.12);
+  color:#bae6fd;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:.92em;
+  overflow-wrap:anywhere;
 }
 
 .footer{
@@ -153,9 +235,22 @@ a{
 }
 
 @media(max-width:900px){
-  .row{
-    grid-template-columns:1fr;
+  .grid{grid-template-columns:1fr}
+}
+
+@media(max-width:600px){
+  .page{
+    width:calc(100% - 28px);
+    padding:82px 0 38px;
+    gap:28px;
   }
+
+  .block{
+    padding:16px;
+    font-size:13px;
+  }
+
+  .card{padding:18px}
 }
 </style>
 </head>
@@ -164,192 +259,521 @@ a{
 
 <main class="page">
 
-  <nav class="breadcrumb">
+  <nav class="breadcrumb" aria-label="面包屑导航">
     <a href="/docs/index.html">文档中心</a> /
     <a href="/docs/learn/index.html">学习模块</a> /
-    <span>RTOS vs Linux</span>
+    <span aria-current="page">RTOS vs Linux</span>
   </nav>
 
   <section class="hero">
-    <span class="hero-label">HRTOS 学习模块</span>
+    <span class="hero-label">RTOS Learning · System Architecture</span>
 
-    <h1>RTOS vs Linux</h1>
+    <h1>RTOS vs Linux：实时系统与通用系统</h1>
 
     <p>
-      RTOS 与 Linux 的差异不在性能高低，而在系统目标：一个强调时间确定性，一个强调通用计算与资源效率。
+      RTOS（实时操作系统）与 Linux 的比较，不能简单归结为谁更快、谁更确定。
+      更重要的是理解系统的设计目标、调度策略、执行路径和时间约束如何影响工程实现。
+      Linux 可以通过不同的调度策略和实时配置满足部分实时需求；RTOS 也需要经过分析和验证，
+      才能证明特定任务满足规定的时间要求。
     </p>
 
     <div class="meta">
-      <span class="tag">Determinism</span>
-      <span class="tag">Kernel Design</span>
-      <span class="tag">System Philosophy</span>
+      <span class="tag">Real-Time Systems</span>
+      <span class="tag">Linux Scheduling</span>
+      <span class="tag">Latency Analysis</span>
+      <span class="tag">Kernel Architecture</span>
     </div>
   </section>
 
   <section class="section">
-    <h2>一、核心认知：目标不同，不是等级不同</h2>
+    <h2>一、核心区别：系统目标与约束不同</h2>
 
     <p>
-      RTOS 与 Linux 常被误解为性能差异，本质上它们的设计目标完全不同。
-      一个约束“必须按时完成”，一个优化“整体执行效率”。
+      通用操作系统需要兼顾多种应用、用户交互、吞吐量、资源管理和系统服务。
+      实时系统则更强调任务的时间约束，以及在指定运行条件下满足这些约束的能力。
+      这是一种设计重点的差异，而不是简单的系统等级之分。
     </p>
 
-    <div class="block">
-RTOS：关注最坏情况（Worst-case Guarantee）
-Linux：关注平均性能（Best-effort Optimization）
+    <div class="grid">
+      <div class="card">
+        <h3>通用操作系统（GPOS）</h3>
+        <p>
+          面向多样化工作负载，提供丰富的进程、内存、文件、网络和设备管理能力。
+          调度策略会根据系统配置、调度类别和任务属性而变化。
+        </p>
+      </div>
 
-RTOS = 按时完成优先
-Linux = 尽快完成优先
+      <div class="card">
+        <h3>实时操作系统（RTOS）</h3>
+        <p>
+          面向具有时间约束的任务，通常提供更直接的实时任务管理机制。
+          其实时能力仍取决于内核实现、配置、硬件和应用负载。
+        </p>
+      </div>
     </div>
 
-    <p>
-      RTOS强调“是否准时”，Linux强调“是否更快”。适用场景不同，不存在优劣关系。
-    </p>
-  </section>
+    <div class="block">系统设计关注点：
 
-  <section class="section">
-    <h2>二、时间模型差异</h2>
+通用操作系统：
+多种工作负载 + 丰富的系统服务 + 资源利用率
 
-    <p>
-      RTOS中时间是硬约束资源，Linux中时间是调度结果。
-      RTOS关注可证明的上界，Linux关注统计意义上的性能表现。
-    </p>
+实时系统：
+任务时间约束 + 响应时间分析 + 截止时间验证
 
-    <div class="block">
-RTOS：
-执行时间 ≤ 硬截止时间（可证明上界）
+共同目标：
+正确完成工作，并满足各自的系统要求</div>
 
-Linux：
-执行时间 = 统计分布结果
-    </div>
-
-    <p>
-      Linux的“通常没问题”不等于“边界上安全”，而RTOS必须在边界上可验证。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>三、调度器差异</h2>
-
-    <p>
-      Linux调度器追求公平与吞吐量，通过权重平衡资源。
-      RTOS调度器追求时间可行性，确保关键任务不会超时。
-    </p>
-
-    <div class="block">
-RTOS Scheduler：
-→ 判断任务是否满足时间约束
-→ 保证最坏情况可执行
-
-Linux Scheduler：
-→ 基于权重与公平分配CPU
-→ 优化整体吞吐
+    <div class="note">
+      <strong>关键认识：</strong>
+      RTOS 不会因为名字中包含“实时”就自动保证所有任务按时完成；
+      Linux 也不意味着无法实现实时响应。判断依据应当是具体机制、配置和可验证的时间指标。
     </div>
   </section>
 
   <section class="section">
-    <h2>四、延迟与抖动</h2>
+    <h2>二、时间模型：平均表现与最坏情况分析</h2>
 
     <p>
-      Linux延迟来源复杂（调度、公平性、缓存、内核路径等），因此不可严格预测。
-      RTOS通过减少不确定性，使延迟保持在可分析范围内。
+      对很多通用工作负载，平均延迟、吞吐量和性能分布是重要的评价指标。
+      对具有严格截止时间的任务，仅知道平均性能通常不够，还需要分析任务在不利条件下的响应时间。
     </p>
 
-    <div class="block">
-Linux：延迟 = f(负载 + 调度 + 内核路径不确定性)
+    <div class="grid">
+      <div class="card">
+        <h3>平均性能与统计指标</h3>
+        <p>
+          可以描述典型负载下的运行表现，例如平均响应时间、分位数延迟和吞吐量。
+          这些指标有助于评价性能，但单独使用时不能证明绝不会超时。
+        </p>
+      </div>
 
-RTOS：延迟 ≤ 已知上界
+      <div class="card">
+        <h3>最坏情况时间分析</h3>
+        <p>
+          需要明确分析范围、输入假设、任务干扰、资源阻塞和系统开销，
+          再评估最坏情况执行时间及响应时间是否满足截止时间。
+        </p>
+      </div>
+    </div>
 
-控制系统更关注“抖动上限”
+    <div class="block">常见时间指标：
+
+WCET：最坏情况执行时间
+WCRT：最坏情况响应时间
+Interrupt Latency：中断响应延迟
+Scheduling Latency：调度相关延迟
+Jitter：时序抖动
+
+实时性判断：
+在明确的系统模型和假设下，
+关键任务是否满足其截止时间？</div>
+
+    <p>
+      执行时间与响应时间并不相同。响应时间还可能包含任务等待、抢占、资源阻塞、中断处理和调度开销。
+      即使某段代码运行很快，整个任务也可能因为等待资源或其他任务的干扰而错过截止时间。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>三、调度器：并非简单的公平与优先级之分</h2>
+
+    <p>
+      不同操作系统可能同时提供多种调度策略。
+      不能简单地认为 Linux 只追求公平，也不能认为所有 RTOS 都采用固定优先级调度。
+      比较时需要看具体调度类别、优先级规则和任务约束。
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>比较维度</th>
+            <th>常见 RTOS 实现</th>
+            <th>Linux</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>调度策略</td>
+            <td>常见固定优先级抢占式调度，也有协作式、轮转或其他策略。</td>
+            <td>提供多种调度类别，包括普通任务调度、实时调度策略和截止时间调度等。</td>
+          </tr>
+          <tr>
+            <td>任务选择</td>
+            <td>可能根据优先级、就绪状态和具体调度规则选择任务。</td>
+            <td>由调度类别、策略、优先级、任务属性和系统状态共同决定。</td>
+          </tr>
+          <tr>
+            <td>实时分析</td>
+            <td>需分析任务执行时间、优先级干扰、阻塞及内核开销。</td>
+            <td>同样需要考虑调度配置、内核路径、驱动、资源竞争和系统负载。</td>
+          </tr>
+          <tr>
+            <td>资源管理</td>
+            <td>通常围绕目标设备和嵌入式应用进行设计，具体能力依实现而定。</td>
+            <td>提供面向通用计算环境的丰富资源管理和系统服务。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <strong>注意：</strong>
+      固定优先级调度并不是实时性的充分条件；公平调度也不意味着系统完全没有时间约束。
+      真正的分析需要把调度规则与任务模型结合起来。
     </div>
   </section>
 
   <section class="section">
-    <h2>五、中断处理</h2>
+    <h2>四、延迟、抖动与可预测性</h2>
 
     <p>
-      Linux中断通常延后处理，RTOS中断强调快速响应并直接参与调度。
-      常见模式是ISR只做最小处理，其余交给高优先级任务。
+      实时系统关注的不只是延迟平均值，还包括延迟变化范围，以及不利条件下是否仍能满足时间约束。
+      通用系统也可以测量延迟和抖动，但若需要严格的时间保证，就必须进一步分析相关执行路径和干扰来源。
     </p>
 
-    <p>
-      RTOS将“中断 + 调度”视为紧密时间链路，而非独立阶段。
-    </p>
-  </section>
+    <div class="block">端到端响应时间可能涉及：
 
-  <section class="section">
-    <h2>六、系统结构对比</h2>
+事件发生
+    ↓
+中断响应
+    ↓
+中断服务与事件处理
+    ↓
+任务变为就绪
+    ↓
+调度等待与任务切换
+    ↓
+任务完成
 
-    <div class="table">
+分析时还需考虑：
+中断屏蔽区、不可抢占区、资源阻塞、
+高优先级任务干扰和其他系统开销。</div>
 
-      <div class="row head">
-        <div>维度</div>
-        <div>RTOS</div>
-        <div>Linux</div>
+    <div class="grid">
+      <div class="card">
+        <h3>延迟（Latency）</h3>
+        <p>
+          表示事件发生到指定处理阶段或结果产生之间的时间。
+          比较不同系统时，必须先明确计时的起点和终点。
+        </p>
       </div>
 
-      <div class="row">
-        <div>目标</div>
-        <div>时间确定性</div>
-        <div>通用计算能力</div>
+      <div class="card">
+        <h3>抖动（Jitter）</h3>
+        <p>
+          表示实际时序相对于目标时序的变化。
+          对周期控制、采样和通信任务，抖动可能与功能质量直接相关。
+        </p>
       </div>
 
-      <div class="row">
-        <div>调度</div>
-        <div>固定优先级/可预测</div>
-        <div>动态公平调度</div>
+      <div class="card">
+        <h3>时间可预测性</h3>
+        <p>
+          关键路径的执行条件和延迟边界能够被理解、测量或分析，
+          并可用于判断任务是否满足时间要求。
+        </p>
       </div>
 
-      <div class="row">
-        <div>延迟</div>
-        <div>上界可控</div>
-        <div>统计分布</div>
+      <div class="card">
+        <h3>时间保证</h3>
+        <p>
+          需要明确硬件、软件配置、输入范围、并发条件和分析假设。
+          仅凭一次低延迟测试不能证明存在严格的最坏情况上界。
+        </p>
       </div>
-
-      <div class="row">
-        <div>复杂度</div>
-        <div>低，易分析</div>
-        <div>高，功能丰富</div>
-      </div>
-
-      <div class="row">
-        <div>场景</div>
-        <div>控制/嵌入式/工业</div>
-        <div>服务器/桌面/云</div>
-      </div>
-
     </div>
   </section>
 
   <section class="section">
-    <h2>七、结论</h2>
+    <h2>五、中断处理：机制不同，仍需分析完整路径</h2>
 
     <p>
-      RTOS不是轻量Linux，Linux也不是重型RTOS。
-      两者没有升级关系，只是优化目标不同。
-      即使用实时补丁增强Linux，它仍然是在通用系统上逼近实时性，而非原生确定性模型。
+      中断是实时嵌入式系统的重要入口，但 RTOS 与 Linux 都需要处理硬件中断、驱动工作和后续任务执行。
+      两者的具体路径取决于硬件架构、内核配置、驱动实现和中断类型。
     </p>
 
-    <pre class="block">
-RTOS vs Linux 核心模型：
+    <div class="grid">
+      <div class="card">
+        <h3>典型 RTOS 模式</h3>
+        <p>
+          中断服务程序通常先处理紧急工作、记录事件或唤醒任务；
+          后续处理可由任务完成。部分系统也允许在中断退出路径触发调度。
+        </p>
+      </div>
 
-RTOS：
-→ 时间约束优先
-→ 最坏情况必须满足
-→ 控制“是否准时”
+      <div class="card">
+        <h3>Linux 中断模式</h3>
+        <p>
+          Linux 可以通过硬中断处理、线程化中断以及软中断、工作队列等机制分担处理工作。
+          哪些工作能够延后执行，取决于具体中断路径和驱动设计。
+        </p>
+      </div>
+    </div>
 
-Linux：
-→ 资源效率优先
-→ 优化平均性能
-→ 控制“如何更快”
-
-结论：
-RTOS = 时间确定系统
-Linux = 资源优化系统
-    </pre>
+    <div class="note">
+      <strong>不要混淆：</strong>
+      中断响应时间、ISR 执行时间、任务调度延迟和端到端响应时间是不同指标。
+      应当明确测量边界，并分析它们之间的依赖关系。
+    </div>
   </section>
 
+  <section class="section">
+    <h2>六、Linux 也可以用于实时系统</h2>
 
+    <p>
+      Linux 具有多种调度策略和实时相关机制。通过合适的内核配置、实时调度策略、
+      中断与驱动优化，以及对系统负载和硬件的控制，Linux 可以应用于具有较严格实时要求的场景。
+    </p>
+
+    <div class="card">
+      <h3>PREEMPT_RT 是什么？</h3>
+      <p>
+        PREEMPT_RT 是一组用于增强 Linux 内核抢占能力、改善实时响应特性的实时补丁和内核机制。
+        它涉及内核抢占、中断处理、锁和执行上下文等方面的调整。
+        它能够改善实时行为，但并不意味着所有系统配置下都自动获得无条件的硬实时保证。
+      </p>
+    </div>
+
+    <p>
+      评估实时 Linux 时，通常还需要考虑内核版本与配置、CPU 亲和性、调度策略、
+      电源管理、驱动执行路径、中断路由、内存行为和系统负载等因素。
+      是否满足特定截止时间，仍需要与具体工作负载和目标平台相结合进行分析和验证。
+    </p>
+
+    <div class="block">Linux + 实时配置：
+
+内核抢占能力
++ 实时调度策略
++ 中断与驱动优化
++ 资源与负载管理
++ 测量和时间分析
+
+最终目标：
+满足具体应用的实时要求</div>
+  </section>
+
+  <section class="section">
+    <h2>七、RTOS 与 Linux 的工程取舍</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>典型嵌入式 RTOS</th>
+            <th>Linux</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>主要应用方向</td>
+            <td>资源受限设备、控制任务、专用嵌入式系统等。</td>
+            <td>复杂嵌入式设备、网关、服务器、桌面和云计算等。</td>
+          </tr>
+          <tr>
+            <td>资源需求</td>
+            <td>可针对小容量 RAM、ROM 和特定 MCU 进行设计。</td>
+            <td>通常需要更丰富的处理器、内存和外围设备资源。</td>
+          </tr>
+          <tr>
+            <td>系统服务</td>
+            <td>根据产品需求提供任务管理、同步、通信和驱动等功能。</td>
+            <td>拥有较完整的进程、内存、文件、网络和用户空间体系。</td>
+          </tr>
+          <tr>
+            <td>实时能力</td>
+            <td>依赖内核机制、配置、应用设计和时间验证。</td>
+            <td>依赖调度类别、实时配置、驱动和系统整体行为。</td>
+          </tr>
+          <tr>
+            <td>工程成本</td>
+            <td>专用功能可能更精简，但平台适配、验证和维护仍需要投入。</td>
+            <td>功能丰富、生态成熟，但系统复杂度和资源管理成本可能更高。</td>
+          </tr>
+          <tr>
+            <td>选择依据</td>
+            <td>目标 MCU 能力、时间要求、内存预算和所需功能。</td>
+            <td>应用生态、驱动支持、系统服务、硬件资源和实时要求。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      上述对比描述的是常见工程取舍，不代表所有 RTOS 或所有 Linux 系统都具有相同特征。
+      具体项目应根据目标硬件、应用需求和验证成本做出选择。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>八、HRTOS 的定位：面向 8051 的专用内核</h2>
+
+    <p>
+      对 8051 这类资源受限的 MCU，选择系统时不仅要看调度算法，
+      还需要考虑处理器架构、寄存器与堆栈管理、内存布局、中断处理和开发工具链。
+      专用 RTOS 的价值在于围绕目标平台组织这些机制，而不是简单地把通用操作系统缩小。
+    </p>
+
+    <div class="block">HRTOS 的工程分析路径：
+
+8051 硬件与编译工具链
+        ↓
+中断与任务上下文管理
+        ↓
+调度与任务状态转换
+        ↓
+内存、堆栈与资源管理
+        ↓
+关键路径的执行时间分析
+        ↓
+目标配置下的测试与验证</div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>架构适配</h3>
+        <p>
+          根据 8051 的寄存器、堆栈和存储空间特点设计内核执行路径，
+          避免直接照搬其他处理器架构的实现假设。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>资源约束</h3>
+        <p>
+          关注 RAM、代码空间、任务上下文、中断嵌套和堆栈预算，
+          让内核机制适合目标芯片的实际资源条件。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>执行路径分析</h3>
+        <p>
+          结合源码、编译产物、反汇编和目标硬件测量，
+          研究调度、中断和上下文切换的实际开销。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>可验证的工程结论</h3>
+        <p>
+          将性能数据和实时性结论绑定到明确的版本、芯片、时钟、编译选项和测试条件，
+          避免将单次测试结果泛化为无条件保证。
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>HRTOS 的技术方向：</strong>
+      面向 8051 深入优化内核执行机制，并逐步完善对关键路径的时间分析与验证。
+      具体实时能力应以对应版本的实现、分析范围和测试证据为准。
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>九、如何选择？</h2>
+
+    <div class="grid">
+      <div class="card">
+        <h3>优先考虑 RTOS 的情况</h3>
+        <p>
+          项目使用资源有限的 MCU，需要直接控制硬件，任务模型明确，
+          并希望围绕专用调度和中断机制管理实时工作。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>优先考虑 Linux 的情况</h3>
+        <p>
+          项目需要丰富的网络、文件系统、进程隔离、复杂驱动和用户空间生态，
+          并且目标硬件能够满足系统资源需求。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>考虑实时 Linux 的情况</h3>
+        <p>
+          项目需要 Linux 的系统服务与生态，同时对调度延迟和实时响应有较高要求，
+          并能投入资源进行配置、优化和时间验证。
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>无论选择哪一种</h3>
+        <p>
+          都应先定义关键任务、截止时间、负载和故障后果，
+          再判断所选系统是否能满足要求。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>十、总结</h2>
+
+    <div class="block">RTOS 与 Linux 的比较：
+
+不是：
+RTOS 一定有保证，Linux 一定不实时
+
+而是：
+不同系统机制
++ 不同资源条件
++ 不同调度配置
++ 不同验证成本
+
+共同需要回答：
+关键任务能否满足时间约束？
+
+工程判断：
+从应用需求出发，
+分析系统执行路径，
+验证目标平台上的实际行为。</div>
+
+    <p>
+      RTOS 与 Linux 并不是简单的升级或替代关系。
+      对资源受限的专用控制系统，RTOS 可能更贴合硬件和任务模型；
+      对需要丰富系统服务的复杂设备，Linux 可能更合适；
+      对需要 Linux 生态和较强实时响应能力的项目，实时 Linux 也是可选方案。
+      最终选择应由应用约束和工程验证结果决定。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>相关阅读</h2>
+
+    <div class="grid">
+      <a class="card" href="what-is-rtos.html">
+        <h3>什么是 RTOS</h3>
+        <p>了解实时操作系统的目标、职责与基本组成。</p>
+      </a>
+
+      <a class="card" href="real-time-systems.html">
+        <h3>实时系统基础</h3>
+        <p>理解截止时间、WCET、响应时间与实时性分析。</p>
+      </a>
+
+      <a class="card" href="scheduling-basics.html">
+        <h3>调度器基础</h3>
+        <p>了解任务状态、优先级和调度决策机制。</p>
+      </a>
+
+      <a class="card" href="preemptive-vs-cooperative.html">
+        <h3>抢占式与协作式调度</h3>
+        <p>比较不同任务交接模型及其时间影响。</p>
+      </a>
+
+      <a class="card" href="interrupt-basics.html">
+        <h3>中断基础</h3>
+        <p>理解中断响应、ISR 和任务调度之间的关系。</p>
+      </a>
+
+      <a class="card" href="context-switch-basics.html">
+        <h3>上下文切换</h3>
+        <p>了解任务执行状态保存、恢复和切换开销。</p>
+      </a>
+    </div>
+  </section>
 
   <footer class="footer">
     © 2017–2026 HRTOS. 实时系统与通用系统对比分析模块。

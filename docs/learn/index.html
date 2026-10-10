@@ -1,11 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>学习图谱 | HRTOS 知识系统</title>
-<meta name="description" content="HRTOS学习图谱：RTOS概念到内核架构的完整知识结构。" />
+<title>RTOS 学习图谱：实时系统、调度与内核机制 | HRTOS</title>
+<meta name="description" content="从 RTOS 基础、实时系统、任务调度、中断与 IPC，到上下文切换和内核架构，系统学习实时操作系统的核心原理与嵌入式实践。" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/learn/index.html" />
 
 <style>
 :root{
@@ -15,13 +18,22 @@
   --text:#e2e8f0;
   --muted:#94a3b8;
   --accent:#38bdf8;
+  --accent-soft:rgba(56,189,248,.09);
+  --max-width:1200px;
 }
 
 /* ================= BASE ================= */
 *{box-sizing:border-box;}
+
+html{
+  scroll-behavior:smooth;
+  scroll-padding-top:80px;
+}
+
 body{
   margin:0;
-  font-family: ui-sans-serif, system-ui, "PingFang SC";
+  font-family:ui-sans-serif,system-ui,-apple-system,
+    BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
   background:var(--bg);
   color:var(--text);
 }
@@ -30,7 +42,34 @@ a{
   color:var(--accent);
   text-decoration:none;
 }
-a:hover{opacity:.85;}
+
+a:hover{opacity:.88;}
+
+a:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:4px;
+  border-radius:4px;
+}
+
+p{
+  color:var(--muted);
+  line-height:1.85;
+}
+
+h1,h2,h3{
+  color:var(--text);
+  line-height:1.35;
+}
+
+h2{
+  font-size:clamp(22px,3vw,28px);
+  margin:0 0 12px;
+}
+
+h3{
+  font-size:17px;
+  margin:0;
+}
 
 /* ================= NAV ================= */
 .navbar{
@@ -57,62 +96,349 @@ a:hover{opacity:.85;}
 
 /* ================= LAYOUT ================= */
 .page{
-  width:min(1200px, calc(100% - 32px));
+  width:min(var(--max-width),calc(100% - 40px));
   margin:0 auto;
-  padding:40px 0 60px;
+  padding:52px 0 64px;
+}
+
+.hero{
+  position:relative;
+  padding:12px 0 34px;
+  max-width:850px;
+}
+
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  color:#7dd3fc;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  margin-bottom:16px;
+}
+
+.eyebrow::before{
+  content:"";
+  width:20px;
+  height:2px;
+  background:var(--accent);
 }
 
 h1{
-  font-size:40px;
-  margin:0 0 10px;
+  font-size:clamp(32px,5vw,48px);
+  letter-spacing:-1.1px;
+  margin:0 0 18px;
 }
 
-p{
+.hero p{
+  max-width:760px;
+  font-size:16px;
+  margin:0;
+}
+
+.hero-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:24px;
+}
+
+.meta-item{
+  border:1px solid var(--border);
+  background:rgba(17,28,46,.7);
+  border-radius:7px;
+  padding:8px 12px;
+  font-size:12px;
   color:var(--muted);
+}
+
+.meta-item strong{
+  color:var(--text);
+  font-weight:600;
+}
+
+/* ================= SECTION ================= */
+.section{
+  margin-top:46px;
+}
+
+.section-intro{
+  max-width:780px;
+  margin:0 0 22px;
+  font-size:14px;
+}
+
+/* ================= LEARNING ROUTE ================= */
+.route{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+  margin-top:24px;
+}
+
+.route-step{
+  min-width:0;
+  position:relative;
+  padding:20px 18px;
+  background:linear-gradient(160deg,#142238,#101a2b);
+  border:1px solid var(--border);
+  border-radius:12px;
+}
+
+.route-step:first-child{
+  border-top:2px solid #38bdf8;
+}
+
+.route-step:nth-child(2){
+  border-top:2px solid #60a5fa;
+}
+
+.route-step:nth-child(3){
+  border-top:2px solid #818cf8;
+}
+
+.route-step:nth-child(4){
+  border-top:2px solid #34d399;
+}
+
+.step-number{
+  display:block;
+  color:var(--accent);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:1px;
+  margin-bottom:14px;
+}
+
+.route-step p{
+  font-size:13px;
+  margin:10px 0 16px;
+}
+
+.route-step a{
+  font-size:13px;
+  font-weight:600;
+}
+
+/* ================= KNOWLEDGE MAP ================= */
+.map-shell{
+  margin-top:24px;
+  padding:24px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(56,189,248,.07),transparent 65%),
+    #0e1829;
+}
+
+.map-level{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+
+.map-level + .map-level{
+  margin-top:18px;
+}
+
+.map-node{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-width:0;
+  min-height:96px;
+  padding:17px;
+  background:rgba(17,28,46,.95);
+  border:1px solid rgba(148,163,184,.2);
+  border-radius:9px;
+  transition:border-color .18s,background .18s;
+}
+
+.map-node:hover{
+  border-color:rgba(56,189,248,.65);
+  background:#15253b;
+}
+
+.map-node.primary{
+  grid-column:1/-1;
+  min-height:100px;
+  align-items:center;
+  text-align:center;
+  border-color:rgba(56,189,248,.42);
+  background:linear-gradient(110deg,#11253b,#142238);
+}
+
+.map-node .node-label{
+  display:block;
+  font-size:15px;
+  font-weight:650;
+  color:var(--text);
+}
+
+.map-node.primary .node-label{
+  font-size:20px;
+  color:#bae6fd;
+}
+
+.map-node .node-desc{
+  display:block;
+  margin-top:7px;
+  color:var(--muted);
+  font-size:12px;
   line-height:1.7;
 }
 
-/* ================= GRAPH ================= */
-.graph{
-  margin-top:20px;
-  height:820px;
-  border:1px solid var(--border);
-  border-radius:14px;
-  position:relative;
-  overflow:hidden;
+.map-node .node-tag{
+  display:block;
+  color:#7dd3fc;
+  font-size:10px;
+  letter-spacing:1px;
+  margin-bottom:8px;
 }
 
-/* ================= GRID ================= */
-.grid{
-  margin-top:30px;
+.map-connector{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:24px;
+  color:#64748b;
+  font-size:12px;
+}
+
+.map-caption{
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  margin:20px 0 0;
+}
+
+/* ================= TOPIC CARDS ================= */
+.topic-grid{
   display:grid;
-  grid-template-columns:repeat(2, minmax(0,1fr));
-  gap:18px;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  margin-top:24px;
 }
 
-/* 防止错位关键 */
-.card{
+.topic-card{
+  min-width:0;
+  padding:22px;
   background:var(--card);
   border:1px solid var(--border);
   border-radius:12px;
-  padding:16px;
-  min-width:0;
-  overflow:hidden;
 }
 
-.card h3{
-  margin:0 0 10px;
-  font-size:16px;
+.topic-heading{
+  display:flex;
+  align-items:flex-start;
+  gap:13px;
 }
 
-.card a{
-  display:block;
-  padding:4px 0;
-  font-size:14px;
+.topic-index{
+  flex:0 0 36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  border-radius:8px;
+  background:var(--accent-soft);
   color:#7dd3fc;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  font-size:12px;
+  font-weight:700;
+}
+
+.topic-card h3{
+  margin:1px 0 0;
+}
+
+.topic-card p{
+  font-size:13px;
+  margin:13px 0 16px;
+}
+
+.topic-links{
+  display:grid;
+  gap:0;
+  border-top:1px solid var(--border);
+  padding-top:8px;
+}
+
+.topic-links a{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  padding:9px 0;
+  color:#bae6fd;
+  font-size:13px;
+}
+
+.topic-links a span{
+  min-width:0;
+}
+
+.topic-links a::after{
+  content:"↗";
+  flex:0 0 auto;
+  color:var(--muted);
+}
+
+.topic-links a:hover::after{
+  color:var(--accent);
+}
+
+/* ================= NEXT STEP ================= */
+.next-panel{
+  display:grid;
+  grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);
+  gap:24px;
+  align-items:center;
+  margin-top:24px;
+  padding:28px;
+  border:1px solid rgba(56,189,248,.25);
+  border-radius:12px;
+  background:linear-gradient(120deg,rgba(56,189,248,.07),rgba(17,28,46,.75));
+}
+
+.next-panel p{
+  font-size:14px;
+  margin:10px 0 0;
+}
+
+.next-links{
+  display:grid;
+  gap:10px;
+}
+
+.next-link{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:13px 15px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:rgba(11,18,32,.55);
+  font-size:13px;
+}
+
+.next-link span:last-child{
+  color:var(--accent);
+}
+
+/* ================= FAQ ================= */
+.faq-panel{
+  margin-top:24px;
+  padding:22px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(17,28,46,.55);
+}
+
+.faq-panel p{
+  font-size:14px;
+  margin:10px 0 14px;
 }
 
 /* ================= FOOTER ================= */
@@ -126,50 +452,122 @@ footer{
 }
 
 /* ================= RESPONSIVE ================= */
-@media (max-width:768px){
-  .grid{
-    grid-template-columns:1fr;
+@media(max-width:900px){
+  .route{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .map-shell{
+    padding:16px;
+  }
+
+  .map-level{
+    gap:10px;
+  }
+
+  .map-node{
+    padding:13px;
   }
 }
 
-.tree{
-  font-family:Consolas, monospace;
-  color:#7dd3fc;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  padding:22px;
-  border-radius:10px;
-  border:1px solid rgba(56,189,248,.18);
-  background:rgba(15,23,42,.6);
+@media(max-width:768px){
+  .page{
+    width:calc(100% - 32px);
+    padding-top:34px;
+  }
+
+  .navbar{
+    padding:12px 16px;
+    gap:12px;
+    align-items:center;
+  }
+
+  .navbar > div:last-child{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    gap:5px 10px;
+  }
+
+  .navbar a{
+    margin-left:0;
+    font-size:12px;
+  }
+
+  .hero{
+    padding-bottom:22px;
+  }
+
+  .topic-grid,
+  .next-panel{
+    grid-template-columns:1fr;
+  }
+
+  .section{
+    margin-top:36px;
+  }
+
+  .map-shell{
+    padding:12px;
+  }
+
+  .map-level{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .map-node.primary{
+    grid-column:1/-1;
+  }
+
+  .next-panel{
+    padding:21px;
+  }
 }
 
-.tree-line{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  line-height:1.6;
+@media(max-width:480px){
+  .route{
+    grid-template-columns:1fr;
+  }
+
+  .route-step{
+    padding:17px;
+  }
+
+  .map-level{
+    grid-template-columns:1fr;
+  }
+
+  .map-node.primary{
+    grid-column:auto;
+  }
+
+  .map-node{
+    min-height:76px;
+  }
+
+  .topic-card{
+    padding:17px;
+  }
+
+  .hero-meta{
+    gap:7px;
+  }
+
+  .meta-item{
+    padding:7px 9px;
+  }
 }
 
-.tree a{
-  color:#38bdf8;
-  text-decoration:none;
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  *{transition:none!important;}
 }
-
-.tree a:hover{
-  text-decoration:underline;
-}
-
-.indent{
-  padding-left:16px;
-}
-
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
+<!-- NAV：保留原有全局导航 -->
 <div class="navbar">
   <div class="logo">HRTOS Learn</div>
   <div>
@@ -177,239 +575,281 @@ footer{
     <a href="/docs/index.html">文档</a>
     <a href="/system-view/index.html">系统视图</a>
     <a href="/docs/architecture/index.html">架构</a>
-    <a href="/docs/learn/index.html">学习图谱</a>
+    <a href="/docs/learn/index.html" aria-current="page">学习图谱</a>
   </div>
 </div>
 
-<div class="page">
+<main class="page">
 
-<h1>HRTOS 学习图谱</h1>
-<p>从实时系统基础到内核架构的完整学习路径</p>
-
-<section class="section">
-<h2>学习图谱说明</h2>
-
-
-
-  <div class="highlight">
-    推荐顺序：
-    实时系统 → 调度 → 中断 → IPC → 内核架构
-  </div>
-
+<header class="hero">
+  <div class="eyebrow">LEARNING PATH / RTOS FUNDAMENTALS</div>
+  <h1>RTOS 学习图谱</h1>
   <p>
-    HRTOS学习图谱用于展示RTOS知识结构关系，帮助建立“系统依赖关系”，
-    理解实时系统、调度、中断与通信机制如何构成完整RTOS体系。
+    从实时系统的基本概念出发，逐步理解任务调度、上下文切换、
+    中断处理与任务通信，最终进入内核架构和嵌入式系统实践。
+    建立的不只是术语知识，而是对实时操作系统运行机制的整体认识。
   </p>
 
-  
-<!-- ================= GRAPH（简化稳定版）================= -->
-<div class="graph">
+  <div class="hero-meta">
+    <div class="meta-item"><strong>01</strong> 基础认知</div>
+    <div class="meta-item"><strong>02</strong> 内核机制</div>
+    <div class="meta-item"><strong>03</strong> 系统架构</div>
+    <div class="meta-item"><strong>04</strong> 实践应用</div>
+  </div>
+</header>
 
-<svg viewBox="0 0 1000 900" width="100%" height="900">
+<section class="section" aria-labelledby="route-title">
+  <h2 id="route-title">推荐学习路径</h2>
+  <p class="section-intro">
+    如果你刚接触 RTOS，建议按以下顺序学习。
+    已有操作系统或嵌入式开发经验的读者，也可以根据自己的知识基础直接进入对应主题。
+  </p>
 
-<style>
-.node-box{
-  fill:#1e293b;
-  stroke:rgba(56,189,248,.35);
-  stroke-width:1.2;
-  rx:10;
-}
+  <div class="route">
+    <article class="route-step">
+      <span class="step-number">STAGE 01</span>
+      <h3>建立基本认知</h3>
+      <p>理解 RTOS、实时性与通用操作系统之间的基本区别。</p>
+      <a href="what-is-rtos.html">开始学习 →</a>
+    </article>
 
-.node-text{
-  fill:#bae6fd;
-  font-size:13px;
-  font-family: ui-sans-serif, system-ui, "PingFang SC", sans-serif;
-  text-anchor:middle;
-  dominant-baseline:middle;
-  font-weight:600;
-}
+    <article class="route-step">
+      <span class="step-number">STAGE 02</span>
+      <h3>理解内核机制</h3>
+      <p>学习任务调度、抢占与协作模型，以及上下文切换。</p>
+      <a href="scheduling-basics.html">进入内核基础 →</a>
+    </article>
 
-line{
-  stroke:rgba(56,189,248,.20);
-  stroke-width:1.2;
-}
-</style>
+    <article class="route-step">
+      <span class="step-number">STAGE 03</span>
+      <h3>理解系统行为</h3>
+      <p>认识中断响应、任务通信，以及各机制如何协同工作。</p>
+      <a href="interrupt-basics.html">学习系统机制 →</a>
+    </article>
 
-<!-- ================= LINKS ================= -->
-
-<!-- ROOT -->
-<line x1="500" y1="110" x2="150" y2="260"/>
-<line x1="500" y1="110" x2="350" y2="260"/>
-<line x1="500" y1="110" x2="650" y2="260"/>
-<line x1="500" y1="110" x2="850" y2="260"/>
-
-<!-- L1 -> L2 -->
-<line x1="150" y1="260" x2="150" y2="460"/>
-<line x1="350" y1="260" x2="350" y2="460"/>
-<line x1="650" y1="260" x2="650" y2="460"/>
-<line x1="850" y1="260" x2="850" y2="460"/>
-
-<!-- L2 -> L3 -->
-<line x1="350" y1="460" x2="350" y2="680"/>
-<line x1="500" y1="460" x2="500" y2="680"/>
-<line x1="650" y1="460" x2="650" y2="680"/>
-
-<!-- ================= NODES ================= -->
-
-<!-- ROOT -->
-<a href="what-is-rtos.html">
-<g>
-  <rect x="455" y="85" width="90" height="40" class="node-box"/>
-  <text x="500" y="105" class="node-text">RTOS核心</text>
-</g>
-</a>
-
-<!-- L1 -->
-<a href="real-time-systems.html">
-<g>
-  <rect x="110" y="240" width="90" height="40" class="node-box"/>
-  <text x="155" y="260" class="node-text">实时系统</text>
-</g>
-</a>
-
-<a href="scheduling-basics.html">
-<g>
-  <rect x="310" y="240" width="90" height="40" class="node-box"/>
-  <text x="355" y="260" class="node-text">调度机制</text>
-</g>
-</a>
-
-<a href="interrupt-basics.html">
-<g>
-  <rect x="610" y="240" width="90" height="40" class="node-box"/>
-  <text x="655" y="260" class="node-text">中断系统</text>
-</g>
-</a>
-
-<a href="ipc-basics.html">
-<g>
-  <rect x="810" y="240" width="90" height="40" class="node-box"/>
-  <text x="855" y="260" class="node-text">IPC通信</text>
-</g>
-</a>
-
-<!-- L2 -->
-<a href="context-switch-basics.html">
-<g>
-  <rect x="290" y="440" width="110" height="40" class="node-box"/>
-  <text x="345" y="460" class="node-text">上下文切换</text>
-</g>
-</a>
-
-<a href="preemptive-vs-cooperative.html">
-<g>
-  <rect x="460" y="440" width="90" height="40" class="node-box"/>
-  <text x="505" y="460" class="node-text">调度模型</text>
-</g>
-</a>
-
-<a href="/docs/architecture/index.html">
-<g>
-  <rect x="610" y="440" width="90" height="40" class="node-box"/>
-  <text x="655" y="460" class="node-text">架构层</text>
-</g>
-</a>
-
-<!-- L3 -->
-<a href="/docs/architecture/kernel/index.html">
-<g>
-  <rect x="310" y="660" width="70" height="40" class="node-box"/>
-  <text x="345" y="680" class="node-text">内核</text>
-</g>
-</a>
-
-<a href="/docs/architecture/scheduler/index.html">
-<g>
-  <rect x="465" y="660" width="70" height="40" class="node-box"/>
-  <text x="500" y="680" class="node-text">调度器</text>
-</g>
-</a>
-
-<a href="/docs/architecture/memory/index.html">
-<g>
-  <rect x="620" y="660" width="70" height="40" class="node-box"/>
-  <text x="655" y="680" class="node-text">内存</text>
-</g>
-</a>
-
-</svg>
-
-</div>
-
-<!-- ================= CARDS ================= -->
-<div class="grid">
-
-<div class="card">
-<h3>RTOS基础体系</h3>
-<p>
-  用于建立RTOS的基本认知，
-  是理解调度、中断与任务执行的前置概念。
-  描述系统如何引入“时间约束”这一维度。
-</p>
-<a href="what-is-rtos.html">→ 什么是RTOS（核心定义）</a>
-<a href="real-time-systems.html">→ 实时系统基础（时间模型）</a>
-<a href="rtos-vs-linux.html">→ RTOS vs Linux（系统本质差异）</a>
-</div>
-
-<div class="card">
-<h3>调度与执行模型</h3>
-<p>
-  CPU在多个任务之间的分配规则，
-  是任务执行流程中的控制层。
-  用于连接任务与实际行为。
-</p>
-<a href="scheduling-basics.html">→ 调度基础</a>
-<a href="preemptive-vs-cooperative.html">→ 抢占式 vs 协作式</a>
-<a href="context-switch-basics.html">→ 上下文切换机制</a>
-</div>
-
-<div class="card">
-<h3>系统核心机制</h3>
-<p>
-RTOS运行依赖两类核心机制：中断系统与任务间通信机制（IPC）。
-中断负责把外部事件“注入系统”，
-IPC负责把任务之间的协作“结构化”。
-
-</p>
-<a href="interrupt-basics.html">→ 中断系统</a>
-<a href="ipc-basics.html">→ IPC通信机制</a>
-</div>
-
-
-
-
-
-<div class="card">
-<h3>系统架构</h3>
-<a href="/system-view/index.html">系统运行模型</a>
-<a href="/docs/architecture/index.html">架构总览</a>
-<a href="/docs/architecture/kernel/index.html">内核结构</a>
-<a href="/docs/architecture/scheduler/index.html">调度器</a>
-<a href="/docs/architecture/interrupt/index.html">中断模型</a>
-<a href="/docs/architecture/ipc/index.html">通信机制</a>
-<a href="/docs/architecture/memory/index.html">内存布局</a>
-</div>
-
-</div>
-<section class="section">
-  <h2>仍有疑问？</h2>
-<p>
-  刚接触 RTOS，一些基础概念（如抢占式调度、上下文切换、中断延迟、优先级反转）
-  可能会在不同页面中出现交叉理解的情况。
-</p>
-
-<p>
-  FAQ 页面用于集中整理这些容易混淆的点。
-  它不再展开系统原理，而是针对常见误区做快速对照。
-</p>
-
-  <a href="faq.html">→ 查看 RTOS 常见问题（FAQ）</a>
+    <article class="route-step">
+      <span class="step-number">STAGE 04</span>
+      <h3>进入系统架构</h3>
+      <p>从基础原理进一步理解内核结构、调度器和资源管理。</p>
+      <a href="/docs/architecture/index.html">查看系统架构 →</a>
+    </article>
+  </div>
 </section>
+
+<section class="section" aria-labelledby="map-title">
+  <h2 id="map-title">RTOS 核心知识结构</h2>
+  <p class="section-intro">
+    知识图谱用于展示主题之间的组织关系，而不是规定所有主题之间都存在严格的先后依赖。
+    调度、中断和 IPC 属于相互关联但职责不同的机制。
+  </p>
+
+  <div class="map-shell">
+
+    <div class="map-level">
+      <a class="map-node primary" href="what-is-rtos.html">
+        <span class="node-tag">FOUNDATION</span>
+        <span class="node-label">实时操作系统 RTOS</span>
+        <span class="node-desc">系统目标、实时性与基本执行模型</span>
+      </a>
+    </div>
+
+    <div class="map-connector" aria-hidden="true">
+      ↓ 基础概念与执行机制
+    </div>
+
+    <div class="map-level">
+      <a class="map-node" href="real-time-systems.html">
+        <span class="node-label">实时系统</span>
+        <span class="node-desc">时间约束、确定性与实时任务</span>
+      </a>
+
+      <a class="map-node" href="scheduling-basics.html">
+        <span class="node-label">任务调度</span>
+        <span class="node-desc">优先级、就绪状态与调度策略</span>
+      </a>
+
+      <a class="map-node" href="preemptive-vs-cooperative.html">
+        <span class="node-label">调度模型</span>
+        <span class="node-desc">抢占式与协作式执行方式</span>
+      </a>
+    </div>
+
+    <div class="map-connector" aria-hidden="true">
+      ↓ 进一步理解内核运行过程
+    </div>
+
+    <div class="map-level">
+      <a class="map-node" href="context-switch-basics.html">
+        <span class="node-label">上下文切换</span>
+        <span class="node-desc">寄存器、堆栈与任务恢复</span>
+      </a>
+
+      <a class="map-node" href="interrupt-basics.html">
+        <span class="node-label">中断机制</span>
+        <span class="node-desc">中断响应、嵌套与事件处理</span>
+      </a>
+
+      <a class="map-node" href="ipc-basics.html">
+        <span class="node-label">任务通信 IPC</span>
+        <span class="node-desc">消息传递、同步与资源协作</span>
+      </a>
+    </div>
+
+    <div class="map-connector" aria-hidden="true">
+      ↓ 从基础原理进入系统设计
+    </div>
+
+    <div class="map-level">
+      <a class="map-node" href="/docs/architecture/kernel/index.html">
+        <span class="node-label">内核结构</span>
+        <span class="node-desc">内核职责与执行边界</span>
+      </a>
+
+      <a class="map-node" href="/docs/architecture/scheduler/index.html">
+        <span class="node-label">调度器架构</span>
+        <span class="node-desc">调度决策与任务切换</span>
+      </a>
+
+      <a class="map-node" href="/docs/architecture/memory/index.html">
+        <span class="node-label">内存管理</span>
+        <span class="node-desc">资源布局与存储约束</span>
+      </a>
+    </div>
+
+    <p class="map-caption">
+      概念基础 → 内核机制 → 架构实现。各机制之间存在交互关系，实际执行顺序取决于具体系统设计。
+    </p>
+
+  </div>
+</section>
+
+<section class="section" aria-labelledby="topics-title">
+  <h2 id="topics-title">按主题学习</h2>
+  <p class="section-intro">
+    如果你希望解决一个具体问题，可以直接选择相关主题。
+    每个主题都提供进一步阅读的入口。
+  </p>
+
+  <div class="topic-grid">
+
+    <article class="topic-card">
+      <div class="topic-heading">
+        <div class="topic-index">01</div>
+        <h3>RTOS 与实时系统基础</h3>
+      </div>
+      <p>
+        从系统定义与实时性要求出发，理解 RTOS 的设计目标，
+        并区分实时系统与通用操作系统的不同侧重点。
+      </p>
+      <div class="topic-links">
+        <a href="what-is-rtos.html"><span>什么是 RTOS</span></a>
+        <a href="real-time-systems.html"><span>实时系统基础</span></a>
+        <a href="rtos-vs-linux.html"><span>RTOS 与 Linux 的区别</span></a>
+      </div>
+    </article>
+
+    <article class="topic-card">
+      <div class="topic-heading">
+        <div class="topic-index">02</div>
+        <h3>调度与任务执行</h3>
+      </div>
+      <p>
+        理解处理器如何在多个任务之间分配执行机会，
+        以及不同调度模型对任务响应和系统行为的影响。
+      </p>
+      <div class="topic-links">
+        <a href="scheduling-basics.html"><span>任务调度基础</span></a>
+        <a href="preemptive-vs-cooperative.html"><span>抢占式与协作式调度</span></a>
+        <a href="context-switch-basics.html"><span>上下文切换机制</span></a>
+      </div>
+    </article>
+
+    <article class="topic-card">
+      <div class="topic-heading">
+        <div class="topic-index">03</div>
+        <h3>中断与任务通信</h3>
+      </div>
+      <p>
+        从异步事件响应到任务之间的协作，
+        理解中断处理、消息传递和同步机制的作用边界。
+      </p>
+      <div class="topic-links">
+        <a href="interrupt-basics.html"><span>中断处理基础</span></a>
+        <a href="ipc-basics.html"><span>任务间通信 IPC</span></a>
+      </div>
+    </article>
+
+    <article class="topic-card">
+      <div class="topic-heading">
+        <div class="topic-index">04</div>
+        <h3>架构与工程实践</h3>
+      </div>
+      <p>
+        把基础概念映射到实际操作系统，
+        进一步了解内核组成、调度器、中断模型与资源布局。
+      </p>
+      <div class="topic-links">
+        <a href="/system-view/index.html"><span>系统运行视图</span></a>
+        <a href="/docs/architecture/index.html"><span>系统架构总览</span></a>
+        <a href="/docs/architecture/interrupt/index.html"><span>中断架构</span></a>
+        <a href="/docs/architecture/ipc/index.html"><span>通信架构</span></a>
+        <a href="/docs/architecture/memory/index.html"><span>内存布局</span></a>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section class="section" aria-labelledby="next-title">
+  <h2 id="next-title">从理解原理到阅读系统</h2>
+  <p class="section-intro">
+    学习 RTOS 不应停留在术语层面。
+    理解基本机制后，可以进一步观察系统架构、执行路径和具体实现。
+  </p>
+
+  <div class="next-panel">
+    <div>
+      <h3>进入 HRTOS 技术文档</h3>
+      <p>
+        以实际的 8051 实时操作系统为观察对象，
+        将调度、中断、上下文切换与资源管理等概念，
+        对应到系统结构和工程文档中。
+      </p>
+    </div>
+
+    <div class="next-links">
+      <a class="next-link" href="/docs/index.html">
+        <span>技术文档中心</span><span>→</span>
+      </a>
+      <a class="next-link" href="/system-view/index.html">
+        <span>系统运行视图</span><span>→</span>
+      </a>
+      <a class="next-link" href="/docs/architecture/index.html">
+        <span>内核架构总览</span><span>→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="faq-title">
+  <h2 id="faq-title">常见问题与概念辨析</h2>
+
+  <div class="faq-panel">
+    <h3>学习过程中遇到概念混淆？</h3>
+    <p>
+      抢占式调度是否意味着硬实时？中断响应和任务切换有什么区别？
+      上下文切换为什么受到处理器架构影响？
+      这些问题通常需要结合具体的执行模型理解。
+    </p>
+    <a href="faq.html">阅读 RTOS 常见问题与解答 →</a>
+  </div>
+</section>
+
 <footer>
 © 2017–2026 HRTOS. Real-Time Operating System Knowledge System.
 </footer>
 
-</div>
+</main>
 
 </body>
 </html>

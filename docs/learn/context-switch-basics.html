@@ -1,12 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>上下文切换基础 | HRTOS 学习模块</title>
-<meta name="description" content="HRTOS 上下文切换基础知识，解释任务切换时寄存器保存与恢复机制，以及实时系统中的切换开销与影响。" />
-
+<title>上下文切换原理：寄存器、堆栈与任务恢复 | HRTOS</title>
+<meta name="description" content="系统理解 RTOS 上下文切换机制，涵盖任务执行现场、寄存器与堆栈保存、调度触发、切换开销，以及 8051 单片机上的架构约束。" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/learn/context-switch-basics.html" />
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
@@ -16,19 +18,26 @@
   --text:#e2e8f0;
   --muted:#94a3b8;
   --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+  --panel:#111c2e;
+  --panel-soft:rgba(15,23,42,.6);
+  --shadow:0 20px 48px rgba(2,6,23,.25);
+  --radius:12px;
   color-scheme:dark;
 }
 
 *{box-sizing:border-box}
+
+html{
+  scroll-behavior:smooth;
+  scroll-padding-top:90px;
+}
 
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
+  line-height:1.8;
 }
 
 a{
@@ -36,114 +45,294 @@ a{
   text-decoration:none;
 }
 
+a:hover{color:#7dd3fc}
+
+a:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:4px;
+}
+
 .page{
-  width:min(1180px, calc(100% - 40px));
+  width:min(1180px,calc(100% - 40px));
   margin:0 auto;
-  padding:96px 0 56px;
+  padding:88px 0 56px;
   display:grid;
-  gap:40px;
+  gap:38px;
 }
 
 .breadcrumb{
-  font-size:14px;
+  font-size:13px;
   color:var(--muted);
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
-}
+.breadcrumb a{color:#7dd3fc}
 
 .hero{
   display:grid;
   gap:16px;
+  max-width:920px;
 }
 
 .hero-label{
   display:inline-flex;
   width:fit-content;
-  padding:8px 14px;
+  padding:5px 12px;
   border-radius:999px;
-  border:1px solid rgba(56,189,248,.22);
+  border:1px solid rgba(56,189,248,.24);
   color:#bae6fd;
-  font-size:14px;
+  background:rgba(56,189,248,.06);
+  font-size:12px;
+  letter-spacing:.5px;
 }
 
 .hero h1{
   margin:0;
-  font-size:42px;
+  font-size:clamp(30px,4.5vw,44px);
+  line-height:1.3;
+  letter-spacing:-.7px;
 }
 
 .hero p{
   margin:0;
-  max-width:860px;
+  max-width:850px;
   color:var(--muted);
+  font-size:16px;
 }
 
 .meta{
   display:flex;
-  gap:10px;
+  gap:9px;
   flex-wrap:wrap;
 }
 
 .tag{
-  padding:6px 12px;
+  padding:5px 11px;
   border:1px solid var(--border);
-  border-radius:999px;
-  font-size:13px;
+  border-radius:7px;
+  font-size:12px;
   color:#bae6fd;
   background:rgba(15,23,42,.4);
 }
 
 .section{
   display:grid;
-  gap:12px;
+  gap:15px;
+  min-width:0;
 }
 
 .section h2{
   margin:0;
-  font-size:22px;
+  font-size:clamp(21px,3vw,25px);
+  line-height:1.45;
+}
+
+.section h3{
+  margin:0 0 8px;
+  font-size:17px;
 }
 
 .section p{
   margin:0;
-  color:var(--muted);
+  color:#bdc9d9;
 }
 
-.block{
-  padding:22px;
-  border-radius:10px;
-  border:1px solid rgba(56,189,248,.18);
-  background:rgba(15,23,42,.6);
-  font-family:Consolas, monospace;
-  color:#7dd3fc;
-  font-size:14px;
-  line-height:1.8;
-  white-space: pre-wrap;
-  word-break: break-word;
+.lead{
+  font-size:15px;
 }
+
+.kicker{
+  color:#7dd3fc;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:1.5px;
+}
+
+.callout{
+  padding:20px 22px;
+  border-radius:var(--radius);
+  border:1px solid rgba(56,189,248,.22);
+  background:linear-gradient(120deg,rgba(56,189,248,.07),rgba(15,23,42,.6));
+}
+
+.callout p{
+  font-size:14px;
+}
+
+.callout strong{color:#e0f2fe}
 
 .grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+  gap:16px;
 }
 
 .card{
-  padding:22px;
-  border-radius:10px;
+  min-width:0;
+  padding:21px;
+  border-radius:var(--radius);
   border:1px solid var(--border);
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  background:linear-gradient(180deg,rgba(30,41,59,.65),rgba(15,23,42,.86));
 }
 
 .card h3{
-  margin:0 0 10px;
-  font-size:18px;
+  margin:0 0 9px;
+  font-size:16px;
 }
 
 .card p{
-  margin:0;
   color:var(--muted);
   font-size:14px;
+}
+
+.card .index{
+  display:block;
+  color:#7dd3fc;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:1px;
+  margin-bottom:10px;
+}
+
+.steps{
+  display:grid;
+  gap:0;
+  counter-reset:step;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+
+.step{
+  counter-increment:step;
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr);
+  gap:14px;
+  align-items:start;
+  padding:18px 20px;
+  background:rgba(17,28,46,.6);
+}
+
+.step + .step{
+  border-top:1px solid var(--border);
+}
+
+.step::before{
+  content:counter(step,decimal-leading-zero);
+  color:#7dd3fc;
+  font-size:12px;
+  font-weight:700;
+  padding-top:3px;
+}
+
+.step h3{
+  margin:0 0 5px;
+  font-size:15px;
+}
+
+.step p{
+  font-size:13px;
+  color:var(--muted);
+}
+
+.code{
+  padding:20px 22px;
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+  background:#0a1120;
+  color:#bae6fd;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:13px;
+  line-height:1.9;
+  overflow-x:auto;
+  white-space:pre;
+}
+
+.code-note{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.table-wrap{
+  width:100%;
+  overflow-x:auto;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:520px;
+  font-size:13px;
+}
+
+th,td{
+  padding:13px 15px;
+  text-align:left;
+  vertical-align:top;
+  border-bottom:1px solid var(--border);
+}
+
+th{
+  color:#bae6fd;
+  background:rgba(17,28,46,.9);
+  font-weight:600;
+}
+
+td{color:#bdc9d9}
+
+tr:last-child td{border-bottom:none}
+
+.architecture{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+
+.arch-item{
+  padding:17px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--panel);
+}
+
+.arch-item h3{
+  font-size:14px;
+  margin:0 0 8px;
+}
+
+.arch-item p{
+  color:var(--muted);
+  font-size:12px;
+}
+
+.links{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+
+.link-card{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  padding:17px 19px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--panel);
+  transition:border-color .18s;
+}
+
+.link-card:hover{border-color:rgba(56,189,248,.5)}
+
+.link-card strong{
+  font-size:14px;
+  color:#bae6fd;
+}
+
+.link-card span{
+  font-size:12px;
+  color:var(--muted);
 }
 
 .footer{
@@ -155,9 +344,34 @@ a{
 }
 
 @media(max-width:900px){
-  .grid{
-    grid-template-columns:1fr;
+  .architecture{grid-template-columns:1fr}
+}
+
+@media(max-width:700px){
+  .page{
+    width:calc(100% - 32px);
+    padding-top:36px;
+    gap:30px;
   }
+
+  .grid,.links{grid-template-columns:1fr}
+
+  .hero p{font-size:15px}
+
+  .card{padding:18px}
+
+  .step{
+    grid-template-columns:32px minmax(0,1fr);
+    padding:16px;
+    gap:10px;
+  }
+
+  .callout{padding:17px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none!important}
 }
 </style>
 </head>
@@ -166,201 +380,461 @@ a{
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/learn/index.html">学习模块</a> /
-    <span>上下文切换基础</span>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    /
+    <a href="/docs/learn/index.html">学习模块</a>
+    /
+    <span aria-current="page">上下文切换基础</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS 学习模块</span>
+  <header class="hero">
+    <span class="hero-label">LEARN / KERNEL EXECUTION</span>
 
-    <h1>上下文切换基础（Context Switch Basics）</h1>
+    <h1>上下文切换基础<br>Context Switch Basics</h1>
 
     <p>
-      上下文切换（Context Switch）是实时操作系统中最底层、也是最关键的执行机制之一。
-      它决定了系统能否在多任务并发环境中维持“时间确定性”，并直接影响RTOS的实时性能边界。
+      上下文切换是多任务操作系统复用处理器的关键机制。
+      它负责保存当前执行流的必要状态，并使另一个执行流能够从正确的位置继续运行。
+      理解这一过程，是认识任务调度、中断处理和实时响应的重要基础。
     </p>
 
     <div class="meta">
       <span class="tag">Task Switching</span>
-      <span class="tag">Kernel Core</span>
-      <span class="tag">Deterministic Execution</span>
+      <span class="tag">CPU Context</span>
+      <span class="tag">Stack Management</span>
+      <span class="tag">8051 Architecture</span>
+    </div>
+  </header>
+
+  <section class="callout" aria-label="核心概念">
+    <span class="kicker">CORE CONCEPT</span>
+    <p>
+      <strong>上下文切换解决的是执行现场如何迁移，而调度解决的是接下来应该运行谁。</strong>
+      两者紧密相关，但不是同一个概念。
+      上下文切换的具体步骤取决于处理器架构、编译器约定和内核实现。
+    </p>
+  </section>
+
+  <section class="section">
+    <span class="kicker">01 / DEFINITION</span>
+    <h2>一、什么是上下文切换？</h2>
+
+    <p class="lead">
+      上下文（Context）是一个执行流在特定时刻继续运行所需的处理器状态及相关执行信息。
+      上下文切换（Context Switch）则是从一个执行流转移到另一个执行流时，
+      保存前者所需状态、建立后者执行现场的过程。
+    </p>
+
+    <p>
+      在多任务 RTOS 中，多个任务共享同一个处理器。
+      当调度器决定更换当前任务时，内核必须保证被切出的任务以后仍能正确恢复，
+      同时目标任务也能在正确的执行位置继续运行。
+    </p>
+
+    <div class="callout">
+      <p>
+        <strong>需要注意：</strong>
+        并非每次函数调用、每次中断或每次调度判断都会发生任务上下文切换。
+        如果调度结果仍是当前任务，就可能不需要切换到另一个任务。
+      </p>
     </div>
   </section>
 
-  <div class="block" style="margin-top:16px;">
-本页面属于 HRTOS 学习体系中的 <b>内核执行层</b>。
-
-学习路径结构：
-WHY层（为什么需要实时系统）
-→ SYSTEM层（系统结构设计）
-→ LEARN层（机制实现原理）
-→ KERNEL层（底层实现）
-
-当前章节：
-<b>上下文切换 = 实时系统最底层执行原语</b>
-  </div>
-
   <section class="section">
-    <h2>一、什么是上下文切换</h2>
-    <p>
-      上下文切换是指CPU从一个任务切换到另一个任务执行时，
-      将当前任务的运行状态完整保存，并恢复目标任务运行状态的过程。
-      所谓“上下文”，本质上是任务执行现场的完整快照。
-    </p>
-
-    <p>
-      在RTOS中，每一个任务都被视为一个独立的执行流，它拥有自己的寄存器状态、栈空间以及执行指针。
-      当系统发生切换时，这些状态必须被严格保存，否则任务将无法从正确位置继续执行。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>二、为什么需要上下文切换</h2>
-    <p>
-      单核CPU在同一时刻只能执行一个任务，但实际系统往往需要多个任务“并发运行”。
-      这种并发是通过快速切换实现的时间片交错执行。
-    </p>
-
-    <p>
-      上下文切换的本质作用是：在多个任务之间复用CPU，同时保证执行连续性。
-      如果没有它，多任务系统无法成立。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>三、上下文包含哪些内容</h2>
+    <span class="kicker">02 / WHY</span>
+    <h2>二、为什么需要上下文切换？</h2>
 
     <div class="grid">
-      <div class="card">
-        <h3>通用寄存器</h3>
-        <p>保存运算临时数据，是任务执行核心状态。</p>
-      </div>
+      <article class="card">
+        <span class="index">01 / CONTINUITY</span>
+        <h3>保持任务执行连续性</h3>
+        <p>
+          任务被暂停后，其必要的寄存器、堆栈和执行位置等状态必须得到妥善保留，
+          才能在后续恢复时继续正确执行。
+        </p>
+      </article>
 
-      <div class="card">
-        <h3>程序计数器（PC）</h3>
-        <p>记录下一条执行指令地址。</p>
-      </div>
+      <article class="card">
+        <span class="index">02 / MULTITASKING</span>
+        <h3>支持处理器资源复用</h3>
+        <p>
+          单核处理器在某一时刻执行有限的指令流。
+          操作系统通过任务切换，让多个任务在时间上交替获得处理器。
+        </p>
+      </article>
 
-      <div class="card">
-        <h3>栈指针（SP）</h3>
-        <p>指向任务栈空间，是函数调用基础。</p>
-      </div>
+      <article class="card">
+        <span class="index">03 / RESPONSE</span>
+        <h3>响应任务状态变化</h3>
+        <p>
+          当前任务阻塞或更高优先级任务就绪时，
+          调度器可以根据系统策略决定是否更换当前执行任务。
+        </p>
+      </article>
 
-      <div class="card">
-        <h3>状态寄存器（PSR）</h3>
-        <p>记录中断状态与执行模式。</p>
-      </div>
+      <article class="card">
+        <span class="index">04 / ISOLATION</span>
+        <h3>维护独立执行现场</h3>
+        <p>
+          每个任务需要满足其执行模型所要求的状态保存规则。
+          如果必要状态遭到破坏，恢复后的行为就可能错误。
+        </p>
+      </article>
     </div>
   </section>
 
   <section class="section">
-    <h2>四、上下文切换完整流程</h2>
-
-    <div class="block">
-1. 进入调度点
-2. 保存CPU寄存器
-3. 保存PC
-4. 保存SP
-5. 保存TCB状态
-6. 选择下一个任务
-7. 恢复SP
-8. 恢复PC与寄存器
-9. 返回执行
-    </div>
-  </section>
-
-  <section class="section">
-    <h2>五、触发方式</h2>
-
-    <div class="grid">
-      <div class="card">
-        <h3>时间片到期</h3>
-        <p>定时器触发调度。</p>
-      </div>
-
-      <div class="card">
-        <h3>高优先级唤醒</h3>
-        <p>高优先级任务抢占。</p>
-      </div>
-
-      <div class="card">
-        <h3>任务阻塞</h3>
-        <p>任务主动放弃CPU。</p>
-      </div>
-
-      <div class="card">
-        <h3>中断触发</h3>
-        <p>中断导致调度变化。</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <h2>六、代价与影响</h2>
+    <span class="kicker">03 / CONTEXT</span>
+    <h2>三、上下文包含哪些内容？</h2>
 
     <p>
-      上下文切换包含寄存器保存、栈切换、TCB访问与缓存失效等开销。
-      切换越频繁，系统有效执行时间越少。
+      上下文的具体组成没有适用于所有处理器的统一清单。
+      以下列出常见类别；某项状态可能由硬件自动保存、由软件保存，
+      或由其他机制保证不需要在每次切换时保存。
     </p>
 
-    <div class="block">
-典型开销：
-- 寄存器保存/恢复
-- 栈访问
-- TCB读写
-- Cache miss
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>状态类别</th>
+            <th>作用</th>
+            <th>实现注意事项</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>程序计数器（PC）</td>
+            <td>确定执行流恢复时的位置。</td>
+            <td>可能由调用、返回、中断入口等硬件或指令机制参与保存。</td>
+          </tr>
+          <tr>
+            <td>栈指针（SP）</td>
+            <td>定位当前执行流使用的栈。</td>
+            <td>切换时需要遵循处理器的栈结构与编译器调用约定。</td>
+          </tr>
+          <tr>
+            <td>通用寄存器</td>
+            <td>保存计算结果、临时变量及参数等状态。</td>
+            <td>具体保存集合取决于 ABI、寄存器使用规则和切换实现。</td>
+          </tr>
+          <tr>
+            <td>处理器状态</td>
+            <td>包括特定架构中的标志位、控制状态等。</td>
+            <td>是否需要保存取决于这些状态是否可能跨切换发生变化。</td>
+          </tr>
+          <tr>
+            <td>任务控制信息</td>
+            <td>记录任务栈位置、状态及调度所需的数据。</td>
+            <td>通常由内核维护，不等同于 CPU 寄存器上下文。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <p>
+        <strong>PC 与 SP 的含义需要区分。</strong>
+        PC 表示处理器执行位置；SP 表示当前栈的位置。
+        任务控制块（TCB）则是内核管理任务的数据结构。
+        三者承担不同职责，不能将 TCB 简单理解为整个 CPU 上下文。
+      </p>
     </div>
   </section>
 
   <section class="section">
-    <h2>七、本质总结</h2>
+    <span class="kicker">04 / EXECUTION</span>
+    <h2>四、上下文切换的典型流程</h2>
 
     <p>
-      上下文切换本质是执行状态的迁移机制。
-      RTOS通过它实现多任务时间复用，并保证系统可预测性。
+      以下是一个抽象模型，用来解释从当前任务切换到目标任务时需要解决的问题。
+      实际实现可能将多个步骤合并到汇编代码、中断入口或调度器中。
     </p>
 
-    <div class="block">
-核心：
-状态保存 + 调度决策 + 状态恢复
+    <div class="steps">
+      <div class="step">
+        <div>
+          <h3>出现切换机会</h3>
+          <p>例如当前任务阻塞、调度时机到来，或系统需要响应更高优先级任务。</p>
+        </div>
+      </div>
 
-目标：
-- 不丢状态
-- 可预测
-- 有上界
+      <div class="step">
+        <div>
+          <h3>保护当前执行现场</h3>
+          <p>按照架构与调用约定，保存继续运行所需的寄存器、返回位置及其他必要状态。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div>
+          <h3>保存当前任务的恢复信息</h3>
+          <p>将任务恢复所需的信息放置在约定位置，例如保存当前任务的栈指针。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div>
+          <h3>确定目标任务</h3>
+          <p>调度器根据就绪状态、优先级及相应调度策略选择接下来应运行的任务。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div>
+          <h3>建立目标任务的执行现场</h3>
+          <p>恢复目标任务的栈位置和所需处理器状态；首次运行的任务可能使用预先构造的初始现场。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div>
+          <h3>继续执行目标任务</h3>
+          <p>通过相应的返回、跳转或恢复机制，使处理器继续执行目标任务。</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="code-note">
+      注：这是概念流程，并不表示所有 RTOS 都严格按照六个独立步骤执行，
+      也不表示调度器必须在寄存器全部保存后才开始任何调度相关操作。
+    </p>
+  </section>
+
+  <section class="section">
+    <span class="kicker">05 / TRIGGERS</span>
+    <h2>五、什么情况下会发生任务切换？</h2>
+
+    <div class="grid">
+      <article class="card">
+        <h3>定时器与时间片</h3>
+        <p>
+          定时器中断可能使调度器获得运行机会。
+          是否切换取决于时间片策略、任务优先级及当前系统状态。
+        </p>
+      </article>
+
+      <article class="card">
+        <h3>更高优先级任务就绪</h3>
+        <p>
+          在允许抢占的调度模型中，如果更高优先级任务变为就绪状态，
+          内核可能在适当时机切换到该任务。
+        </p>
+      </article>
+
+      <article class="card">
+        <h3>当前任务阻塞或主动让出</h3>
+        <p>
+          当前任务等待事件、延时或主动让出处理器时，
+          内核可能选择另一个可运行任务。
+        </p>
+      </article>
+
+      <article class="card">
+        <h3>中断返回前的调度判断</h3>
+        <p>
+          中断可能改变任务就绪状态。
+          如果内核允许在中断退出路径进行调度，任务切换可能发生在相应的退出阶段。
+        </p>
+      </article>
+    </div>
+
+    <div class="callout">
+      <p>
+        <strong>区分三个事件：</strong>
+        中断发生、调度器作出决定、任务上下文实际切换。
+        它们可能连续发生，但并不是同一件事。
+        在某些系统中，中断结束后仍然继续运行原任务。
+      </p>
     </div>
   </section>
 
   <section class="section">
-    <h2>系统关联路径</h2>
+    <span class="kicker">06 / COST</span>
+    <h2>六、上下文切换的开销与实时性</h2>
+
+    <p>
+      上下文切换需要执行额外的保存、恢复和管理操作。
+      这些操作占用处理器时间，也可能影响任务响应时间。
+      但切换成本并不只由寄存器数量决定，还取决于具体实现和切换路径。
+    </p>
 
     <div class="grid">
+      <article class="card">
+        <h3>直接开销</h3>
+        <p>
+          寄存器保存与恢复、栈访问、任务控制信息更新，
+          以及调度器执行所需的指令。
+        </p>
+      </article>
 
-      <a class="card" href="/system-view/04-scheduler-cycle.html">
-        <h3>上游：调度器</h3>
-        <p>决定何时发生切换</p>
+      <article class="card">
+        <h3>路径相关开销</h3>
+        <p>
+          中断入口与退出、临界区处理、优先级判断等操作，
+          可能成为完整切换路径的一部分。
+        </p>
+      </article>
+
+      <article class="card">
+        <h3>切换频率</h3>
+        <p>
+          切换过于频繁可能增加管理成本，
+          但减少切换也不能以牺牲必要的任务响应为代价。
+        </p>
+      </article>
+
+      <article class="card">
+        <h3>最坏情况分析</h3>
+        <p>
+          评估实时性时，应分析相关执行路径的最坏情况耗时，
+          并结合中断延迟、调度等待和其他阻塞因素。
+        </p>
+      </article>
+    </div>
+
+    <div class="code">响应时间 ≠ 上下文切换时间
+
+响应时间还可能包含：
+  中断响应延迟
+  调度等待时间
+  更高优先级任务的执行时间
+  临界区与资源阻塞
+  目标任务自身的执行时间</div>
+
+    <p>
+      因此，上下文切换足够快并不自动意味着系统满足硬实时约束。
+      对实时系统而言，还需要根据任务截止时间与具体执行路径进行分析。
+    </p>
+  </section>
+
+  <section class="section">
+    <span class="kicker">07 / 8051</span>
+    <h2>七、8051 上下文切换的特殊约束</h2>
+
+    <p>
+      8051 与许多现代 32 位微控制器具有不同的处理器结构。
+      在 8051 上设计任务切换机制时，寄存器组、内部 RAM、堆栈以及中断入口行为，
+      都可能直接影响上下文保存与恢复方案。
+    </p>
+
+    <div class="architecture">
+      <article class="arch-item">
+        <h3>寄存器组</h3>
+        <p>
+          8051 的寄存器组与 PSW 中的寄存器组选择位相关。
+          切换实现必须正确处理寄存器组的使用和恢复约定。
+        </p>
+      </article>
+
+      <article class="arch-item">
+        <h3>内部 RAM 与堆栈</h3>
+        <p>
+          内部 RAM 空间有限，栈增长与任务现场保存需要考虑内存布局和可用空间。
+        </p>
+      </article>
+
+      <article class="arch-item">
+        <h3>中断与返回路径</h3>
+        <p>
+          中断入口、返回地址、寄存器保存规则与嵌套行为，
+          都会影响从中断进入调度及恢复任务的过程。
+        </p>
+      </article>
+    </div>
+
+    <div class="callout">
+      <p>
+        <strong>架构原则：</strong>
+        上下文切换必须与实际处理器、编译器及内核的执行约定保持一致。
+        不能直接将 Cortex-M 的自动压栈模型或其他架构的寄存器保存规则套用到 8051。
+      </p>
+    </div>
+
+    <p>
+      对 HRTOS 而言，进一步分析时应以实际的任务切换汇编、栈布局、
+      中断入口与退出代码，以及 Keil C51 的编译结果为依据。
+      只有确认了具体实现，才能准确说明哪些状态由硬件处理、哪些由内核保存，
+      并计算切换路径的实际指令开销。
+    </p>
+  </section>
+
+  <section class="section">
+    <span class="kicker">08 / SUMMARY</span>
+    <h2>八、核心结论</h2>
+
+    <div class="callout">
+      <p>
+        上下文切换的核心任务，是确保执行流在暂停之后仍能正确恢复。
+        调度器决定后续执行任务，而上下文切换机制负责实现相应的执行现场迁移。
+      </p>
+      <p style="margin-top:12px">
+        <strong>正确性</strong>决定任务能否恢复，
+        <strong>执行开销</strong>影响处理器效率，
+        <strong>最坏情况边界</strong>则是实时性分析的重要组成部分。
+      </p>
+    </div>
+
+    <div class="code">上下文切换：
+  保存当前执行现场
+  + 确定目标执行流
+  + 恢复目标执行现场
+
+工程分析：
+  处理器架构
+  + 编译器调用约定
+  + 内核切换路径
+  + 最坏情况执行时间</div>
+  </section>
+
+  <section class="section">
+    <span class="kicker">RELATED TOPICS</span>
+    <h2>继续学习</h2>
+
+    <p>
+      上下文切换需要结合调度决策和中断执行路径理解。
+      建议继续阅读以下相关内容。
+    </p>
+
+    <div class="links">
+      <a class="link-card" href="scheduling-basics.html">
+        <strong>任务调度基础</strong>
+        <span>理解调度器如何决定下一个运行任务</span>
       </a>
 
-      <a class="card" href="/system-view/01-execution-flow.html">
-        <h3>同层：执行流</h3>
-        <p>任务执行路径模型</p>
+      <a class="link-card" href="preemptive-vs-cooperative.html">
+        <strong>抢占式与协作式调度</strong>
+        <span>理解不同调度模型下的任务切换时机</span>
       </a>
 
-      <a class="card" href="/docs/architecture/interrupt/interrupt-flow.html">
-        <h3>下游：中断</h3>
-        <p>切换主要触发来源</p>
+      <a class="link-card" href="interrupt-basics.html">
+        <strong>中断处理基础</strong>
+        <span>理解中断入口、事件处理和中断退出</span>
       </a>
 
+      <a class="link-card" href="/system-view/01-execution-flow.html">
+        <strong>系统执行流程</strong>
+        <span>从整体执行路径理解任务运行过程</span>
+      </a>
+
+      <a class="link-card" href="/system-view/04-scheduler-cycle.html">
+        <strong>调度器运行周期</strong>
+        <span>进一步理解调度决策与任务切换的关系</span>
+      </a>
+
+      <a class="link-card" href="/docs/architecture/index.html">
+        <strong>系统架构总览</strong>
+        <span>从机制原理进入内核结构与系统设计</span>
+      </a>
     </div>
   </section>
 
   <footer class="footer">
-  © 2017–2026 HRTOS · 内核执行层 · 上下文切换机制
-  <div style="margin-top:8px;color:#64748b;font-size:12px;">
-    Kernel Execution Architecture
-  </div>
+    © 2017–2026 HRTOS · 内核执行层 · 上下文切换机制
+    <div style="margin-top:8px;color:#64748b;font-size:12px">
+      Kernel Execution Architecture
+    </div>
   </footer>
 
 </main>
