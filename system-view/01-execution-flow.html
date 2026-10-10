@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>01 执行流模型 | HRTOS System View</title>
-<meta name="description" content="描述HRTOS系统中的任务执行流、调度路径与时间触发机制">
+<title>Execution Flow | HRTOS 8051 RTOS System View</title>
+<meta name="description" content="HRTOS 8051 实时操作系统执行流模型：解析任务执行、中断介入、调度决策、上下文切换与时间分析之间的关系。">
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="execution-flow">
@@ -31,7 +32,7 @@ body{
   line-height:1.75;
 }
 
-/* NAV */
+/* NAV — 保留原有结构与样式 */
 .nav{
   display:flex;
   justify-content:space-between;
@@ -54,24 +55,73 @@ body{
   color:#cfe3ff;
 }
 
-/* layout */
+/* Layout */
 .container{
   max-width:920px;
   margin:0 auto;
   padding:60px 24px;
 }
 
+.hero{
+  margin-bottom:34px;
+}
+
+.eyebrow{
+  color:#7dd3fc;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.14em;
+  margin-bottom:12px;
+}
+
 h1{
   font-size:38px;
-  margin:0 0 10px;
+  line-height:1.3;
+  margin:0 0 14px;
+}
+
+h2{
+  margin:0 0 12px;
+  font-size:19px;
+  line-height:1.5;
+  color:#cfe3ff;
+}
+
+h3{
+  margin:0 0 8px;
+  font-size:15px;
+  color:#e2e8f0;
+}
+
+p{
+  margin:0 0 12px;
+}
+
+p:last-child{
+  margin-bottom:0;
 }
 
 .sub{
   color:var(--muted);
-  margin-bottom:40px;
+  margin-bottom:20px;
+  max-width:760px;
 }
 
-/* card */
+.tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.tag{
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:4px 10px;
+  color:#cbd5e1;
+  font-size:12px;
+}
+
+/* Cards */
 .card{
   background:rgba(17,24,35,.92);
   border:1px solid var(--border);
@@ -82,26 +132,165 @@ h1{
 }
 
 .card h2{
-  margin:0 0 10px;
-  font-size:18px;
-  color:#cfe3ff;
   border-left:3px solid var(--accent);
   padding-left:10px;
 }
 
 .en{
   color:var(--muted);
-  font-size:14px;
-  margin-top:6px;
+  font-size:13px;
+  margin-top:12px;
 }
 
-/* footer */
+/* Execution path diagram */
+.path{
+  background:#0b1220;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  margin:18px 0 28px;
+}
+
+.path-node{
+  border:1px solid rgba(56,189,248,.28);
+  background:rgba(15,23,42,.9);
+  border-radius:9px;
+  padding:13px 15px;
+  text-align:center;
+}
+
+.path-node strong{
+  display:block;
+  color:#e0f2fe;
+  font-size:14px;
+}
+
+.path-node span{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  margin-top:3px;
+}
+
+.path-arrow{
+  text-align:center;
+  color:#64748b;
+  font-size:17px;
+  line-height:1.8;
+}
+
+.path-branch{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:12px;
+}
+
+.path-branch .path-node{
+  border-color:rgba(245,158,11,.3);
+}
+
+/* Technical blocks */
+.note{
+  border-left:3px solid #60a5fa;
+  padding:12px 15px;
+  background:rgba(30,41,59,.45);
+  color:#cbd5e1;
+  font-size:14px;
+  margin-top:14px;
+}
+
+.formula{
+  background:#0b1220;
+  border:1px solid var(--border);
+  border-radius:9px;
+  padding:15px 17px;
+  margin:14px 0;
+  color:#e2e8f0;
+  font-size:14px;
+  line-height:1.9;
+  overflow-wrap:anywhere;
+}
+
+ul{
+  padding-left:21px;
+  margin:8px 0 0;
+}
+
+li{
+  color:#cbd5e1;
+  font-size:14px;
+  margin-bottom:8px;
+}
+
+li:last-child{
+  margin-bottom:0;
+}
+
+a{
+  color:#7dd3fc;
+  text-decoration:none;
+}
+
+a:hover{
+  text-decoration:underline;
+}
+
+.related{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+
+.related a{
+  display:block;
+  border:1px solid var(--border);
+  border-radius:9px;
+  padding:13px 15px;
+  background:#0f1722;
+}
+
+.related strong{
+  display:block;
+  color:#e2e8f0;
+  font-size:14px;
+}
+
+.related span{
+  color:var(--muted);
+  font-size:12px;
+}
+
+/* Footer — 保留原有结构与内容 */
 .site-footer{
   text-align:center;
   border-top:1px solid rgba(148,163,184,.14);
   padding:18px 12px;
   color:#8ea3be;
   font-size:.95rem;
+}
+
+@media(max-width:640px){
+  .container{
+    padding:38px 18px;
+  }
+
+  h1{
+    font-size:30px;
+  }
+
+  .card{
+    padding:18px;
+  }
+
+  .path{
+    padding:14px;
+  }
+
+  .path-branch,
+  .related{
+    grid-template-columns:1fr;
+  }
 }
 </style>
 </head>
@@ -118,135 +307,362 @@ h1{
   </div>
 </div>
 
-<div class="container">
+<main class="container">
 
-  <h1>1. 执行流模型（Execution Flow）</h1>
-  <div class="sub">RTOS中的时间执行路径模型</div>
+  <header class="hero">
+    <div class="eyebrow">SYSTEM VIEW / EXECUTION MODEL</div>
 
-  <div class="card">
+    <h1>执行流模型（Execution Flow）</h1>
+
+    <p class="sub">
+      执行流描述处理器在任务代码、中断处理程序和内核控制路径之间的运行过程。
+      对实时操作系统而言，理解执行流不仅需要知道代码如何执行，
+      还需要明确执行路径的切换条件、时间开销与分析边界。
+    </p>
+
+    <div class="tags">
+      <span class="tag">8051 RTOS</span>
+      <span class="tag">Execution Path</span>
+      <span class="tag">Interrupt Response</span>
+      <span class="tag">WCET / WCRT</span>
+    </div>
+  </header>
+
+  <section class="card">
     <h2>核心定义</h2>
+
     <p>
-      执行流描述任务从“触发条件成立”到“完成返回”的完整时间路径。
+      执行流是处理器从某个明确的起始事件或执行位置出发，
+      沿实际控制路径运行，直到到达指定结束位置的过程。
     </p>
+
     <p>
-      在 HRTOS 中，它不仅是控制流，更是时间流，每一步都必须可分析。
+      在 HRTOS 中，执行流可能涉及任务运行、内核服务、中断处理、
+      调度判断以及上下文保存与恢复。不同执行路径的组成并不完全相同，
+      因此时间分析必须先明确分析对象。
     </p>
+
     <div class="en">
-      Execution Flow is a time-bounded execution path with analyzable timing constraints.
+      Execution Flow describes a concrete processor path across task, interrupt,
+      and kernel execution, with explicit entry and exit boundaries.
     </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>1. 任务触发（Trigger）</h2>
-    <p>
-      任务来源于三类触发：外部中断、内核事件、调度器唤醒。
-    </p>
-    <p>
-      触发必须具备低抖动与有界延迟，否则系统时间模型失效。
-    </p>
-  </div>
+  <section class="card">
+    <h2>执行流的基本结构</h2>
 
-  <div class="card">
-    <h2>2. 调度决策（Scheduling）</h2>
     <p>
-      调度器从就绪集合中选择可执行任务。
+      一条典型的任务执行路径可以抽象为以下过程。
+      这是一种分析视图，而不是要求所有任务都严格经过每一个阶段。
     </p>
+
+    <div class="path">
+      <div class="path-node">
+        <strong>1. 触发条件或执行入口</strong>
+        <span>任务就绪、超时到期、中断到达或任务主动调用内核服务</span>
+      </div>
+
+      <div class="path-arrow">↓</div>
+
+      <div class="path-node">
+        <strong>2. 内核处理与状态判断</strong>
+        <span>处理事件、检查任务状态，或执行相应内核操作</span>
+      </div>
+
+      <div class="path-arrow">↓</div>
+
+      <div class="path-node">
+        <strong>3. 调度判断（如适用）</strong>
+        <span>根据内核调度规则决定是否需要改变执行对象</span>
+      </div>
+
+      <div class="path-arrow">↓</div>
+
+      <div class="path-node">
+        <strong>4. 执行或上下文恢复</strong>
+        <span>继续当前任务，或切换至符合调度条件的任务</span>
+      </div>
+
+      <div class="path-branch">
+        <div class="path-node">
+          <strong>路径 A：继续运行</strong>
+          <span>当前执行对象保持不变</span>
+        </div>
+
+        <div class="path-node">
+          <strong>路径 B：控制流转移</strong>
+          <span>发生中断处理、任务切换或其他内核路径转移</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      关键区别：事件发生不代表必然切换任务；进入调度判断也不代表调度结果一定不同。
+      应以实际执行路径判断哪些处理步骤真正发生。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>01. 触发来源（Trigger Sources）</h2>
+
     <p>
-      本质是约束满足问题：在不破坏时间约束前提下选择执行路径。
+      执行路径可以由多种事件或控制操作引起，不能简单地认为每个任务都由外部中断直接触发。
     </p>
+
+    <ul>
+      <li>
+        <strong>外部或外设中断：</strong>
+        处理器响应中断请求后进入相应中断服务路径。
+      </li>
+      <li>
+        <strong>系统 Tick 与超时：</strong>
+        系统时基推进后，内核可能处理到期事件并改变相关任务状态。
+      </li>
+      <li>
+        <strong>任务主动调用内核服务：</strong>
+        例如任务延时、等待消息、释放资源或发送消息。
+      </li>
+      <li>
+        <strong>任务状态变化：</strong>
+        某个任务具备运行条件后，可能进入就绪集合，等待调度器选择。
+      </li>
+    </ul>
+
+    <p>
+      这些来源可能影响执行流，但其具体作用取决于 HRTOS 的实际实现。
+      例如，任务变为就绪状态并不意味着它一定会立即运行。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>02. 调度决策（Scheduling Decision）</h2>
+
+    <p>
+      调度器根据任务就绪情况和内核规定的调度策略，决定接下来应执行哪个任务，
+      或判断当前执行对象是否可以继续运行。
+    </p>
+
+    <ul>
+      <li>任务优先级及同优先级任务的处理规则。</li>
+      <li>当前任务是否仍然具备运行条件。</li>
+      <li>时间片、延时到期和其他调度触发条件。</li>
+      <li>中断返回路径及内核执行环境对调度时机的影响。</li>
+    </ul>
+
+    <p>
+      调度是按照具体算法执行的控制决策，并不天然等同于一个通用的约束优化问题。
+      实时性是否满足，还需要进一步分析执行时间、干扰条件和任务截止时间。
+    </p>
+
     <div class="en">
-      Scheduling is constraint satisfaction under timing guarantees.
+      Scheduling selects the next execution context according to the implemented
+      scheduling policy and the current kernel state.
     </div>
-  </div>
 
-  <div class="card">
-    <h2>3. 就绪队列竞争（Ready Queue）</h2>
     <p>
-      多任务同时 READY 时进入竞争。
+      参见 <a href="/system-view/04-scheduler-cycle.html">Scheduler Cycle（调度周期）</a>。
     </p>
-    <p>
-      竞争因素包括优先级、抢占状态与资源依赖。
-    </p>
-    <p>
-      系统必须避免随机性，否则破坏确定性。
-    </p>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>4. 执行阶段（Execution）</h2>
-    <p>
-      CPU 执行任务主体逻辑，系统进入时间消耗阶段。
-    </p>
-    <p>
-      该阶段受中断抢占、高优先级插入、缓存与流水线延迟影响。
-    </p>
-    <p>
-      必须通过 WCET（最坏执行时间）约束建模。
-    </p>
-  </div>
+  <section class="card">
+    <h2>03. 任务状态与执行资格（Task State）</h2>
 
-  <div class="card">
-    <h2>5. 中断交互（Interrupt Interaction）</h2>
     <p>
-      执行流可能被中断打断并插入新的执行路径。
+      任务状态决定任务当前是否具备被调度执行的条件。
+      就绪状态、运行状态和阻塞状态之间的转换，会改变调度器可选择的任务集合。
     </p>
-    <p>
-      中断必须保证可控延迟与短执行路径，避免破坏任务窗口。
-    </p>
-  </div>
 
-  <div class="card">
-    <h2>6. 完成与返回（Completion）</h2>
-    <p>
-      任务完成后进入资源释放与调度回归。
-    </p>
-    <p>
-      系统关键点是重新进入可调度状态的时机。
-    </p>
-  </div>
+    <ul>
+      <li><strong>Ready：</strong>任务具备运行条件，等待获得处理器。</li>
+      <li><strong>Running：</strong>任务当前正在执行。</li>
+      <li><strong>Blocked：</strong>任务正在等待时间、消息或其他事件。</li>
+    </ul>
 
-  <div class="card">
-    <h2>7. 系统闭环（System Loop）</h2>
     <p>
-      执行流构成周期闭环：
+      上述名称是常见的任务状态抽象。具体状态定义、转换条件和特殊状态，
+      应以 HRTOS 对应版本的实现及文档为准。
     </p>
-    <p>
-      触发 → 调度 → 执行 → 中断 → 恢复 → 完成 → 再触发
-    </p>
-    <p>
-      RTOS 的核心是保证闭环时间误差不累积失控。
-    </p>
-  </div>
 
-  <div class="card">
+    <p>
+      任务状态变化和调度决策密切相关，但二者并不相同：
+      状态描述任务的运行资格，调度决策确定执行对象。
+    </p>
+
+    <p>
+      参见 <a href="/system-view/02-task-lifecycle.html">Task Lifecycle（任务生命周期）</a>。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>04. 中断介入与路径恢复（Interrupt Interaction）</h2>
+
+    <p>
+      任务执行过程中可能发生中断。处理器随后进入相应中断路径，
+      执行中断处理逻辑，并按照处理器和内核的具体机制返回或转移控制流。
+    </p>
+
+    <ul>
+      <li>中断响应时间受目标处理器、中断优先级和中断屏蔽状态等条件影响。</li>
+      <li>中断服务程序的执行时间会影响被打断任务的后续执行。</li>
+      <li>嵌套中断会引入额外的控制流与上下文管理开销。</li>
+      <li>中断退出后是否进行任务切换，取决于内核实现和当时的调度条件。</li>
+    </ul>
+
+    <p>
+      因此，中断分析不能只测量进入中断到退出中断的时间。
+      对任务实时性而言，还应明确中断对任务执行路径和响应时间的影响。
+    </p>
+
+    <div class="en">
+      Interrupt handling introduces additional execution paths and may affect
+      task response time, context restoration, and scheduling behavior.
+    </div>
+
+    <p>
+      参见 <a href="/system-view/03-interrupt-flow.html">Interrupt Flow（中断流）</a>。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>05. 执行时间与最坏情况分析（WCET）</h2>
+
+    <p>
+      执行时间必须对应明确的代码路径和测量边界。
+      不同路径可能具有不同的指令序列、分支条件、中断干扰与上下文处理开销。
+    </p>
+
+    <div class="formula">
+      <strong>路径时间分解示意：</strong><br>
+      T<sub>path</sub> = T<sub>entry</sub> + T<sub>processing</sub>
+      + T<sub>switch</sub> + T<sub>execution</sub> + T<sub>exit</sub>
+    </div>
+
+    <p>
+      以上各项是便于分析的时间分解方式，不表示每条路径都会包含所有项目，
+      也不能在没有检查路径边界的情况下直接相加。
+      如果某项不存在，应明确排除；如果不同阶段发生重叠，则应避免重复计数。
+    </p>
+
+    <p>
+      WCET（Worst-Case Execution Time）关注指定执行对象在规定分析条件下的最坏执行时间上界。
+      如果分析目标包含中断干扰、调度等待或资源阻塞，还必须明确这些因素属于 WCET
+      计算范围，还是需要在响应时间分析中单独处理。
+    </p>
+
+    <div class="note">
+      对 8051 目标进行指令级分析时，应以实际编译生成的机器码、目标芯片的指令周期、
+      时钟配置和明确的控制流边界为依据。仅凭源代码长度或平均测量值，
+      不能直接推出可信的最坏时间上界。
+    </div>
+
+    <p>
+      参见 <a href="/system-view/06-time-system.html">Time System（时间系统）</a>
+      与 <a href="/system-view/07-deterministic-chain.html">Deterministic Chain（确定性链）</a>。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>06. 完成、阻塞与再次调度</h2>
+
+    <p>
+      执行路径结束后，系统可能出现多种情况，而不是每次都进入相同的“完成与返回”阶段。
+    </p>
+
+    <ul>
+      <li><strong>继续执行：</strong>当前任务尚未让出处理器，继续运行其后续代码。</li>
+      <li><strong>主动阻塞或让出：</strong>任务等待事件或主动调用内核服务，调度器可能选择其他任务。</li>
+      <li><strong>任务切换：</strong>内核保存必要上下文，并恢复另一个可运行任务。</li>
+      <li><strong>中断返回：</strong>根据实际控制流恢复原有执行路径，或进入内核定义的后续路径。</li>
+    </ul>
+
+    <p>
+      对持续运行的嵌入式任务而言，“一次执行完成”通常需要人为定义边界，
+      例如一次消息处理、一轮控制计算或一次指定函数调用。
+      只有明确边界，才能对该路径进行重复测量和时间分析。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>07. 从执行流到实时性验证</h2>
+
+    <p>
+      执行流模型的工程价值，是将抽象的实时性要求转化为可定位、可分析和可验证的具体路径。
+    </p>
+
+    <ul>
+      <li><strong>明确对象：</strong>确定目标任务、事件、函数路径或内核操作。</li>
+      <li><strong>明确边界：</strong>规定从哪个事件或指令位置开始，到哪个位置结束。</li>
+      <li><strong>识别干扰：</strong>分析中断、临界区、上下文切换及资源访问等相关因素。</li>
+      <li><strong>建立证据：</strong>结合反汇编分析、目标硬件测量和压力测试，分别记录结果与适用条件。</li>
+      <li><strong>评估约束：</strong>将有依据的时间结果与指定的响应时间或截止时间要求比较。</li>
+    </ul>
+
+    <div class="formula">
+      Execution Path → Timing Analysis → Evidence → Deadline Evaluation
+    </div>
+
+    <p>
+      执行路径可分析，不等于已经证明整个系统具有硬实时保证。
+      最终结论仍取决于路径覆盖范围、最坏情况假设、系统负载及验证证据的完整性。
+    </p>
+  </section>
+
+  <section class="card">
     <h2>语义总结</h2>
+
     <p>
-      执行流的核心不是“任务执行过程”，而是“时间路径是否可建模”。
+      执行流连接了任务代码、内核控制路径、中断处理与调度机制。
+      它提供了一种明确分析对象和时间边界的方法，使系统行为能够逐步接受测量、分析和验证。
     </p>
+
     <p>
-      一旦时间不可分析，实时系统将退化为通用系统。
+      对 HRTOS 而言，重点不只是让任务按预期执行，
+      还包括理解执行路径为什么发生、控制流何时转移，以及时间结论在什么条件下成立。
     </p>
+
     <div class="en">
-      Real-time systems exist only when execution paths are time-bounded and analyzable.
+      An analyzable execution path is a foundation for timing analysis,
+      but system-level real-time guarantees require additional evidence.
     </div>
-  </div>
+  </section>
 
-  <div class="card">
+  <section class="card">
     <h2>相关阅读</h2>
-    <p><b>System View</b></p>
-    <p><a href="/system-view/index.html" style="color:#38bdf8;">返回总览</a></p>
 
-    <p><b>下一篇</b></p>
-    <p><a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;">任务生命周期 →</a></p>
+    <div class="related">
+      <a href="/system-view/index.html">
+        <strong>System View</strong>
+        <span>系统运行结构总览</span>
+      </a>
 
-    <p><b>相关模块</b></p>
-    <p>
-      <a href="/system-view/03-interrupt-flow.html" style="color:#38bdf8;">中断流模型</a><br>
-      <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度周期模型</a>
-    </p>
-  </div>
+      <a href="/system-view/02-task-lifecycle.html">
+        <strong>Task Lifecycle</strong>
+        <span>任务状态与生命周期</span>
+      </a>
 
-</div>
+      <a href="/system-view/03-interrupt-flow.html">
+        <strong>Interrupt Flow</strong>
+        <span>中断进入、处理与返回</span>
+      </a>
+
+      <a href="/system-view/04-scheduler-cycle.html">
+        <strong>Scheduler Cycle</strong>
+        <span>调度触发与调度过程</span>
+      </a>
+
+      <a href="/system-view/06-time-system.html">
+        <strong>Time System</strong>
+        <span>系统时基与时间约束</span>
+      </a>
+
+      <a href="/system-view/07-deterministic-chain.html">
+        <strong>Deterministic Chain</strong>
+        <span>执行确定性与因果关系</span>
+      </a>
+    </div>
+  </section>
+
+</main>
 
 <footer class="site-footer">
   © 2017–2026 HRTOS · SYSTEM VIEW

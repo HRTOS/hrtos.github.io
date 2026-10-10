@@ -1,75 +1,373 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Execution Flow Layer | HRTOS System View</title>
-<meta name="description" content="描述HRTOS系统中的任务执行流、调度路径与时间触发机制">
-
-<meta name="page-role" content="system-view">
-<meta name="semantic-node" content="execution-flow">
+<title>System Summary | HRTOS 8051 RTOS System View</title>
+<meta name="description" content="System-level overview of HRTOS for 8051 microcontrollers, covering execution flow, task lifecycle, interrupt handling, scheduling, memory management and timing analysis.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://hrtos.com/system-view/summary.html">
+<meta name="theme-color" content="#0f172a">
+<link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
+  --bg:#0b1220;
+  --surface:#111b2b;
+  --surface2:#152238;
+  --text:#e5edf8;
+  --muted:#9aabc2;
   --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+  --border:#26364d;
+  --green:#86efac;
+  --purple:#c4b5fd;
 }
 
 *{box-sizing:border-box}
+
+html{scroll-behavior:smooth}
 
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+  line-height:1.8;
+  font-size:15px;
 }
 
-/* NAV */
+a{
+  color:#7dd3fc;
+  text-decoration:none;
+}
+
+a:hover{color:#bae6fd}
+
+a:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:4px;
+}
+
+
 .nav{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:14px 24px;
-  border-bottom:1px solid rgba(148,163,184,.12);
-  background:rgba(11,15,20,.92);
-  position:sticky;
-  top:0;
+  gap:20px;
+  padding:14px max(24px,calc((100% - var(--max-width))/2));
+  border-bottom:1px solid var(--border);
+  background:rgba(11,18,32,.96);
 }
 
-.nav a{
+.brand{
+  color:#f8fafc;
+  font-size:18px;
+  font-weight:750;
+  letter-spacing:.04em;
+  white-space:nowrap;
+}
+
+.nav-links{
+  display:flex;
+  align-items:center;
+  gap:22px;
+}
+
+.nav-links a{
   color:var(--muted);
-  margin-left:14px;
-  text-decoration:none;
   font-size:14px;
 }
 
-.nav a.active{
-  color:#cfe3ff;
+.nav-links a[aria-current="page"]{
+  color:var(--accent-soft);
+  font-weight:650;
 }
 
-/* layout */
+
 .container{
-  max-width:920px;
+  width:min(960px,calc(100% - 36px));
   margin:0 auto;
-  padding:60px 24px;
+  padding:48px 0 65px;
+}
+
+.breadcrumb{
+  margin-bottom:22px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.breadcrumb a{color:var(--muted)}
+.breadcrumb a:hover{color:var(--accent)}
+
+.eyebrow{
+  color:var(--accent);
+  font-size:11px;
+  font-weight:750;
+  letter-spacing:.15em;
 }
 
 h1{
-  font-size:38px;
-  margin:0 0 10px;
+  margin:10px 0 14px;
+  font-size:clamp(30px,5vw,43px);
+  line-height:1.25;
+  letter-spacing:-.03em;
 }
 
-.sub{
+h1 span{color:var(--accent)}
+
+.lead{
+  max-width:780px;
+  margin:0;
   color:var(--muted);
-  margin-bottom:40px;
+  font-size:16px;
 }
+
+.meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:20px;
+}
+
+.tag{
+  padding:4px 9px;
+  border:1px solid var(--border);
+  border-radius:5px;
+  color:#cbd5e1;
+  font-size:11px;
+}
+
+.section{
+  margin-top:48px;
+  scroll-margin-top:78px;
+}
+
+.section-header{margin-bottom:20px}
+
+.section-index{
+  color:var(--accent);
+  font-size:11px;
+  font-weight:750;
+  letter-spacing:.13em;
+}
+
+h2{
+  margin:5px 0 9px;
+  font-size:24px;
+  line-height:1.45;
+}
+
+.section-header p{
+  margin:0;
+  color:var(--muted);
+}
+
+.card{
+  margin-top:14px;
+  padding:22px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface);
+}
+
+.card h3{
+  margin:0 0 9px;
+  font-size:17px;
+}
+
+.card p{
+  margin:8px 0;
+  color:#cbd5e1;
+}
+
+.card p:last-child{margin-bottom:0}
+
+.muted{color:var(--muted)!important}
+
+.en{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.flow{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:0;
+  margin-top:22px;
+}
+
+.flow-node{
+  padding:16px 18px;
+  border:1px solid #30445d;
+  border-radius:8px;
+  background:var(--surface);
+}
+
+.flow-node strong{
+  display:block;
+  margin-bottom:3px;
+  font-size:15px;
+}
+
+.flow-node p{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.flow-node.event{border-left:3px solid var(--accent)}
+.flow-node.interrupt{border-left:3px solid #fbbf24}
+.flow-node.scheduler{border-left:3px solid var(--purple)}
+.flow-node.task{border-left:3px solid var(--green)}
+
+.flow-arrow{
+  height:34px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:#7290ae;
+  font-size:21px;
+}
+
+.flow-branch{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:14px;
+}
+
+.branch{
+  padding:15px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:#0e192a;
+}
+
+.branch strong{
+  display:block;
+  margin-bottom:5px;
+  font-size:13px;
+}
+
+.branch p{
+  margin:0;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  margin-top:18px;
+}
+
+.mini{
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--surface);
+}
+
+.mini h3{
+  margin:0 0 7px;
+  font-size:15px;
+}
+
+.mini p{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.pill{
+  display:inline-block;
+  margin-bottom:9px;
+  padding:3px 7px;
+  border:1px solid #34516a;
+  border-radius:4px;
+  color:var(--accent);
+  font-size:10px;
+  font-weight:750;
+  letter-spacing:.07em;
+}
+
+.callout{
+  margin-top:18px;
+  padding:17px 20px;
+  border-left:3px solid var(--accent);
+  background:#101e30;
+}
+
+.callout strong{
+  display:block;
+  margin-bottom:5px;
+}
+
+.callout p{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.formula{
+  overflow-wrap:anywhere;
+  margin-top:14px;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:#0a1423;
+  color:#bae6fd;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:13px;
+}
+
+.link-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:18px;
+}
+
+.link-item{
+  display:block;
+  padding:14px 16px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:var(--surface);
+}
+
+.link-item strong{
+  display:block;
+  margin-bottom:3px;
+  font-size:13px;
+}
+
+.link-item span{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+}
+
+footer{
+  margin-top:58px;
+  padding-top:20px;
+  border-top:1px solid var(--border);
+  color:var(--muted);
+  font-size:12px;
+}
+
+.footer-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 18px;
+  margin-top:13px;
+}
+
+.footer-links a{font-size:12px}
 /* footer */
 .site-footer{
   text-align:center;
@@ -78,185 +376,511 @@ h1{
   color:#8ea3be;
   font-size:.95rem;
 }
-/* card */
-.card{
-  background:rgba(17,24,35,.92);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:22px;
-  margin-bottom:16px;
-  box-shadow:var(--shadow);
+
+@media (max-width: 620px) {
+  .nav {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+
+  .nav-links {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px 18px;
+  }
+
+  .nav-links a {
+    font-size: 12px;
+  }
+
+  /* 下面保留你原有的 .container、.grid 等移动端规则 */
+
+
+  .container{
+    width:calc(100% - 30px);
+    padding-top:30px;
+  }
+
+  .grid,.link-list,.flow-branch{
+    grid-template-columns:1fr;
+  }
+
+  .card{padding:18px}
+
+  .section{margin-top:38px}
 }
 
-.card h2{
-  margin:0 0 10px;
-  font-size:18px;
-  color:#cfe3ff;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
-}
-
-.en{
-  color:var(--muted);
-  font-size:14px;
-  margin-top:6px;
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
 }
 </style>
 </head>
 
 <body>
 
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
+<header class="nav">
+  <a class="brand" href="/index.html">HRTOS</a>
+
+  <nav class="nav-links" aria-label="主导航">
     <a href="/index.html">首页</a>
     <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" class="active">System</a>
+    <a href="/system-view/index.html" class="active" aria-current="page">System</a>
     <a href="/docs/index.html">Docs</a>
+  </nav>
+</header>
+
+<main class="container">
+
+  <div class="breadcrumb">
+    <a href="/index.html">首页</a>
+    /
+    <a href="/system-view/index.html">System View</a>
+    /
+    Execution Flow
   </div>
-</div>
 
-<div class="container">
+  <!-- HERO -->
+  <header>
+    <div class="eyebrow">SYSTEM VIEW / SYSTEM SUMMARY</div>
 
-<h1>执行流层总结（Execution Flow Layer Summary）</h1>
-<div class="sub">时间驱动的任务执行路径与调度结构</div>
+<h1>System <span>Summary</span></h1>
 
-<div class="card">
-  <h2>核心定义</h2>
-  <p>
-    执行流不是“代码执行顺序”，而是时间、CPU与调度器共同构建的受控执行路径。
-  </p>
-  <p>
-    在 HRTOS 中，执行流必须可追踪、可预测、可分析。
-  </p>
-  <div class="en">
-    Execution flow is a deterministic, time-constrained execution path.
-  </div>
-</div>
+    <p class="lead">
+      执行流描述处理器如何在任务、中断与内核控制路径之间转移执行权。
+      通过分析事件触发、调度条件、上下文切换与任务运行，
+      可以理解 HRTOS 的运行机制，并为关键路径的时间分析建立基础。
+    </p>
 
-<div class="card">
-  <h2>1. 触发源</h2>
-  <p>执行流起点：</p>
-  <p>
-    • 外部中断（IO / Sensor）<br>
-    • Tick 定时器<br>
-    • 任务唤醒 / IPC 信号
-  </p>
-</div>
+    <div class="meta">
+      <span class="tag">8051 Native</span>
+      <span class="tag">Task Execution</span>
+      <span class="tag">Interrupt Handling</span>
+      <span class="tag">Timing Analysis</span>
+    </div>
+  </header>
 
-<div class="card">
-  <h2>2. 进入调度</h2>
-  <p>
-    所有触发事件不会直接执行任务，而是进入调度器统一排序。
-  </p>
-  <p>
-    系统决定“谁在下一时间片获得 CPU”。
-  </p>
-</div>
 
-<div class="card">
-  <h2>3. 执行路径</h2>
-  <p>
-    执行过程可能发生：
-  </p>
-  <p>
-    • 中断嵌套<br>
-    • 抢占切换<br>
-    • 再调度计算
-  </p>
-  <p>
-    执行流是“动态分支结构”，而非线性流程。
-  </p>
-</div>
+  <!-- 01 DEFINITION -->
+  <section class="section" id="definition">
+    <div class="section-header">
+      <div class="section-index">01 / DEFINITION</div>
+      <h2>什么是执行流？</h2>
+      <p>从代码逻辑转向处理器实际经历的执行路径。</p>
+    </div>
 
-<div class="card">
-  <h2>4. 生命周期终止</h2>
-  <p>
-    任务完成必须进入确定状态迁移：
-  </p>
-  <p>
-    Running → Dead → Resource Release
-  </p>
-</div>
+    <div class="card">
+      <h3>核心定义</h3>
 
-<div class="card">
-  <h2>语义总结</h2>
-  <p>
-    执行流 = 时间约束下的状态机路径。
-  </p>
-  <div class="en">
-    Execution flow is a time-constrained state machine path.
-  </div>
-</div>
+      <p>
+        执行流是处理器在特定系统状态与事件条件下，
+        沿指令执行、异常处理、内核服务和上下文转移形成的动态路径。
+      </p>
 
-<div class="card">
-  <h2>系统关联结构</h2>
+      <p>
+        对于 RTOS，执行流不仅取决于程序中的函数调用关系，
+        还受到中断、任务状态、优先级、调度策略和资源约束的影响。
+      </p>
 
-  <p>
-    Execution Flow 位于 RTOS 执行层核心，其行为受多系统共同约束：
-  </p>
+      <div class="en">
+        Execution flow describes the actual processor path through
+        task execution, interrupt handling and kernel control transitions.
+      </div>
+    </div>
 
-  <p>
-    Interrupt Flow → Scheduler Cycle → Execution Flow → Memory View → Time System → Deterministic Chain
-  </p>
+    <div class="callout">
+      <strong>关键区别：程序流程不等于系统执行流</strong>
+      <p>
+        同一段任务代码，在不同的中断时机、任务状态和调度条件下，
+        可能经历不同的执行路径。理解这些路径，才能进一步分析
+        响应延迟、上下文切换开销与最坏情况时间。
+      </p>
+    </div>
+  </section>
 
-  <p><b>模块关系：</b></p>
 
-  <p>
-    → <a href="/system-view/03-interrupt-flow.html" style="color:#38bdf8;">中断流模型</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">外部事件触发执行流入口</span>
-  </p>
+  <!-- 02 FLOW MODEL -->
+  <section class="section" id="model">
+    <div class="section-header">
+      <div class="section-index">02 / EXECUTION PATH</div>
+      <h2>典型执行路径</h2>
+      <p>
+        以下流程展示事件可能引发的控制路径。
+        它是用于理解机制的概念模型，不代表所有事件都必须经过每个阶段。
+      </p>
+    </div>
 
-  <p>
-    → <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度循环</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">决定执行流的CPU分配</span>
-  </p>
+    <div class="flow">
 
-  <p>
-    → <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;">任务生命周期</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">执行流状态基础（Ready/Running/Blocked）</span>
-  </p>
+      <div class="flow-node event">
+        <strong>01. 事件或调度条件出现</strong>
+        <p>
+          外部中断、定时器事件、任务延时到期、消息到达，
+          或任务主动调用内核服务。
+        </p>
+      </div>
 
-  <p>
-    → <a href="/system-view/05-memory-view.html" style="color:#38bdf8;">内存视图</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">影响执行时间抖动来源</span>
-  </p>
+      <div class="flow-arrow" aria-hidden="true">↓</div>
 
-  <p>
-    → <a href="/system-view/06-time-system.html" style="color:#38bdf8;">时间系统</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">执行流时间约束基准</span>
-  </p>
+      <div class="flow-node interrupt">
+        <strong>02. 进入对应处理路径</strong>
+        <p>
+          硬件中断进入 ISR；任务 API 则可能执行内核服务。
+          不同入口具有不同的上下文与执行约束。
+        </p>
+      </div>
 
-  <p>
-    → <a href="/system-view/07-deterministic-chain.html" style="color:#38bdf8;">确定性因果链</a><br>
-    <span style="color:#9fb0c3;font-size:13px;">执行流的数学化表达</span>
-  </p>
+      <div class="flow-arrow" aria-hidden="true">↓</div>
 
-  <p style="margin-top:10px;color:#9fb0c3;font-size:13px;">
-    System Position: Execution Flow = RTOS 执行层核心结构
-  </p>
-</div>
+      <div class="flow-node scheduler">
+        <strong>03. 判断是否需要调度</strong>
+        <p>
+          根据事件结果、任务状态、优先级和调度策略，
+          判断是否需要改变当前执行对象。
+        </p>
+      </div>
 
-</div>
+      <div class="flow-arrow" aria-hidden="true">↓</div>
 
-<footer class="site-footer">
+      <div class="flow-node task">
+        <strong>04. 继续当前任务或切换上下文</strong>
+        <p>
+          如果满足切换条件，系统按相应机制保存和恢复执行现场；
+          否则，当前执行路径可能继续。
+        </p>
+      </div>
+
+    </div>
+
+    <div class="flow-branch">
+      <div class="branch">
+        <strong>路径 A：不发生任务切换</strong>
+        <p>
+          ISR 返回原任务，或当前任务继续执行。
+          具体行为取决于事件类型与内核状态。
+        </p>
+      </div>
+
+      <div class="branch">
+        <strong>路径 B：发生任务切换</strong>
+        <p>
+          执行必要的现场保护与恢复，转入被选中的任务，
+          后续仍可能被中断或再次调度。
+        </p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>8051 专用实现需要进一步考虑</strong>
+      <p>
+        实际执行路径还取决于寄存器组管理、堆栈操作、中断入口与返回、
+        编译器生成的指令，以及 HRTOS 对任务和中断上下文的具体实现。
+        这些细节需要结合实际内核代码与目标芯片进行确认。
+      </p>
+    </div>
+  </section>
+
+
+  <!-- 03 CONTROL SOURCES -->
+  <section class="section" id="triggers">
+    <div class="section-header">
+      <div class="section-index">03 / CONTROL SOURCES</div>
+      <h2>执行流的主要触发源</h2>
+      <p>不同触发源进入内核的方式不同，不能将其统一理解为一次调度。</p>
+    </div>
+
+    <div class="grid">
+
+      <article class="mini">
+        <span class="pill">HARDWARE</span>
+        <h3>硬件中断</h3>
+        <p>
+          外部引脚、定时器或其他外设事件可以引发中断服务。
+          是否立即影响任务执行，取决于中断配置与当前处理器状态。
+        </p>
+      </article>
+
+      <article class="mini">
+        <span class="pill">TIME</span>
+        <h3>系统节拍与超时</h3>
+        <p>
+          系统 Tick 可用于更新时间与检查定时条件。
+          时间事件是否导致任务切换，还取决于任务状态和调度规则。
+        </p>
+      </article>
+
+      <article class="mini">
+        <span class="pill">KERNEL API</span>
+        <h3>任务与内核服务</h3>
+        <p>
+          延时、等待、消息操作或其他内核 API 可能改变任务状态，
+          并影响后续的调度决策。
+        </p>
+      </article>
+
+      <article class="mini">
+        <span class="pill">SCHEDULING</span>
+        <h3>任务就绪与优先级变化</h3>
+        <p>
+          当新的任务变为就绪状态，或者有效优先级发生变化时，
+          系统可能需要重新评估执行权分配。
+        </p>
+      </article>
+
+    </div>
+  </section>
+
+
+  <!-- 04 TASK STATE -->
+  <section class="section" id="task-state">
+    <div class="section-header">
+      <div class="section-index">04 / TASK STATE</div>
+      <h2>执行流与任务生命周期</h2>
+      <p>
+        执行流描述控制权如何转移；任务生命周期描述任务在系统中的状态。
+        两者相关，但不是同一个概念。
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>常见任务状态</h3>
+
+      <div class="grid">
+        <div class="mini">
+          <h3>Ready</h3>
+          <p>
+            任务具备运行条件，等待获得处理器执行权。
+          </p>
+        </div>
+
+        <div class="mini">
+          <h3>Running</h3>
+          <p>
+            任务当前正在处理器上执行。
+          </p>
+        </div>
+
+        <div class="mini">
+          <h3>Blocked / Waiting</h3>
+          <p>
+            任务正在等待时间、事件、消息或其他内核定义的条件。
+          </p>
+        </div>
+
+        <div class="mini">
+          <h3>退出或终止</h3>
+          <p>
+            只有当内核支持相应操作时，任务才会进入退出或终止路径。
+            资源回收方式应以实际实现为准。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>不要把任务状态图误认为固定的线性流程</strong>
+      <p>
+        Ready、Running 与等待状态之间的转换由具体事件和内核规则决定。
+        任务也不一定最终进入终止状态：许多嵌入式任务会在整个系统运行期间持续存在。
+      </p>
+    </div>
+
+    <p class="muted">
+      深入阅读：
+      <a href="02-task-lifecycle.html">任务生命周期</a>
+      ·
+      <a href="04-scheduler-cycle.html">调度周期</a>
+    </p>
+  </section>
+
+
+  <!-- 05 TIMING -->
+  <section class="section" id="timing">
+    <div class="section-header">
+      <div class="section-index">05 / TIMING ANALYSIS</div>
+      <h2>执行流如何转化为时间分析</h2>
+      <p>
+        当执行路径能够被识别后，才能进一步估算或测量关键阶段的时间开销。
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>典型的延迟组成</h3>
+
+      <p>
+        对于一个由外部中断触发、最终由任务处理的事件，
+        可以将端到端响应时间拆分为若干阶段。
+      </p>
+
+      <div class="formula">
+        R = T_event_to_ISR
+          + T_ISR
+          + T_dispatch
+          + T_task_to_action
+      </div>
+
+      <p class="muted">
+        其中各项分别表示事件至中断服务的延迟、中断处理时间、
+        调度或切换开销，以及任务从开始执行到完成目标动作所需的时间。
+        该表达式是简化的分解模型；实际分析需要避免阶段重叠或遗漏，
+        并纳入适用的阻塞、嵌套与干扰因素。
+      </p>
+    </div>
+
+    <div class="grid">
+
+      <article class="mini">
+        <h3>WCET</h3>
+        <p>
+          Worst-Case Execution Time。
+          对指定代码路径和明确执行条件，分析其最坏情况执行时间。
+        </p>
+      </article>
+
+      <article class="mini">
+        <h3>WCRT</h3>
+        <p>
+          Worst-Case Response Time。
+          分析任务或事件从指定起点到响应终点的最坏情况时间。
+        </p>
+      </article>
+
+      <article class="mini">
+        <h3>静态分析</h3>
+        <p>
+          结合反汇编、控制流、分支与循环边界、指令周期和干扰条件，
+          推导适用范围内的时间上界。
+        </p>
+      </article>
+
+      <article class="mini">
+        <h3>硬件测量</h3>
+        <p>
+          使用 GPIO 翻转、逻辑分析仪或示波器观察实际时间，
+          为性能评估与分析模型提供测量证据。
+        </p>
+      </article>
+
+    </div>
+
+    <div class="callout">
+      <strong>测量最大值不自动等于最坏情况上界</strong>
+      <p>
+        有限次测试得到的是特定测试条件下的观测结果。
+        要形成可信的最坏情况结论，还需要明确路径覆盖、
+        循环边界、中断干扰、硬件条件与分析假设。
+      </p>
+    </div>
+  </section>
+
+
+  <!-- 06 RELATED MODELS -->
+  <section class="section" id="related">
+    <div class="section-header">
+      <div class="section-index">06 / RELATED SYSTEM MODELS</div>
+      <h2>执行流与其他系统视图</h2>
+      <p>
+        执行流是系统级分析的一个入口，需要与任务状态、调度、
+        中断、内存和时间模型共同理解。
+      </p>
+    </div>
+
+    <div class="link-list">
+
+      <a class="link-item" href="02-task-lifecycle.html">
+        <strong>Task Lifecycle</strong>
+        <span>任务状态与转换条件</span>
+      </a>
+
+      <a class="link-item" href="03-interrupt-flow.html">
+        <strong>Interrupt Flow</strong>
+        <span>中断入口、嵌套与返回路径</span>
+      </a>
+
+      <a class="link-item" href="04-scheduler-cycle.html">
+        <strong>Scheduler Cycle</strong>
+        <span>调度触发与执行权分配</span>
+      </a>
+
+      <a class="link-item" href="05-memory-view.html">
+        <strong>Memory View</strong>
+        <span>内存布局、上下文与栈约束</span>
+      </a>
+
+      <a class="link-item" href="06-time-system.html">
+        <strong>Time System</strong>
+        <span>系统 Tick、延时与时间约束</span>
+      </a>
+
+      <a class="link-item" href="07-deterministic-chain.html">
+        <strong>Deterministic Chain</strong>
+        <span>从事件到响应的因果关系</span>
+      </a>
+
+    </div>
+  </section>
+
+
+  <!-- 07 SUMMARY -->
+  <section class="section" id="summary">
+    <div class="section-header">
+      <div class="section-index">07 / SUMMARY</div>
+      <h2>系统级结论</h2>
+    </div>
+
+    <div class="card">
+      <h3>Execution Flow = Control Path + State + Timing</h3>
+
+      <p>
+        执行流由处理器实际控制路径、任务与内核状态、
+        以及事件发生的时机共同决定。
+      </p>
+
+      <p>
+        对 HRTOS 而言，分析执行流的价值在于：
+        将任务调度、中断处理、上下文切换与时间约束联系起来，
+        使关键路径能够被解释、测量，并在明确的前提下进行分析。
+      </p>
+
+      <div class="en">
+        A useful execution model connects processor control flow,
+        system state and timing constraints.
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>下一步：从概念模型进入实际实现</strong>
+      <p>
+        结合目标芯片、实际编译输出、内核上下文管理代码与硬件测量，
+        验证执行路径中的每个关键假设。
+        只有将模型与具体实现对应起来，才能形成有工程价值的分析结论。
+      </p>
+    </div>
+  </section>
+
+
+  <footer class="site-footer">
   <div style="margin-bottom:10px;">
     © 2017–2026 HRTOS · SYSTEM VIEW
   </div>
 
-  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
+  <div style="font-size:13px;color:#8ea3be;line-height:1.6;max-width:860px;margin:0 auto;">
     System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
     该层关注“系统如何运行”，而非“为什么这样设计”。
   </div>
 
   <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
+    <a href="/system-view/index.html" style="color:#7dd3fc;margin-right:12px;">System 首页</a>
+    <a href="/system-view/01-execution-flow.html" style="color:#7dd3fc;margin-right:12px;">执行流</a>
+    <a href="/system-view/02-task-lifecycle.html" style="color:#7dd3fc;margin-right:12px;">任务生命周期</a>
+    <a href="/system-view/04-scheduler-cycle.html" style="color:#7dd3fc;margin-right:12px;">调度周期</a>
+    <a href="/why/index.html" style="color:#7dd3fc;">→ WHY Layer</a>
   </div>
 </footer>
+
+</main>
 
 </body>
 </html>

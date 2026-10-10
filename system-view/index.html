@@ -1,318 +1,1042 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>System View | HRTOS Documentation</title>
-<meta name="description" content="HRTOS System View - execution flow, scheduler cycle, task lifecycle, interrupt flow and deterministic system behavior visualization.">
+<title>HRTOS System View | 8051 RTOS Architecture & Execution Model</title>
+<meta name="description" content="Explore the HRTOS system architecture for 8051 microcontrollers: task execution, scheduling, interrupt handling, context switching, memory constraints, timing analysis and system verification.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://hrtos.com/system-view/index.html">
+<meta name="theme-color" content="#0f172a">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="HRTOS System View | 8051 RTOS Architecture">
+<meta property="og:description" content="Understand how HRTOS organizes task execution, scheduling, interrupts, memory and timing on 8051 microcontrollers.">
+<meta property="og:url" content="https://hrtos.com/system-view/index.html">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
+  --bg:#0b1220;
+  --surface:#111b2b;
+  --surface-2:#152238;
+  --border:#26364d;
+  --text:#e5edf8;
+  --muted:#9aabc2;
   --accent:#38bdf8;
+  --accent-soft:#7dd3fc;
+  --green:#86efac;
+  --purple:#c4b5fd;
+  --max-width:1160px;
 }
 
 *{box-sizing:border-box}
+
+html{scroll-behavior:smooth}
 
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
+  font-size:15px;
+  line-height:1.8;
 }
 
-/* NAV（统一成你第二版风格） */
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid #1e2a3a;
-  background: #0f172a;
-}
-
-.nav a {
-  color: #38bdf8;
-  text-decoration: none;
-  margin-left: 12px;
-  font-size: 14px;
-}
-
-.nav a:hover {
-  color: #2563eb;
-}
-
-.page{
-  width:min(1180px,calc(100% - 40px));
-  margin:0 auto;
-  padding:80px 0 60px;
-}
-
-.hero h1{
-  font-size:38px;
-  margin:0 0 10px;
-}
-
-.hero p{
-  color:var(--muted);
-  margin:0 0 30px;
-}
-
-/* section */
-.section{
-  margin-top:40px;
-}
-
-.section h2{
-  font-size:20px;
-  margin-bottom:10px;
-  color:#cfe3ff;
-}
-
-.section p{
-  color:var(--muted);
-}
-
-/* grid */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:16px;
-  margin-top:20px;
-}
-
-.card{
-  background:#111823;
-  border:1px solid #1e2a3a;
-  padding:18px;
-  border-radius:10px;
-  transition:.2s;
-}
-
-.card:hover{
-  border-color:rgba(56,189,248,.5);
-  transform:translateY(-4px);
-}
-
-.card a{
-  color:#7dd3fc;
-  font-weight:600;
+a{
+  color:var(--accent-soft);
   text-decoration:none;
 }
 
-.card p{
+a:hover{
+  color:#bae6fd;
+}
+
+a:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:4px;
+  border-radius:3px;
+}
+
+.nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+  padding:14px max(24px,calc((100% - var(--max-width))/2));
+  border-bottom:1px solid var(--border);
+  background:rgba(11,18,32,.96);
+}
+
+.brand{
+  color:#f8fafc;
+  font-size:18px;
+  font-weight:750;
+  letter-spacing:.04em;
+  white-space:nowrap;
+}
+
+.nav-links{
+  display:flex;
+  align-items:center;
+  gap:22px;
+}
+
+.nav-links a{
+  color:var(--muted);
   font-size:14px;
+}
+
+.nav-links a[aria-current="page"]{
+  color:var(--accent-soft);
+  font-weight:650;
+}
+
+.page{
+  width:min(var(--max-width),calc(100% - 40px));
+  margin:0 auto;
+  padding:58px 0 64px;
+}
+
+.hero{
+  padding:30px 0 40px;
+}
+
+.eyebrow{
+  color:var(--accent);
+  font-size:12px;
+  font-weight:750;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+}
+
+.hero h1{
+  margin:12px 0 18px;
+  font-size:clamp(32px,5vw,48px);
+  line-height:1.2;
+  letter-spacing:-.035em;
+}
+
+.hero h1 span{
+  color:var(--accent);
+}
+
+.hero p{
+  max-width:790px;
+  margin:0;
+  color:var(--muted);
+  font-size:16px;
+}
+
+.hero-note{
+  display:inline-block;
+  margin-top:22px;
+  padding:7px 12px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  color:#cbd5e1;
+  font-size:12px;
+}
+
+.section{
+  margin-top:58px;
+  scroll-margin-top:24px;
+}
+
+.section-header{
+  max-width:790px;
+  margin-bottom:22px;
+}
+
+.section-kicker{
+  color:var(--accent);
+  font-size:11px;
+  font-weight:750;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+
+.section h2{
+  margin:5px 0 10px;
+  font-size:clamp(23px,3vw,29px);
+  line-height:1.4;
+  letter-spacing:-.02em;
+}
+
+.section-header p,
+.section-intro{
+  margin:0;
   color:var(--muted);
 }
 
-/* footer */
-footer{
-  margin-top:60px;
-  padding-top:20px;
-  border-top:1px solid #1e2a3a;
+.architecture{
+  padding:26px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:
+    radial-gradient(ellipse at top,rgba(56,189,248,.07),transparent 60%),
+    var(--surface);
+}
+
+.architecture-title{
+  margin:0 0 6px;
+  font-size:18px;
   text-align:center;
-  color:#8ea3be;
+}
+
+.architecture-subtitle{
+  margin:0 0 26px;
+  color:var(--muted);
+  font-size:13px;
+  text-align:center;
+}
+
+.arch-layer{
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:rgba(15,23,42,.72);
+}
+
+.arch-layer + .arch-layer{
+  margin-top:12px;
+}
+
+.layer-label{
+  margin-bottom:12px;
+  color:var(--accent-soft);
+  font-size:11px;
+  font-weight:750;
+  letter-spacing:.1em;
+}
+
+.arch-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+
+.arch-item{
+  min-width:0;
+  padding:14px;
+  border:1px solid #2a3c53;
+  border-radius:7px;
+  background:var(--surface-2);
+}
+
+.arch-item strong{
+  display:block;
+  margin-bottom:5px;
+  color:#eaf5ff;
+  font-size:14px;
+}
+
+.arch-item p{
+  margin:0;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.7;
+}
+
+.arch-connector{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:40px;
+  color:#66819f;
+  font-size:23px;
+}
+
+.arch-bottom{
+  border-color:#315347;
+  background:rgba(20,48,43,.35);
+}
+
+.arch-bottom .layer-label{
+  color:var(--green);
+}
+
+.arch-note{
+  margin:18px 0 0;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.concept-flow{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  margin-top:24px;
+  padding:18px 12px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:#0c1627;
+}
+
+.flow-node{
+  padding:7px 11px;
+  border:1px solid #29435e;
+  border-radius:5px;
+  background:#13243a;
+  color:#dbeafe;
+  font-size:12px;
+  font-weight:650;
+}
+
+.flow-arrow{
+  color:var(--accent);
+  font-size:16px;
+}
+
+.flow-caption{
+  width:100%;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:12px;
+  text-align:center;
+}
+
+.card-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:15px;
+  margin-top:22px;
+}
+
+.card{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  padding:21px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface);
+  transition:border-color .2s,transform .2s,background .2s;
+}
+
+.card:hover{
+  transform:translateY(-3px);
+  border-color:#3b7193;
+  background:#132035;
+}
+
+.card-index{
+  margin-bottom:12px;
+  color:var(--accent);
+  font-size:11px;
+  font-weight:750;
+  letter-spacing:.12em;
+}
+
+.card h3{
+  margin:0 0 8px;
+  font-size:17px;
+  line-height:1.5;
+}
+
+.card p{
+  flex:1;
+  margin:0 0 15px;
+  color:var(--muted);
   font-size:13px;
 }
 
-@media(max-width:900px){
-  .grid{grid-template-columns:repeat(2,1fr);}
+.card-link{
+  align-self:flex-start;
+  font-size:13px;
+  font-weight:650;
+}
+
+.card-link::after{
+  content:" →";
+}
+
+.two-col{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  margin-top:22px;
+}
+
+.panel{
+  padding:23px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface);
+}
+
+.panel h3{
+  margin:0 0 9px;
+  font-size:17px;
+}
+
+.panel p{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.panel ul{
+  margin:14px 0 0;
+  padding-left:19px;
+  color:#cbd5e1;
+  font-size:13px;
+}
+
+.panel li + li{
+  margin-top:7px;
+}
+
+.panel a{
+  font-weight:600;
+}
+
+.pill{
+  display:inline-block;
+  margin-bottom:12px;
+  padding:3px 8px;
+  border:1px solid #31506b;
+  border-radius:4px;
+  color:var(--accent-soft);
+  font-size:11px;
+  font-weight:700;
+}
+
+.knowledge-tree{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  margin-top:22px;
+}
+
+.tree-item{
+  padding:19px;
+  border-left:2px solid #2e6688;
+  background:var(--surface);
+}
+
+.tree-item h3{
+  margin:0 0 8px;
+  font-size:15px;
+}
+
+.tree-item p{
+  margin:0 0 10px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.tree-item a{
+  font-size:13px;
+  font-weight:600;
+}
+
+.callout{
+  margin-top:22px;
+  padding:20px 22px;
+  border-left:3px solid var(--accent);
+  background:#101e30;
+}
+
+.callout strong{
+  display:block;
+  margin-bottom:5px;
+}
+
+.callout p{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+}
+
+footer{
+  margin-top:70px;
+  padding-top:24px;
+  border-top:1px solid var(--border);
+  color:var(--muted);
+  font-size:12px;
+}
+
+.footer-top{
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.footer-brand{
+  color:#e2e8f0;
+  font-weight:700;
+}
+
+.footer-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:16px;
+}
+
+.footer-description{
+  max-width:760px;
+  margin:10px 0 0;
+}
+
+@media(max-width:850px){
+  .card-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .arch-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .arch-grid .arch-item:last-child:nth-child(odd){
+    grid-column:1/-1;
+  }
 }
 
 @media(max-width:600px){
-  .grid{grid-template-columns:1fr;}
+  .nav{
+    align-items:flex-start;
+    padding:14px 20px;
+  }
+
+  .nav-links{
+    justify-content:flex-end;
+    flex-wrap:wrap;
+    gap:8px 13px;
+  }
+
+  .nav-links a{
+    font-size:12px;
+  }
+
+  .page{
+    width:calc(100% - 32px);
+    padding-top:35px;
+  }
+
+  .hero{
+    padding-top:18px;
+  }
+
+  .card-grid,
+  .two-col,
+  .knowledge-tree,
+  .arch-grid{
+    grid-template-columns:1fr;
+  }
+
+  .arch-grid .arch-item:last-child:nth-child(odd){
+    grid-column:auto;
+  }
+
+  .architecture{
+    padding:16px;
+  }
+
+  .arch-layer{
+    padding:13px;
+  }
+
+  .section{
+    margin-top:44px;
+  }
+
+  .card{
+    padding:18px;
+  }
+
+  .concept-flow{
+    gap:7px;
+  }
+
+  .flow-node{
+    padding:6px 8px;
+    font-size:11px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    transition:none!important;
+    animation:none!important;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<!-- NAV（统一版本） -->
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
+<header class="nav">
+  <a class="brand" href="/index.html">HRTOS</a>
+
+  <nav class="nav-links" aria-label="主导航">
     <a href="/index.html">首页</a>
     <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" style="color:#cfe3ff;">系统</a>
+    <a href="/system-view/index.html" aria-current="page">系统视图</a>
     <a href="/docs/index.html">文档</a>
-  </div>
-</div>
+  </nav>
+</header>
 
-<div class="page">
+<main class="page">
 
-  <!-- HERO（压缩） -->
-  <div class="hero">
-    <h1>System View（系统运行视图）</h1>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="eyebrow">SYSTEM ARCHITECTURE · EXECUTION MODEL</div>
+
+    <h1>HRTOS <span>System View</span></h1>
+
     <p>
-      描述 HRTOS 内核的运行结构：执行流、调度、中断、时间系统与确定性执行链。
-    </p>
-  </div>
-
-  <!-- 核心说明（压缩但保留本质） -->
-  <div class="section">
-    <h2>系统模型概述</h2>
-    <p>
-      HRTOS 是一个以时间确定性为核心约束的实时系统模型，
-      所有行为必须映射到可分析的时间路径。
-    </p>
-    <p style="color:#94a3b8;">
-      Event → Interrupt → Scheduler → Execution → Time → Event
-    </p>
-  </div>
-<!-- RTOS KNOWLEDGE TREE -->
-<section class="section">
-
-  <div class="section-header">
-    <h2>RTOS 知识结构路径</h2>
-    <p>从时间约束系统出发的系统化学习路径（Learning Tree）</p>
-  </div>
-
-  <div class="card">
-
-    <h3>RTOS 学习总览</h3>
-
-    <p style="color:#7dd3fc;font-weight:600;margin-bottom:8px;">
-      RTOS = 时间约束执行系统
+      从执行上下文、任务调度与中断管理出发，
+      理解 HRTOS 在 8051 微控制器上的系统运行机制。
+      将任务行为、时间约束、内存布局与工程验证放在同一套架构视图中，
+      建立从内核机制到系统行为的完整认知。
     </p>
 
-    <p style="margin-bottom:10px;">
-      以下结构用于建立从“理论 → 调度 → 中断 → 架构”的完整认知路径：
-    </p>
+    <div class="hero-note">
+      8051 Native · Execution Model · Timing Analysis · Engineering Verification
+    </div>
+  </section>
 
-    <div style="color:#cbd5e1; line-height:1.9; font-size:14px;">
 
-      <div>
-        <b>1. 实时系统基础</b> →
-        <a href="/docs/learn/real-time-systems.html" style="color:#38bdf8;">Real-Time Model</a>
+  <!-- 01 SYSTEM ARCHITECTURE -->
+  <section class="section" id="architecture">
+
+    <div class="section-header">
+      <div class="section-kicker">01 / SYSTEM ARCHITECTURE</div>
+      <h2>系统架构总览</h2>
+      <p>
+        实时系统不是孤立的调度器，而是执行上下文、调度决策、
+        中断机制、时间管理与资源约束共同作用的系统。
+        System View 从整体结构出发，展示这些机制之间的联系。
+      </p>
+    </div>
+
+    <div class="architecture">
+
+      <h3 class="architecture-title">HRTOS Runtime Architecture</h3>
+
+      <p class="architecture-subtitle">
+        从处理器执行机制到内核服务与应用运行
+      </p>
+
+      <div class="arch-layer">
+        <div class="layer-label">01 — EXECUTION & CONTROL</div>
+
+        <div class="arch-grid">
+          <div class="arch-item">
+            <strong>任务与上下文</strong>
+            <p>任务状态、寄存器现场、栈与上下文恢复。</p>
+          </div>
+
+          <div class="arch-item">
+            <strong>调度与优先级</strong>
+            <p>就绪任务选择、抢占策略、时间片与执行权分配。</p>
+          </div>
+
+          <div class="arch-item">
+            <strong>中断与嵌套</strong>
+            <p>中断入口、服务过程、嵌套关系与退出路径。</p>
+          </div>
+        </div>
       </div>
 
-      <div style="margin-left:14px;">
-        • 硬实时 / 软实时：理解超时后果
+      <div class="arch-connector" aria-hidden="true">↓</div>
+
+      <div class="arch-layer">
+        <div class="layer-label">02 — TIME & RESOURCE CONSTRAINTS</div>
+
+        <div class="arch-grid">
+          <div class="arch-item">
+            <strong>时间系统</strong>
+            <p>系统节拍、延时、超时与任务时间约束。</p>
+          </div>
+
+          <div class="arch-item">
+            <strong>内存与栈</strong>
+            <p>DATA、IDATA、XDATA、任务栈与上下文空间。</p>
+          </div>
+
+          <div class="arch-item">
+            <strong>同步与通信</strong>
+            <p>任务协作、消息传递与共享资源管理。</p>
+          </div>
+        </div>
       </div>
 
-      <div style="margin-left:14px;">
-        • 时间约束：deadline / period / jitter
+      <div class="arch-connector" aria-hidden="true">↓</div>
+
+      <div class="arch-layer arch-bottom">
+        <div class="layer-label">03 — SYSTEM SERVICES & APPLICATIONS</div>
+
+        <div class="arch-grid">
+          <div class="arch-item">
+            <strong>内核 API</strong>
+            <p>任务控制、时间服务与资源操作接口。</p>
+          </div>
+
+          <div class="arch-item">
+            <strong>系统组件</strong>
+            <p>Shell、Modbus RTU、驱动与可复用组件。</p>
+          </div>
+
+          <div class="arch-item">
+            <strong>用户应用</strong>
+            <p>将实时任务、外设处理与业务逻辑组织成完整应用。</p>
+          </div>
+        </div>
       </div>
 
-      <div style="margin-left:14px;">
-        • WCET / WCRT：最坏情况分析模型
-      </div>
-
-      <br>
-
-      <div>
-        <b>2. 调度系统</b> →
-        <a href="/docs/learn/scheduling-basics.html" style="color:#38bdf8;">Scheduling</a>
-      </div>
-
-      <div style="margin-left:14px;">
-        • <a href="/docs/learn/preemptive-vs-cooperative.html" style="color:#38bdf8;">抢占式调度</a>：内核控制 CPU
-      </div>
-
-      <div style="margin-left:14px;">
-        • <a href="/docs/learn/preemptive-vs-cooperative.html" style="color:#38bdf8;">协作式调度</a>：任务让出 CPU
-      </div>
-
-      <br>
-
-      <div>
-        <b>3. 中断系统</b> →
-        <a href="/docs/learn/interrupt-basics.html" style="color:#38bdf8;">Interrupt Model</a>
-      </div>
-
-      <div style="margin-left:14px;">
-        • 外部事件如何进入内核路径
-      </div>
-
-      <br>
-
-      <div>
-        <b>4. 内核架构</b> →
-        <a href="/docs/architecture/index.html" style="color:#38bdf8;">Kernel Design</a>
-      </div>
-
-      <div style="margin-left:14px;">
-        • 将机制统一回系统级结构理解
-      </div>
+      <p class="arch-note">
+        注：该图为概念架构视图，用于表达系统职责与关联，并不代表所有模块
+        都是独立的软件层，也不表示任务、中断与调度必须严格按单一方向执行。
+      </p>
 
     </div>
 
-  </div>
+    <div class="concept-flow" aria-label="典型事件处理路径">
+      <span class="flow-node">External Event</span>
+      <span class="flow-arrow" aria-hidden="true">→</span>
+      <span class="flow-node">Interrupt Handling</span>
+      <span class="flow-arrow" aria-hidden="true">→</span>
+      <span class="flow-node">Scheduling Decision</span>
+      <span class="flow-arrow" aria-hidden="true">→</span>
+      <span class="flow-node">Task Execution</span>
 
-</section>
-  <!-- 核心入口（不删减，只压缩展示） -->
-  <div class="section">
-    <h2>核心运行流程</h2>
-
-    <div class="grid">
-      <div class="card">
-        <a href="01-execution-flow.html">执行流模型</a>
-        <p>任务从触发到完成的时间路径</p>
-      </div>
-
-      <div class="card">
-        <a href="02-task-lifecycle.html">任务生命周期</a>
-        <p>状态转换：Ready / Running / Blocked</p>
-      </div>
-
-      <div class="card">
-        <a href="03-interrupt-flow.html">中断流模型</a>
-        <p>外部事件如何影响执行路径</p>
-      </div>
-
-      <div class="card">
-        <a href="04-scheduler-cycle.html">调度周期</a>
-        <p>CPU分配与调度决策循环</p>
-      </div>
-
-      <div class="card">
-        <a href="05-memory-view.html">内存视图</a>
-        <p>堆栈与系统资源分布</p>
-      </div>
-
-      <div class="card">
-        <a href="06-time-system.html">时间系统</a>
-        <p>Tick与时间约束模型</p>
-      </div>
-
-      <div class="card">
-        <a href="07-deterministic-chain.html">确定性因果链</a>
-        <p>完整时间因果函数模型</p>
+      <div class="flow-caption">
+        典型事件驱动路径。实际执行路径取决于事件来源、中断配置、
+        当前运行状态与调度条件。
       </div>
     </div>
-  </div>
 
-  <!-- 结构入口 -->
-  <div class="section">
-    <h2>结构视图</h2>
+  </section>
 
-    <div class="grid">
-      <div class="card">
-        <a href="system-diagram.html">系统结构图</a>
-        <p>模块关系与系统结构</p>
-      </div>
 
-      <div class="card">
-        <a href="summary.html">系统总结</a>
-        <p>System View 全局模型</p>
-      </div>
+  <!-- 02 EXECUTION MODEL -->
+  <section class="section" id="execution">
+
+    <div class="section-header">
+      <div class="section-kicker">02 / EXECUTION MODEL</div>
+      <h2>从任务执行到系统行为</h2>
+      <p>
+        理解实时内核，关键不只是知道有哪些 API，
+        而是理解处理器何时改变执行对象、如何保存现场，
+        以及中断和调度如何共同影响任务运行。
+      </p>
     </div>
-  </div>
 
-  <!-- footer -->
+    <div class="card-grid">
+
+      <article class="card">
+        <div class="card-index">EXECUTION / 01</div>
+        <h3>执行流模型</h3>
+        <p>
+          从事件触发到任务继续执行，梳理系统中的典型控制流与时间路径。
+        </p>
+        <a class="card-link" href="01-execution-flow.html">查看执行流</a>
+      </article>
+
+      <article class="card">
+        <div class="card-index">TASK / 02</div>
+        <h3>任务生命周期</h3>
+        <p>
+          理解 Ready、Running、Blocked 等任务状态及其转换条件。
+        </p>
+        <a class="card-link" href="02-task-lifecycle.html">查看任务状态</a>
+      </article>
+
+      <article class="card">
+        <div class="card-index">INTERRUPT / 03</div>
+        <h3>中断流模型</h3>
+        <p>
+          了解中断进入、服务、嵌套处理、退出与任务恢复之间的关系。
+        </p>
+        <a class="card-link" href="03-interrupt-flow.html">查看中断路径</a>
+      </article>
+
+      <article class="card">
+        <div class="card-index">SCHEDULER / 04</div>
+        <h3>调度周期</h3>
+        <p>
+          分析调度触发条件、任务选择、执行权转移与时间片机制。
+        </p>
+        <a class="card-link" href="04-scheduler-cycle.html">查看调度机制</a>
+      </article>
+
+    </div>
+  </section>
+
+
+  <!-- 03 8051 ARCHITECTURE -->
+  <section class="section" id="8051">
+
+    <div class="section-header">
+      <div class="section-kicker">03 / 8051 ARCHITECTURE</div>
+      <h2>为什么 8051 需要专用的系统设计</h2>
+      <p>
+        8051 的寄存器组织、内部存储空间、中断机制与指令执行特征，
+        会直接影响上下文切换、栈预算和调度路径。
+        系统设计必须与目标处理器的实际约束相匹配。
+      </p>
+    </div>
+
+    <div class="two-col">
+
+      <article class="panel">
+        <span class="pill">MEMORY MODEL</span>
+        <h3>内存布局与栈预算</h3>
+        <p>
+          内存不只是编译结果中的一个数字。
+          任务上下文、系统变量、栈空间与应用数据共同决定系统的资源边界。
+        </p>
+        <ul>
+          <li>DATA / IDATA / XDATA 的使用约束</li>
+          <li>任务现场与系统上下文占用</li>
+          <li>中断嵌套与栈深度预算</li>
+          <li>目标芯片的实际内存容量</li>
+        </ul>
+        <p style="margin-top:15px">
+          <a href="05-memory-view.html">查看内存视图 →</a>
+        </p>
+      </article>
+
+      <article class="panel">
+        <span class="pill">PROCESSOR CONTROL</span>
+        <h3>中断、寄存器与上下文</h3>
+        <p>
+          在 8051 上，寄存器组选择、现场保护、中断优先级
+          与返回路径之间存在紧密联系。
+          这些细节会影响任务切换成本与中断响应路径。
+        </p>
+        <ul>
+          <li>寄存器组与执行上下文</li>
+          <li>中断入口和退出过程</li>
+          <li>嵌套中断与现场保护</li>
+          <li>汇编指令及处理器周期</li>
+        </ul>
+        <p style="margin-top:15px">
+          <a href="03-interrupt-flow.html">查看中断流模型 →</a>
+        </p>
+      </article>
+
+    </div>
+
+    <div class="callout">
+      <strong>Architecture Principle</strong>
+      <p>
+        不能简单将面向其他 MCU 架构的内核实现直接移植到 8051，
+        再假定它具有相同的执行成本与资源特征。
+        应从实际处理器行为、编译器生成代码与目标芯片资源出发进行设计和验证。
+      </p>
+    </div>
+
+  </section>
+
+
+  <!-- 04 TIMING -->
+  <section class="section" id="timing">
+
+    <div class="section-header">
+      <div class="section-kicker">04 / TIMING & DETERMINISM</div>
+      <h2>从时间机制到可分析的执行路径</h2>
+      <p>
+        实时性不仅涉及任务能否运行，还涉及事件何时得到处理、
+        执行路径需要多长时间，以及系统能否在规定期限内完成工作。
+      </p>
+    </div>
+
+    <div class="card-grid">
+
+      <article class="card">
+        <div class="card-index">TIME / 01</div>
+        <h3>时间系统</h3>
+        <p>
+          了解系统 Tick、延时、超时与周期性调度机制，
+          以及时钟配置对时间分辨率的影响。
+        </p>
+        <a class="card-link" href="06-time-system.html">查看时间系统</a>
+      </article>
+
+      <article class="card">
+        <div class="card-index">CAUSALITY / 02</div>
+        <h3>确定性因果链</h3>
+        <p>
+          从事件发生到任务响应，分析中断处理、调度决策、
+          执行阻塞与资源竞争之间的时间关系。
+        </p>
+        <a class="card-link" href="07-deterministic-chain.html">查看因果链</a>
+      </article>
+
+      <article class="card">
+        <div class="card-index">ANALYSIS / 03</div>
+        <h3>最坏情况时间分析</h3>
+        <p>
+          结合目标二进制、控制流、指令周期与执行条件，
+          逐步分析关键路径的最坏情况执行时间及响应时间。
+        </p>
+        <a class="card-link" href="/docs/index.html">查看技术文档</a>
+      </article>
+
+    </div>
+
+    <div class="callout">
+      <strong>Determinism Is an Engineering Property</strong>
+      <p>
+        可分析的机制、可解释的执行路径和可重复的测量结果，
+        是评估实时系统的重要基础。
+        WCET、WCRT 与实测延迟并不是同一个指标；
+        分析结论必须说明目标平台、前提条件、覆盖范围和验证方法。
+      </p>
+    </div>
+
+  </section>
+
+
+  <!-- 05 VERIFICATION -->
+  <section class="section" id="verification">
+
+    <div class="section-header">
+      <div class="section-kicker">05 / ENGINEERING & VERIFICATION</div>
+      <h2>从内核机制到工程验证</h2>
+      <p>
+        系统架构最终需要落实到可以构建、测试、观察与维护的工程实践。
+        理论模型解释系统为什么这样运行，测试和分析则为具体结论提供证据。
+      </p>
+    </div>
+
+    <div class="two-col">
+
+      <article class="panel">
+        <span class="pill">SYSTEM STRUCTURE</span>
+        <h3>整体结构与系统总结</h3>
+        <p>
+          通过全局结构图和系统总结，将任务、调度、中断、
+          时间与资源管理重新联系起来。
+        </p>
+        <ul>
+          <li><a href="system-diagram.html">系统结构图</a></li>
+          <li><a href="summary.html">System View 全局总结</a></li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <span class="pill">ENGINEERING PRACTICE</span>
+        <h3>组件与应用集成</h3>
+        <p>
+          内核机制需要通过清晰的 API、驱动接口、通信组件、
+          示例程序与配套文档，转化为可复用的工程能力。
+        </p>
+        <ul>
+          <li><a href="/docs/index.html">HRTOS 文档中心</a></li>
+          <li><a href="/docs/architecture/index.html">内核架构文档</a></li>
+          <li><a href="/docs/learn/real-time-systems.html">实时系统基础</a></li>
+        </ul>
+      </article>
+
+    </div>
+
+  </section>
+
+
+  <!-- 06 KNOWLEDGE TREE -->
+  <section class="section" id="learning">
+
+    <div class="section-header">
+      <div class="section-kicker">06 / LEARNING PATH</div>
+      <h2>RTOS 知识结构路径</h2>
+      <p>
+        如果你希望从基础开始理解实时操作系统，
+        可以沿着实时模型、调度、中断与内核架构逐步深入。
+        这条学习路径提供通用知识背景，HRTOS 专题则用于理解具体系统机制。
+      </p>
+    </div>
+
+    <div class="knowledge-tree">
+
+      <article class="tree-item">
+        <h3>01. 实时系统基础</h3>
+        <p>
+          理解实时性关注的是任务完成时间与截止期限，
+          而不只是平均运行速度。
+        </p>
+        <a href="/docs/learn/real-time-systems.html">
+          Real-Time System Model →
+        </a>
+      </article>
+
+      <article class="tree-item">
+        <h3>02. 调度理论</h3>
+        <p>
+          学习优先级、抢占式与协作式调度，
+          理解不同调度策略的运行条件与取舍。
+        </p>
+        <a href="/docs/learn/scheduling-basics.html">
+          Scheduling Basics →
+        </a>
+        <br>
+        <a href="/docs/learn/preemptive-vs-cooperative.html">
+          Preemptive vs Cooperative →
+        </a>
+      </article>
+
+      <article class="tree-item">
+        <h3>03. 中断机制</h3>
+        <p>
+          理解外部事件如何进入处理器执行路径，
+          以及中断服务与任务执行之间的关系。
+        </p>
+        <a href="/docs/learn/interrupt-basics.html">
+          Interrupt Model →
+        </a>
+      </article>
+
+      <article class="tree-item">
+        <h3>04. 内核架构</h3>
+        <p>
+          将任务上下文、调度算法、中断管理、
+          时间系统与资源控制统一到系统级视图中。
+        </p>
+        <a href="/docs/architecture/index.html">
+          Kernel Architecture →
+        </a>
+      </article>
+
+    </div>
+
+  </section>
+
+
+  <!-- FOOTER -->
   <footer>
-    © 2017–2026 HRTOS · SYSTEM VIEW
-    <br><br>
-    System View 是 HRTOS 内核运行结构入口层，包括执行流、调度周期、中断路径与内存约束。<br>
-    该层关注“系统如何运行”，而非“为什么这样设计”。
+    <div class="footer-top">
+      <div class="footer-brand">HRTOS · SYSTEM VIEW</div>
+
+      <nav class="footer-links" aria-label="页脚导航">
+        <a href="/index.html">首页</a>
+        <a href="/why/index.html">Why</a>
+        <a href="/docs/index.html">文档中心</a>
+      </nav>
+    </div>
+
+    <p class="footer-description">
+      System View 是 HRTOS 的系统运行结构入口，
+      聚焦任务执行、调度、中断、上下文、时间约束与内存资源，
+      帮助开发者从系统级视角理解 8051 实时操作系统。
+      本页面中的架构图用于说明概念关系；
+      具体实现与性能结论应以对应版本的源代码接口、技术文档和测试证据为准。
+    </p>
+
+    <p>© 2017–2026 HRTOS. All rights reserved.</p>
   </footer>
 
-</div>
+</main>
 
 </body>
 </html>

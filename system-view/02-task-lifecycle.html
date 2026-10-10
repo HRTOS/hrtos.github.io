@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>02 任务生命周期 | HRTOS System View</title>
-<meta name="description" content="定义HRTOS中任务从创建到结束的完整生命周期状态模型">
+<title>Task Lifecycle | HRTOS 8051 RTOS System View</title>
+<meta name="description" content="HRTOS 8051 实时操作系统任务生命周期模型：解析任务状态、就绪与阻塞、调度资格及状态转换对执行行为的影响。">
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="task-lifecycle">
@@ -31,7 +32,7 @@ body{
   line-height:1.75;
 }
 
-/* NAV */
+/* NAV — 保留原有结构与样式 */
 .nav{
   display:flex;
   justify-content:space-between;
@@ -54,24 +55,73 @@ body{
   color:#cfe3ff;
 }
 
-/* layout */
+/* Layout */
 .container{
   max-width:920px;
   margin:0 auto;
   padding:60px 24px;
 }
 
+.hero{
+  margin-bottom:34px;
+}
+
+.eyebrow{
+  color:#7dd3fc;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.14em;
+  margin-bottom:12px;
+}
+
 h1{
   font-size:38px;
-  margin:0 0 10px;
+  line-height:1.3;
+  margin:0 0 14px;
+}
+
+h2{
+  margin:0 0 12px;
+  font-size:19px;
+  line-height:1.5;
+  color:#cfe3ff;
+}
+
+h3{
+  margin:0 0 8px;
+  font-size:15px;
+  color:#e2e8f0;
+}
+
+p{
+  margin:0 0 12px;
+}
+
+p:last-child{
+  margin-bottom:0;
 }
 
 .sub{
   color:var(--muted);
-  margin-bottom:40px;
+  margin-bottom:20px;
+  max-width:760px;
 }
 
-/* card */
+.tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.tag{
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:4px 10px;
+  color:#cbd5e1;
+  font-size:12px;
+}
+
+/* Cards */
 .card{
   background:rgba(17,24,35,.92);
   border:1px solid var(--border);
@@ -82,26 +132,178 @@ h1{
 }
 
 .card h2{
-  margin:0 0 10px;
-  font-size:18px;
-  color:#cfe3ff;
   border-left:3px solid var(--accent);
   padding-left:10px;
 }
 
 .en{
   color:var(--muted);
-  font-size:14px;
-  margin-top:6px;
+  font-size:13px;
+  margin-top:12px;
 }
 
-/* footer */
+/* State model */
+.state-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin:16px 0;
+}
+
+.state-item{
+  background:#0f1722;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:15px;
+}
+
+.state-name{
+  color:#7dd3fc;
+  font-size:14px;
+  font-weight:700;
+  margin-bottom:5px;
+}
+
+.state-desc{
+  color:#cbd5e1;
+  font-size:13px;
+  line-height:1.75;
+}
+
+/* Transition diagram */
+.diagram{
+  padding:18px;
+  background:#0b1220;
+  border:1px solid var(--border);
+  border-radius:12px;
+  margin:16px 0;
+}
+
+.diagram-node{
+  background:#111c2c;
+  border:1px solid rgba(56,189,248,.3);
+  border-radius:9px;
+  padding:12px 15px;
+  text-align:center;
+}
+
+.diagram-node strong{
+  display:block;
+  color:#e0f2fe;
+  font-size:14px;
+}
+
+.diagram-node span{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  margin-top:3px;
+}
+
+.diagram-arrow{
+  text-align:center;
+  color:#64748b;
+  line-height:1.9;
+}
+
+.diagram-row{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+
+.diagram-note{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:14px;
+}
+
+/* Technical note */
+.note{
+  border-left:3px solid #60a5fa;
+  padding:12px 15px;
+  background:rgba(30,41,59,.45);
+  color:#cbd5e1;
+  font-size:14px;
+  margin-top:14px;
+}
+
+ul{
+  padding-left:21px;
+  margin:8px 0 0;
+}
+
+li{
+  color:#cbd5e1;
+  font-size:14px;
+  margin-bottom:8px;
+}
+
+li:last-child{
+  margin-bottom:0;
+}
+
+a{
+  color:#7dd3fc;
+  text-decoration:none;
+}
+
+a:hover{
+  text-decoration:underline;
+}
+
+.related{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+
+.related a{
+  display:block;
+  border:1px solid var(--border);
+  border-radius:9px;
+  padding:13px 15px;
+  background:#0f1722;
+}
+
+.related strong{
+  display:block;
+  color:#e2e8f0;
+  font-size:14px;
+}
+
+.related span{
+  color:var(--muted);
+  font-size:12px;
+}
+
+/* Footer — 保留原有结构与内容 */
 .site-footer{
   text-align:center;
   border-top:1px solid rgba(148,163,184,.14);
   padding:18px 12px;
   color:#8ea3be;
   font-size:.95rem;
+}
+
+@media(max-width:640px){
+  .container{
+    padding:38px 18px;
+  }
+
+  h1{
+    font-size:30px;
+  }
+
+  .card{
+    padding:18px;
+  }
+
+  .state-list,
+  .diagram-row,
+  .related{
+    grid-template-columns:1fr;
+  }
 }
 </style>
 </head>
@@ -118,118 +320,321 @@ h1{
   </div>
 </div>
 
-<div class="container">
+<main class="container">
 
-  <h1>2. 任务生命周期（Task Lifecycle）</h1>
-  <div class="sub">任务在 HRTOS 中的时间驱动状态流转模型</div>
+  <header class="hero">
+    <div class="eyebrow">SYSTEM VIEW / TASK LIFECYCLE</div>
 
-  <div class="card">
+    <h1>任务生命周期（Task Lifecycle）</h1>
+
+    <p class="sub">
+      任务生命周期描述任务从进入内核管理体系开始，其执行资格、
+      等待条件与运行状态如何随系统事件发生变化。
+      它连接任务管理与调度机制，是理解多任务运行行为的重要基础。
+    </p>
+
+    <div class="tags">
+      <span class="tag">Task State</span>
+      <span class="tag">Ready / Running / Blocked</span>
+      <span class="tag">Scheduling</span>
+      <span class="tag">8051 RTOS</span>
+    </div>
+  </header>
+
+  <section class="card">
     <h2>核心定义</h2>
+
     <p>
-      任务生命周期描述任务从创建到终止的完整状态变化过程。
+      任务生命周期是任务在系统中经历的状态变化及其转换条件的集合。
+      状态用于描述任务当前所处的运行阶段，以及它是否具备被调度执行的条件。
     </p>
+
     <p>
-      在 HRTOS 中，它不仅是状态机，而是一个受时间约束的执行实体模型。
+      在 HRTOS 中，理解任务生命周期需要同时关注任务状态、
+      调度规则、等待条件和上下文管理。状态变化可能影响后续执行路径，
+      但状态本身并不直接代表任务获得了多少处理器时间。
     </p>
+
     <div class="en">
-      Task lifecycle is a time-constrained execution entity model, not a simple state machine.
+      Task lifecycle describes task states, transition conditions,
+      and their interaction with scheduling and execution.
     </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>系统本质</h2>
+  <section class="card">
+    <h2>01. 任务状态模型</h2>
+
     <p>
-      在 HRTOS 中，状态的意义不是资源管理，而是时间约束管理。
+      从通用 RTOS 的分析角度，可以使用就绪、运行和阻塞三个基本状态理解任务的调度资格。
+      这些状态构成概念模型；HRTOS 的实际状态表示与转换规则应以对应版本实现为准。
     </p>
+
+    <div class="state-list">
+      <div class="state-item">
+        <div class="state-name">Ready · 就绪</div>
+        <div class="state-desc">
+          任务具备运行条件，可以参与调度，但当前未必正在执行。
+        </div>
+      </div>
+
+      <div class="state-item">
+        <div class="state-name">Running · 运行</div>
+        <div class="state-desc">
+          任务当前正在使用处理器执行其指令路径。
+        </div>
+      </div>
+
+      <div class="state-item">
+        <div class="state-name">Blocked · 阻塞</div>
+        <div class="state-desc">
+          任务正在等待某个条件，例如延时到期、消息到达或资源变为可用。
+        </div>
+      </div>
+
+      <div class="state-item">
+        <div class="state-name">Other States · 其他状态</div>
+        <div class="state-desc">
+          创建、挂起、删除或终止等状态是否存在，取决于内核提供的任务管理能力。
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      这里的 Ready、Running 和 Blocked 是常见的分析术语，
+      并不意味着 HRTOS 内核一定以同名枚举或独立变量实现这些状态。
+      对外描述应与真实的内核数据结构和 API 语义保持一致。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>02. 状态转移关系</h2>
+
     <p>
-      每一次状态变化，本质都是一次时间语义切换：是否占用CPU、是否可调度、是否进入等待区间。
+      任务状态不是固定的线性流程。任务可能在运行期间阻塞，
+      也可能因时间到期或事件到达重新变为就绪；
+      被抢占的任务通常仍然具备运行资格，只是暂时让出处理器。
     </p>
-  </div>
 
-  <div class="card">
-    <h2>1. 创建（Created）</h2>
-    <p>任务被初始化并分配TCB，但尚未进入调度体系。</p>
-    <p>关键点：是否进入系统时间模型。</p>
-  </div>
+    <div class="diagram">
+      <div class="diagram-node">
+        <strong>Ready · 就绪</strong>
+        <span>具备执行条件，等待调度</span>
+      </div>
 
-  <div class="card">
-    <h2>2. 就绪（Ready）</h2>
-    <p>任务进入就绪队列，具备执行条件但未获得CPU。</p>
-    <p>本质：等待时间分配。</p>
-  </div>
+      <div class="diagram-arrow">↓ 调度器选择</div>
 
-  <div class="card">
-    <h2>3. 运行（Running）</h2>
-    <p>任务获得CPU执行权，进入时间消耗阶段。</p>
+      <div class="diagram-node">
+        <strong>Running · 运行</strong>
+        <span>当前任务正在执行</span>
+      </div>
+
+      <div class="diagram-row" style="margin-top:12px;">
+        <div class="diagram-node">
+          <strong>Blocked · 阻塞</strong>
+          <span>等待时间、消息或其他条件</span>
+        </div>
+
+        <div class="diagram-node">
+          <strong>Ready · 重新就绪</strong>
+          <span>被抢占、让出处理器或恢复运行资格</span>
+        </div>
+      </div>
+
+      <div class="diagram-arrow">
+        阻塞条件满足：Blocked → Ready<br>
+        发生抢占或让出：Running → Ready
+      </div>
+
+      <div class="diagram-note">
+        示意图展示常见状态关系，不代表完整状态机或 HRTOS 内核的逐条实现路径。
+        实际状态转换还应考虑具体 API、调度策略和中断处理规则。
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>03. 就绪状态与调度资格</h2>
+
     <p>
-      约束包括：抢占控制、WCET约束、中断延迟边界。
+      就绪意味着任务满足运行条件，但不意味着任务立即获得处理器。
+      当多个任务同时就绪时，调度器需要按照内核规定的调度策略选择执行对象。
     </p>
-  </div>
 
-  <div class="card">
-    <h2>4. 阻塞（Blocked）</h2>
-    <p>任务因资源或事件进入等待状态。</p>
-    <p>该状态本质是“时间冻结”，但仍属于系统时间模型的一部分。</p>
-  </div>
+    <ul>
+      <li>任务优先级影响调度器对候选任务的选择。</li>
+      <li>时间片或轮转规则可能影响同一优先级任务的执行顺序。</li>
+      <li>更高优先级任务就绪后是否立即抢占当前任务，取决于具体调度策略和抢占条件。</li>
+      <li>中断处理和内核临界区可能影响调度决策实际生效的时刻。</li>
+    </ul>
 
-  <div class="card">
-    <h2>5. 终止（Terminated）</h2>
-    <p>任务退出系统，释放资源并移出调度体系。</p>
-    <p>关键点：是否完全脱离时间模型。</p>
-  </div>
+    <p>
+      因此，任务状态回答的是“任务是否具备运行资格”，
+      调度机制回答的是“下一步由谁执行”。
+    </p>
 
-  <div class="card">
-    <h2>状态转移模型</h2>
     <p>
-      Created → Ready → Running → Blocked → Ready → Running → Terminated
+      参见 <a href="/system-view/04-scheduler-cycle.html">Scheduler Cycle（调度周期）</a>。
     </p>
-    <p>
-      由三类事件驱动：中断、调度器、资源事件。
-    </p>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>系统级意义</h2>
+  <section class="card">
+    <h2>04. 阻塞、等待与时间推进</h2>
+
     <p>
-      生命周期的核心作用是：让任务行为在时间上可预测。
+      阻塞表示任务暂时不具备继续运行的条件。
+      例如任务等待延时到期、等待消息或等待资源。
+      阻塞期间，该任务通常不会持续占用处理器执行自己的任务代码。
     </p>
+
     <p>
-      若生命周期不可预测，则调度分析失效。
+      但阻塞不意味着系统时间停止，也不意味着整个系统进入等待状态。
+      其他就绪任务、中断处理程序和系统时基仍可能继续运行。
     </p>
+
+    <ul>
+      <li><strong>时间等待：</strong>系统时基推进，达到条件后任务可能重新就绪。</li>
+      <li><strong>事件等待：</strong>消息或指定事件到达后，内核可能解除任务等待。</li>
+      <li><strong>资源等待：</strong>相关资源状态改变后，任务是否可以继续运行取决于同步机制。</li>
+    </ul>
+
     <div class="en">
-      Lifecycle modeling enables predictable temporal behavior of tasks.
+      Blocking suspends a task's eligibility to execute;
+      it does not freeze system time or stop other tasks from running.
     </div>
-  </div>
+  </section>
 
-  <div class="card">
+  <section class="card">
+    <h2>05. 运行状态与上下文切换</h2>
+
+    <p>
+      任务进入运行状态后，处理器执行该任务对应的指令路径。
+      当发生调度切换时，内核需要依据目标处理器和自身实现，
+      保存必要的当前上下文，并恢复下一执行对象的上下文。
+    </p>
+
+    <p>
+      上下文切换与任务状态变化相关，但二者并非一一对应：
+      任务可能由运行转为就绪，也可能在内核处理期间发生控制流变化；
+      而一次调度判断也可能最终继续执行原任务。
+    </p>
+
+    <ul>
+      <li>上下文切换包含的寄存器和堆栈操作取决于处理器架构及内核设计。</li>
+      <li>切换开销会影响任务实际可获得的处理器时间。</li>
+      <li>中断上下文与任务上下文需要分别分析，避免混淆执行边界。</li>
+    </ul>
+
+    <p>
+      参见 <a href="/system-view/01-execution-flow.html">Execution Flow（执行流）</a>
+      和 <a href="/system-view/03-interrupt-flow.html">Interrupt Flow（中断流）</a>。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>06. 创建、退出与资源回收</h2>
+
+    <p>
+      一些 RTOS 提供显式的任务创建、挂起、恢复、删除或终止接口。
+      这些操作是否存在，以及任务退出后如何回收控制块、堆栈和相关资源，
+      需要根据具体内核的任务管理能力判断。
+    </p>
+
+    <p>
+      对于采用固定任务表或静态任务配置的实现，
+      任务生命周期可能与支持动态创建和删除任务的系统有所不同。
+      因此，不应仅依据通用 RTOS 状态图推断 HRTOS 支持动态任务创建或终止。
+    </p>
+
+    <div class="note">
+      如果需要描述 HRTOS 4.0 的实际任务生命周期，
+      应进一步核对任务创建 API、任务控制结构、阻塞与唤醒逻辑、
+      调度状态表示，以及任务退出或删除机制。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>07. 生命周期与实时性分析</h2>
+
+    <p>
+      生命周期模型有助于识别任务何时具备运行资格、何时等待条件满足，
+      以及哪些状态变化可能触发调度。
+      但状态模型本身不能直接证明任务一定在截止时间前完成。
+    </p>
+
+    <p>
+      对具体任务开展实时性分析时，还需要考虑：
+    </p>
+
+    <ul>
+      <li>任务执行路径的最坏执行时间（WCET）。</li>
+      <li>高优先级任务和中断造成的执行干扰。</li>
+      <li>任务等待、资源竞争及同步机制引入的延迟。</li>
+      <li>调度策略、时间片与上下文切换开销。</li>
+      <li>任务截止时间及其响应时间的明确计算边界。</li>
+    </ul>
+
+    <p>
+      生命周期描述任务的状态变化；执行流描述处理器的具体运行路径；
+      时间分析则评估这些路径在指定条件下是否满足实时约束。
+    </p>
+
+    <div class="en">
+      Task states, execution paths, and timing analysis are complementary
+      views of real-time behavior.
+    </div>
+  </section>
+
+  <section class="card">
     <h2>语义总结</h2>
+
     <p>
-      生命周期不是状态管理，而是时间资源分配模型。
+      任务生命周期不是单纯的状态名称列表，
+      而是用于描述任务运行资格、等待条件和状态转换规则的模型。
     </p>
+
+    <p>
+      对 HRTOS 而言，准确理解任务状态与调度机制的关系，
+      可以帮助开发者分析任务为何运行、为何等待，以及何时可能再次获得处理器。
+    </p>
+
     <div class="en">
-      Task lifecycle is a time-resource allocation model.
+      Task lifecycle modeling clarifies task eligibility, waiting conditions,
+      and the state transitions that influence scheduling.
     </div>
-  </div>
+  </section>
 
-  <div class="card">
+  <section class="card">
     <h2>相关阅读</h2>
-    <p><b>System View</b></p>
-    <p><a href="/system-view/index.html" style="color:#38bdf8;">返回总览</a></p>
 
-    <p><b>上一篇</b></p>
-    <p><a href="/system-view/01-execution-flow.html" style="color:#38bdf8;">执行流模型 ←</a></p>
+    <div class="related">
+      <a href="/system-view/index.html">
+        <strong>System View</strong>
+        <span>系统运行结构总览</span>
+      </a>
 
-    <p><b>下一篇</b></p>
-    <p><a href="/system-view/03-interrupt-flow.html" style="color:#38bdf8;">中断流模型 →</a></p>
+      <a href="/system-view/01-execution-flow.html">
+        <strong>Execution Flow</strong>
+        <span>任务与内核执行路径</span>
+      </a>
 
-    <p><b>扩展</b></p>
-    <p>
-      <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度周期模型</a><br>
-      <a href="/system-view/07-deterministic-chain.html" style="color:#38bdf8;">确定性执行链</a>
-    </p>
-  </div>
+      <a href="/system-view/03-interrupt-flow.html">
+        <strong>Interrupt Flow</strong>
+        <span>中断处理与返回路径</span>
+      </a>
 
-</div>
+      <a href="/system-view/04-scheduler-cycle.html">
+        <strong>Scheduler Cycle</strong>
+        <span>调度触发与任务选择</span>
+      </a>
+
+      <a href="/system-view/07-deterministic-chain.html">
+        <strong>Deterministic Chain</strong>
+        <span>系统行为与时间约束</span>
+      </a>
+    </div>
+  </section>
+
+</main>
 
 <footer class="site-footer">
   © 2017–2026 HRTOS · SYSTEM VIEW

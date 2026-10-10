@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>System Model | HRTOS</title>
-<meta name="description" content="HRTOS 论文级系统模型：基于时间因果链的实时系统运行结构">
+<title>HRTOS System Model | 8051 RTOS System View</title>
+<meta name="description" content="HRTOS 8051 实时操作系统系统模型：解析中断处理、任务状态、调度决策、执行路径与时间约束之间的关系。">
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="system-model">
@@ -31,7 +32,7 @@ body{
   line-height:1.75;
 }
 
-/* NAV */
+/* NAV — 保持原有结构与样式不变 */
 .nav{
   display:flex;
   justify-content:space-between;
@@ -58,7 +59,7 @@ body{
   color:#cfe3ff;
 }
 
-/* layout */
+/* Main layout */
 .container{
   max-width:980px;
   margin:0 auto;
@@ -67,42 +68,127 @@ body{
 
 h1{
   font-size:38px;
-  margin:0 0 10px;
+  line-height:1.25;
+  margin:0 0 16px;
+  letter-spacing:-.025em;
+}
+
+h2{
+  font-size:23px;
+  line-height:1.4;
+  margin:0 0 14px;
+}
+
+h3{
+  font-size:17px;
+  line-height:1.5;
+  margin:0 0 8px;
+}
+
+p{
+  margin:0 0 14px;
+}
+
+a{
+  color:#7dd3fc;
+  text-decoration:none;
+}
+
+a:hover{
+  text-decoration:underline;
+}
+
+.hero{
+  margin-bottom:34px;
+}
+
+.eyebrow{
+  color:#7dd3fc;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  margin-bottom:14px;
 }
 
 .sub{
   color:var(--muted);
-  margin-bottom:30px;
-  line-height:1.6;
+  max-width:760px;
+  font-size:16px;
+  line-height:1.85;
+  margin-bottom:22px;
 }
 
-/* core box */
+.tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.tag{
+  display:inline-block;
+  padding:4px 10px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  color:#cbd5e1;
+  font-size:12px;
+}
+
+/* Intro */
 .model{
   background:#111823;
   border:1px solid var(--border);
   border-radius:14px;
-  padding:20px;
-  margin-bottom:30px;
+  padding:24px;
+  margin-bottom:34px;
+  box-shadow:var(--shadow);
 }
-/* footer */
-.site-footer{
-  text-align:center;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding-top:12px;
-  color:#8ea3be;
-  font-size:.95rem;
+
+.model-label{
+  color:#7dd3fc;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.1em;
+  margin-bottom:12px;
 }
-/* boxes */
+
+.model-equation{
+  color:#f1f5f9;
+  font-size:17px;
+  font-weight:650;
+  line-height:1.9;
+  overflow-wrap:anywhere;
+  margin:14px 0;
+}
+
+.model-note{
+  color:var(--muted);
+  font-size:13px;
+  margin-top:12px;
+}
+
+/* Sections */
+.section{
+  margin-bottom:38px;
+}
+
+.section-intro{
+  color:var(--muted);
+  font-size:14px;
+  margin-bottom:18px;
+}
+
 .box{
   border:1px solid #1e2a3a;
   background:#0f1722;
   border-radius:14px;
-  padding:18px 22px;
-  margin-bottom:18px;
+  padding:20px 22px;
+  margin-bottom:14px;
 }
 
 .title{
   font-size:15px;
+  font-weight:700;
   color:#7dd3fc;
   margin-bottom:8px;
 }
@@ -110,24 +196,111 @@ h1{
 .text{
   color:#cbd5e1;
   font-size:14px;
-  line-height:1.7;
+  line-height:1.8;
+}
+
+.text p:last-child{
+  margin-bottom:0;
 }
 
 .flow{
   text-align:center;
-  color:#4da3ff;
+  color:#64748b;
   font-size:13px;
-  margin:6px 0;
+  margin:8px 0;
 }
 
-/* layers */
-.chain{ border-left:3px solid #4da3ff; }
-.decide{ border-left:3px solid #f59e0b; }
-.exec{ border-left:3px solid #22c55e; }
-.noise{ border-left:3px solid #ef4444; }
-.time{ border-left:3px solid #a855f7; }
+.chain{border-left:3px solid #38bdf8}
+.decide{border-left:3px solid #f59e0b}
+.exec{border-left:3px solid #22c55e}
+.interrupt{border-left:3px solid #fb7185}
+.state{border-left:3px solid #60a5fa}
+.time{border-left:3px solid #a78bfa}
 
-b{ color:#cfe3ff; }
+/* Two-column relationships */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+
+.grid .box{
+  margin:0;
+}
+
+/* Technical lists */
+ul{
+  padding-left:21px;
+  margin:10px 0 0;
+}
+
+li{
+  color:#cbd5e1;
+  font-size:14px;
+  margin-bottom:8px;
+}
+
+li:last-child{
+  margin-bottom:0;
+}
+
+strong,b{
+  color:#e2e8f0;
+}
+
+/* Formula */
+.formula{
+  padding:16px 18px;
+  background:#0b1220;
+  border:1px solid var(--border);
+  border-radius:10px;
+  color:#e2e8f0;
+  font-size:14px;
+  line-height:1.9;
+  overflow-wrap:anywhere;
+  margin:14px 0;
+}
+
+.small{
+  color:var(--muted);
+  font-size:13px;
+}
+
+/* Footer — 保持原有结构与内容不变 */
+.site-footer{
+  text-align:center;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:12px;
+  color:#8ea3be;
+  font-size:.95rem;
+}
+
+/* Responsive rules */
+@media(max-width:640px){
+  .container{
+    padding:38px 18px;
+  }
+
+  h1{
+    font-size:30px;
+  }
+
+  h2{
+    font-size:21px;
+  }
+
+  .model{
+    padding:19px;
+  }
+
+  .box{
+    padding:17px;
+  }
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
 </style>
 </head>
 
@@ -143,132 +316,347 @@ b{ color:#cfe3ff; }
   </div>
 </div>
 
-<div class="container">
+<main class="container">
 
-<h1>System Model（系统模型）</h1>
+  <header class="hero">
+    <div class="eyebrow">SYSTEM VIEW / SYSTEM MODEL</div>
+    <h1>System Model（系统运行模型）</h1>
 
-<div class="sub">
-HRTOS 不是模块集合，而是一个<strong>时间因果闭环系统</strong>。<br>
-所有行为必须映射为可界定的时间函数关系。
-</div>
+    <p class="sub">
+      HRTOS 的运行过程涉及中断响应、任务状态变化、调度决策、上下文切换与时间约束。
+      系统模型用于描述这些机制之间的关系，并为执行路径分析、实时性评估和工程验证建立统一的分析框架。
+    </p>
 
-<div class="model">
-<b>核心定义：</b><br><br>
+    <div class="tags">
+      <span class="tag">8051 RTOS</span>
+      <span class="tag">Interrupt Handling</span>
+      <span class="tag">Task Scheduling</span>
+      <span class="tag">Timing Analysis</span>
+    </div>
+  </header>
 
-系统运行可抽象为循环函数：
+  <section class="model">
+    <div class="model-label">SYSTEM MODEL / CORE RELATIONSHIP</div>
 
-<br><br>
+    <h2>从事件到执行，再到时间验证</h2>
 
-<b>
-Event(t) → Decision(t) → State(t) → Execution(t) → Disturbance(t) → Constraint(t) → Event(t+1)
-</b>
+    <p>
+      系统运行不是所有模块依次执行的固定流水线，而是由事件触发、
+      内核状态变化、调度决策和实际执行共同构成的动态过程。
+    </p>
 
-<br><br>
+    <div class="model-equation">
+      Event → Kernel Processing → Scheduling Decision → Execution
+    </div>
 
-约束原则：
-- 所有阶段必须 bounded（有界）
-- 任一不可预测因素都会破坏确定性
-</div>
+    <div class="model-equation">
+      Task State + Interrupt Behavior + Resource Constraints
+      → Timing Behavior
+    </div>
 
-<div class="box chain">
-<div class="title">① 事件层（Interrupt Layer）</div>
-<div class="text">
-系统唯一输入来源：中断 / Tick / IPC。<br><br>
-作用：生成调度触发点，打断时间连续性。
-</div>
-</div>
+    <p class="model-note">
+      说明：以上是用于理解系统机制的概念模型，不代表每次事件都会触发任务切换，
+      也不构成对所有执行路径均已获得形式化时间上界的声明。
+    </p>
+  </section>
 
-<div class="flow">↓</div>
+  <section class="section">
+    <h2>01. 事件与中断处理</h2>
+    <p class="section-intro">
+      事件是系统运行过程中的触发因素。外部中断、系统 Tick 和内核通信操作，
+      可能引起任务状态变化或调度需求，但它们的执行路径并不完全相同。
+    </p>
 
-<div class="box decide">
-<div class="title">② 调度层（Scheduler Layer）</div>
-<div class="text">
-时间资源分配中心。<br><br>
-本质：决定 CPU 在某时间片归属。
-</div>
-</div>
+    <div class="box interrupt">
+      <div class="title">Interrupt / Tick / Kernel Event</div>
+      <div class="text">
+        <ul>
+          <li><strong>外部中断：</strong>响应外设或外部信号，并执行相应的中断处理程序。</li>
+          <li><strong>系统 Tick：</strong>推进系统时间，并根据内核实现处理超时与时间相关事件。</li>
+          <li><strong>内核操作：</strong>例如任务延时、消息传递或资源释放，可能改变任务状态。</li>
+        </ul>
+      </div>
+    </div>
 
-<div class="flow">↓</div>
+    <div class="flow">↓ 产生处理需求或状态变化</div>
 
-<div class="box chain">
-<div class="title">③ 状态层（Task Lifecycle）</div>
-<div class="text">
-任务状态集合：Ready / Running / Blocked。<br><br>
-本质：可调度空间的时间划分。
-</div>
-</div>
+    <div class="box chain">
+      <div class="title">Kernel Processing</div>
+      <div class="text">
+        内核根据事件类型执行对应的处理逻辑。是否进入调度路径，
+        是否发生上下文切换，以及何时恢复任务执行，取决于事件类型、
+        当前执行环境和具体内核实现。
+      </div>
+    </div>
+  </section>
 
-<div class="flow">↓</div>
+  <section class="section">
+    <h2>02. 任务状态与调度决策</h2>
+    <p class="section-intro">
+      任务状态描述任务是否具备执行条件；调度器则根据可运行任务、
+      优先级及调度策略决定后续执行对象。两者相关，但不是同一个概念。
+    </p>
 
-<div class="box exec">
-<div class="title">④ 执行层（Execution Flow）</div>
-<div class="text">
-CPU 实际执行轨迹。<br><br>
-必须满足 WCET（最坏执行时间）约束。
-</div>
-</div>
+    <div class="grid">
+      <div class="box state">
+        <div class="title">Task Lifecycle</div>
+        <div class="text">
+          <p><strong>Ready：</strong>任务已具备运行条件，等待获得处理器。</p>
+          <p><strong>Running：</strong>任务当前正在执行。</p>
+          <p><strong>Blocked：</strong>任务正在等待时间、消息或其他事件。</p>
+          <p class="small">
+            具体状态定义、状态转换和边界条件，以 HRTOS 对应版本的实际实现为准。
+          </p>
+        </div>
+      </div>
 
-<div class="flow">↓</div>
+      <div class="box decide">
+        <div class="title">Scheduler Decision</div>
+        <div class="text">
+          <p>调度器根据当前任务状态和调度规则，确定接下来应执行的任务或内核路径。</p>
+          <p>优先级、时间片、任务就绪情况和中断返回路径，都可能影响最终执行结果。</p>
+          <p class="small">
+            调度决策不等于任务切换：若选中的执行对象未发生变化，可能不需要切换任务上下文。
+          </p>
+        </div>
+      </div>
+    </div>
 
-<div class="box noise">
-<div class="title">⑤ 扰动层（Memory & Cache）</div>
-<div class="text">
-时间不确定性来源：Cache miss / 内存访问 / 分配行为。<br><br>
-本质：时间抖动生成器。
-</div>
-</div>
+    <div class="flow">状态变化与调度决策共同影响执行路径</div>
 
-<div class="flow">↓</div>
+    <div class="box chain">
+      <div class="title">Scheduling Result</div>
+      <div class="text">
+        调度结果决定后续执行对象，但实际运行还受到中断到达、
+        临界区、上下文切换成本和共享资源访问等因素影响。
+        因此，分析调度策略时，还需要结合真实执行路径与处理器时间预算。
+      </div>
+    </div>
+  </section>
 
-<div class="box time">
-<div class="title">⑥ 约束层（Time System）</div>
-<div class="text">
-系统正确性判定层。<br><br>
-规则：超时 = 错误（不是性能问题）。
-</div>
-</div>
+  <section class="section">
+    <h2>03. 执行路径与上下文切换</h2>
+    <p class="section-intro">
+      执行流描述处理器在任务代码、中断处理程序和内核路径之间的转移。
+      它是连接调度机制与时间分析的关键部分。
+    </p>
 
-<div class="flow">↺ Loop Back</div>
+    <div class="box exec">
+      <div class="title">Execution Flow</div>
+      <div class="text">
+        <ul>
+          <li>任务持续执行，直到发生调度点、中断或其他控制流转移。</li>
+          <li>中断处理可能改变系统状态，并影响当前任务的后续执行。</li>
+          <li>当调度结果要求更换执行任务时，内核需要按照实现规则保存和恢复相应上下文。</li>
+          <li>中断返回、任务恢复和嵌套中断的具体顺序取决于目标处理器及内核实现。</li>
+        </ul>
+      </div>
+    </div>
 
-<div class="model">
-<b>系统本质总结：</b><br><br>
+    <div class="formula">
+      <strong>执行路径时间模型：</strong><br>
+      T<sub>path</sub> =
+      T<sub>interrupt</sub> +
+      T<sub>kernel</sub> +
+      T<sub>schedule</sub> +
+      T<sub>context</sub> +
+      T<sub>task</sub>
+    </div>
 
-HRTOS 本质不是操作系统，而是：
+    <p class="small">
+      该公式用于拆分执行路径中的时间开销。各项是否发生、是否重叠及如何计入，
+      应根据具体路径定义；不能直接将该表达式视为适用于所有路径的固定计算式。
+    </p>
 
-<br><br>
+    <p>
+      详细机制参见
+      <a href="/system-view/01-execution-flow.html">Execution Flow</a>、
+      <a href="/system-view/03-interrupt-flow.html">Interrupt Flow</a>
+      和
+      <a href="/system-view/04-scheduler-cycle.html">Scheduler Cycle</a>。
+    </p>
+  </section>
 
-<b>一个以时间为核心变量的因果闭环函数系统。</b>
+  <section class="section">
+    <h2>04. 时间约束与实时性分析</h2>
+    <p class="section-intro">
+      实时系统不仅关注功能是否正确，还需要关注结果是否在规定时间内产生。
+      时间约束必须结合具体任务、事件路径与系统负载进行分析。
+    </p>
 
-<br><br>
+    <div class="box time">
+      <div class="title">Timing Constraints</div>
+      <div class="text">
+        <ul>
+          <li><strong>中断响应时间：</strong>从规定的中断事件发生，到指定响应点之间的时间。</li>
+          <li><strong>调度与切换开销：</strong>内核完成调度决策及必要上下文切换所消耗的时间。</li>
+          <li><strong>执行时间：</strong>指定代码路径在目标硬件和明确环境条件下所需的处理器时间。</li>
+          <li><strong>截止时间：</strong>任务或响应必须满足的时间约束。</li>
+        </ul>
+      </div>
+    </div>
 
-它回答的不是“如何执行”，而是：
+    <div class="formula">
+      <strong>实时性判定的基本形式：</strong><br>
+      R ≤ D<br><br>
+      R：按明确边界定义的响应时间<br>
+      D：对应事件或任务的截止时间
+    </div>
 
-<br>
-👉 “为何在相同时间结构下始终得到一致结果”
-</div>
+    <p>
+      WCET（最坏执行时间）分析、响应时间分析和压力测试可以提供不同层面的证据，
+      但它们回答的问题并不相同。只有明确目标硬件、编译结果、执行路径、
+      中断条件和分析边界，才能解释时间结论的适用范围。
+    </p>
 
-<div class="box">
-<div class="title">系统模型关系</div>
+    <p>
+      相关内容参见
+      <a href="/system-view/06-time-system.html">Time System</a>
+      与
+      <a href="/system-view/07-deterministic-chain.html">Deterministic Chain</a>。
+    </p>
+  </section>
 
-<div class="text">
-<a href="/system-view/01-execution-flow.html">01 Execution Flow</a><br>
-<a href="/system-view/02-task-lifecycle.html">02 Task Lifecycle</a><br>
-<a href="/system-view/03-interrupt-flow.html">03 Interrupt Flow</a><br>
-<a href="/system-view/04-scheduler-cycle.html">04 Scheduler Cycle</a><br>
-<a href="/system-view/05-memory-view.html">05 Memory View</a><br>
-<a href="/system-view/06-time-system.html">06 Time System</a><br>
-<a href="/system-view/07-deterministic-chain.html">07 Deterministic Chain</a>
-</div>
-</div>
+  <section class="section">
+    <h2>05. 资源与干扰因素</h2>
+    <p class="section-intro">
+      处理器时间并非只由任务代码长度决定。中断活动、临界区、资源竞争、
+      存储器访问以及上下文管理开销，都可能影响实际响应时间。
+    </p>
 
-<div class="box">
-<div class="title">推荐阅读顺序</div>
-<div class="flow">
-时间系统 → 调度周期 → 执行流 → 中断流 → 确定性因果链
-</div>
-</div>
+    <div class="grid">
+      <div class="box">
+        <div class="title">Memory & Context</div>
+        <div class="text">
+          在资源受限的 8051 环境中，需要关注内部 RAM、外部 RAM、
+          寄存器组、堆栈及上下文保存与恢复的成本。
+          具体影响取决于芯片型号、存储器配置和编译结果。
+        </div>
+      </div>
 
-</div>
+      <div class="box">
+        <div class="title">Interrupt & Critical Section</div>
+        <div class="text">
+          中断嵌套、关中断区间和临界区可能改变事件响应的可达时刻。
+          分析时应区分全局中断屏蔽、特定中断源屏蔽及其他同步机制的影响。
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="title">Shared Resources</div>
+        <div class="text">
+          共享数据、消息队列和互斥资源可能引入额外处理步骤或等待时间。
+          需要根据资源访问规则与同步机制确定相关路径的时间边界。
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="title">Build & Hardware</div>
+        <div class="text">
+          指令周期、编译器优化、时钟配置和芯片具体实现都会影响测量结果。
+          时间分析应绑定明确的目标配置，而不能脱离构建条件讨论。
+        </div>
+      </div>
+    </div>
+
+    <p>
+      内存布局与资源约束参见
+      <a href="/system-view/05-memory-view.html">Memory View</a>。
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>06. 系统模型如何用于工程验证</h2>
+
+    <div class="box chain">
+      <div class="title">Step 1 — Define the Target</div>
+      <div class="text">
+        明确 MCU 型号、时钟配置、编译器版本、编译选项、HRTOS 版本和运行条件。
+      </div>
+    </div>
+
+    <div class="box chain">
+      <div class="title">Step 2 — Identify the Execution Path</div>
+      <div class="text">
+        选定需要分析的中断响应、任务切换、调度周期或其他具体路径，
+        明确起点、终点及可能介入的中断。
+      </div>
+    </div>
+
+    <div class="box chain">
+      <div class="title">Step 3 — Establish Timing Evidence</div>
+      <div class="text">
+        结合反汇编指令分析、路径边界检查和目标硬件测量，
+        分别记录理论估算与实测数据，并说明各自的假设和限制。
+      </div>
+    </div>
+
+    <div class="box chain">
+      <div class="title">Step 4 — Evaluate the Constraint</div>
+      <div class="text">
+        将分析结果与明确的时间约束比较，记录满足条件的范围、
+        尚未覆盖的路径和需要进一步验证的风险。
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>07. 系统模型的边界</h2>
+
+    <div class="model">
+      <p>
+        系统模型提供的是一种组织运行机制和时间约束的分析框架，
+        并不自动证明系统具有确定的最坏响应时间，也不意味着所有路径
+        都已完成形式化验证。
+      </p>
+
+      <p>
+        对 HRTOS 的实时性进行评价时，应区分架构设计、实现机制、
+        静态时间分析、目标硬件测量与长期压力测试等不同证据。
+        这些证据相互补充，但不能彼此替代。
+      </p>
+
+      <div class="model-equation">
+        System Model → Execution Analysis → Timing Evidence → Constraint Evaluation
+      </div>
+
+      <p class="model-note">
+        目标是让系统行为更容易理解、分析和验证，并逐步提高关键执行路径的可预测性。
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>系统模型关系</h2>
+
+    <div class="box">
+      <div class="title">Execution & Scheduling</div>
+      <div class="text">
+        <a href="/system-view/01-execution-flow.html">01 · Execution Flow</a><br>
+        <a href="/system-view/02-task-lifecycle.html">02 · Task Lifecycle</a><br>
+        <a href="/system-view/03-interrupt-flow.html">03 · Interrupt Flow</a><br>
+        <a href="/system-view/04-scheduler-cycle.html">04 · Scheduler Cycle</a>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="title">Resources & Timing</div>
+      <div class="text">
+        <a href="/system-view/05-memory-view.html">05 · Memory View</a><br>
+        <a href="/system-view/06-time-system.html">06 · Time System</a><br>
+        <a href="/system-view/07-deterministic-chain.html">07 · Deterministic Chain</a>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="title">推荐阅读顺序</div>
+      <div class="text">
+        执行流 → 任务生命周期 → 中断流 → 调度周期 → 内存视图 → 时间系统 → 确定性因果链
+      </div>
+    </div>
+  </section>
+
+</main>
 
 <footer class="site-footer">
   <div style="margin-bottom:10px;">

@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>03 中断流模型 | HRTOS System View</title>
-<meta name="description" content="定义HRTOS中中断的触发、响应、嵌套与对执行流的影响机制">
+<title>Interrupt Flow | HRTOS 8051 RTOS System View</title>
+<meta name="description" content="HRTOS 8051 实时操作系统中断流模型：分析中断响应、嵌套处理、上下文保护、中断退出与任务调度之间的关系。">
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="interrupt-flow">
@@ -31,7 +32,7 @@ body{
   line-height:1.75;
 }
 
-/* NAV */
+/* NAV — 保留原有结构与样式 */
 .nav{
   display:flex;
   justify-content:space-between;
@@ -54,24 +55,67 @@ body{
   color:#cfe3ff;
 }
 
-/* layout */
+/* Layout */
 .container{
   max-width:920px;
   margin:0 auto;
   padding:60px 24px;
 }
 
+.hero{
+  margin-bottom:34px;
+}
+
+.eyebrow{
+  color:#7dd3fc;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.14em;
+  margin-bottom:12px;
+}
+
 h1{
   font-size:38px;
-  margin:0 0 10px;
+  line-height:1.3;
+  margin:0 0 14px;
+}
+
+h2{
+  margin:0 0 12px;
+  font-size:19px;
+  line-height:1.5;
+  color:#cfe3ff;
+}
+
+p{
+  margin:0 0 12px;
+}
+
+p:last-child{
+  margin-bottom:0;
 }
 
 .sub{
   color:var(--muted);
-  margin-bottom:40px;
+  margin-bottom:20px;
+  max-width:760px;
 }
 
-/* card */
+.tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.tag{
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:4px 10px;
+  color:#cbd5e1;
+  font-size:12px;
+}
+
+/* Cards */
 .card{
   background:rgba(17,24,35,.92);
   border:1px solid var(--border);
@@ -82,26 +126,169 @@ h1{
 }
 
 .card h2{
-  margin:0 0 10px;
-  font-size:18px;
-  color:#cfe3ff;
   border-left:3px solid var(--accent);
   padding-left:10px;
 }
 
 .en{
   color:var(--muted);
-  font-size:14px;
-  margin-top:6px;
+  font-size:13px;
+  margin-top:12px;
 }
 
-/* footer */
+/* Flow diagram */
+.flow{
+  background:#0b1220;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:18px;
+  margin:16px 0;
+}
+
+.flow-node{
+  background:#111c2c;
+  border:1px solid rgba(56,189,248,.3);
+  border-radius:9px;
+  padding:13px 15px;
+  text-align:center;
+}
+
+.flow-node strong{
+  display:block;
+  color:#e0f2fe;
+  font-size:14px;
+}
+
+.flow-node span{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  margin-top:3px;
+}
+
+.flow-arrow{
+  text-align:center;
+  color:#64748b;
+  line-height:2;
+  font-size:13px;
+}
+
+.flow-branches{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:12px;
+}
+
+/* Technical details */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:16px;
+}
+
+.item{
+  background:#0f1722;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:15px;
+}
+
+.item strong{
+  display:block;
+  color:#7dd3fc;
+  font-size:14px;
+  margin-bottom:5px;
+}
+
+.item p{
+  color:#cbd5e1;
+  font-size:13px;
+  line-height:1.75;
+}
+
+.note{
+  border-left:3px solid #60a5fa;
+  padding:12px 15px;
+  background:rgba(30,41,59,.45);
+  color:#cbd5e1;
+  font-size:14px;
+  margin-top:14px;
+}
+
+ul{
+  padding-left:21px;
+  margin:8px 0 0;
+}
+
+li{
+  color:#cbd5e1;
+  font-size:14px;
+  margin-bottom:8px;
+}
+
+li:last-child{
+  margin-bottom:0;
+}
+
+.related{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+
+.related a{
+  display:block;
+  border:1px solid var(--border);
+  border-radius:9px;
+  padding:13px 15px;
+  background:#0f1722;
+  text-decoration:none;
+}
+
+.related a:hover{
+  border-color:rgba(56,189,248,.5);
+}
+
+.related strong{
+  display:block;
+  color:#e2e8f0;
+  font-size:14px;
+}
+
+.related span{
+  color:var(--muted);
+  font-size:12px;
+}
+
+/* Footer — 保留原有结构与内容 */
 .site-footer{
   text-align:center;
   border-top:1px solid rgba(148,163,184,.14);
   padding:18px 12px;
   color:#8ea3be;
   font-size:.95rem;
+}
+
+@media(max-width:640px){
+  .container{
+    padding:38px 18px;
+  }
+
+  h1{
+    font-size:30px;
+  }
+
+  .card{
+    padding:18px;
+  }
+
+  .grid,
+  .flow-branches,
+  .related{
+    grid-template-columns:1fr;
+  }
 }
 </style>
 </head>
@@ -118,113 +305,405 @@ h1{
   </div>
 </div>
 
-<div class="container">
+<main class="container">
 
-  <h1>3. 中断流模型（Interrupt Flow）</h1>
-  <div class="sub">外部事件如何打断执行流并重构系统调度路径</div>
+  <header class="hero">
+    <div class="eyebrow">SYSTEM VIEW / INTERRUPT FLOW</div>
 
-  <div class="card">
+    <h1>中断流模型（Interrupt Flow）</h1>
+
+    <p class="sub">
+      中断是处理器响应外部事件和内部时基的重要机制。
+      在实时操作系统中，中断处理不仅决定事件响应路径，
+      也会影响任务执行连续性、调度时机、上下文保护与最坏响应时间。
+    </p>
+
+    <div class="tags">
+      <span class="tag">Interrupt Response</span>
+      <span class="tag">Nested Interrupts</span>
+      <span class="tag">Context Protection</span>
+      <span class="tag">8051 Architecture</span>
+    </div>
+  </header>
+
+  <section class="card">
     <h2>核心定义</h2>
+
     <p>
-      中断流描述外部事件如何打断当前执行流，并触发系统重新进入调度状态。
+      中断流描述从中断请求产生，到处理器接受请求、执行中断服务程序，
+      再到中断返回或进入后续内核处理路径的完整控制流。
     </p>
+
     <p>
-      在 HRTOS 中，中断不是异常机制，而是时间模型的一部分。
+      对 RTOS 而言，中断是异步事件处理机制，也是影响系统响应时间的重要因素。
+      它可能改变任务执行的连续性，并在满足内核调度条件时影响后续任务选择。
     </p>
+
+    <p>
+      因此，中断流分析需要同时考虑硬件响应行为、内核保护机制、
+      ISR 执行路径和中断退出语义。
+    </p>
+
     <div class="en">
-      Interrupt flow is part of the timing model, not an exception mechanism.
+      Interrupt flow models the path from interrupt acceptance through ISR execution
+      to return or subsequent kernel processing.
     </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>1. 中断触发</h2>
-    <p>
-      来源包括 Timer、IO、通信接口与异常事件。
-    </p>
-    <p>
-      必须满足：可预测 + 有界频率，否则无法进行实时分析。
-    </p>
-  </div>
+  <section class="card">
+    <h2>01. 中断请求与接受条件</h2>
 
-  <div class="card">
-    <h2>2. 中断响应</h2>
     <p>
-      CPU进入ISR并保存上下文。
+      中断请求可以来自定时器、外部引脚、串行通信接口及其他外设。
+      请求产生并不意味着处理器一定会立即执行对应的 ISR。
     </p>
-    <p>
-      响应延迟由：硬件延迟 + 屏蔽窗口 + 上下文保存构成。
-    </p>
-    <p>
-      RTOS核心目标是界定该延迟上界。
-    </p>
-  </div>
 
-  <div class="card">
-    <h2>3. 中断嵌套</h2>
-    <p>
-      高优先级中断可抢占低优先级ISR，形成嵌套链。
-    </p>
-    <p>
-      嵌套深度必须有界，否则系统失去可分析性。
-    </p>
-    <p>
-      Nesting Depth ≤ Bounded Constant
-    </p>
-  </div>
+    <div class="grid">
+      <div class="item">
+        <strong>请求产生</strong>
+        <p>
+          外设事件发生并形成中断请求。具体请求标志、触发方式及清除规则
+          由芯片外设和中断控制机制决定。
+        </p>
+      </div>
 
-  <div class="card">
-    <h2>4. 与调度的关系</h2>
-    <p>
-      中断可以直接触发调度器重新选择任务。
-    </p>
-    <p>
-      在抢占式RTOS中，中断是调度事件源。
-    </p>
-  </div>
+      <div class="item">
+        <strong>请求接受</strong>
+        <p>
+          处理器根据中断使能、优先级、当前执行状态和架构规则，
+          判断何时能够响应请求。
+        </p>
+      </div>
 
-  <div class="card">
-    <h2>5. 执行恢复</h2>
-    <p>
-      ISR结束后可能返回原任务或触发重新调度。
-    </p>
-    <p>
-      高优先级事件通常直接进入调度路径。
-    </p>
-  </div>
+      <div class="item">
+        <strong>中断屏蔽</strong>
+        <p>
+          全局中断关闭或相关中断被屏蔽时，请求的响应可能延迟。
+          延迟上界取决于屏蔽区间、请求行为和硬件规则。
+        </p>
+      </div>
 
-  <div class="card">
+      <div class="item">
+        <strong>请求积压与丢失</strong>
+        <p>
+          不同外设对待处理事件的记录能力不同。必须确认请求标志、
+          FIFO 或计数机制是否能保留连续发生的事件。
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      实时性分析不能只测量 ISR 的执行时间。
+      从事件发生到 ISR 开始执行之间的延迟，同样可能影响系统响应上界。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>02. 中断响应路径</h2>
+
+    <p>
+      中断响应路径包含从请求等待到 ISR 开始执行的过程。
+      在经典 8051 及其兼容增强型芯片上，具体响应时序还取决于芯片内核、
+      指令边界、中断优先级和当前中断状态。
+    </p>
+
+    <div class="flow">
+      <div class="flow-node">
+        <strong>Interrupt Request</strong>
+        <span>外设或定时器产生请求</span>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <div class="flow-node">
+        <strong>Acceptance Conditions</strong>
+        <span>检查使能、屏蔽和优先级条件</span>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <div class="flow-node">
+        <strong>Hardware Entry</strong>
+        <span>处理器进入中断入口</span>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <div class="flow-node">
+        <strong>ISR Prologue</strong>
+        <span>执行入口代码及必要的上下文保护</span>
+      </div>
+    </div>
+
+    <p>
+      在分析时，可以将响应时间拆分为请求等待、硬件接受与入口延迟，
+      以及 ISR 入口代码开始执行前的必要处理。
+      具体拆分边界应保持一致，避免同一开销重复计入。
+    </p>
+
+    <div class="en">
+      Interrupt response latency and ISR execution time are distinct quantities
+      and should be measured with clearly defined boundaries.
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>03. ISR 执行与上下文保护</h2>
+
+    <p>
+      ISR 执行期间，内核必须确保中断处理代码与被打断的任务、
+      其他中断路径之间不会发生未经处理的上下文破坏。
+    </p>
+
+    <p>
+      在 8051 架构上，这一问题尤其依赖寄存器组、堆栈、特殊功能寄存器
+      和编译器生成代码的具体使用方式。不能简单假定所有寄存器都会由硬件自动保存。
+    </p>
+
+    <ul>
+      <li>确认硬件自动完成的中断入口操作与返回操作。</li>
+      <li>确认 ISR 或内核入口代码需要保护的寄存器和状态。</li>
+      <li>确认 ISR 使用的寄存器组与任务上下文之间的关系。</li>
+      <li>核对编译器生成的 ISR 序言、尾声及调用约定。</li>
+      <li>确认中断退出路径与内核要求的返回方式一致。</li>
+    </ul>
+
+    <div class="note">
+      对 HRTOS 这样的 8051 内核，上下文保护是中断正确性的核心组成部分。
+      具体保存哪些寄存器、使用哪个寄存器组以及需要多少堆栈空间，
+      应以对应版本的汇编实现和编译结果为准。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>04. 中断嵌套与优先级</h2>
+
+    <p>
+      中断嵌套指处理器在一个 ISR 尚未结束时，再接受另一个符合条件的中断请求。
+      是否允许嵌套、哪些中断能够嵌套，以及嵌套时采用什么上下文保护方式，
+      都由处理器架构与内核设计共同决定。
+    </p>
+
+    <div class="grid">
+      <div class="item">
+        <strong>优先级规则</strong>
+        <p>
+          优先级影响中断接受与抢占关系，但高优先级请求能否立即执行，
+          还受到中断使能、屏蔽状态和架构规则的约束。
+        </p>
+      </div>
+
+      <div class="item">
+        <strong>嵌套边界</strong>
+        <p>
+          可分析的嵌套行为需要明确允许的中断组合、最大嵌套深度
+          及各层入口和返回所需的资源。
+        </p>
+      </div>
+
+      <div class="item">
+        <strong>堆栈预算</strong>
+        <p>
+          每增加一层嵌套，都可能增加返回地址、寄存器保存和局部调用的堆栈消耗。
+          必须按最深合法路径核算。
+        </p>
+      </div>
+
+      <div class="item">
+        <strong>重入与共享状态</strong>
+        <p>
+          嵌套 ISR 可能再次访问共享数据或调用相同函数。
+          必须审查重入安全性、原子性和共享状态保护。
+        </p>
+      </div>
+    </div>
+
+    <p>
+      HRTOS 的中断嵌套路径应按实际支持的优先级关系、入口机制和退出机制分析，
+      而不是假定所有中断都可以无限嵌套。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>05. 中断退出与任务调度</h2>
+
+    <p>
+      ISR 结束后，处理器可能返回被中断的执行路径，也可能在内核规定的条件下
+      进入任务调度或其他内核处理路径。
+      是否发生任务切换，取决于内核的调度机制和当前系统状态。
+    </p>
+
+    <div class="flow">
+      <div class="flow-node">
+        <strong>ISR Completion</strong>
+        <span>完成本次中断处理</span>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <div class="flow-branches">
+        <div class="flow-node">
+          <strong>Return Path</strong>
+          <span>满足返回条件时恢复原执行路径</span>
+        </div>
+
+        <div class="flow-node">
+          <strong>Kernel / Scheduling Path</strong>
+          <span>符合内核条件时继续处理调度或上下文切换</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <div class="flow-node">
+        <strong>Next Execution</strong>
+        <span>恢复原任务或执行内核选择的后续任务</span>
+      </div>
+    </div>
+
+    <p>
+      对采用专门中断退出接口或汇编返回路径的内核，
+      ISR 的退出方式属于内核控制流契约。
+      不能仅凭普通 C 函数返回的语义，推断其与内核中断返回机制等价。
+    </p>
+
+    <div class="note">
+      对 HRTOS 的实际实现，应核对 ISR 入口方式、退出接口、
+      是否存在中断退出时调度，以及对应的上下文恢复顺序。
+      这些细节会直接影响正确性和时间分析。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>06. 中断对实时性的影响</h2>
+
+    <p>
+      中断会占用处理器时间，也可能延迟任务执行或其他中断的响应。
+      因此，实时性评估既要分析单次中断路径，也要分析多个中断在目标时间窗口内
+      对任务执行造成的综合干扰。
+    </p>
+
+    <ul>
+      <li><strong>响应延迟：</strong>从请求发生到规定的响应起点之间的时间。</li>
+      <li><strong>ISR 执行时间：</strong>中断处理路径实际占用的处理器时间。</li>
+      <li><strong>屏蔽时间：</strong>相关请求不能被接受的时间区间。</li>
+      <li><strong>嵌套开销：</strong>多层中断的入口、退出与上下文保护开销。</li>
+      <li><strong>任务干扰：</strong>中断执行使任务被推迟的时间及其对响应时间的影响。</li>
+    </ul>
+
+    <p>
+      这些指标的计算边界必须明确。例如，ISR 执行时间是否包含入口和退出代码，
+      会影响测量结果之间的可比性。
+    </p>
+
+    <div class="en">
+      Real-time analysis must account for interrupt latency,
+      handler execution, masking intervals, nesting overhead,
+      and interference with task execution.
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>07. 中断路径的验证方法</h2>
+
+    <p>
+      中断行为需要结合静态代码分析、目标芯片上的测量与压力测试。
+      单次测量只能证明某次运行中的观测值，不能单独证明最坏情况上界。
+    </p>
+
+    <div class="grid">
+      <div class="item">
+        <strong>静态路径分析</strong>
+        <p>
+          检查中断入口、寄存器保存、调用链、返回路径与条件分支，
+          识别可能增加执行时间的路径。
+        </p>
+      </div>
+
+      <div class="item">
+        <strong>硬件时序测量</strong>
+        <p>
+          使用 GPIO、定时器或逻辑分析仪测量请求至响应、
+          ISR 执行区间及中断退出后的行为。
+        </p>
+      </div>
+
+      <div class="item">
+        <strong>嵌套压力测试</strong>
+        <p>
+          在允许的中断组合下检查上下文完整性、最大堆栈占用
+          和共享数据保护。
+        </p>
+      </div>
+
+      <div class="item">
+        <strong>边界条件验证</strong>
+        <p>
+          覆盖中断屏蔽、请求同时到达、连续触发和调度边界等情况，
+          检查事件是否丢失以及返回路径是否正确。
+        </p>
+      </div>
+    </div>
+
+    <p>
+      若进一步开展最坏情况执行时间（WCET）分析，
+      应将反汇编指令周期、分支路径、芯片时序和中断干扰纳入统一模型，
+      并明确分析结论适用的配置与边界条件。
+    </p>
+  </section>
+
+  <section class="card">
     <h2>语义总结</h2>
-    <p>
-      中断流的本质是：时间执行被切割后重新组合为新的执行序列。
-    </p>
-    <p>
-      它决定系统是否能维持时间连续性与确定性。
-    </p>
-    <div class="en">
-      Interrupt flow reconstructs execution time under external events while preserving determinism.
-    </div>
-  </div>
 
-  <div class="card">
+    <p>
+      中断流不只是 ISR 的执行顺序，而是从事件请求、硬件响应、
+      上下文保护到退出与后续执行的完整控制路径。
+    </p>
+
+    <p>
+      对 8051 实时操作系统而言，可靠的中断机制必须同时满足正确性与可分析性：
+      既要保证中断前后执行状态得到正确处理，也要能够明确响应延迟、
+      执行开销、嵌套边界和资源消耗。
+    </p>
+
+    <div class="en">
+      A reliable interrupt model requires correct control flow,
+      safe context handling, bounded nesting, and analyzable timing behavior.
+    </div>
+  </section>
+
+  <section class="card">
     <h2>相关阅读</h2>
 
-    <p><b>System View</b></p>
-    <p><a href="/system-view/index.html" style="color:#38bdf8;">返回总览</a></p>
+    <div class="related">
+      <a href="/system-view/index.html">
+        <strong>System View</strong>
+        <span>系统运行结构总览</span>
+      </a>
 
-    <p><b>上一篇</b></p>
-    <p><a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;">任务生命周期 ←</a></p>
+      <a href="/system-view/01-execution-flow.html">
+        <strong>Execution Flow</strong>
+        <span>任务与内核执行路径</span>
+      </a>
 
-    <p><b>下一篇</b></p>
-    <p><a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度周期 →</a></p>
+      <a href="/system-view/02-task-lifecycle.html">
+        <strong>Task Lifecycle</strong>
+        <span>任务状态与调度资格</span>
+      </a>
 
-    <p><b>扩展</b></p>
-    <p>
-      <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;">执行流模型</a><br>
-      <a href="/system-view/07-deterministic-chain.html" style="color:#38bdf8;">确定性执行链</a>
-    </p>
-  </div>
+      <a href="/system-view/04-scheduler-cycle.html">
+        <strong>Scheduler Cycle</strong>
+        <span>调度触发与任务选择</span>
+      </a>
 
-</div>
+      <a href="/system-view/07-deterministic-chain.html">
+        <strong>Deterministic Chain</strong>
+        <span>执行路径与确定性约束</span>
+      </a>
+    </div>
+  </section>
+
+</main>
 
 <footer class="site-footer">
   © 2017–2026 HRTOS · SYSTEM VIEW

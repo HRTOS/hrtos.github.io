@@ -1,11 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>07 确定性因果链 | HRTOS System View</title>
-<meta name="description" content="定义HRTOS中从触发到执行结果的完整确定性因果链模型，用于解释系统如何保证可预测行为">
+<title>07 确定性因果链 | HRTOS 8051 RTOS System View</title>
+<meta name="description" content="HRTOS 确定性因果链：从事件触发、中断响应、调度决策到任务执行与结果输出，建立面向 8051 实时系统的时间边界、最坏执行时间与可验证性分析模型。">
+<meta name="keywords" content="HRTOS,8051 RTOS,确定性因果链,实时系统,最坏执行时间,WCET,中断响应,任务调度,硬实时分析">
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="deterministic-chain">
@@ -13,22 +15,32 @@
 <style>
 :root{
   --bg:#0f172a;
+  --panel:#111c30;
+  --panel2:#142238;
   --text:#e2e8f0;
   --muted:#94a3b8;
   --accent:#38bdf8;
+  --accent2:#7dd3fc;
   --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+  --shadow:0 20px 48px rgba(2,6,23,.28);
+  --radius:12px;
+  --green:#86efac;
+  --yellow:#fde68a;
+  --red:#fca5a5;
 }
 
 *{box-sizing:border-box}
 
+html{scroll-behavior:smooth}
+
 body{
   margin:0;
-  background:var(--bg);
+  background:
+    radial-gradient(ellipse at 50% -10%,rgba(56,189,248,.09),transparent 46%),
+    var(--bg);
   color:var(--text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+  line-height:1.8;
 }
 
 /* NAV */
@@ -58,18 +70,258 @@ body{
 .container{
   max-width:920px;
   margin:0 auto;
-  padding:60px 24px;
+  padding:54px 24px 64px;
 }
 
 h1{
-  font-size:38px;
-  margin:0 0 10px;
+  font-size:clamp(30px,5vw,40px);
+  line-height:1.3;
+  letter-spacing:-.5px;
+  margin:0 0 14px;
 }
+
+h2,h3{line-height:1.45}
+
+p{margin:10px 0}
+
+a{transition:color .2s ease}
+
+a:hover{color:#bae6fd!important}
 
 .sub{
   color:var(--muted);
-  margin-bottom:40px;
+  margin-bottom:26px;
+  font-size:17px;
+  max-width:760px;
 }
+
+.hero{
+  padding:30px;
+  border:1px solid rgba(56,189,248,.25);
+  border-radius:16px;
+  background:
+    linear-gradient(135deg,rgba(14,116,144,.16),rgba(17,24,39,.94) 62%),
+    var(--panel);
+  box-shadow:var(--shadow);
+  margin-bottom:20px;
+}
+
+.hero-kicker{
+  color:var(--accent2);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:1.7px;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+
+.hero p{
+  color:#cbd5e1;
+  max-width:760px;
+}
+
+.tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:20px;
+}
+
+.tag{
+  font-size:12px;
+  color:#bae6fd;
+  border:1px solid rgba(56,189,248,.22);
+  background:rgba(56,189,248,.07);
+  padding:4px 10px;
+  border-radius:999px;
+}
+
+.card{
+  background:rgba(17,24,35,.88);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:24px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
+}
+
+.card h2{
+  margin:0 0 14px;
+  font-size:19px;
+  color:#cfe3ff;
+  border-left:3px solid var(--accent);
+  padding-left:11px;
+}
+
+.card h3{
+  font-size:15px;
+  color:#dbeafe;
+  margin:18px 0 6px;
+}
+
+.en{
+  color:var(--muted);
+  font-size:13px;
+  margin-top:12px;
+}
+
+.lead{
+  color:#dbeafe;
+  font-size:16px;
+}
+
+.muted{color:var(--muted)}
+
+.small{
+  font-size:13px;
+  color:var(--muted);
+}
+
+.flow{
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  gap:8px;
+  margin:24px 0 16px;
+}
+
+.flow-node{
+  flex:1;
+  min-width:0;
+  padding:15px 8px;
+  text-align:center;
+  background:rgba(30,41,59,.78);
+  border:1px solid rgba(125,211,252,.22);
+  border-radius:10px;
+}
+
+.flow-node strong{
+  display:block;
+  color:#e0f2fe;
+  font-size:13px;
+  line-height:1.5;
+}
+
+.flow-node span{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  margin-top:5px;
+}
+
+.flow-arrow{
+  display:flex;
+  align-items:center;
+  color:var(--accent);
+  font-size:20px;
+  flex-shrink:0;
+}
+
+.note{
+  padding:14px 16px;
+  border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;
+  background:rgba(56,189,248,.07);
+  color:#cbd5e1;
+  margin-top:16px;
+}
+
+.warning{
+  border-left-color:#fbbf24;
+  background:rgba(251,191,36,.07);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:16px;
+}
+
+.mini{
+  padding:17px;
+  border:1px solid var(--border);
+  background:rgba(15,23,42,.5);
+  border-radius:10px;
+  min-width:0;
+}
+
+.mini h3{
+  margin:0 0 7px;
+  font-size:15px;
+}
+
+.mini p{
+  margin:0;
+  color:#b9c7d8;
+  font-size:14px;
+}
+
+.code-flow{
+  margin:16px 0;
+  padding:17px;
+  border-radius:10px;
+  background:#0b1220;
+  border:1px solid rgba(148,163,184,.17);
+  color:#bae6fd;
+  font-family:Consolas,"SFMono-Regular",monospace;
+  font-size:13px;
+  line-height:1.9;
+  overflow-wrap:anywhere;
+}
+
+.metric{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:18px 0;
+}
+
+.metric-item{
+  padding:15px 12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(15,23,42,.5);
+}
+
+.metric-item strong{
+  display:block;
+  font-size:15px;
+  color:#bae6fd;
+  margin-bottom:4px;
+}
+
+.metric-item span{
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+}
+
+.list{
+  padding-left:20px;
+  margin:10px 0;
+}
+
+.list li{margin:7px 0}
+
+.check{
+  color:var(--green);
+  font-weight:600;
+}
+
+.related a{
+  color:var(--accent);
+  text-decoration:none;
+}
+
+.related p{margin:7px 0}
+
+hr{
+  border:0;
+  border-top:1px solid var(--border);
+  margin:22px 0;
+}
+
 /* footer */
 .site-footer{
   text-align:center;
@@ -78,28 +330,17 @@ h1{
   color:#8ea3be;
   font-size:.95rem;
 }
-/* card */
-.card{
-  background:rgba(17,24,35,.92);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:22px;
-  margin-bottom:16px;
-  box-shadow:var(--shadow);
-}
 
-.card h2{
-  margin:0 0 10px;
-  font-size:18px;
-  color:#cfe3ff;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
-}
-
-.en{
-  color:var(--muted);
-  font-size:14px;
-  margin-top:6px;
+@media(max-width:680px){
+  .container{padding:36px 16px 48px}
+  .hero{padding:22px}
+  .card{padding:19px}
+  .nav{padding:12px 14px}
+  .nav a{margin-left:8px;font-size:12px}
+  .flow{flex-direction:column;gap:6px}
+  .flow-arrow{justify-content:center;transform:rotate(90deg);height:18px}
+  .grid{grid-template-columns:1fr}
+  .metric{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -117,142 +358,368 @@ h1{
   </div>
 </div>
 
-<div class="container">
+<main class="container">
 
-<h1>07 确定性因果链（Deterministic Chain）</h1>
-<div class="sub">从事件触发到结果输出的时间因果结构</div>
+  <header class="hero">
+    <div class="hero-kicker">HRTOS / SYSTEM VIEW / 07</div>
+    <h1>确定性因果链</h1>
+    <div class="sub">Deterministic Chain · 从事件发生到结果完成，分析实时系统的时间边界。</div>
+    <p>
+      实时系统不仅要回答“执行了什么”，还需要回答：
+      <strong>事件何时被系统感知、经过哪些执行阶段、结果何时产生，以及这个时间是否满足要求。</strong>
+    </p>
+    <div class="tags">
+      <span class="tag">Event-to-Response</span>
+      <span class="tag">Timing Bound</span>
+      <span class="tag">Interrupt & Scheduling</span>
+      <span class="tag">WCET Analysis</span>
+      <span class="tag">Verification</span>
+    </div>
+  </header>
 
-<div class="card">
-  <h2>核心定义</h2>
-  <p>
-    确定性因果链描述事件在 HRTOS 中如何经过中断、调度与执行路径，
-    最终生成可预测的系统输出。
-  </p>
-  <p>
-    它不是流程图，而是“时间约束驱动的因果模型”。
-  </p>
-  <div class="en">
-    A deterministic chain models how events become predictable outcomes through time-constrained system stages.
-  </div>
-</div>
+  <section class="card">
+    <h2>核心定义：把执行路径转化为时间模型</h2>
+    <p class="lead">
+      确定性因果链，是对一个系统事件如何沿着实际执行路径传播、处理并产生结果的结构化描述。
+    </p>
+    <p>
+      它把事件来源、事件识别、中断处理、任务就绪、调度决策、任务执行、资源访问和结果输出连接起来，
+      并为相关阶段建立明确的时间边界与验证条件。
+    </p>
+    <div class="note">
+      <strong>关键区别：</strong>
+      画出一条流程，只能说明可能的执行顺序；
+      建立确定性因果链，还需要明确每个阶段的进入条件、执行路径、干扰因素、时间上界和完成判据。
+    </div>
+    <div class="en">
+      A deterministic chain connects an event to its observable outcome through a bounded and analyzable execution path.
+    </div>
+  </section>
 
-<div class="card">
-  <h2>1. 因果链结构</h2>
-  <p>
-    完整链路：
-  </p>
-  <p>
-    Event → Interrupt → Scheduling → Context Switch → Execution → Result
-  </p>
-  <p>
-    每个节点都是时间约束点，而非功能模块。
-  </p>
-</div>
+  <section class="card">
+    <h2>1. 因果链的基本结构</h2>
+    <p>
+      对于由外部事件触发、需要任务参与处理的典型实时场景，可以使用下面的分析路径：
+    </p>
 
-<div class="card">
-  <h2>2. 事件层</h2>
-  <p>
-    事件来源：
-  </p>
-  <p>
-    • 外部中断（IO / 传感器）<br>
-    • Tick 定时器<br>
-    • 任务通信信号
-  </p>
-  <p>
-    要求：事件必须可枚举，否则无法建立确定性模型。
-  </p>
-</div>
+    <div class="flow">
+      <div class="flow-node">
+        <strong>事件发生</strong>
+        <span>Event</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <strong>事件识别</strong>
+        <span>Detection</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <strong>中断 / 通知</strong>
+        <span>ISR / Signal</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <strong>调度与切换</strong>
+        <span>Scheduling</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <strong>处理与输出</strong>
+        <span>Execution</span>
+      </div>
+    </div>
 
-<div class="card">
-  <h2>3. 调度层</h2>
-  <p>
-    调度器只做一件事：
-  </p>
-  <p>
-    决定下一时刻 CPU 属于谁
-  </p>
-  <p>
-    要求：
-    ✔ 可重复<br>
-    ✔ 可分析<br>
-    ✔ 无随机依赖
-  </p>
-</div>
+    <p class="small">
+      这是用于分析的典型路径，不代表每个事件都必须经过全部节点。具体路径取决于事件来源、系统状态和应用程序设计。
+    </p>
 
-<div class="card">
-  <h2>4. 执行层</h2>
-  <p>
-    执行是链路中主要耗时阶段。
-  </p>
-  <p>
-    必须满足 WCET 上界，否则因果链失效。
-  </p>
-  <p>
-    设计原则：只关心最坏情况，而非平均值。
-  </p>
-</div>
+    <div class="grid">
+      <div class="mini">
+        <h3>执行顺序</h3>
+        <p>哪些阶段存在先后依赖？是否可能被高优先级中断、任务或资源竞争打断？</p>
+      </div>
+      <div class="mini">
+        <h3>时间边界</h3>
+        <p>每个阶段最多需要多少时间？哪些延迟来自硬件，哪些来自内核和应用程序？</p>
+      </div>
+      <div class="mini">
+        <h3>状态条件</h3>
+        <p>事件到达时，CPU 正在执行什么？目标任务是否就绪？是否存在临界区或阻塞？</p>
+      </div>
+      <div class="mini">
+        <h3>完成判据</h3>
+        <p>以任务开始、数据处理完成，还是物理输出生效作为链路的终点？</p>
+      </div>
+    </div>
+  </section>
 
-<div class="card">
-  <h2>5. 破坏点</h2>
-  <p>
-    以下因素会破坏确定性：
-  </p>
-  <p>
-    • 非确定调度策略<br>
-    • cache miss 未建模<br>
-    • 动态内存分配<br>
-    • 不受控中断嵌套<br>
-    • 锁竞争不可界定
-  </p>
-</div>
+  <section class="card">
+    <h2>2. 事件层：确定因果分析的起点</h2>
+    <p>
+      因果链必须从可识别的事件开始。常见来源包括：
+    </p>
+    <ul class="list">
+      <li><strong>外部事件：</strong>GPIO 输入变化、传感器信号、外部设备请求。</li>
+      <li><strong>定时事件：</strong>定时器中断、系统 Tick、周期性采样触发。</li>
+      <li><strong>内部事件：</strong>任务间消息、同步对象变化、共享状态满足处理条件。</li>
+      <li><strong>通信事件：</strong>串口接收、协议帧完成、通信状态发生变化。</li>
+    </ul>
 
-<div class="card">
-  <h2>6. 系统意义</h2>
-  <p>
-    因果链的目标不是描述执行，而是构造函数：
-  </p>
-  <p>
-    Input(Event) → F(t) → Output
-  </p>
-  <p>
-    其中 F(t) 必须稳定且可证明。
-  </p>
-</div>
+    <p>
+      对每类事件，应明确其触发条件、到达模式、最小间隔或最大到达频率，以及系统如何识别它。
+      如果多个事件可能同时到达，还需要分析它们之间的优先级和竞争关系。
+    </p>
 
-<div class="card">
-  <h2>语义总结</h2>
-  <p>
-    确定性因果链把操作系统从“执行系统”提升为“时间因果系统”。
-  </p>
-  <p>
-    系统正确性等价于：在相同时间结构下产生相同结果。
-  </p>
-  <div class="en">
-    A deterministic chain turns an OS into a provable time-causal system.
-  </div>
-</div>
+    <div class="note">
+      <strong>分析边界：</strong>
+      并不是所有外部变化都能被软件逐次观察到。
+      如果硬件标志位可能被后续事件覆盖，或者软件轮询存在采样间隔，就必须将这些限制纳入事件模型。
+    </div>
+  </section>
 
-<div class="card">
-  <h2>相关阅读</h2>
+  <section class="card">
+    <h2>3. 中断与调度层：从事件到任务执行</h2>
+    <p>
+      对中断驱动的任务处理路径，需要区分几个经常被混为一谈的时间点：
+    </p>
 
-  <p><b>上级</b></p>
-  <p><a href="/system-view/index.html" style="color:#38bdf8;">System View 总览</a></p>
+    <div class="metric">
+      <div class="metric-item">
+        <strong>中断响应</strong>
+        <span>事件到 ISR 开始执行</span>
+      </div>
+      <div class="metric-item">
+        <strong>任务响应</strong>
+        <span>事件到目标任务开始处理</span>
+      </div>
+      <div class="metric-item">
+        <strong>结果响应</strong>
+        <span>事件到预期结果实际完成</span>
+      </div>
+    </div>
 
-  <p><b>上一篇</b></p>
-  <p><a href="/system-view/06-time-system.html" style="color:#38bdf8;">06 时间系统 ←</a></p>
+    <p>
+      中断响应快，并不意味着目标任务必然立即运行；
+      目标任务进入就绪状态，也不意味着 CPU 一定马上切换到它。
+      中间可能存在中断处理、调度规则、当前执行状态、临界区以及更高优先级工作的影响。
+    </p>
 
-  <p><b>下一篇</b></p>
-  <p><a href="/docs/index.html" style="color:#38bdf8;">Docs 体系 →</a></p>
+    <h3>需要逐项核对的因素</h3>
+    <ul class="list">
+      <li>中断何时能够被 CPU 接受，是否受到中断屏蔽或更高优先级中断影响。</li>
+      <li>中断处理程序执行了多少工作，是否存在嵌套和共享资源访问。</li>
+      <li>目标任务何时进入就绪状态，是否满足运行条件。</li>
+      <li>调度器何时执行决策，目标任务是否具备运行资格。</li>
+      <li>上下文切换是否发生，以及切换过程的实际成本。</li>
+    </ul>
 
-  <p><b>扩展</b></p>
-  <p>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度循环模型</a><br>
-    <a href="/system-view/03-interrupt-flow.html" style="color:#38bdf8;">中断流模型</a>
-  </p>
-</div>
+    <div class="note warning">
+      <strong>HRTOS 实现注意：</strong>
+      应根据具体版本的中断入口、退出路径、调度触发点和上下文切换实现建立模型，
+      不能仅凭通用 RTOS 的工作方式推断 HRTOS 的实际执行顺序。
+    </div>
+  </section>
 
-</div>
+  <section class="card">
+    <h2>4. 执行层：WCET 是重要边界，而不是全部证明</h2>
+    <p>
+      当目标任务开始运行后，需要分析从任务入口到目标操作完成的执行路径。
+      这里的关键概念是最坏情况执行时间（Worst-Case Execution Time，WCET）。
+    </p>
+
+    <div class="code-flow">事件到结果的端到端时间
+    = 事件识别与等待
+    + 中断处理开销
+    + 调度与上下文切换开销
+    + 任务执行时间
+    + 必要的资源等待与输出开销</div>
+
+    <p class="small">
+      上式用于建立分析框架，不是可以不加区分直接相加的通用公式。
+      各项必须使用一致的起止边界，并避免重复计算；如果阶段存在重叠、抢占或并行硬件操作，需要采用相应模型。
+    </p>
+
+    <h3>8051 平台上的执行时间分析</h3>
+    <ul class="list">
+      <li>从目标芯片和编译配置出发，确认指令集、时钟条件和实际生成的机器代码。</li>
+      <li>检查条件分支、循环上界、调用路径和可达代码，识别可能的最长执行路径。</li>
+      <li>分析中断屏蔽区、上下文保存与恢复、调度器路径及其干扰。</li>
+      <li>结合反汇编指令周期核算与目标板测量，交叉验证分析结果。</li>
+    </ul>
+
+    <div class="note">
+      <strong>重要：</strong>
+      测试中观察到的最大执行时间是实测结果，不自动等于理论 WCET。
+      同样，某个函数具有可分析的 WCET，也不代表整个事件到结果的链路已经得到证明。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>5. 哪些因素会让时间边界变得难以证明？</h2>
+    <p>
+      真正的问题不是某项机制的名称，而是它是否引入了未建模、无界或难以验证的行为。
+    </p>
+
+    <div class="grid">
+      <div class="mini">
+        <h3>执行路径不明确</h3>
+        <p>循环次数、递归深度或条件分支缺少可验证的边界，使最长路径难以确定。</p>
+      </div>
+      <div class="mini">
+        <h3>中断干扰未建模</h3>
+        <p>嵌套深度、到达频率、屏蔽区和处理时间未纳入响应时间分析。</p>
+      </div>
+      <div class="mini">
+        <h3>资源等待无上界</h3>
+        <p>锁竞争、任务阻塞或外部设备等待可能使完成时间超出预期。</p>
+      </div>
+      <div class="mini">
+        <h3>内存行为不明确</h3>
+        <p>分配失败、碎片、资源耗尽或访问路径不确定，可能影响执行和完成时间。</p>
+      </div>
+      <div class="mini">
+        <h3>调度假设不成立</h3>
+        <p>优先级、任务状态或调度触发条件与分析模型不一致。</p>
+      </div>
+      <div class="mini">
+        <h3>验证范围不足</h3>
+        <p>仅测试常见路径或平均负载，没有覆盖最不利状态和关键干扰组合。</p>
+      </div>
+    </div>
+
+    <div class="note">
+      这些因素不一定会直接破坏确定性。只要行为受到约束、边界能够建立并且假设得到验证，
+      某些复杂机制仍然可以纳入实时分析。
+      对经典 8051 系统，也应以目标芯片的实际硬件结构为准，不应机械套用其他架构的缓存等分析模型。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>6. 从“可预测”走向“可验证”</h2>
+    <p>
+      确定性不能只依赖设计者的直觉。它需要明确的假设、可复查的实现证据，以及与目标平台相匹配的验证方法。
+    </p>
+
+    <h3>建议建立的验证链</h3>
+    <div class="code-flow">系统需求
+  ↓ 定义触发条件、截止时间和完成判据
+事件模型
+  ↓ 明确到达模式、优先级和状态条件
+实现路径
+  ↓ 核对 ISR、调度、上下文与任务代码
+时间分析
+  ↓ 建立执行时间上界和干扰模型
+实测验证
+  ↓ GPIO 标记、逻辑分析仪、压力测试
+结论与限制
+  ↓ 记录成立条件、测试范围和未覆盖情形</div>
+
+    <ul class="list">
+      <li><span class="check">✓</span> <strong>静态分析：</strong>检查代码路径、指令周期、资源布局与可达性。</li>
+      <li><span class="check">✓</span> <strong>目标板测量：</strong>使用 GPIO 时间标记或逻辑分析仪观察关键路径。</li>
+      <li><span class="check">✓</span> <strong>压力测试：</strong>组合任务负载、中断干扰和资源竞争，寻找边界情况。</li>
+      <li><span class="check">✓</span> <strong>证据记录：</strong>保留编译配置、芯片型号、分析假设、测量结果与已知限制。</li>
+    </ul>
+
+    <p>
+      静态分析和实测各有作用：前者帮助推导边界，后者用于检查实现与模型是否一致。
+      两者相互印证，比单独依赖一次测试峰值或理论估计更可靠。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>7. 如何判断一条因果链满足实时要求？</h2>
+    <p>
+      判断依据不是“系统运行得很快”，而是从明确的起点到明确的终点，
+      在规定的工作条件与假设下，能够证明或充分论证其响应时间满足应用要求。
+    </p>
+
+    <div class="grid">
+      <div class="mini">
+        <h3>起点明确</h3>
+        <p>说明计时从物理事件、硬件捕获、ISR 入口还是软件识别时刻开始。</p>
+      </div>
+      <div class="mini">
+        <h3>终点明确</h3>
+        <p>说明计时结束于任务启动、计算完成、输出寄存器更新还是外部信号生效。</p>
+      </div>
+      <div class="mini">
+        <h3>约束明确</h3>
+        <p>给出截止时间、输入到达条件、系统负载和允许的干扰范围。</p>
+      </div>
+      <div class="mini">
+        <h3>证据充分</h3>
+        <p>时间上界、实现路径和目标平台验证能够相互对应，已知限制得到记录。</p>
+      </div>
+    </div>
+
+    <div class="note warning">
+      <strong>关于硬实时：</strong>
+      满足某次测试的截止时间，不等于已经证明硬实时保证。
+      硬实时论证还需要明确适用条件，并证明规定条件下关键截止时间不会被违反。
+      本页给出的是分析框架，不单独构成 HRTOS 或任何具体应用的硬实时保证。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>8. 与 System View 其他模型的关系</h2>
+    <p>
+      确定性因果链不是孤立的功能模块，而是将前面各个系统模型连接起来的分析视角。
+    </p>
+
+    <ul class="list">
+      <li><strong>执行流模型：</strong>确认 CPU 实际经过哪些执行路径。</li>
+      <li><strong>任务生命周期：</strong>解释任务何时就绪、运行、阻塞或恢复。</li>
+      <li><strong>中断流模型：</strong>解释事件如何进入处理路径，以及中断如何影响当前执行。</li>
+      <li><strong>调度周期模型：</strong>解释调度决策和任务切换在什么条件下发生。</li>
+      <li><strong>内存视图模型：</strong>确认上下文、栈和内核对象的资源约束。</li>
+      <li><strong>时间系统模型：</strong>明确 Tick、延迟、响应时间和执行时间的不同含义。</li>
+    </ul>
+
+    <p>
+      只有将这些结构与具体应用的输入条件、执行代码和截止时间结合起来，
+      才能对端到端实时行为进行有边界的分析。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>语义总结</h2>
+    <p class="lead">
+      确定性因果链的核心，是让事件到结果之间的执行路径、状态条件与时间边界变得可描述、可分析、可验证。
+    </p>
+    <p>
+      一个实时系统不仅需要正确地执行任务，还需要在规定的条件下，于规定的时间范围内完成关键工作。
+      对这一目标的论证，必须同时覆盖内核机制、应用执行路径、硬件行为和实际运行条件。
+    </p>
+    <div class="en">
+      Deterministic behavior requires an analyzable event-to-outcome path, explicit timing constraints, and evidence that the required deadlines are met under stated assumptions.
+    </div>
+  </section>
+
+  <section class="card related">
+    <h2>相关阅读</h2>
+
+    <p><b>上级</b></p>
+    <p><a href="/system-view/index.html">System View 总览</a></p>
+
+    <p><b>上一篇</b></p>
+    <p><a href="/system-view/06-time-system.html">06 时间系统模型 ←</a></p>
+
+    <p><b>相关模型</b></p>
+    <p><a href="/system-view/01-execution-flow.html">01 执行流模型</a></p>
+    <p><a href="/system-view/02-task-lifecycle.html">02 任务生命周期</a></p>
+    <p><a href="/system-view/03-interrupt-flow.html">03 中断流模型</a></p>
+    <p><a href="/system-view/04-scheduler-cycle.html">04 调度周期模型</a></p>
+    <p><a href="/system-view/05-memory-view.html">05 内存视图模型</a></p>
+    <p><a href="/system-view/06-time-system.html">06 时间系统模型</a></p>
+
+    <p><b>下一步</b></p>
+    <p><a href="/system-view/system-diagram.html">System Diagram：系统结构图 →</a></p>
+    <p><a href="/system-view/summary.html">System View 总结</a></p>
+    <p><a href="/docs/index.html">HRTOS 文档体系</a></p>
+  </section>
+
+</main>
 
 <footer class="site-footer">
   © 2017–2026 HRTOS · SYSTEM VIEW

@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>04 调度循环 | HRTOS System View</title>
-<meta name="description" content="定义HRTOS调度器如何在任务与中断之间持续做出执行决策的循环机制">
+<title>04 调度周期模型 | HRTOS 8051 RTOS System View</title>
+<meta name="description" content="深入理解 HRTOS 8051 实时操作系统的调度周期：任务就绪、调度决策、上下文切换、中断介入与执行恢复之间的运行关系。">
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="scheduler-cycle">
@@ -63,12 +64,60 @@ body{
 
 h1{
   font-size:38px;
-  margin:0 0 10px;
+  line-height:1.25;
+  margin:0 0 14px;
+  letter-spacing:-.025em;
 }
 
 .sub{
   color:var(--muted);
-  margin-bottom:40px;
+  margin-bottom:32px;
+  font-size:16px;
+  max-width:760px;
+}
+
+.eyebrow{
+  color:var(--accent);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+
+.hero{
+  padding:28px;
+  margin-bottom:24px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:
+    radial-gradient(ellipse at top right,rgba(56,189,248,.10),transparent 55%),
+    rgba(17,24,35,.92);
+  box-shadow:var(--shadow);
+}
+
+.hero p:last-child{
+  margin-bottom:0;
+}
+
+.hero strong{
+  color:#f8fafc;
+}
+
+.tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:18px;
+}
+
+.tag{
+  padding:4px 10px;
+  border:1px solid rgba(56,189,248,.24);
+  border-radius:999px;
+  background:rgba(56,189,248,.07);
+  color:#bae6fd;
+  font-size:12px;
 }
 
 /* card */
@@ -82,17 +131,157 @@ h1{
 }
 
 .card h2{
-  margin:0 0 10px;
+  margin:0 0 12px;
   font-size:18px;
+  line-height:1.5;
   color:#cfe3ff;
   border-left:3px solid var(--accent);
   padding-left:10px;
 }
 
+.card h3{
+  font-size:15px;
+  color:#e2e8f0;
+  margin:18px 0 6px;
+}
+
+.card p{
+  margin:10px 0;
+}
+
+.card ul{
+  padding-left:22px;
+  margin:10px 0;
+}
+
+.card li{
+  margin:6px 0;
+}
+
 .en{
   color:var(--muted);
+  font-size:13px;
+  margin-top:12px;
+  line-height:1.7;
+}
+
+.muted{
+  color:var(--muted);
+}
+
+.flow{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:20px 0;
+}
+
+.flow-step{
+  position:relative;
+  padding:15px 12px;
+  min-height:100px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  border:1px solid rgba(56,189,248,.22);
+  border-radius:9px;
+  background:rgba(15,23,42,.8);
+  text-align:center;
+}
+
+.flow-step strong{
+  display:block;
+  color:#bae6fd;
   font-size:14px;
-  margin-top:6px;
+  margin-bottom:4px;
+}
+
+.flow-step span{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.6;
+}
+
+.flow-arrow{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--accent);
+  font-size:20px;
+}
+
+.cycle{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:10px;
+  margin:20px 0;
+}
+
+.cycle-node{
+  text-align:center;
+  padding:16px 12px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:rgba(15,23,42,.65);
+}
+
+.cycle-node strong{
+  display:block;
+  font-size:14px;
+  color:#e2e8f0;
+}
+
+.cycle-node span{
+  display:block;
+  margin-top:5px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.cycle-arrow{
+  color:var(--accent);
+  font-size:20px;
+}
+
+.note{
+  border-left:3px solid #64748b;
+  padding:12px 15px;
+  margin-top:16px;
+  border-radius:0 8px 8px 0;
+  background:rgba(148,163,184,.06);
+  color:#cbd5e1;
+  font-size:14px;
+}
+
+.note strong{
+  color:#f1f5f9;
+}
+
+.warning{
+  border-left-color:#f59e0b;
+  background:rgba(245,158,11,.06);
+}
+
+.related a{
+  color:var(--accent);
+  text-decoration:none;
+}
+
+.related a:hover{
+  text-decoration:underline;
+}
+
+.related p{
+  margin:8px 0;
+}
+
+.semantic{
+  font-size:15px;
+}
+
+.semantic strong{
+  color:#bae6fd;
 }
 
 /* footer */
@@ -102,6 +291,42 @@ h1{
   padding:18px 12px;
   color:#8ea3be;
   font-size:.95rem;
+}
+
+@media(max-width:640px){
+  .container{
+    padding:36px 18px;
+  }
+
+  h1{
+    font-size:30px;
+  }
+
+  .hero{
+    padding:21px;
+  }
+
+  .card{
+    padding:18px;
+  }
+
+  .flow{
+    grid-template-columns:1fr;
+  }
+
+  .flow-step{
+    min-height:auto;
+    padding:13px;
+  }
+
+  .cycle{
+    grid-template-columns:1fr;
+  }
+
+  .cycle-arrow{
+    transform:rotate(90deg);
+    text-align:center;
+  }
 }
 </style>
 </head>
@@ -118,126 +343,262 @@ h1{
   </div>
 </div>
 
-<div class="container">
+<main class="container">
 
-  <h1>4. 调度循环（Scheduler Cycle）</h1>
-  <div class="sub">持续进行“任务执行 + 中断事件”的实时决策闭环</div>
+  <div class="eyebrow">SYSTEM VIEW / 04</div>
 
-  <div class="card">
-    <h2>核心定义</h2>
+  <h1>调度周期模型</h1>
+
+  <div class="sub">
+    Scheduler Cycle · 从任务就绪与调度决策，到上下文切换、执行恢复和下一次调度触发，理解 HRTOS 的运行控制路径。
+  </div>
+
+  <section class="hero">
     <p>
-      调度循环是 HRTOS 的核心控制闭环，用于在任务执行流与中断事件流之间持续做出调度决策。
+      <strong>调度周期不是简单的任务排序，也不意味着调度器必须不断遍历全部系统状态。</strong>
+      它描述的是：当系统运行条件或调度触发条件发生变化时，内核如何确定后续执行路径，并在任务、中断与上下文之间完成控制权转换。
     </p>
     <p>
-      它不是一次性算法，而是持续运行的实时决策系统。
+      对 8051 实时操作系统而言，调度过程必须与处理器的寄存器、堆栈、中断入口和返回机制共同考虑。调度算法只是其中一部分，真正的运行行为还取决于内核如何实现这些机制。
     </p>
-    <div class="en">
-      Scheduler cycle is a continuously running real-time decision loop.
+    <div class="tags">
+      <span class="tag">任务就绪</span>
+      <span class="tag">调度决策</span>
+      <span class="tag">上下文切换</span>
+      <span class="tag">中断介入</span>
+      <span class="tag">执行恢复</span>
     </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>1. 系统状态采样</h2>
-    <p>
-      调度器首先采样系统状态：
-    </p>
-    <p>
-      任务状态 / 中断标志 / 资源锁 / 时间约束窗口
-    </p>
-    <p>
-      用于构建当前决策输入空间。
-    </p>
-  </div>
+  <section class="card">
+    <h2>一、调度周期的核心结构</h2>
 
-  <div class="card">
-    <h2>2. 可执行集合构建</h2>
     <p>
-      从所有任务中筛选当前可执行集合（Ready Set）。
+      从系统运行角度，可以把调度过程理解为三个相互关联的阶段：形成调度条件、确定执行目标、恢复相应执行上下文。
+      这些阶段可能由任务主动让出执行权、任务状态变化、时钟事件或中断返回等不同路径触发。
     </p>
-    <p>
-      条件：非阻塞、资源满足、未违反调度约束。
-    </p>
-  </div>
 
-  <div class="card">
-    <h2>3. 调度决策计算</h2>
-    <p>
-      在 Ready Set 中选择执行任务。
-    </p>
-    <p>
-      “最优”在 RTOS 中意味着：
-    </p>
-    <p>
-      ✔ 满足时间约束<br>
-      ✔ 满足优先级规则<br>
-      ✔ 保持系统确定性
-    </p>
-    <p>
-      本质是约束决策问题，而非排序问题。
-    </p>
-  </div>
-
-  <div class="card">
-    <h2>4. 上下文切换</h2>
-    <p>
-      保存当前任务状态并切换执行目标任务。
-    </p>
-    <p>
-      必须满足：切换时间有界且可预测，不引入随机延迟。
-    </p>
-  </div>
-
-  <div class="card">
-    <h2>5. 中断融合与再调度</h2>
-    <p>
-      中断可能随时插入调度循环。
-    </p>
-    <p>
-      调度器必须支持：
-    </p>
-    <p>
-      ✔ 中断感知<br>
-      ✔ 即时重计算<br>
-      ✔ 抢占式调度
-    </p>
-    <p>
-      因此调度循环是动态重计算系统。
-    </p>
-  </div>
-
-  <div class="card">
-    <h2>语义总结</h2>
-    <p>
-      调度循环不是算法，而是持续运行的实时决策闭环。
-    </p>
-    <p>
-      它连接执行流与中断流，是RTOS时间模型的核心控制器。
-    </p>
-    <div class="en">
-      The scheduler cycle is a real-time decision loop connecting execution and interrupt flows.
+    <div class="flow">
+      <div class="flow-step">
+        <strong>01 · 调度触发</strong>
+        <span>任务状态变化、时钟事件或内核控制路径</span>
+      </div>
+      <div class="flow-step">
+        <strong>02 · 执行目标选择</strong>
+        <span>依据当前可运行任务与调度规则确定目标</span>
+      </div>
+      <div class="flow-step">
+        <strong>03 · 执行上下文转换</strong>
+        <span>必要时保存与恢复处理器执行状态</span>
+      </div>
     </div>
-  </div>
 
-  <div class="card">
+    <p>
+      目标任务开始运行后，系统可能继续执行该任务，也可能因新的事件再次进入调度相关路径。因此，“调度周期”是对运行机制的整体描述，而不是要求每一步都以固定频率重复执行。
+    </p>
+
+    <div class="en">
+      A scheduler cycle describes the control path from scheduling triggers to execution selection and, when required, context restoration.
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>二、调度器依据什么作出决策？</h2>
+
+    <p>
+      调度器的决策依据来自内核维护的任务运行状态及其调度规则，而不是对所有可能执行路径进行通用意义上的“最优解搜索”。
+    </p>
+
+    <h3>1. 可运行任务</h3>
+    <p>
+      只有符合内核运行条件、当前可以参与调度的任务，才可能成为本次调度的执行目标。等待事件或处于阻塞状态的任务，通常不能直接作为普通任务执行目标。
+    </p>
+
+    <h3>2. 优先级与调度模式</h3>
+    <p>
+      优先级用于表达任务之间的调度关系，但具体选择结果还取决于内核的调度模式、时间片规则、当前执行路径以及相应的状态更新机制。
+    </p>
+
+    <h3>3. 事件与时间条件</h3>
+    <p>
+      时钟节拍、等待条件满足、任务主动让出执行权，以及中断处理后的返回路径，都可能影响下一阶段的运行安排。并非每个事件都会直接触发一次任务切换。
+    </p>
+
+    <div class="note">
+      <strong>关键区别：</strong>
+      任务状态发生变化、调度器执行选择、处理器真正发生上下文切换，是三个不同的概念。某次调度判断可能最终选择当前任务继续运行，而不一定产生实际的任务切换。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>三、调度决策不等于上下文切换</h2>
+
+    <p>
+      调度器确定下一步执行目标后，内核还需要根据当前执行状态完成控制权转换。如果目标任务与当前任务不同，通常需要处理相应的上下文保存与恢复；如果目标仍是当前任务，则可能无需执行完整的任务切换。
+    </p>
+
+    <div class="cycle">
+      <div class="cycle-node">
+        <strong>当前执行上下文</strong>
+        <span>寄存器、堆栈与任务执行位置</span>
+      </div>
+      <div class="cycle-arrow">→</div>
+      <div class="cycle-node">
+        <strong>目标执行上下文</strong>
+        <span>恢复对应状态并继续执行</span>
+      </div>
+    </div>
+
+    <p>
+      在 8051 架构中，上下文管理尤其需要考虑寄存器组、程序计数器、堆栈使用以及编译器生成的代码。任务切换的实际成本不能只用调度算法本身的计算量衡量。
+    </p>
+
+    <p>
+      对 HRTOS 而言，评估调度开销应结合实际内核实现、Keil C51 编译结果、目标芯片指令周期及中断影响，而不能仅根据流程图推导出一个固定的切换时间。
+    </p>
+
+    <div class="note">
+      <strong>分析原则：</strong>
+      将“调度决策耗时”和“上下文切换耗时”分开测量与分析，才能更准确地理解任务切换的实际成本。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>四、中断如何影响调度周期？</h2>
+
+    <p>
+      中断路径与普通任务调度路径相互关联，但不能简单地视为同一条流程。中断请求到达后，处理器是否立即接受、能否嵌套、何时退出，以及退出后是否进入任务调度路径，都取决于具体的中断控制与内核实现。
+    </p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <strong>中断请求</strong>
+        <span>产生事件，等待处理器接受</span>
+      </div>
+      <div class="flow-step">
+        <strong>中断处理</strong>
+        <span>执行中断服务路径并维护必要状态</span>
+      </div>
+      <div class="flow-step">
+        <strong>退出与恢复</strong>
+        <span>按内核机制返回原执行路径或进入后续调度</span>
+      </div>
+    </div>
+
+    <p>
+      中断处理可能改变任务的运行条件，也可能增加当前任务的等待时间；但这并不意味着每次中断都会重新选择任务，或每次中断退出都会发生上下文切换。
+    </p>
+
+    <p>
+      在支持嵌套中断的系统中，还需要考虑中断优先级、允许嵌套的运行阶段、寄存器保护和堆栈预算。这些因素共同影响调度响应与执行时序。
+    </p>
+
+    <div class="note warning">
+      <strong>实时性边界：</strong>
+      支持优先级调度或中断嵌套，并不自动证明系统满足所有硬实时期限。要评估最坏响应时间，还需要分析中断屏蔽时间、执行路径、切换开销和任务竞争等因素。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>五、时间片与优先级如何参与调度？</h2>
+
+    <p>
+      时间片与优先级是两类不同的调度控制因素。优先级决定任务之间的相对调度关系；时间片机制则可以限制特定调度模式下任务连续占用处理器的时间。
+    </p>
+
+    <ul>
+      <li>
+        <strong>优先级调度：</strong>
+        根据内核规定的优先级规则确定可运行任务的执行顺序；具体抢占时机取决于内核实现。
+      </li>
+      <li>
+        <strong>时间片调度：</strong>
+        在适用的调度模式下，通过时间片边界影响后续执行目标；时间片到期不等于所有任务都必须切换。
+      </li>
+      <li>
+        <strong>中断处理：</strong>
+        具有独立的响应与退出机制，可能影响任务何时获得处理器，但不能简单等同于普通任务的优先级竞争。
+      </li>
+    </ul>
+
+    <p>
+      分析 HRTOS 的具体调度行为时，应将优先级定义、时间片配置、任务状态转换和中断路径结合起来，而不是仅凭某一个优先级数值推断所有执行结果。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>六、怎样验证调度周期的实际行为？</h2>
+
+    <p>
+      调度周期不仅是概念模型，也应能够通过代码审查、指令分析和目标板测试进行验证。不同方法回答的问题不同，宜交叉使用。
+    </p>
+
+    <ul>
+      <li>
+        <strong>代码与控制流分析：</strong>
+        确认调度触发点、任务选择路径、切换条件及中断退出后的控制流。
+      </li>
+      <li>
+        <strong>反汇编与指令周期分析：</strong>
+        结合目标芯片指令集和实际编译产物，分析指定执行路径的指令开销。
+      </li>
+      <li>
+        <strong>GPIO 与逻辑分析仪测量：</strong>
+        对关键路径设置测量边界，观察目标板上的实际响应与执行时间。
+      </li>
+      <li>
+        <strong>边界与压力测试：</strong>
+        覆盖高优先级任务竞争、时间片边界、中断嵌套及连续事件等场景。
+      </li>
+      <li>
+        <strong>最坏情况分析：</strong>
+        明确分析对象、输入条件、路径覆盖范围与假设，再评估路径上界；单次测量不能替代最坏情况证明。
+      </li>
+    </ul>
+
+    <div class="note">
+      <strong>证据分层：</strong>
+      流程模型用于说明机制，实测用于说明已观察到的行为，最坏情况分析用于研究规定条件下的执行上界。三者相互补充，但不能互相替代。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>七、调度周期模型的语义总结</h2>
+
+    <p class="semantic">
+      <strong>调度周期描述的是内核如何从调度触发条件进入执行目标选择，并通过必要的上下文管理完成后续运行。</strong>
+      中断、任务状态变化、优先级规则和时间片机制共同影响这条运行路径，但它们并不总是以固定顺序执行，也不必然导致任务切换。
+    </p>
+
+    <p class="semantic">
+      对 8051 实时操作系统而言，理解调度周期需要同时关注调度策略与处理器执行机制。只有进一步结合实际内核代码、编译结果和目标板测试，才能对切换开销、响应时间及其最坏情况作出有依据的判断。
+    </p>
+
+    <div class="en">
+      The scheduler cycle connects scheduling conditions, execution selection and context management. Its timing properties must be evaluated against the actual kernel implementation and target hardware.
+    </div>
+  </section>
+
+  <section class="card related">
     <h2>相关阅读</h2>
 
     <p><b>System View</b></p>
-    <p><a href="/system-view/index.html" style="color:#38bdf8;">返回总览</a></p>
+    <p><a href="/system-view/index.html">返回总览 →</a></p>
 
-    <p><b>上一篇</b></p>
-    <p><a href="/system-view/03-interrupt-flow.html" style="color:#38bdf8;">中断流模型 ←</a></p>
+    <p><b>上一篇 · 中断流模型</b></p>
+    <p><a href="/system-view/03-interrupt-flow.html">03 中断流模型 ←</a></p>
 
-    <p><b>下一篇</b></p>
-    <p><a href="/system-view/05-memory-view.html" style="color:#38bdf8;">内存视图模型 →</a></p>
+    <p><b>下一篇 · 内存视图模型</b></p>
+    <p><a href="/system-view/05-memory-view.html">05 内存视图模型 →</a></p>
 
-    <p><b>扩展</b></p>
-    <p>
-      <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;">执行流模型</a><br>
-      <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;">任务生命周期</a>
-    </p>
-  </div>
+    <p><b>扩展阅读</b></p>
+    <p><a href="/system-view/01-execution-flow.html">01 执行流模型</a></p>
+    <p><a href="/system-view/02-task-lifecycle.html">02 任务生命周期</a></p>
+    <p><a href="/system-view/06-time-system.html">06 时间系统</a></p>
+    <p><a href="/system-view/07-deterministic-chain.html">07 确定性链路</a></p>
+  </section>
 
-</div>
+</main>
 
 <footer class="site-footer">
   © 2017–2026 HRTOS · SYSTEM VIEW

@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>05 内存视图 | HRTOS System View</title>
-<meta name="description" content="定义HRTOS中的内存分配、访问与实时约束之间的关系">
+<title>05 内存视图模型 | HRTOS 8051 RTOS System View</title>
+<meta name="description" content="HRTOS 8051 实时操作系统内存视图：解析 DATA、IDATA、XDATA、CODE 存储空间，任务上下文、堆栈预算、内存布局与实时执行约束之间的关系。">
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="memory-view">
@@ -63,12 +64,59 @@ body{
 
 h1{
   font-size:38px;
-  margin:0 0 10px;
+  line-height:1.25;
+  margin:0 0 14px;
+  letter-spacing:-.025em;
 }
 
 .sub{
   color:var(--muted);
-  margin-bottom:40px;
+  margin-bottom:32px;
+  font-size:16px;
+  max-width:760px;
+}
+
+.eyebrow{
+  color:var(--accent);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.14em;
+  margin-bottom:12px;
+}
+
+.hero{
+  padding:28px;
+  margin-bottom:24px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:
+    radial-gradient(ellipse at top right,rgba(56,189,248,.10),transparent 55%),
+    rgba(17,24,35,.92);
+  box-shadow:var(--shadow);
+}
+
+.hero p:last-child{
+  margin-bottom:0;
+}
+
+.hero strong{
+  color:#f8fafc;
+}
+
+.tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:18px;
+}
+
+.tag{
+  padding:4px 10px;
+  border:1px solid rgba(56,189,248,.24);
+  border-radius:999px;
+  background:rgba(56,189,248,.07);
+  color:#bae6fd;
+  font-size:12px;
 }
 
 /* card */
@@ -82,17 +130,159 @@ h1{
 }
 
 .card h2{
-  margin:0 0 10px;
+  margin:0 0 12px;
   font-size:18px;
+  line-height:1.5;
   color:#cfe3ff;
   border-left:3px solid var(--accent);
   padding-left:10px;
 }
 
+.card h3{
+  font-size:15px;
+  color:#e2e8f0;
+  margin:18px 0 6px;
+}
+
+.card p{
+  margin:10px 0;
+}
+
+.card ul{
+  padding-left:22px;
+  margin:10px 0;
+}
+
+.card li{
+  margin:6px 0;
+}
+
 .en{
   color:var(--muted);
+  font-size:13px;
+  margin-top:12px;
+  line-height:1.7;
+}
+
+.muted{
+  color:var(--muted);
+}
+
+.memory-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin:18px 0;
+}
+
+.memory-item{
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:rgba(15,23,42,.72);
+  min-width:0;
+}
+
+.memory-item strong{
+  display:block;
+  color:#bae6fd;
+  font-size:16px;
+  margin-bottom:5px;
+}
+
+.memory-item span{
+  display:block;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.65;
+}
+
+.flow{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:20px 0;
+}
+
+.flow-step{
+  padding:15px 12px;
+  min-width:0;
+  border:1px solid rgba(56,189,248,.22);
+  border-radius:9px;
+  background:rgba(15,23,42,.8);
+  text-align:center;
+}
+
+.flow-step strong{
+  display:block;
+  color:#bae6fd;
   font-size:14px;
-  margin-top:6px;
+  margin-bottom:5px;
+}
+
+.flow-step span{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.6;
+}
+
+.memory-chain{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:20px 0;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:rgba(15,23,42,.65);
+}
+
+.memory-chain span{
+  padding:7px 11px;
+  border-radius:6px;
+  background:rgba(56,189,248,.08);
+  color:#bae6fd;
+  font-size:13px;
+  text-align:center;
+}
+
+.memory-chain b{
+  color:var(--accent);
+  font-size:16px;
+}
+
+.note{
+  border-left:3px solid #64748b;
+  padding:12px 15px;
+  margin-top:16px;
+  border-radius:0 8px 8px 0;
+  background:rgba(148,163,184,.06);
+  color:#cbd5e1;
+  font-size:14px;
+}
+
+.note strong{
+  color:#f1f5f9;
+}
+
+.warning{
+  border-left-color:#f59e0b;
+  background:rgba(245,158,11,.06);
+}
+
+.related a{
+  color:var(--accent);
+  text-decoration:none;
+}
+
+.related a:hover{
+  text-decoration:underline;
+}
+
+.related p{
+  margin:8px 0;
 }
 
 /* footer */
@@ -102,6 +292,37 @@ h1{
   padding:18px 12px;
   color:#8ea3be;
   font-size:.95rem;
+}
+
+@media(max-width:640px){
+  .container{
+    padding:36px 18px;
+  }
+
+  h1{
+    font-size:30px;
+  }
+
+  .hero{
+    padding:21px;
+  }
+
+  .card{
+    padding:18px;
+  }
+
+  .memory-grid,
+  .flow{
+    grid-template-columns:1fr;
+  }
+
+  .flow-step{
+    text-align:left;
+  }
+
+  .memory-chain{
+    justify-content:flex-start;
+  }
 }
 </style>
 </head>
@@ -118,131 +339,310 @@ h1{
   </div>
 </div>
 
-<div class="container">
+<main class="container">
 
-  <h1>5. 内存视图（Memory View）</h1>
-  <div class="sub">内存如何成为实时系统的时间约束来源</div>
+  <div class="eyebrow">SYSTEM VIEW / 05</div>
 
-  <div class="card">
-    <h2>核心定义</h2>
+  <h1>内存视图模型</h1>
+
+  <div class="sub">
+    Memory View · 从 8051 存储空间、任务上下文与堆栈布局出发，理解内存容量、访问方式和资源边界如何影响 HRTOS 的运行行为。
+  </div>
+
+  <section class="hero">
     <p>
-      内存视图描述系统如何管理内存资源，并保证其不会破坏时间确定性。
+      <strong>对于 8051 实时操作系统，内存不仅决定系统能容纳多少任务和内核对象，也直接影响上下文管理、中断安全性与资源配置。</strong>
     </p>
     <p>
-      在 HRTOS 中，内存不是静态资源，而是影响执行时间的时间变量源。
+      HRTOS 的内存视图关注的是实际的存储空间、静态数据布局、任务上下文和运行时堆栈。它不是泛泛讨论内存优化，而是解释内核如何在有限的片上 RAM 与扩展 RAM 条件下组织运行资源。
     </p>
-    <div class="en">
-      Memory is a timing-related system variable, not just a storage resource.
+    <div class="tags">
+      <span class="tag">8051 存储模型</span>
+      <span class="tag">DATA / IDATA / XDATA</span>
+      <span class="tag">任务上下文</span>
+      <span class="tag">堆栈预算</span>
+      <span class="tag">资源边界</span>
     </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>1. 内存分配模型</h2>
-    <p>
-      动态内存分配（malloc/free）在RTOS中是不可控风险源。
-    </p>
-    <p>
-      常见替代方案：
-    </p>
-    <p>
-      • 静态分配<br>
-      • 内存池<br>
-      • 固定块分配
-    </p>
-    <p>
-      核心原则：分配时间必须有界（Bounded Allocation Time）
-    </p>
-  </div>
+  <section class="card">
+    <h2>一、8051 的内存不是单一地址空间</h2>
 
-  <div class="card">
-    <h2>2. 内存碎片问题</h2>
     <p>
-      动态分配会产生碎片，导致分配时间逐渐不可预测。
+      经典 MCS-51 架构具有不同类型的存储空间。它们的寻址方式、容量和访问指令存在差异，不能简单地把所有 RAM 看作一块可互换的连续内存。
     </p>
-    <p>
-      这会引入时间漂移问题（Timing Drift）。
-    </p>
-    <p>
-      在实时系统中，这比空间浪费更严重。
-    </p>
-  </div>
 
-  <div class="card">
-    <h2>3. Cache与访问不确定性</h2>
-    <p>
-      Cache命中/未命中会导致访问时间出现数量级差异。
-    </p>
-    <p>
-      内存访问因此变为随机变量，而非固定延迟操作。
-    </p>
-    <p>
-      需要通过缓存策略或最坏情况分析进行约束。
-    </p>
-  </div>
-
-  <div class="card">
-    <h2>4. 内存隔离</h2>
-    <p>
-      多任务系统必须保证任务之间内存边界清晰。
-    </p>
-    <p>
-      否则会引入：
-    </p>
-    <p>
-      • 数据竞争<br>
-      • 时间干扰
-    </p>
-    <p>
-      隔离不仅是安全问题，也是实时性问题。
-    </p>
-  </div>
-
-  <div class="card">
-    <h2>5. 内存与时间耦合</h2>
-    <p>
-      内存行为的不确定性最终会转化为执行时间不确定性。
-    </p>
-    <p>
-      关系链：
-    </p>
-    <p>
-      Memory Behavior → Execution Time → System Determinism
-    </p>
-  </div>
-
-  <div class="card">
-    <h2>语义总结</h2>
-    <p>
-      在实时系统中，内存不是空间资源，而是时间约束来源。
-    </p>
-    <p>
-      它是影响系统确定性的隐性关键变量。
-    </p>
-    <div class="en">
-      Memory is a hidden timing constraint in real-time systems.
+    <div class="memory-grid">
+      <div class="memory-item">
+        <strong>DATA</strong>
+        <span>片内直接寻址数据区。访问方式和容量受具体 8051 兼容芯片实现限制。</span>
+      </div>
+      <div class="memory-item">
+        <strong>IDATA</strong>
+        <span>通过间接寻址访问的片内数据区。实际可用范围取决于目标芯片的内部 RAM 结构。</span>
+      </div>
+      <div class="memory-item">
+        <strong>XDATA</strong>
+        <span>外部数据存储器寻址空间。增强型 8051 芯片可能在片内集成扩展 RAM，但具体容量和访问成本需查阅芯片资料。</span>
+      </div>
+      <div class="memory-item">
+        <strong>CODE</strong>
+        <span>程序代码与常量所在的代码空间，通常与数据空间采用不同的寻址机制。</span>
+      </div>
     </div>
-  </div>
 
-  <div class="card">
+    <p>
+      这些名称描述的是 8051 工具链与处理器架构中的存储类别。编译器如何放置变量、内核如何分配运行时数据，以及芯片实际提供多少可用空间，需要结合目标型号、链接配置和编译结果判断。
+    </p>
+
+    <div class="note">
+      <strong>工程要点：</strong>
+      芯片标称 RAM 容量不等于 HRTOS 可以自由使用的容量。启动代码、寄存器组、堆栈、全局变量、内核对象及其他模块都会消耗资源，必须以实际链接和内存布局为准。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>二、HRTOS 内存布局的核心对象</h2>
+
+    <p>
+      RTOS 的内存开销不仅来自内核代码，还包括运行期间必须维护的状态。对 HRTOS 这样的 8051 系统，需要特别关注以下几类对象。
+    </p>
+
+    <ul>
+      <li>
+        <strong>任务状态与调度记录：</strong>
+        保存任务的运行状态及调度所需信息。
+      </li>
+      <li>
+        <strong>任务上下文：</strong>
+        为任务切换保存和恢复必要的处理器状态。实际字段与大小取决于内核的上下文设计。
+      </li>
+      <li>
+        <strong>任务堆栈与系统堆栈：</strong>
+        用于函数调用、返回地址、局部数据及执行路径中的临时状态；具体用途和预算必须结合实现确认。
+      </li>
+      <li>
+        <strong>中断上下文：</strong>
+        中断入口、嵌套处理及退出路径可能使用额外堆栈空间或保存区域。
+      </li>
+      <li>
+        <strong>内核对象与消息资源：</strong>
+        任务同步、消息队列及其他功能模块会占用静态或运行时资源。
+      </li>
+    </ul>
+
+    <div class="memory-chain">
+      <span>任务控制信息</span>
+      <b>+</b>
+      <span>上下文</span>
+      <b>+</b>
+      <span>堆栈</span>
+      <b>+</b>
+      <span>内核对象</span>
+      <b>→</b>
+      <span>实际 RAM 预算</span>
+    </div>
+
+    <p>
+      这些资源之间存在耦合关系。例如，增加任务数量可能扩大任务控制信息和上下文的静态开销；增加消息队列容量，则可能提高消息存储区的占用。最终容量必须根据实际配置和内存布局核算。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>三、为什么任务上下文会影响内存预算？</h2>
+
+    <p>
+      任务上下文用于在执行权发生转换时保存和恢复必要的状态。上下文设计会影响每个任务需要占用的存储空间，也会影响切换过程中的保存、恢复与访问开销。
+    </p>
+
+    <p>
+      在 8051 上，寄存器组、程序计数器、堆栈和编译器生成的代码共同决定实际的上下文管理方式。因此，不能直接套用 32 位 MCU 的任务控制块或上下文大小估算 HRTOS。
+    </p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <strong>保存状态</strong>
+        <span>保留后续恢复所需的执行信息</span>
+      </div>
+      <div class="flow-step">
+        <strong>切换执行目标</strong>
+        <span>更新当前执行任务及相关状态</span>
+      </div>
+      <div class="flow-step">
+        <strong>恢复状态</strong>
+        <span>使目标任务能够从规定位置继续执行</span>
+      </div>
+    </div>
+
+    <p>
+      上下文的静态空间开销与切换时的临时堆栈开销需要分别评估。某个数据结构占用多少字节，并不能单独说明整个任务切换路径需要多少运行时空间。
+    </p>
+
+    <div class="note">
+      <strong>核算原则：</strong>
+      应分别统计静态上下文存储、任务堆栈、系统堆栈与中断路径的临时使用量，再根据实际调用关系和嵌套条件分析它们是否可能同时达到峰值。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>四、堆栈预算是运行安全的基础</h2>
+
+    <p>
+      堆栈不足可能导致返回地址、保存的寄存器或其他运行数据被覆盖，最终表现为任务异常、中断返回错误或难以复现的系统故障。
+    </p>
+
+    <p>
+      对支持中断嵌套的系统，堆栈需求不仅取决于普通任务调用深度，还可能受到中断进入、内核接口调用、嵌套中断以及编译器生成的函数序言和尾声代码影响。
+    </p>
+
+    <ul>
+      <li>分析任务正常调用链及其最大嵌套深度。</li>
+      <li>检查中断入口、退出和内核接口使用的额外空间。</li>
+      <li>根据实际允许的嵌套关系，评估多层中断同时存在时的空间需求。</li>
+      <li>结合反汇编、链接映射和目标板测试验证预算。</li>
+    </ul>
+
+    <div class="note warning">
+      <strong>不要混淆容量与安全余量：</strong>
+      堆栈分配了多少字节，不代表实际路径一定不会溢出。安全结论需要基于明确的调用边界、嵌套规则、编译产物和可验证的空间预算。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>五、动态分配、静态布局与内存池</h2>
+
+    <p>
+      内存管理方式会影响空间利用率、运行时开销及故障排查难度。不同方案各有适用场景，关键是理解其成本和约束，而不是将某一种方案视为所有 RTOS 的唯一正确选择。
+    </p>
+
+    <h3>静态分配</h3>
+    <p>
+      资源在构建阶段确定，通常更容易通过链接映射和配置核算容量。代价是资源弹性较低，需要提前规划任务、队列和其他对象的数量。
+    </p>
+
+    <h3>固定块内存池</h3>
+    <p>
+      从预先配置的块集合中申请和释放资源，能够避免通用堆分配器带来的外部碎片问题。其空间浪费、分配上限和耗时仍需根据具体实现评估。
+    </p>
+
+    <h3>通用动态分配</h3>
+    <p>
+      malloc/free 一类接口可以提供更灵活的空间使用方式，但其执行时间、碎片行为、失败处理和同步开销取决于分配器实现及使用模式。
+    </p>
+
+    <div class="note">
+      <strong>实时性判断：</strong>
+      动态分配并不必然意味着无法用于实时系统，静态分配也不自动保证整个系统具有确定性。真正需要评估的是分配与释放的执行上界、失败行为、并发访问约束和资源耗尽时的处理方式。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>六、内存布局如何影响实时执行？</h2>
+
+    <p>
+      内存对实时性的影响并不只来自分配器。对于 8051 系统，存储空间类型、访问指令、堆栈活动和中断干扰都可能改变实际执行开销。
+    </p>
+
+    <div class="memory-chain">
+      <span>存储空间与数据布局</span>
+      <b>→</b>
+      <span>访问指令与堆栈行为</span>
+      <b>→</b>
+      <span>实际执行开销</span>
+      <b>→</b>
+      <span>响应时间分析</span>
+    </div>
+
+    <p>
+      例如，变量位于不同存储类别时，编译器可能生成不同的访问指令；函数调用与中断嵌套可能增加堆栈操作；内存不足还可能限制可创建的任务和消息资源。
+    </p>
+
+    <p>
+      这些因素会影响系统的资源上限与执行时序，但具体影响大小不能只由变量声明或内存总量推断，必须查看目标芯片、编译配置及生成的机器代码。
+    </p>
+
+    <h3>关于 Cache 的边界</h3>
+    <p>
+      经典 8051 系统通常不采用通用处理器那样的数据 Cache 分析模型。因此，本页面以存储空间、访问指令、堆栈与资源预算为重点，不将 Cache 命中或未命中当作 HRTOS 的普遍内存开销来源。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>七、如何验证实际内存占用？</h2>
+
+    <p>
+      对 HRTOS 的内存评估应以目标芯片与实际构建结果为依据。源码中的变量声明只能提供部分信息，不能替代最终链接结果和运行时堆栈分析。
+    </p>
+
+    <ul>
+      <li>
+        <strong>编译与链接报告：</strong>
+        检查 DATA、IDATA、XDATA、CODE 等空间的使用量及链接器报告的分配结果。
+      </li>
+      <li>
+        <strong>内存映射：</strong>
+        对照链接映射文件，确认内核状态、任务上下文、内存池与其他模块的实际布局。
+      </li>
+      <li>
+        <strong>堆栈分析：</strong>
+        结合调用链、编译器生成代码和中断嵌套规则，分析峰值空间需求。
+      </li>
+      <li>
+        <strong>资源边界测试：</strong>
+        检查任务数、消息队列和其他内核对象达到配置上限时的行为，以及资源申请失败时的处理路径。
+      </li>
+      <li>
+        <strong>目标板验证：</strong>
+        通过压力测试、边界场景与必要的运行时监测，检查内存预算和资源管理假设是否成立。
+      </li>
+    </ul>
+
+    <div class="note">
+      <strong>证据分层：</strong>
+      编译报告说明静态空间使用情况；控制流与堆栈分析用于研究运行时峰值；目标板测试用于验证已覆盖的实际场景。三者结合，才能形成更可信的内存评估。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>八、内存视图模型的语义总结</h2>
+
+    <p>
+      <strong>内存视图描述的是内核如何在具体硬件的存储空间限制下，组织任务状态、执行上下文、堆栈和系统资源。</strong>
+    </p>
+
+    <p>
+      对 HRTOS 而言，内存容量不仅决定系统可以容纳多少运行资源，也与上下文管理、中断嵌套、指令访问成本及故障边界相关。
+    </p>
+
+    <p>
+      因此，内存设计需要同时回答三个问题：空间实际分布在哪里、运行期间最多需要多少空间，以及这些存储与访问行为会怎样影响系统执行。
+    </p>
+
+    <div class="en">
+      The memory view connects the 8051 memory map, kernel data structures, stack requirements and runtime resource limits. Actual constraints must be verified against the target hardware and build artifacts.
+    </div>
+  </section>
+
+  <section class="card related">
     <h2>相关阅读</h2>
 
     <p><b>System View</b></p>
-    <p><a href="/system-view/index.html" style="color:#38bdf8;">返回总览</a></p>
+    <p><a href="/system-view/index.html">返回总览 →</a></p>
 
-    <p><b>上一篇</b></p>
-    <p><a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度循环 ←</a></p>
+    <p><b>上一篇 · 调度周期模型</b></p>
+    <p><a href="/system-view/04-scheduler-cycle.html">04 调度周期模型 ←</a></p>
 
-    <p><b>下一篇</b></p>
-    <p><a href="/system-view/06-time-system.html" style="color:#38bdf8;">时间系统 →</a></p>
+    <p><b>下一篇 · 时间系统</b></p>
+    <p><a href="/system-view/06-time-system.html">06 时间系统 →</a></p>
 
-    <p><b>扩展</b></p>
-    <p>
-      <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;">执行流模型</a><br>
-      <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;">任务生命周期</a>
-    </p>
-  </div>
+    <p><b>扩展阅读</b></p>
+    <p><a href="/system-view/01-execution-flow.html">01 执行流模型</a></p>
+    <p><a href="/system-view/02-task-lifecycle.html">02 任务生命周期</a></p>
+    <p><a href="/system-view/03-interrupt-flow.html">03 中断流模型</a></p>
+    <p><a href="/system-view/07-deterministic-chain.html">07 确定性链路</a></p>
+  </section>
 
-</div>
+</main>
 
 <footer class="site-footer">
   © 2017–2026 HRTOS · SYSTEM VIEW

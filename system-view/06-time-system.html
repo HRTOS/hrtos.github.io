@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>06 时间系统 | HRTOS System View</title>
-<meta name="description" content="定义HRTOS中的时间模型，包括tick、系统时间、执行时间与延迟约束">
+<title>06 时间系统模型 | HRTOS 8051 RTOS System View</title>
+<meta name="description" content="HRTOS 8051 实时操作系统时间系统：解析系统 Tick、任务响应延迟、中断响应、上下文切换、时间片与最坏执行时间 WCET 之间的关系。">
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="time-system">
@@ -63,21 +64,59 @@ body{
 
 h1{
   font-size:38px;
-  margin:0 0 10px;
+  line-height:1.25;
+  margin:0 0 14px;
+  letter-spacing:-.025em;
 }
 
 .sub{
   color:var(--muted);
-  margin-bottom:40px;
+  margin-bottom:32px;
+  font-size:16px;
+  max-width:760px;
 }
 
-/* footer */
-.site-footer{
-  text-align:center;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding-top:12px;
-  color:#8ea3be;
-  font-size:.95rem;
+.eyebrow{
+  color:var(--accent);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.14em;
+  margin-bottom:12px;
+}
+
+.hero{
+  padding:28px;
+  margin-bottom:24px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:
+    radial-gradient(ellipse at top right,rgba(56,189,248,.10),transparent 55%),
+    rgba(17,24,35,.92);
+  box-shadow:var(--shadow);
+}
+
+.hero p:last-child{
+  margin-bottom:0;
+}
+
+.hero strong{
+  color:#f8fafc;
+}
+
+.tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:18px;
+}
+
+.tag{
+  padding:4px 10px;
+  border:1px solid rgba(56,189,248,.24);
+  border-radius:999px;
+  background:rgba(56,189,248,.07);
+  color:#bae6fd;
+  font-size:12px;
 }
 
 /* card */
@@ -91,17 +130,186 @@ h1{
 }
 
 .card h2{
-  margin:0 0 10px;
+  margin:0 0 12px;
   font-size:18px;
+  line-height:1.5;
   color:#cfe3ff;
   border-left:3px solid var(--accent);
   padding-left:10px;
 }
 
+.card h3{
+  font-size:15px;
+  color:#e2e8f0;
+  margin:18px 0 6px;
+}
+
+.card p{
+  margin:10px 0;
+}
+
+.card ul{
+  padding-left:22px;
+  margin:10px 0;
+}
+
+.card li{
+  margin:6px 0;
+}
+
 .en{
   color:var(--muted);
+  font-size:13px;
+  margin-top:12px;
+  line-height:1.7;
+}
+
+.time-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin:18px 0;
+}
+
+.time-item{
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:rgba(15,23,42,.72);
+  min-width:0;
+}
+
+.time-item strong{
+  display:block;
+  color:#bae6fd;
+  font-size:15px;
+  margin-bottom:6px;
+}
+
+.time-item span{
+  display:block;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.65;
+}
+
+.flow{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:20px 0;
+}
+
+.flow-step{
+  padding:15px 12px;
+  min-width:0;
+  border:1px solid rgba(56,189,248,.22);
+  border-radius:9px;
+  background:rgba(15,23,42,.8);
+  text-align:center;
+}
+
+.flow-step strong{
+  display:block;
+  color:#bae6fd;
   font-size:14px;
-  margin-top:6px;
+  margin-bottom:5px;
+}
+
+.flow-step span{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.6;
+}
+
+.formula{
+  padding:18px;
+  margin:18px 0;
+  overflow-wrap:anywhere;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:rgba(15,23,42,.8);
+  text-align:center;
+  color:#bae6fd;
+  font-size:15px;
+  font-weight:650;
+}
+
+.formula small{
+  display:block;
+  margin-top:8px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:400;
+  line-height:1.7;
+}
+
+.note{
+  border-left:3px solid #64748b;
+  padding:12px 15px;
+  margin-top:16px;
+  border-radius:0 8px 8px 0;
+  background:rgba(148,163,184,.06);
+  color:#cbd5e1;
+  font-size:14px;
+}
+
+.note strong{
+  color:#f1f5f9;
+}
+
+.warning{
+  border-left-color:#f59e0b;
+  background:rgba(245,158,11,.06);
+}
+
+.related a{
+  color:var(--accent);
+  text-decoration:none;
+}
+
+.related a:hover{
+  text-decoration:underline;
+}
+
+.related p{
+  margin:8px 0;
+}
+
+/* footer */
+.site-footer{
+  text-align:center;
+  border-top:1px solid rgba(148,163,184,.14);
+  padding-top:12px;
+  color:#8ea3be;
+  font-size:.95rem;
+}
+
+@media(max-width:640px){
+  .container{
+    padding:36px 18px;
+  }
+
+  h1{
+    font-size:30px;
+  }
+
+  .hero{
+    padding:21px;
+  }
+
+  .card{
+    padding:18px;
+  }
+
+  .time-grid,
+  .flow{
+    grid-template-columns:1fr;
+  }
+
+  .flow-step{
+    text-align:left;
+  }
 }
 </style>
 </head>
@@ -119,132 +327,340 @@ h1{
   </div>
 </div>
 
-<div class="container">
+<main class="container">
 
-  <h1>06 时间系统（Time System）</h1>
-  <div class="sub">时间是实时系统的第一约束变量，而不是辅助机制</div>
+  <div class="eyebrow">SYSTEM VIEW / 06</div>
 
-  <div class="card">
-    <h2>核心定义</h2>
+  <h1>时间系统模型</h1>
+
+  <div class="sub">
+    Time System · 从系统节拍、任务响应与中断延迟，到执行时间分析和实时期限，理解 HRTOS 如何管理时间相关的运行约束。
+  </div>
+
+  <section class="hero">
     <p>
-      时间系统不是计时模块，而是实时系统的约束框架。
-      所有调度、中断与任务执行，都必须满足“时间可预测性”。
+      <strong>实时系统不仅要计算正确，还需要在规定的时间范围内完成规定的工作。</strong>
+      时间系统负责建立软件使用的时间基准，并通过节拍、中断、调度与等待机制影响系统何时响应事件、何时切换任务，以及任务能够在什么条件下满足期限要求。
     </p>
     <p>
-      在 HRTOS 中，时间不只是背景变量，而是系统正确性的直接判断依据。
+      对 HRTOS 而言，系统时间、任务实际执行时间和外部事件响应时间并不是同一个指标。理解这些时间量之间的关系，是分析调度行为与最坏情况执行时间的基础。
     </p>
-    <div class="en">
-      Time system defines temporal correctness, not just timekeeping.
+    <div class="tags">
+      <span class="tag">System Tick</span>
+      <span class="tag">响应延迟</span>
+      <span class="tag">时间片</span>
+      <span class="tag">执行时间</span>
+      <span class="tag">WCET</span>
     </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>1. 三层时间模型</h2>
+  <section class="card">
+    <h2>一、三个不同的时间概念</h2>
 
-    <p><b>① 物理时间（Real Time）</b></p>
-    <p>外部世界的真实时间流，如传感器输入与物理变化，系统只能响应。</p>
-
-    <p><b>② 系统时间（System Time）</b></p>
-    <p>由 tick 或定时器构成的内部时间基准，是调度统一参考系。</p>
-
-    <p><b>③ 执行时间（CPU Time）</b></p>
-    <p>任务实际占用 CPU 的时间，是 WCET 分析核心。</p>
-  </div>
-
-  <div class="card">
-    <h2>2. Tick 与时间粒度</h2>
     <p>
-      Tick 是时间离散化单位，决定系统调度精度。
+      分析实时系统时，首先要区分外部世界的时间、内核维护的时间基准，以及处理器实际执行某段代码所消耗的时间。
     </p>
-    <p>
-      • Tick 小 → 精度高但开销大<br>
-      • Tick 大 → 开销低但延迟粗
-    </p>
-    <p>
-      本质是“时间分辨率 vs 系统成本”的权衡。
-    </p>
-    <div class="en">
-      Tick defines scheduling granularity and timing resolution.
+
+    <div class="time-grid">
+      <div class="time-item">
+        <strong>物理时间</strong>
+        <span>外部事件发生、传感器变化或控制对象响应所处的真实时间尺度。</span>
+      </div>
+      <div class="time-item">
+        <strong>系统时间</strong>
+        <span>由定时器、Tick 或其他计时机制维护的软件时间基准，用于时间管理与调度相关判断。</span>
+      </div>
+      <div class="time-item">
+        <strong>执行时间</strong>
+        <span>处理器完成指定代码路径所消耗的时间，需要结合指令、时钟和执行条件分析。</span>
+      </div>
     </div>
-  </div>
 
-  <div class="card">
-    <h2>3. 延迟结构拆解</h2>
     <p>
-      实时任务总延迟由多段组成：
+      这三者存在关联，但不能互相替代。系统 Tick 可以提供软件时间基准，却不直接等于任务的执行时间；任务执行了多少个 CPU 周期，也不能单独决定外部事件何时得到响应。
     </p>
-    <p>
-      中断延迟 + 调度延迟 + 上下文切换 + 执行时间
-    </p>
-    <p>
-      任何一项不可预测，都会破坏实时性边界。
-    </p>
-  </div>
 
-  <div class="card">
-    <h2>4. 确定性原则</h2>
-    <p>
-      实时系统正确性取决于是否在时间窗口内完成。
-    </p>
-    <p>
-      超时不是性能下降，而是系统错误。
-    </p>
-    <p>
-      系统设计关注的是最坏情况，而非平均情况。
-    </p>
     <div class="en">
-      Timeout is a correctness failure, not performance degradation.
+      Physical time, kernel time and CPU execution time are related but distinct quantities.
     </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>5. 系统级约束</h2>
-    <p>
-      时间系统直接约束三大核心：
-    </p>
-    <p>
-      • 调度：必须可预测<br>
-      • 中断：必须可界定<br>
-      • 内存：必须低抖动
-    </p>
-    <p>
-      因此时间系统是“系统一致性基础”。
-    </p>
-  </div>
+  <section class="card">
+    <h2>二、Tick：系统时间的离散基准</h2>
 
-  <div class="card">
-    <h2>语义总结</h2>
     <p>
-      时间系统的本质，是将物理世界的不确定性转换为可计算约束。
+      Tick 通常指由定时器产生并由内核处理的周期性时间事件。系统可以基于 Tick 推进软件时间、检查超时条件，或执行与节拍相关的调度工作。
     </p>
+
     <p>
-      系统不是运行程序，而是在维护时间正确性。
+      如果定时器每隔固定的时间间隔产生一次有效节拍，那么 Tick 周期决定了基于该节拍计数的时间管理粒度。它并不意味着所有任务都只能在每个 Tick 时刻开始运行。
     </p>
+
+    <h3>Tick 周期较短</h3>
+    <p>
+      时间管理可以具有更细的节拍粒度，但定时器中断频率通常更高，也可能增加中断处理和内核维护的开销。
+    </p>
+
+    <h3>Tick 周期较长</h3>
+    <p>
+      周期性节拍的开销可能降低，但依赖 Tick 检查的超时或延时操作，其可观察和处理粒度可能变粗。
+    </p>
+
+    <div class="formula">
+      Tick 频率 = 1 / Tick 周期
+      <small>例如：若 Tick 周期为 1 ms，则对应的节拍频率为 1000 Hz。该示例不代表 HRTOS 的实际配置。</small>
+    </div>
+
+    <div class="note">
+      <strong>关键区别：</strong>
+      Tick 粒度不等于中断响应延迟，也不等于任务切换时间。实际行为还取决于定时器配置、中断屏蔽、内核执行路径及任务调度机制。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>三、时间片、延时与超时</h2>
+
+    <p>
+      时间片与延时机制解决的是不同的问题。时间片用于限制特定调度模式下任务连续占用处理器的时间；延时或超时机制则用于表达任务何时重新具备运行条件，或某个等待条件何时需要被判定为超时。
+    </p>
+
+    <ul>
+      <li>
+        <strong>时间片：</strong>
+        影响适用调度模式下的任务运行机会与切换时机。
+      </li>
+      <li>
+        <strong>任务延时：</strong>
+        让任务在指定时间条件满足前暂时不参与普通任务运行。
+      </li>
+      <li>
+        <strong>等待超时：</strong>
+        将等待条件与时间限制结合；超时后具体执行什么操作，取决于内核接口与应用逻辑。
+      </li>
+      <li>
+        <strong>硬件定时器：</strong>
+        可以用于产生时间事件或测量执行间隔，但实际分辨率和精度受芯片及配置限制。
+      </li>
+    </ul>
+
+    <p>
+      对依赖周期性 Tick 的延时接口而言，调用时刻相对于 Tick 边界的位置可能影响实际等待时长。分析这类接口时，应检查其计数方式、边界条件、时间单位和超时判断实现，而不能只根据参数值推断精确到期时刻。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>四、从事件发生到任务响应</h2>
+
+    <p>
+      实时响应通常从某个外部事件或硬件中断请求开始，到指定的软件动作真正发生为止。要评估响应时间，必须先定义测量的起点与终点。
+    </p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <strong>事件发生</strong>
+        <span>传感器变化、外设请求或其他触发源</span>
+      </div>
+      <div class="flow-step">
+        <strong>内核处理</strong>
+        <span>中断响应、必要的状态处理及调度相关路径</span>
+      </div>
+      <div class="flow-step">
+        <strong>目标动作</strong>
+        <span>任务开始运行或指定操作实际完成</span>
+      </div>
+    </div>
+
+    <p>
+      从事件到任务开始执行的延迟，与从事件到任务完成的总响应时间不同。后者还可能包含任务自身的执行时间，以及执行过程中受到的中断、抢占和资源等待影响。
+    </p>
+
+    <div class="formula">
+      响应时间 = 目标动作时刻 − 事件参考时刻
+      <small>必须明确事件参考点与目标动作的测量边界；不同定义得到的响应时间不能直接混用。</small>
+    </div>
+
+    <p>
+      分析时还应区分中断请求产生、处理器接受中断、中断服务程序开始执行，以及任务代码真正开始运行等不同时间点。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>五、延迟由哪些因素构成？</h2>
+
+    <p>
+      响应延迟可能受到多个阶段影响，但这些阶段并非在所有系统和所有执行路径中都能简单地作为互不重叠的固定项相加。
+    </p>
+
+    <ul>
+      <li>
+        <strong>中断接受延迟：</strong>
+        受到中断屏蔽状态、当前指令执行、硬件优先级规则及其他中断活动影响。
+      </li>
+      <li>
+        <strong>中断处理开销：</strong>
+        包括入口、状态保存、服务逻辑和退出等实际执行路径。
+      </li>
+      <li>
+        <strong>调度相关开销：</strong>
+        包括任务状态处理、执行目标选择，以及相关内核路径的执行成本。
+      </li>
+      <li>
+        <strong>上下文切换开销：</strong>
+        当执行目标改变且需要切换上下文时，可能产生额外的保存与恢复成本。
+      </li>
+      <li>
+        <strong>任务执行与干扰：</strong>
+        目标任务开始运行后，仍可能受到后续中断、较高优先级任务或其他系统约束影响。
+      </li>
+    </ul>
+
+    <div class="note warning">
+      <strong>不要机械相加：</strong>
+      只有在测量边界明确、阶段定义一致且不存在重复计入时，才能将各项延迟作为独立部分求和。若分析最坏响应时间，还必须考虑不同阶段的最坏条件能否在同一条执行路径上同时发生。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>六、平均时间、实测时间与 WCET</h2>
+
+    <p>
+      时间性能评估至少需要区分三个层次：平均表现、已经观察到的执行时间，以及在明确假设和路径范围内分析得到的最坏情况执行时间。
+    </p>
+
+    <h3>平均执行时间</h3>
+    <p>
+      可以反映常见工作负载下的性能表现，但平均值无法说明极端执行路径是否满足期限。
+    </p>
+
+    <h3>实测执行时间</h3>
+    <p>
+      通过 GPIO、定时器或逻辑分析仪测得的结果，可以验证特定硬件、编译版本与测试条件下的实际行为。但测试未覆盖的路径仍可能具有不同的执行时间。
+    </p>
+
+    <h3>最坏情况执行时间（WCET）</h3>
+    <p>
+      WCET 分析研究指定代码路径和执行条件下的执行时间上界。它需要结合控制流、循环边界、分支条件、指令周期和目标硬件特性，并清楚说明分析范围与假设。
+    </p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <strong>控制流分析</strong>
+        <span>明确分支、循环及可达路径</span>
+      </div>
+      <div class="flow-step">
+        <strong>指令周期分析</strong>
+        <span>结合目标芯片与实际编译产物</span>
+      </div>
+      <div class="flow-step">
+        <strong>上界与验证</strong>
+        <span>记录假设、覆盖范围并用实测交叉检查</span>
+      </div>
+    </div>
+
+    <p>
+      对 HRTOS 而言，基于 8051 机器代码开展指令级时间分析，可以把内核执行路径与具体硬件联系起来。但单条路径的指令周期上界，不等于整个系统的最坏响应时间；系统级分析还需要考虑中断干扰、调度行为和任务竞争。
+    </p>
+
+    <div class="note">
+      <strong>证据边界：</strong>
+      实测最大值是已观察到的结果，不自动构成理论上界；指令路径分析也只有在控制流与执行条件覆盖充分时，才能支持相应范围内的 WCET 结论。
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>七、时间确定性与实时期限</h2>
+
+    <p>
+      实时系统的关键不是每次执行都耗费完全相同的时间，而是系统能否在规定的条件下，对执行时间与响应行为给出足够可靠的约束。
+    </p>
+
+    <p>
+      任务的实时需求通常包含触发条件、完成期限、允许的响应时间和故障处理要求。是否满足实时要求，需要把实际或经过分析的执行行为与这些需求进行比较。
+    </p>
+
+    <ul>
+      <li>明确每类关键任务的响应起点与完成终点。</li>
+      <li>确认期限是相对于事件发生、任务释放还是其他参考时刻定义的。</li>
+      <li>分析中断屏蔽、任务竞争、上下文切换和资源等待等干扰因素。</li>
+      <li>针对关键执行路径建立可验证的时间预算与测试场景。</li>
+    </ul>
+
+    <p>
+      对具有硬实时要求的任务，超过规定期限可能意味着功能正确性失败，而不仅仅是性能下降。但这一判断应来自系统需求，不应脱离具体应用，把所有延迟或超时都一概视为整个操作系统失效。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>八、时间系统与内核其他部分的关系</h2>
+
+    <p>
+      时间系统并不独立工作。它与调度器、中断管理和内存布局共同影响实际运行行为。
+    </p>
+
+    <ul>
+      <li>
+        <strong>与调度周期的关系：</strong>
+        时间事件可能改变任务的运行条件，并影响调度与时间片处理路径。
+      </li>
+      <li>
+        <strong>与中断管理的关系：</strong>
+        中断屏蔽、响应和嵌套会影响事件处理时机与任务可获得的执行时间。
+      </li>
+      <li>
+        <strong>与内存布局的关系：</strong>
+        上下文保存、堆栈操作和不同存储空间的访问指令会影响实际执行开销。
+      </li>
+      <li>
+        <strong>与 WCET 分析的关系：</strong>
+        时间系统提供实际时序背景，而指令与控制流分析用于研究指定执行路径的时间上界。
+      </li>
+    </ul>
+
+    <div class="formula">
+      硬件时序 + 内核控制流 + 任务竞争条件
+      <small>共同构成分析实时响应与执行时间时需要考虑的主要因素；具体模型应以目标系统的实现与需求为准。</small>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>九、时间系统模型的语义总结</h2>
+
+    <p>
+      <strong>时间系统将计时基准、执行行为和实时期限联系起来，使系统能够表达、观察并分析时间相关的运行约束。</strong>
+    </p>
+
+    <p>
+      Tick 用于提供软件时间基准，调度与中断机制影响事件的处理时机，执行时间分析则研究具体路径需要多少处理器时间。它们共同服务于实时需求，但任何一个单独指标都不足以证明整个系统满足硬实时要求。
+    </p>
+
+    <p>
+      对 HRTOS 而言，进一步结合目标芯片、实际编译产物、反汇编、测试结果与明确的时间预算，才能逐步建立从内核运行机制到实时性证据的完整链路。
+    </p>
+
     <div class="en">
-      The system maintains temporal correctness rather than executing programs.
+      The time system connects timekeeping, execution behavior and deadlines. Real-time claims must be evaluated against explicit requirements, actual implementation and evidence.
     </div>
-  </div>
+  </section>
 
-  <div class="card">
+  <section class="card related">
     <h2>相关阅读</h2>
 
-    <p><b>上级</b></p>
-    <p><a href="/system-view/index.html" style="color:#38bdf8;">System View 总览</a></p>
+    <p><b>上级 · System View</b></p>
+    <p><a href="/system-view/index.html">System View 总览 →</a></p>
 
-    <p><b>上一篇</b></p>
-    <p><a href="/system-view/05-memory-view.html" style="color:#38bdf8;">05 内存视图 ←</a></p>
+    <p><b>上一篇 · 内存视图模型</b></p>
+    <p><a href="/system-view/05-memory-view.html">05 内存视图模型 ←</a></p>
 
-    <p><b>下一篇</b></p>
-    <p><a href="/system-view/07-deterministic-chain.html" style="color:#38bdf8;">07 确定性执行链 →</a></p>
+    <p><b>下一篇 · 确定性执行链</b></p>
+    <p><a href="/system-view/07-deterministic-chain.html">07 确定性执行链 →</a></p>
 
-    <p><b>扩展</b></p>
-    <p>
-      <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;">调度循环模型</a><br>
-      <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;">执行流模型</a>
-    </p>
-  </div>
+    <p><b>扩展阅读</b></p>
+    <p><a href="/system-view/04-scheduler-cycle.html">04 调度周期模型</a></p>
+    <p><a href="/system-view/01-execution-flow.html">01 执行流模型</a></p>
+    <p><a href="/system-view/03-interrupt-flow.html">03 中断流模型</a></p>
+  </section>
 
-</div>
+</main>
 
 <footer class="site-footer">
   <div style="margin-bottom:10px;">
