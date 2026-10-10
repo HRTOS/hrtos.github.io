@@ -1,541 +1,1041 @@
-  <!DOCTYPE html>
+
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HRTOS Documentation Center | RTOS Kernel & Embedded System Reference</title>
-<meta name="description" content="HRTOS documentation center for RTOS kernel design, task scheduling, memory management, IPC communication, API reference and embedded real-time systems.">
- <link rel="canonical" href="https://hrtos.com/docs/index.html">
- <meta name="keywords" content="RTOS, real-time operating system, HRTOS, task scheduling, embedded system, kernel design, IPC, memory management">
-  <style>
-    :root {
-      --bg: #0f172a;
-      --surface: rgba(15, 23, 42, 0.72);
-      --surface-strong: #13203a;
-      --surface-hover: #16325f;
-      --border: rgba(148, 163, 184, 0.18);
-      --border-strong: rgba(56, 189, 248, 0.45);
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-strong: #2563eb;
-      --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
-      --shadow-hover: 0 26px 56px rgba(37, 99, 235, 0.24);
-      --radius: 8px;
-      color-scheme: dark;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    * {
-      box-sizing: border-box;
-    }
+<title>HRTOS 生态中心 | 8051 RTOS 文档、内核架构与开发资源</title>
 
-    html {
-      scroll-behavior: smooth;
-    }
+<meta name="description" content="HRTOS 官方生态与技术参考中心，提供 8051 实时操作系统学习路径、系统架构、内核模块、API 文档、执行流程、示例工程、Shell、Modbus RTU、GitHub、Gitee 与技术社区资源。">
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      font-family: "Segoe UI", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
-      line-height: 1.7;
-      position: relative;
-      overflow-x: hidden;
-    }
+<meta name="keywords" content="HRTOS, 8051 RTOS, 实时操作系统, 内核架构, 任务调度, 中断管理, API文档, 嵌入式开发, Modbus RTU">
 
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background-image:
-        linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
-      background-size: 28px 28px;
-      opacity: 0.16;
-      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.65), transparent 90%);
-    }
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://hrtos.com/docs/index.html">
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+<link rel="stylesheet" href="https://hrtos.com/global.css">
 
-    .page {
-      width: min(1180px, calc(100% - 40px));
-      margin: 0 auto;
-      padding: 104px 0 56px;
-      display: grid;
-      gap: 64px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero {
-      display: grid;
-      gap: 24px;
-      padding: 0 0 12px;
-    }
-
-    .hero-label {
-      display: inline-flex;
-      width: fit-content;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 14px;
-      border: 1px solid rgba(56, 189, 248, 0.22);
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.55);
-      color: #bae6fd;
-      font-size: 0.92rem;
-      font-weight: 600;
-    }
-
-    .hero h1 {
-      margin: 0;
-      font-size: clamp(2.3rem, 5vw, 4.25rem);
-      line-height: 1.08;
-      font-weight: 700;
-    }
-
-    .hero p {
-      margin: 0;
-      max-width: 860px;
-      font-size: 1.05rem;
-      color: var(--muted);
-    }
-
-    .section {
-      display: grid;
-      gap: 22px;
-    }
-
-    .section-header {
-      display: grid;
-      gap: 8px;
-    }
-
-    .section-header h2 {
-      margin: 0;
-      font-size: clamp(1.45rem, 3vw, 2rem);
-      line-height: 1.2;
-      font-weight: 700;
-    }
-
-    .section-header p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.98rem;
-    }
-
-    .docs-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 20px;
-    }
-
-
-    .quick-grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: rgba(15, 23, 42, .76);
+  --surface-strong: #172338;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-strong: #2563eb;
+  --border: rgba(148, 163, 184, .18);
+  --border-accent: rgba(56, 189, 248, .4);
+  --radius: 10px;
+  --max-width: 1140px;
+  --shadow: 0 16px 38px rgba(2, 6, 23, .2);
 }
 
-    .doc-card {
-      display: grid;
-      gap: 10px;
-      min-height: 166px;
-      padding: 24px 22px;
-      background:
-        linear-gradient(180deg, rgba(30, 41, 59, 0.78), rgba(15, 23, 42, 0.92));
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      transition:
-        transform 0.22s ease,
-        border-color 0.22s ease,
-        background 0.22s ease,
-        box-shadow 0.22s ease;
-    }
+* {
+  box-sizing: border-box;
+}
 
-    .doc-card:hover,
-    .doc-card:focus-visible {
-      transform: translateY(-8px);
-      border-color: var(--border-strong);
-      background:
-        linear-gradient(180deg, rgba(30, 64, 175, 0.34), rgba(15, 23, 42, 0.96));
-      box-shadow: var(--shadow-hover);
-      outline: none;
-    }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
+}
 
-    .doc-card h3 {
-      margin: 0;
-      font-size: 1.16rem;
-      line-height: 1.3;
-      font-weight: 700;
-      color: #f8fafc;
-     
-    }
-[aria-label="site-stats"] .doc-card h3 {
-  font-size: 2rem;
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    "Segoe UI",
+    "SF Pro Display",
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+  line-height: 1.7;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, .045) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: .65;
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 54px;
+  width: min(var(--max-width), calc(100% - 40px));
+  margin: 0 auto;
+  padding: 108px 0 48px;
+}
+
+/* Hero */
+
+.hero {
+  display: grid;
+  gap: 18px;
+  max-width: 900px;
+}
+
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  padding: 6px 12px;
+  border: 1px solid var(--border-accent);
+  border-radius: 999px;
+  background: rgba(56, 189, 248, .055);
+  color: #bae6fd;
+  font-size: .84rem;
+  font-weight: 600;
+  letter-spacing: .035em;
+}
+
+.hero-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2.1rem, 4.7vw, 3.65rem);
+  line-height: 1.18;
+  letter-spacing: -.035em;
+}
+
+.hero p {
+  max-width: 790px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.03rem;
+}
+
+.hero-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.hero-nav a {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: #cbd5e1;
+  font-size: .88rem;
+  transition: border-color .2s ease, color .2s ease;
+}
+
+.hero-nav a:hover {
+  border-color: var(--border-accent);
+  color: var(--accent);
+}
+
+/* Sections */
+
+.section {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.section-header {
+  display: grid;
+  gap: 6px;
+}
+
+.section-kicker {
+  color: var(--accent);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 3vw, 1.9rem);
+  line-height: 1.35;
+}
+
+.section-header p {
+  max-width: 800px;
+  margin: 0;
+  color: var(--muted);
+  font-size: .94rem;
+}
+
+/* Entry cards */
+
+.entry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.entry-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  min-height: 188px;
+  padding: 23px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(
+      155deg,
+      rgba(30, 41, 59, .83),
+      rgba(15, 23, 42, .94)
+    );
+  box-shadow: var(--shadow);
+  transition:
+    transform .2s ease,
+    border-color .2s ease,
+    background .2s ease;
+}
+
+.entry-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-accent);
+  background:
+    linear-gradient(
+      155deg,
+      rgba(30, 64, 100, .72),
+      rgba(15, 23, 42, .96)
+    );
+}
+
+.entry-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 15px;
+  border: 1px solid var(--border-accent);
+  border-radius: 9px;
+  background: rgba(56, 189, 248, .07);
   color: #7dd3fc;
+  font-size: .8rem;
+  font-weight: 750;
+  letter-spacing: -.02em;
 }
-    .doc-card p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
 
-    .doc-link {
-      margin-top: auto;
-      color: #7dd3fc;
-      font-size: 0.92rem;
-      font-weight: 600;
-    }
-
-    .myos {
-      display: grid;
-      grid-template-columns: minmax(0, 1.5fr) minmax(220px, 0.7fr);
-      gap: 28px;
-      align-items: center;
-      padding: 28px;
-      border: 1px solid rgba(56, 189, 248, 0.18);
-      border-radius: var(--radius);
-      background:
-        linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(19, 32, 58, 0.9));
-      box-shadow: var(--shadow);
-    }
-
-    .myos h2 {
-      margin: 0 0 12px;
-      font-size: clamp(1.5rem, 3vw, 2rem);
-      line-height: 1.2;
-      font-weight: 700;
-    }
-
-    .myos p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 1rem;
-    }
-
-    .myos-action {
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .cta-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 48px;
-      padding: 0 22px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-      color: #eff6ff;
-      font-size: 0.98rem;
-      font-weight: 700;
-      box-shadow: 0 14px 32px rgba(37, 99, 235, 0.3);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-    }
-
-    .cta-button:hover,
-    .cta-button:focus-visible {
-      transform: translateY(-3px);
-      box-shadow: 0 20px 36px rgba(37, 99, 235, 0.34);
-      filter: brightness(1.04);
-      outline: none;
-    }
-
-    .site-footer {
-      padding: 6px 0 0;
-      border-top: 1px solid rgba(148, 163, 184, 0.14);
-      color: #8ea3be;
-      font-size: 0.95rem;
-      text-align: center;
-    }
-
-    @media (max-width: 980px) {
-      .docs-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .myos {
-        grid-template-columns: 1fr;
-      }
-
-      .myos-action {
-        justify-content: flex-start;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .page {
-        width: min(100% - 28px, 1180px);
-        padding-top: 88px;
-        gap: 48px;
-      }
-      
-      .docs-grid {
-        grid-template-columns: 1fr;
-      }
-
-
-      .quick-grid{
-  grid-template-columns:1fr;
+.entry-card h3 {
+  margin: 0 0 8px;
+  color: #f1f5f9;
+  font-size: 1.08rem;
+  line-height: 1.4;
 }
-  
-      .doc-card {
-        min-height: 148px;
-        padding: 20px 18px;
-      }
 
-      .myos {
-        padding: 22px 18px;
-      }
+.entry-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .91rem;
+  line-height: 1.7;
+}
 
-      .hero p,
-      .myos p,
-      .section-header p,
-      .doc-card p {
-        font-size: 0.96rem;
-      }
+.entry-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 17px;
+  color: #7dd3fc;
+  font-size: .88rem;
+  font-weight: 650;
+}
 
-      .site-footer {
-        font-size: 0.9rem;
-      }
-    }
-  </style>
-  <link rel="stylesheet" href="https://hrtos.com/global.css">
+.entry-card:hover .entry-link {
+  color: #bae6fd;
+}
+
+/* Knowledge architecture */
+
+.knowledge-flow {
+  display: grid;
+  gap: 16px;
+}
+
+.knowledge-group {
+  display: grid;
+  gap: 12px;
+  padding: 21px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(15, 23, 42, .45);
+}
+
+.knowledge-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.knowledge-number {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 33px;
+  height: 33px;
+  border: 1px solid var(--border-accent);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: .82rem;
+  font-weight: 750;
+}
+
+.knowledge-heading h3 {
+  margin: 0;
+  font-size: 1.04rem;
+}
+
+.knowledge-heading p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: .84rem;
+}
+
+.knowledge-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.knowledge-link {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid rgba(148, 163, 184, .12);
+  border-radius: 8px;
+  background: rgba(30, 41, 59, .5);
+  transition: border-color .2s ease, background .2s ease;
+}
+
+.knowledge-link:hover {
+  border-color: var(--border-accent);
+  background: rgba(30, 64, 100, .28);
+}
+
+.knowledge-link strong {
+  color: #e2e8f0;
+  font-size: .92rem;
+  font-weight: 650;
+}
+
+.knowledge-link span {
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+/* Engineering resources */
+
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.resource-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 21px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(
+    180deg,
+    rgba(30, 41, 59, .68),
+    rgba(15, 23, 42, .9)
+  );
+  transition: border-color .2s ease, transform .2s ease;
+}
+
+.resource-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-accent);
+}
+
+.resource-type {
+  margin-bottom: 10px;
+  color: var(--accent);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.resource-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.02rem;
+}
+
+.resource-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.7;
+}
+
+.resource-card a {
+  margin-top: auto;
+  padding-top: 15px;
+  color: #7dd3fc;
+  font-size: .88rem;
+  font-weight: 650;
+}
+
+.resource-card a:hover {
+  color: #bae6fd;
+  text-decoration: underline;
+}
+
+/* Community */
+
+.community-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr);
+  gap: 26px;
+  align-items: center;
+  padding: clamp(23px, 4vw, 32px);
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  background:
+    radial-gradient(
+      ellipse at top right,
+      rgba(37, 99, 235, .12),
+      transparent 55%
+    ),
+    rgba(19, 32, 58, .72);
+}
+
+.community-panel h2 {
+  margin: 0 0 8px;
+  font-size: 1.4rem;
+}
+
+.community-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .92rem;
+}
+
+.community-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 43px;
+  padding: 9px 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, .58);
+  color: var(--text);
+  font-size: .88rem;
+  font-weight: 650;
+  transition: border-color .2s ease, transform .2s ease;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-accent);
+}
+
+.button-primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: white;
+}
+
+/* Footer */
+
+.site-footer {
+  display: grid;
+  gap: 7px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+  color: #8ea3be;
+  font-size: .86rem;
+  text-align: center;
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.site-footer a {
+  color: var(--muted);
+}
+
+.site-footer a:hover {
+  color: var(--accent);
+}
+
+/* Responsive */
+
+@media (max-width: 960px) {
+  .entry-grid,
+  .resource-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .knowledge-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .community-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .community-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  html {
+    scroll-padding-top: 84px;
+  }
+
+  .page {
+    width: calc(100% - 32px);
+    padding-top: 88px;
+    gap: 39px;
+  }
+
+  .hero {
+    gap: 15px;
+  }
+
+  .hero h1 {
+    font-size: 2.15rem;
+  }
+
+  .hero p {
+    font-size: .96rem;
+  }
+
+  .hero-nav {
+    gap: 8px;
+  }
+
+  .hero-nav a {
+    font-size: .83rem;
+  }
+
+  .entry-grid,
+  .resource-grid,
+  .knowledge-links {
+    grid-template-columns: 1fr;
+  }
+
+  .entry-card {
+    min-height: 160px;
+    padding: 20px;
+  }
+
+  .knowledge-group {
+    padding: 16px;
+  }
+
+  .knowledge-link {
+    padding: 12px;
+  }
+
+  .community-panel {
+    padding: 22px 18px;
+  }
+
+  .community-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+</style>
 </head>
+
 <body data-header="docs">
-   
-  <main class="page">
-    <section class="hero" aria-labelledby="page-title">
-      <span class="hero-label">RTOS Documentation Center</span>
-      <h1 id="page-title">HRTOS 文档与 RTOS 参考中心</h1>
-      <p>
-  HRTOS 面向高可靠嵌入式实时系统设计，提供核心模块文档、系统架构参考与工程化学习路径，帮助开发者快速构建 RTOS 知识体系与实践能力。
-</p>
-    </section>
 
-   
-<section class="section" aria-label="site-stats">
-  <div class="docs-grid">
+<main class="page">
 
-    <div class="doc-card">
-      <h3>文档</h3>
-      <p>系统手册、API 参考与开发资料</p>
-    </div>
+  <!-- Hero -->
 
-    <div class="doc-card">
-      <h3>示例</h3>
-      <p>应用示例、驱动与功能实践</p>
-    </div>
+  <section class="hero" aria-labelledby="page-title">
 
-    <div class="doc-card">
-      <h3>生态</h3>
-      <p>代码、组件、博客与开发者社区</p>
-    </div>
+    <span class="hero-label">
+      <span class="hero-dot" aria-hidden="true"></span>
+      HRTOS DOCUMENTATION & ECOSYSTEM
+    </span>
 
-  </div>
-</section>
+    <h1 id="page-title">HRTOS 生态与技术参考中心</h1>
 
-<section class="section">
-  <div class="section-header">
-    <h2>进入 HRTOS 系统</h2>
-    <p>从学习到实践的核心入口</p>
-  </div>
-
-  <div class="quick-grid">
-
-    <a class="doc-card" href="learn/index.html">
-      <h3>RTOS 学习路径</h3>
-      <p>基础 → 调度 → 架构</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-    <a class="doc-card" href="architecture/index.html">
-      <h3>系统架构</h3>
-      <p>内核 / 调度 / 时间系统</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-    <a class="doc-card" href="modules/index.html">
-      <h3>核心模块</h3>
-      <p>任务 / IPC / 内存 / 调度</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-    <a class="doc-card" href="examples/index.html">
-  <h3>示例系统</h3>
-  <p>可运行代码与系统行为演示</p>
-  <span class="doc-link">进入 →</span>
-</a>
-
-  </div>
-</section>
-
-
-    
-<section class="section" aria-labelledby="rtos-reference-title">
-  <div class="section-header">
-    <h2 id="rtos-reference-title">HRTOS 知识体系结构</h2>
     <p>
-      从系统动机 → 架构设计 → 内核模块，构建完整 RTOS 知识图谱。
+      面向 8051 嵌入式实时系统开发，整合 HRTOS 学习路径、
+      系统架构、内核模块、API 参考、工程示例与开发者资源。
+      从理解实时系统原理，到研究内核执行机制，再到实际工程应用，
+      建立连续、可查阅、可实践的技术路径。
     </p>
-  </div>
 
-  <!-- 🔵 第一组：为什么 & 基础 -->
-  <div class="docs-grid">
+    <nav class="hero-nav" aria-label="页面快捷导航">
+      <a href="#core-entry">核心入口</a>
+      <a href="#knowledge-system">技术知识体系</a>
+      <a href="#engineering-resources">工程开发资源</a>
+      <a href="#community">社区与技术文章</a>
+    </nav>
 
-    <a class="doc-card" href="/why/index.html">
-      <h3>为什么需要 RTOS</h3>
-      <p>实时系统为什么不同于普通操作系统？</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-    <a class="doc-card" href="learn/index.html">
-      <h3>RTOS 学习路径</h3>
-      <p>从基础概念到调度模型的系统学习路线。</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-    <a class="doc-card" href="../download/index.html">
-      <h3>下载中心</h3>
-      <p>HRTOS 版本发布与系统下载。</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-  </div>
-
-  <!-- 🟢 第二组：系统架构 -->
-  <div class="docs-grid" style="margin-top:20px;">
-
-    <a class="doc-card" href="architecture/index.html">
-      <h3>系统架构</h3>
-      <p>内核结构、调度模型与系统设计。</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-    <a class="doc-card" href="system/index.html">
-      <h3>执行流程</h3>
-      <p>上下文切换与调度执行流程。</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-    <a class="doc-card" href="../system-view/index.html">
-      <h3>System View 图谱</h3>
-      <p>系统运行状态可视化理解。</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-  </div>
-
-  <!-- 🟡 第三组：内核模块 -->
-  <div class="docs-grid" style="margin-top:20px;">
-
-    <a class="doc-card" href="modules/task/index.html">
-      <h3>任务系统</h3>
-      <p>任务生命周期与状态管理。</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-    <a class="doc-card" href="guide/index.html">
-      <h3>系统手册</h3>
-      <p>HRTOS 使用指南与整体说明。</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-    <a class="doc-card" href="api_v2/index.html">
-      <h3>API 接口文档</h3>
-      <p>系统调用与接口文档。</p>
-      <span class="doc-link">进入 →</span>
-    </a>
-
-  </div>
-
-</section>
-
-<section class="section" aria-labelledby="ecosystem-title">
-  <div class="section-header">
-    <h2 id="ecosystem-title">HRTOS 开发生态</h2>
-    <p>官方代码、技术文章、项目介绍与开发资源</p>
-  </div>
-
-  <div class="docs-grid">
-    <a class="doc-card" href="https://hrtos.cn/" target="_blank" rel="noopener noreferrer">
-      <h3>HRTOS 项目介绍</h3>
-      <p>HRTOS 官方项目介绍、产品定位与系统概览。</p>
-      <span class="doc-link">访问 →</span>
-    </a>
-
-    <a class="doc-card" href="https://blog.csdn.net/qq_36826123" target="_blank" rel="noopener noreferrer">
-      <h3>HRTOS CSDN 博客</h3>
-      <p>HRTOS 最新开发动态、技术文章与 8051 开发经验。</p>
-      <span class="doc-link">访问 →</span>
-    </a>
-
-    <a class="doc-card" href="https://blog.51cto.com/u_14146126" target="_blank" rel="noopener noreferrer">
-      <h3>HRTOS 51CTO 博客</h3>
-      <p>HRTOS 技术文章、C/C++ 与 8051 嵌入式开发经验分享。</p>
-      <span class="doc-link">访问 →</span>
-    </a>
+  </section>
 
 
-  </div>
+  <!-- Core Entry -->
 
-  <div class="docs-grid" style="margin-top:20px;">
-    <a class="doc-card" href="https://github.com/HRTOS/HRTOS-Docs" target="_blank" rel="noopener noreferrer">
-      <h3>HRTOS Docs</h3>
-      <p>HRTOS 官方文档仓库，包含开发手册、API 参考、使用教程及 PDF 文档。</p>
-      <span class="doc-link">访问 →</span>
-    </a>
+  <section class="section" id="core-entry" aria-labelledby="core-entry-title">
 
-    <a class="doc-card" href="https://github.com/HRTOS/HRTOS-Examples" target="_blank" rel="noopener noreferrer">
-      <h3>HRTOS Examples</h3>
-      <p>HRTOS 官方应用示例，包含任务调度、通信机制、扩展模块及嵌入式开发示例。</p>
-      <span class="doc-link">访问 →</span>
-    </a>
+    <div class="section-header">
+      <span class="section-kicker">START HERE</span>
+      <h2 id="core-entry-title">核心入口</h2>
+      <p>
+        根据当前开发目标，直接进入学习、架构、模块与工程示例。
+      </p>
+    </div>
 
-    <a class="doc-card" href="https://gitee.com/HRTOS/" target="_blank" rel="noopener noreferrer">
-      <h3>Gitee 镜像</h3>
-      <p>HRTOS 国内代码镜像与备份路径。</p>
-      <span class="doc-link">访问 →</span>
-    </a>
-    
-  </div>
+    <div class="entry-grid">
 
-  <div class="docs-grid" style="margin-top:20px;">
-    <a class="doc-card" href="https://github.com/HRTOS/hrtos-modbus" target="_blank" rel="noopener noreferrer">
-      <h3>HRTOS Modbus</h3>
-      <p>HRTOS 官方 Modbus RTU 组件，为 8051 单片机提供轻量级工业通信协议支持。</p>
-      <span class="doc-link">访问 →</span>
-    </a>
+      <a class="entry-card" href="learn/index.html">
+        <span class="entry-icon" aria-hidden="true">LEARN</span>
+        <h3>RTOS 学习路径</h3>
+        <p>
+          从实时系统基本概念开始，逐步理解任务调度、
+          时间管理、内核架构与实时运行机制。
+        </p>
+        <span class="entry-link">开始学习 →</span>
+      </a>
 
-    <a class="doc-card" href="https://github.com/HRTOS/hrtos-shell" target="_blank" rel="noopener noreferrer">
-      <h3>HRTOS Shell</h3>
-      <p>HRTOS 官方 Shell 组件，为 8051 单片机提供轻量级命令行交互与系统调试功能。</p>
-      <span class="doc-link">访问 →</span>
-    </a>    
+      <a class="entry-card" href="architecture/index.html">
+        <span class="entry-icon" aria-hidden="true">ARCH</span>
+        <h3>系统架构</h3>
+        <p>
+          了解 HRTOS 的内核组织、任务与中断关系、
+          调度机制及系统运行的整体结构。
+        </p>
+        <span class="entry-link">查看架构 →</span>
+      </a>
 
-    
-    <a class="doc-card">
-    <h3>HRTOS QQ 交流群</h3>
-    <p>官方技术交流群，欢迎交流 8051、RTOS 及嵌入式开发问题。</p>
-    <span class="doc-link">QQ群：523549975</span>
-    </a>
-  </div>
+      <a class="entry-card" href="modules/index.html">
+        <span class="entry-icon" aria-hidden="true">CORE</span>
+        <h3>核心模块</h3>
+        <p>
+          按模块查阅任务、调度、IPC、内存与其他
+          系统功能的设计说明和技术资料。
+        </p>
+        <span class="entry-link">浏览模块 →</span>
+      </a>
 
-  <div style="grid-column: 1 / -1;"></div>
-</section>
+      <a class="entry-card" href="guide/index.html">
+        <span class="entry-icon" aria-hidden="true">GUIDE</span>
+        <h3>系统手册</h3>
+        <p>
+          查阅系统整体说明、使用指南、工程配置
+          与开发过程中需要的基础信息。
+        </p>
+        <span class="entry-link">阅读手册 →</span>
+      </a>
 
-    <footer class="site-footer">
-      <p>© 2017–2026 HRTOS. Documentation for embedded real-time systems.</p>
-    </footer>
-  </main>
-  <script src="https://hrtos.com/header.js"></script>
+      <a class="entry-card" href="api_v2/index.html">
+        <span class="entry-icon" aria-hidden="true">API</span>
+        <h3>API 接口参考</h3>
+        <p>
+          按接口查找系统调用与相关说明，
+          为实际编码、集成与调试提供参考。
+        </p>
+        <span class="entry-link">查看 API →</span>
+      </a>
+
+      <a class="entry-card" href="examples/index.html">
+        <span class="entry-icon" aria-hidden="true">DEMO</span>
+        <h3>示例系统</h3>
+        <p>
+          通过可运行示例理解系统接口、任务行为、
+          功能组合与嵌入式工程实践。
+        </p>
+        <span class="entry-link">浏览示例 →</span>
+      </a>
+
+    </div>
+  </section>
+
+
+  <!-- Knowledge Architecture -->
+
+  <section class="section" id="knowledge-system" aria-labelledby="knowledge-title">
+
+    <div class="section-header">
+      <span class="section-kicker">TECHNICAL REFERENCE</span>
+      <h2 id="knowledge-title">HRTOS 技术知识体系</h2>
+      <p>
+        按照实时系统原理、系统架构、运行过程与内核模块组织技术资料，
+        形成从概念理解到实现分析的阅读路径。
+      </p>
+    </div>
+
+    <div class="knowledge-flow">
+
+      <!-- Level 1 -->
+
+      <div class="knowledge-group">
+
+        <div class="knowledge-heading">
+          <span class="knowledge-number">01</span>
+          <div>
+            <h3>理解实时系统</h3>
+            <p>Why · Learn · Download</p>
+          </div>
+        </div>
+
+        <div class="knowledge-links">
+
+          <a class="knowledge-link" href="/why/index.html">
+            <strong>为什么需要 RTOS</strong>
+            <span>理解实时系统与通用操作系统的差异。</span>
+          </a>
+
+          <a class="knowledge-link" href="learn/index.html">
+            <strong>RTOS 学习路径</strong>
+            <span>从基础概念逐步进入调度与内核机制。</span>
+          </a>
+
+          <a class="knowledge-link" href="../download/index.html">
+            <strong>下载中心</strong>
+            <span>获取正式版本与相关开发资源。</span>
+          </a>
+
+        </div>
+      </div>
+
+
+      <!-- Level 2 -->
+
+      <div class="knowledge-group">
+
+        <div class="knowledge-heading">
+          <span class="knowledge-number">02</span>
+          <div>
+            <h3>理解系统架构与执行过程</h3>
+            <p>Architecture · Execution · System View</p>
+          </div>
+        </div>
+
+        <div class="knowledge-links">
+
+          <a class="knowledge-link" href="architecture/index.html">
+            <strong>系统架构</strong>
+            <span>内核结构、任务组织与调度模型。</span>
+          </a>
+
+          <a class="knowledge-link" href="system/index.html">
+            <strong>系统执行流程</strong>
+            <span>上下文切换、调度与关键执行路径。</span>
+          </a>
+
+          <a class="knowledge-link" href="../system-view/index.html">
+            <strong>System View</strong>
+            <span>通过系统视图理解运行状态与模块关系。</span>
+          </a>
+
+        </div>
+      </div>
+
+
+      <!-- Level 3 -->
+
+      <div class="knowledge-group">
+
+        <div class="knowledge-heading">
+          <span class="knowledge-number">03</span>
+          <div>
+            <h3>深入内核模块与接口</h3>
+            <p>Modules · Guide · API</p>
+          </div>
+        </div>
+
+        <div class="knowledge-links">
+
+          <a class="knowledge-link" href="modules/task/index.html">
+            <strong>任务系统</strong>
+            <span>任务生命周期、状态与相关管理机制。</span>
+          </a>
+
+          <a class="knowledge-link" href="modules/index.html">
+            <strong>核心模块总览</strong>
+            <span>从模块角度查阅系统功能与实现说明。</span>
+          </a>
+
+          <a class="knowledge-link" href="api_v2/index.html">
+            <strong>API 接口参考</strong>
+            <span>查询接口定义、调用方式与使用说明。</span>
+          </a>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- Engineering Resources -->
+
+  <section class="section" id="engineering-resources" aria-labelledby="resources-title">
+
+    <div class="section-header">
+      <span class="section-kicker">ENGINEERING RESOURCES</span>
+      <h2 id="resources-title">工程开发与开源资源</h2>
+      <p>
+        从系统文档延伸到代码仓库、通信组件、命令行工具与应用示例，
+        方便进一步阅读源码和开展工程实践。
+      </p>
+    </div>
+
+    <div class="resource-grid">
+
+      <article class="resource-card">
+        <span class="resource-type">Documentation</span>
+        <h3>HRTOS Docs</h3>
+        <p>
+          官方文档代码仓库。用于查阅和跟踪系统手册、
+          API 参考、使用教程及相关文档资源。
+        </p>
+        <a href="https://github.com/HRTOS/HRTOS-Docs"
+           target="_blank" rel="noopener noreferrer">
+          访问文档仓库 ↗
+        </a>
+      </article>
+
+      <article class="resource-card">
+        <span class="resource-type">Examples</span>
+        <h3>HRTOS Examples</h3>
+        <p>
+          官方示例工程资源，用于了解任务调度、
+          系统接口、组件集成与嵌入式应用实践。
+        </p>
+        <a href="https://github.com/HRTOS/HRTOS-Examples"
+           target="_blank" rel="noopener noreferrer">
+          访问示例仓库 ↗
+        </a>
+      </article>
+
+      <article class="resource-card">
+        <span class="resource-type">Communication</span>
+        <h3>HRTOS Modbus</h3>
+        <p>
+          Modbus RTU 通信组件相关代码，
+          面向 8051 嵌入式设备的工业通信应用。
+        </p>
+        <a href="https://github.com/HRTOS/hrtos-modbus"
+           target="_blank" rel="noopener noreferrer">
+          访问 Modbus 仓库 ↗
+        </a>
+      </article>
+
+      <article class="resource-card">
+        <span class="resource-type">Debugging</span>
+        <h3>HRTOS Shell</h3>
+        <p>
+          串口命令交互与系统调试组件，
+          用于查看系统信息和扩展命令功能。
+        </p>
+        <a href="https://github.com/HRTOS/hrtos-shell"
+           target="_blank" rel="noopener noreferrer">
+          访问 Shell 仓库 ↗
+        </a>
+      </article>
+
+      <article class="resource-card">
+        <span class="resource-type">Code Hosting</span>
+        <h3>Gitee 项目资源</h3>
+        <p>
+          通过 Gitee 查找 HRTOS 相关项目、
+          国内代码托管资源与可用镜像。
+        </p>
+        <a href="https://gitee.com/HRTOS/"
+           target="_blank" rel="noopener noreferrer">
+          访问 Gitee ↗
+        </a>
+      </article>
+
+      <article class="resource-card">
+        <span class="resource-type">Project Overview</span>
+        <h3>HRTOS 项目介绍</h3>
+        <p>
+          了解 HRTOS 的项目定位、主要功能、
+          适用平台与整体系统概况。
+        </p>
+        <a href="https://hrtos.cn/"
+           target="_blank" rel="noopener noreferrer">
+          查看项目介绍 ↗
+        </a>
+      </article>
+
+    </div>
+  </section>
+
+
+  <!-- Technical Articles -->
+
+  <section class="section" id="technical-articles" aria-labelledby="articles-title">
+
+    <div class="section-header">
+      <span class="section-kicker">TECHNICAL ARTICLES</span>
+      <h2 id="articles-title">技术文章与开发经验</h2>
+      <p>
+        通过持续积累的技术文章，进一步了解 RTOS 内核机制、
+        8051 开发实践及相关工程问题。
+      </p>
+    </div>
+
+    <div class="resource-grid">
+
+      <article class="resource-card">
+        <span class="resource-type">CSDN</span>
+        <h3>HRTOS 技术博客</h3>
+        <p>
+          HRTOS 开发记录、内核机制分析、
+          任务调度与 8051 嵌入式技术文章。
+        </p>
+        <a href="https://blog.csdn.net/qq_36826123"
+           target="_blank" rel="noopener noreferrer">
+          阅读技术文章 ↗
+        </a>
+      </article>
+
+      <article class="resource-card">
+        <span class="resource-type">51CTO</span>
+        <h3>51CTO 技术博客</h3>
+        <p>
+          查阅相关技术文章、C/C++ 与
+          嵌入式系统开发经验分享。
+        </p>
+        <a href="https://blog.51cto.com/u_14146126"
+           target="_blank" rel="noopener noreferrer">
+          访问技术博客 ↗
+        </a>
+      </article>
+
+      <article class="resource-card">
+        <span class="resource-type">Community</span>
+        <h3>HRTOS 技术交流群</h3>
+        <p>
+          面向 HRTOS、8051 单片机、实时操作系统
+          与嵌入式开发问题的技术交流。
+        </p>
+        <p style="margin-top:12px;color:#cbd5e1;">
+          QQ 群：523549975
+        </p>
+      </article>
+
+    </div>
+  </section>
+
+
+  <!-- Community CTA -->
+
+  <section class="community-panel" id="community" aria-labelledby="community-title">
+
+    <div>
+      <h2 id="community-title">从技术文档走向工程实践</h2>
+      <p>
+        建议从学习路径和系统手册入手，
+        再结合架构说明、API 参考与示例工程深入理解 HRTOS。
+        遇到具体问题时，可进一步查阅技术文章和相关代码仓库。
+      </p>
+    </div>
+
+    <div class="community-actions">
+      <a class="button button-primary" href="learn/index.html">
+        开始学习
+      </a>
+
+      <a class="button" href="../download/index.html">
+        获取系统
+      </a>
+
+      <a class="button" href="guide/index.html">
+        查看系统手册
+      </a>
+    </div>
+
+  </section>
+
+
+  <!-- Footer -->
+
+  <footer class="site-footer">
+    <p>
+      © 2017–2026 HRTOS · Hard Real-Time Operating System
+    </p>
+    <p>
+      <a href="https://hrtos.com/">HRTOS 官网</a>
+      ·
+      <a href="https://hrtos.com/docs/index.html">技术参考中心</a>
+    </p>
+  </footer>
+
+</main>
+
+<script src="https://hrtos.com/header.js"></script>
+
 </body>
 </html>
