@@ -1,208 +1,1064 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>中断流程（Interrupt Flow） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS中断流程系统级说明，包括中断触发、上下文保存、ISR执行与调度恢复机制。" />
+<title>8051中断处理与嵌套机制 | HRTOS Documentation</title>
+<meta name="description" content="HRTOS 8051中断处理机制说明，涵盖中断入口、ISR执行、中断嵌套、中断退出、任务调度协同及最坏情况响应时间分析。" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/system/interrupt-flow.html" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
-/* 保持原样，不改 */
-:root{--bg:#0f172a;--surface:rgba(15,23,42,.72);--surface-hover:rgba(30,41,59,.92);--border:rgba(148,163,184,.18);--border-strong:rgba(56,189,248,.38);--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--shadow:0 20px 48px rgba(2,6,23,.34);--radius:10px;color-scheme:dark}
+:root{
+  --bg:#0f172a;
+  --surface:rgba(15,23,42,.78);
+  --surface-hover:rgba(30,41,59,.92);
+  --border:rgba(148,163,184,.18);
+  --border-strong:rgba(56,189,248,.42);
+  --text:#e2e8f0;
+  --muted:#a2b0c4;
+  --accent:#38bdf8;
+  --accent-soft:rgba(56,189,248,.09);
+  --green:#6ee7b7;
+  --amber:#fcd34d;
+  --red:#fda4af;
+  --shadow:0 16px 42px rgba(2,6,23,.24);
+  --radius:12px;
+  color-scheme:dark;
+}
+
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.75}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(148,163,184,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.08) 1px,transparent 1px);background-size:28px 28px;opacity:.14}
-a{text-decoration:none;color:inherit}
-.page{width:min(1180px,calc(100% - 40px));margin:0 auto;padding:96px 0 56px;position:relative;z-index:1}
-.breadcrumb{margin-bottom:28px;font-size:.92rem;color:var(--muted)}
-.hero{margin-bottom:56px}
-.hero-label{display:inline-block;padding:8px 14px;border-radius:999px;border:1px solid rgba(56,189,248,.24);color:#bae6fd;font-size:.9rem}
-.hero h1{margin:0 0 16px;font-size:clamp(2.3rem,5vw,4rem)}
-.hero p{margin:0;color:var(--muted);max-width:760px}
-.meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-.tag{padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:rgba(15,23,42,.45);color:#bae6fd;font-size:.84rem}
 
-.layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:28px}
-.content{display:grid;gap:22px}
+html{
+  scroll-behavior:smooth;
+  scroll-padding-top:96px;
+}
 
-.section{display:grid;gap:12px;padding:24px 22px;background:linear-gradient(180deg,rgba(30,41,59,.72),rgba(15,23,42,.92));border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
-.section h2{margin:0;font-size:1.35rem;border-left:3px solid var(--accent);padding-left:12px}
-.section p{margin:0;color:var(--muted)}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.8;
+  overflow-x:hidden;
+}
 
-.code{background:#020617;border:1px solid rgba(56,189,248,.14);border-radius:8px;padding:16px;color:#7dd3fc;font-family:Consolas,monospace;white-space:pre-wrap}
-.note{padding:14px 16px;border-left:3px solid var(--accent);background:rgba(15,23,42,.6);border-radius:8px;color:var(--muted)}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(148,163,184,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(148,163,184,.055) 1px,transparent 1px);
+  background-size:30px 30px;
+  opacity:.55;
+}
 
-.sidebar{display:grid;gap:16px}
-.box{padding:18px 16px;border:1px solid var(--border);border-radius:var(--radius);background:rgba(30,41,59,.56)}
-.box h3{margin:0 0 12px}
-.box a{display:block;color:#7dd3fc;margin-bottom:8px}
+a{color:inherit;text-decoration:none}
+a:hover{color:#7dd3fc}
 
-.footer{text-align:center;padding-top:18px;border-top:1px solid rgba(148,163,184,.14);color:#8ea3be}
+.page{
+  width:min(1180px,calc(100% - 40px));
+  margin:0 auto;
+  padding:96px 0 52px;
+  position:relative;
+  z-index:1;
+}
 
-@media(max-width:980px){.layout{grid-template-columns:1fr}}
+.breadcrumb{
+  margin-bottom:26px;
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+.breadcrumb a{color:#7dd3fc}
+
+.hero{margin-bottom:38px}
+
+.hero-label{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  padding:6px 12px;
+  margin-bottom:18px;
+  border:1px solid var(--border-strong);
+  border-radius:999px;
+  background:var(--accent-soft);
+  color:#bae6fd;
+  font-size:.82rem;
+  letter-spacing:.04em;
+}
+
+.hero-label::before{
+  content:"";
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--accent);
+}
+
+.hero h1{
+  max-width:920px;
+  margin:0 0 18px;
+  font-size:clamp(2rem,4.5vw,3.45rem);
+  line-height:1.2;
+  letter-spacing:-.035em;
+}
+
+.hero p{
+  max-width:830px;
+  margin:0;
+  color:var(--muted);
+  font-size:1.04rem;
+}
+
+.meta{
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+  margin-top:22px;
+}
+
+.tag{
+  padding:5px 11px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:rgba(15,23,42,.55);
+  color:#cbd5e1;
+  font-size:.8rem;
+}
+
+.intro-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  margin-bottom:30px;
+}
+
+.intro-card{
+  min-width:0;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:linear-gradient(145deg,rgba(30,41,59,.76),rgba(15,23,42,.86));
+}
+
+.intro-card .number{
+  display:block;
+  margin-bottom:9px;
+  color:var(--accent);
+  font-family:Consolas,monospace;
+  font-size:.82rem;
+}
+
+.intro-card h2{
+  margin:0 0 7px;
+  font-size:1rem;
+}
+
+.intro-card p{
+  margin:0;
+  color:var(--muted);
+  font-size:.89rem;
+  line-height:1.7;
+}
+
+.layout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 248px;
+  gap:24px;
+  align-items:start;
+}
+
+.content{
+  display:grid;
+  gap:20px;
+  min-width:0;
+}
+
+.section{
+  display:grid;
+  gap:15px;
+  min-width:0;
+  padding:25px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:linear-gradient(180deg,rgba(30,41,59,.73),rgba(15,23,42,.91));
+  box-shadow:var(--shadow);
+  scroll-margin-top:96px;
+}
+
+.section h2{
+  margin:0;
+  padding-left:12px;
+  border-left:3px solid var(--accent);
+  font-size:1.28rem;
+  line-height:1.5;
+}
+
+.section h3{
+  margin:5px 0 0;
+  font-size:1.02rem;
+}
+
+.section p{
+  margin:0;
+  color:#c0ccdc;
+}
+
+.section ul,.section ol{
+  margin:0;
+  padding-left:23px;
+  color:#c0ccdc;
+}
+
+.section li+li{margin-top:7px}
+
+.lead{
+  color:#e2e8f0!important;
+  font-size:1.02rem;
+}
+
+.muted{color:var(--muted)!important}
+
+.note{
+  padding:15px 17px;
+  border-left:3px solid var(--accent);
+  border-radius:7px;
+  background:rgba(15,23,42,.72);
+  color:#cbd5e1;
+  font-size:.92rem;
+}
+
+.note strong{color:#e0f2fe}
+.note.warning{border-left-color:var(--amber)}
+.note.success{border-left-color:var(--green)}
+
+.diagram{
+  padding:14px;
+  overflow-x:auto;
+  border:1px solid rgba(148,163,184,.14);
+  border-radius:10px;
+  background:rgba(2,6,23,.5);
+}
+
+.diagram svg{
+  display:block;
+  width:100%;
+  min-width:520px;
+  height:auto;
+}
+
+.diagram-caption{
+  margin-top:10px!important;
+  color:var(--muted)!important;
+  font-size:.82rem;
+}
+
+.flow-node{
+  fill:#172b43;
+  stroke:#38bdf8;
+  stroke-width:1.2;
+}
+
+.flow-node-alt{
+  fill:#1d293b;
+  stroke:#64748b;
+  stroke-width:1.2;
+}
+
+.flow-node-green{
+  fill:#12332f;
+  stroke:#34d399;
+  stroke-width:1.2;
+}
+
+.flow-node-amber{
+  fill:#392f1b;
+  stroke:#fbbf24;
+  stroke-width:1.2;
+}
+
+.flow-text{
+  fill:#e2e8f0;
+  font-family:"Microsoft YaHei",sans-serif;
+  font-size:13px;
+  text-anchor:middle;
+}
+
+.flow-sub{
+  fill:#a7bbd1;
+  font-family:"Microsoft YaHei",sans-serif;
+  font-size:10px;
+  text-anchor:middle;
+}
+
+.flow-line{
+  fill:none;
+  stroke:#64748b;
+  stroke-width:1.5;
+}
+
+.flow-label{
+  fill:#7dd3fc;
+  font-family:"Microsoft YaHei",sans-serif;
+  font-size:10px;
+}
+
+.code{
+  padding:16px 18px;
+  overflow-x:auto;
+  border:1px solid rgba(56,189,248,.15);
+  border-radius:9px;
+  background:#020617;
+  color:#bae6fd;
+  font:.88rem/1.9 Consolas,"Courier New",monospace;
+  white-space:pre;
+}
+
+.table-wrap{overflow-x:auto}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.9rem;
+}
+
+th,td{
+  padding:11px 12px;
+  border-bottom:1px solid var(--border);
+  text-align:left;
+  vertical-align:top;
+}
+
+th{
+  background:rgba(15,23,42,.65);
+  color:#e2e8f0;
+  font-weight:600;
+}
+
+td{color:#bdcada}
+tr:last-child td{border-bottom:none}
+
+.inline-code{
+  padding:2px 5px;
+  border-radius:4px;
+  background:rgba(2,6,23,.8);
+  color:#7dd3fc;
+  font:.9em Consolas,monospace;
+  overflow-wrap:anywhere;
+}
+
+.steps{
+  display:grid;
+  gap:12px;
+}
+
+.step{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr);
+  gap:12px;
+  align-items:start;
+}
+
+.step-no{
+  display:grid;
+  width:30px;
+  height:30px;
+  place-items:center;
+  border:1px solid var(--border-strong);
+  border-radius:8px;
+  background:var(--accent-soft);
+  color:#7dd3fc;
+  font:.85rem Consolas,monospace;
+}
+
+.step h3{margin:1px 0 5px}
+.step p{font-size:.92rem}
+
+.sidebar{
+  position:sticky;
+  top:22px;
+  display:grid;
+  gap:14px;
+}
+
+.box{
+  padding:18px 16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:rgba(30,41,59,.68);
+}
+
+.box h2{
+  margin:0 0 12px;
+  font-size:1rem;
+}
+
+.box nav{display:grid;gap:3px}
+
+.box nav a,.related a{
+  display:block;
+  padding:6px 8px;
+  border-radius:6px;
+  color:#b6c6d9;
+  font-size:.87rem;
+}
+
+.box nav a:hover,.related a:hover{
+  background:var(--accent-soft);
+  color:#7dd3fc;
+}
+
+.related{display:grid;gap:4px}
+
+.related a::after{
+  content:"↗";
+  float:right;
+  color:#7dd3fc;
+}
+
+.footer{
+  margin-top:34px;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+  color:#8ea3be;
+  text-align:center;
+  font-size:.85rem;
+}
+
+@media(max-width:960px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  .sidebar{
+    position:static;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    order:-1;
+  }
+}
+
+@media(max-width:640px){
+  .page{
+    width:calc(100% - 28px);
+    padding-top:82px;
+  }
+  .hero h1{font-size:2rem}
+  .intro-grid{grid-template-columns:1fr}
+  .section{padding:19px 16px}
+  .sidebar{grid-template-columns:1fr}
+  .diagram{padding:9px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+}
 </style>
 </head>
 
 <body data-header="docs">
-
 <main class="page">
 
-  <nav class="breadcrumb">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="/docs/index.html">Docs</a> /
     <a href="/docs/system/index.html">System</a> /
-    <span>Interrupt Flow</span>
+    <span aria-current="page">Interrupt Flow</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">System / Kernel Mechanism</span>
+  <header class="hero">
+    <span class="hero-label">SYSTEM / KERNEL MECHANISM</span>
 
-    <h1>中断流程（Interrupt Flow）</h1>
+    <h1>中断处理与嵌套机制</h1>
 
     <p>
-      中断流程描述系统在异步事件触发时的执行路径，
-      包括现场保存、中断服务执行以及调度恢复过程。
+      中断机制使处理器能够响应定时器、外设和其他异步事件。
+      对于运行在 8051 上的 HRTOS，中断入口、现场保护、ISR 执行、
+      嵌套控制与中断退出共同决定事件响应路径及其时间开销。
     </p>
 
     <div class="meta">
-      <span class="tag">System</span>
-      <span class="tag">Interrupt</span>
-      <span class="tag">Kernel Mechanism</span>
-      <span class="tag">Real-Time</span>
+      <span class="tag">8051 Architecture</span>
+      <span class="tag">Interrupt Handling</span>
+      <span class="tag">Nested Interrupts</span>
+      <span class="tag">Real-Time Analysis</span>
     </div>
-  </section>
+  </header>
+
+  <div class="intro-grid">
+    <article class="intro-card">
+      <span class="number">01 / ENTRY</span>
+      <h2>中断进入</h2>
+      <p>从硬件事件和中断控制条件出发，进入相应的中断处理路径。</p>
+    </article>
+
+    <article class="intro-card">
+      <span class="number">02 / SERVICE</span>
+      <h2>中断服务</h2>
+      <p>执行必要的事件处理，维护中断状态并遵循 ISR 执行约束。</p>
+    </article>
+
+    <article class="intro-card">
+      <span class="number">03 / EXIT</span>
+      <h2>中断退出</h2>
+      <p>完成现场与返回状态处理，并根据内核规则继续执行或转入其他路径。</p>
+    </article>
+  </div>
 
   <div class="layout">
-
     <div class="content">
 
       <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          中断机制用于响应外部或系统事件，通过异步方式打断当前执行流并进入处理流程。
-        </p>
-      </section>
+        <h2>01. 中断机制的职责</h2>
 
-      <section class="section" id="mechanism">
-        <h2>工作机制</h2>
+        <p class="lead">
+          中断处理负责响应异步事件；任务调度负责决定哪个任务获得处理器。
+          两者相互协作，但中断发生并不意味着一定发生任务切换。
+        </p>
+
         <p>
-          当中断发生时，系统进入中断处理路径，
-          完成必要的上下文保存后执行中断服务逻辑。
+          在典型的微控制器系统中，中断源可以来自定时器、串口、外部引脚
+          或其他外设。事件发生后，硬件和软件共同决定中断何时被接受、
+          由哪个处理入口执行，以及如何返回先前的执行路径。
         </p>
 
         <div class="note">
-          中断响应延迟与嵌套行为直接影响实时系统性能。
+          <strong>阅读本页时需要区分：</strong>
+          中断请求、中断被接受、ISR 开始执行、ISR 结束和任务切换是不同阶段。
+          它们之间存在执行顺序和条件约束，不能直接视为同一事件。
         </div>
       </section>
 
-      <section class="section" id="trigger">
-        <h2>触发条件</h2>
+      <section class="section" id="architecture">
+        <h2>02. 中断处理的整体流程</h2>
 
-        <div class="code">
-1. 外设事件触发
-2. 定时器到期
-3. IO输入变化
-4. 系统异常事件
-5. 软件触发中断
+        <div class="diagram">
+          <svg viewBox="0 0 660 510" role="img"
+               aria-labelledby="irq-title irq-desc">
+            <title id="irq-title">中断处理与退出流程图</title>
+            <desc id="irq-desc">
+              中断请求到达后，硬件根据中断控制条件接受请求，
+              随后进入中断入口、执行现场保护和 ISR。
+              ISR 完成后，系统根据中断退出与调度规则决定返回原执行路径
+              或转入适用的任务切换路径。
+            </desc>
+            <defs>
+              <marker id="irq-arrow-a" markerWidth="8" markerHeight="8"
+                      refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#64748b"/>
+              </marker>
+            </defs>
+
+            <rect class="flow-node" x="185" y="10" width="290" height="43" rx="8"/>
+            <text class="flow-text" x="330" y="36">外设或定时器产生中断请求</text>
+
+            <path class="flow-line" d="M330 53 V78"
+                  marker-end="url(#irq-arrow-a)"/>
+
+            <rect class="flow-node-alt" x="185" y="82" width="290" height="43" rx="8"/>
+            <text class="flow-text" x="330" y="108">硬件检查中断接受条件</text>
+
+            <path class="flow-line" d="M330 125 V150"
+                  marker-end="url(#irq-arrow-a)"/>
+
+            <rect class="flow-node" x="185" y="154" width="290" height="43" rx="8"/>
+            <text class="flow-text" x="330" y="180">进入中断入口与必要的现场处理</text>
+
+            <path class="flow-line" d="M330 197 V222"
+                  marker-end="url(#irq-arrow-a)"/>
+
+            <rect class="flow-node" x="185" y="226" width="290" height="43" rx="8"/>
+            <text class="flow-text" x="330" y="252">执行中断服务程序 ISR</text>
+
+            <path class="flow-line" d="M330 269 V294"
+                  marker-end="url(#irq-arrow-a)"/>
+
+            <rect class="flow-node-alt" x="185" y="298" width="290" height="43" rx="8"/>
+            <text class="flow-text" x="330" y="324">完成必要的中断状态处理</text>
+
+            <path class="flow-line" d="M330 341 V366"
+                  marker-end="url(#irq-arrow-a)"/>
+
+            <path class="flow-node-alt" d="M330 370 L430 411 L330 452 L230 411 Z"/>
+            <text class="flow-text" x="330" y="408">退出路径与调度条件</text>
+            <text class="flow-sub" x="330" y="423">依据内核实际实现</text>
+
+            <path class="flow-line" d="M230 411 H115 V466"
+                  marker-end="url(#irq-arrow-a)"/>
+            <text class="flow-label" x="145" y="401">返回原路径</text>
+
+            <rect class="flow-node-green" x="10" y="469" width="210" height="34" rx="7"/>
+            <text class="flow-text" x="115" y="491">继续原执行路径</text>
+
+            <path class="flow-line" d="M430 411 H535 V466"
+                  marker-end="url(#irq-arrow-a)"/>
+            <text class="flow-label" x="455" y="401">适用时</text>
+
+            <rect class="flow-node-amber" x="430" y="469" width="220" height="34" rx="7"/>
+            <text class="flow-text" x="540" y="491">进入任务切换路径</text>
+          </svg>
         </div>
-      </section>
 
-      <section class="section" id="execution-path">
-        <h2>执行路径</h2>
-
-        <div class="code">
-中断触发
-↓
-进入中断处理流程
-↓
-保存当前执行状态
-↓
-执行ISR逻辑
-↓
-清除中断标志
-↓
-判断是否需要调度
-↓
-恢复执行流
-        </div>
+        <p class="diagram-caption">
+          机制级流程示意。实际硬件接受规则、中断入口、状态处理及退出分支应以目标芯片和 HRTOS 实现为准。
+        </p>
 
         <p>
-          中断执行路径决定系统响应能力与任务切换时机。
+          中断请求可能因屏蔽状态、优先级或芯片规定的接受条件而不能立即执行。
+          ISR 结束后，内核也不一定马上选择新任务：如果没有满足切换条件，
+          执行流可以继续原来的路径。
         </p>
       </section>
 
-      <section class="section" id="isr">
-        <h2>ISR执行原则</h2>
+      <section class="section" id="trigger">
+        <h2>03. 中断源与接受条件</h2>
 
-        <div class="code">
-- 保持执行时间尽可能短
-- 避免阻塞操作
-- 只处理关键逻辑
-- 延迟复杂处理到任务层
+        <p>
+          不同中断源的触发方式、标志处理方式和硬件约束并不完全相同。
+          在分析中断路径时，需要把外设行为与处理器的中断控制机制分开考察。
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>中断来源</th>
+                <th>典型用途</th>
+                <th>分析重点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>定时器</td>
+                <td>系统时基、周期性采样</td>
+                <td>计数周期、溢出标志、入口延迟</td>
+              </tr>
+              <tr>
+                <td>串口或通信外设</td>
+                <td>接收、发送与通信事件</td>
+                <td>数据读取时机、标志清除和缓冲区处理</td>
+              </tr>
+              <tr>
+                <td>外部中断</td>
+                <td>引脚边沿或电平事件</td>
+                <td>触发模式、信号持续时间与优先级</td>
+              </tr>
+              <tr>
+                <td>其他片上外设</td>
+                <td>PWM、捕获比较等事件</td>
+                <td>芯片手册规定的专用中断行为</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          在传统 8051 及其兼容扩展中，中断源、优先级数量、寄存器布局和响应规则
+          可能随具体芯片而变化。因此，涉及 STC 系列增强型 8051 时，
+          应使用目标型号的数据手册，而不是只依赖经典 8051 的通用描述。
+        </p>
+      </section>
+
+      <section class="section" id="entry">
+        <h2>04. 中断入口与现场保护</h2>
+
+        <p>
+          中断入口是从当前执行流进入 ISR 的边界。
+          在 8051 架构下，硬件中断响应会涉及程序执行位置的保存和跳转，
+          但完整的任务或 ISR 现场保护仍可能需要软件完成。
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <span class="step-no">01</span>
+            <div>
+              <h3>硬件接受中断</h3>
+              <p>
+                处理器依据中断使能、优先级及相关硬件条件接受请求，
+                并转入对应中断入口。具体接受时机还受到当前指令执行状态等因素影响。
+              </p>
+            </div>
+          </div>
+
+          <div class="step">
+            <span class="step-no">02</span>
+            <div>
+              <h3>执行入口处理</h3>
+              <p>
+                入口代码根据系统设计完成必要的状态保护、寄存器处理和执行环境准备。
+                对由跳转方式进入的专用内核路径，应特别核对它与普通函数调用的区别。
+              </p>
+            </div>
+          </div>
+
+          <div class="step">
+            <span class="step-no">03</span>
+            <div>
+              <h3>建立 ISR 执行环境</h3>
+              <p>
+                ISR 使用其实际配置的寄存器、栈和共享数据。
+                如果 ISR 会调用内核 API 或允许嵌套中断，还需要核对相应的现场保护约束。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="note warning">
+          <strong>8051 特别注意：</strong>
+          硬件保存返回地址并不意味着 ACC、PSW、DPTR、工作寄存器或其他软件状态都已自动保存。
+          必须依据实际入口汇编及编译器生成代码确定保护范围。
+        </div>
+      </section>
+
+      <section class="section" id="isr">
+        <h2>05. ISR 的设计原则</h2>
+
+        <p>
+          中断服务程序直接影响其他中断和任务的等待时间。
+          因此，ISR 的设计不仅要保证功能正确，还应使执行时间、共享数据访问和嵌套行为容易分析。
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>设计原则</th>
+                <th>工程原因</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>控制执行路径</td>
+                <td>减少不必要的分支和不受约束的循环，使执行时间更容易评估。</td>
+              </tr>
+              <tr>
+                <td>避免阻塞等待</td>
+                <td>阻塞式操作可能延长 ISR 占用处理器的时间，并影响其他事件响应。</td>
+              </tr>
+              <tr>
+                <td>谨慎访问共享数据</td>
+                <td>避免 ISR 与任务之间出现竞态、数据不一致或额外的临界区开销。</td>
+              </tr>
+              <tr>
+                <td>明确标志处理</td>
+                <td>按照外设手册处理待处理中断标志，避免重复进入或丢失事件。</td>
+              </tr>
+              <tr>
+                <td>限制嵌套复杂度</td>
+                <td>嵌套会增加现场保护成本、栈使用量及执行时间分析难度。</td>
+              </tr>
+              <tr>
+                <td>将非紧急工作移至任务层</td>
+                <td>缩短中断占用时间，并将复杂逻辑放入更适合管理和测试的执行环境。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          ISR 越短并不自动代表系统实时性越好。还需要确保必要的事件处理没有遗漏，
+          数据传递机制正确，并且延后处理不会违反事件截止时间。
         </div>
       </section>
 
       <section class="section" id="nested">
-        <h2>中断嵌套</h2>
+        <h2>06. 中断嵌套机制</h2>
 
         <p>
-          支持高优先级中断抢占低优先级中断执行，
-          提高关键事件响应能力。
+          中断嵌套允许符合条件的更高优先级中断在当前中断处理尚未完成时进入执行。
+          这样可以缩短高优先级事件的等待时间，但同时增加现场保护、栈空间和返回顺序的复杂性。
         </p>
 
-        <div class="code">
-低优先级ISR执行
-↓
-高优先级中断到达
-↓
-进入嵌套ISR
-↓
-返回继续执行
+        <div class="diagram">
+          <svg viewBox="0 0 640 355" role="img"
+               aria-labelledby="nested-title nested-desc">
+            <title id="nested-title">中断嵌套时间关系示意图</title>
+            <desc id="nested-desc">
+              低优先级中断开始执行后，高优先级中断到达并在满足嵌套条件时进入执行。
+              高优先级中断结束后，恢复低优先级中断，待其完成后再执行相应的退出路径。
+            </desc>
+            <defs>
+              <marker id="nested-arrow" markerWidth="8" markerHeight="8"
+                      refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#64748b"/>
+              </marker>
+            </defs>
+
+            <text class="flow-text" x="118" y="27">时间推进 →</text>
+
+            <text class="flow-sub" x="16" y="76" text-anchor="start">低优先级 ISR</text>
+            <rect class="flow-node" x="135" y="52" width="205" height="38" rx="7"/>
+            <text class="flow-text" x="237" y="75">执行</text>
+
+            <rect class="flow-node-alt" x="340" y="52" width="110" height="38" rx="7"/>
+            <text class="flow-text" x="395" y="75">暂停</text>
+
+            <rect class="flow-node" x="450" y="52" width="170" height="38" rx="7"/>
+            <text class="flow-text" x="535" y="75">恢复并继续</text>
+
+            <text class="flow-sub" x="16" y="145" text-anchor="start">高优先级 ISR</text>
+            <path class="flow-line" d="M340 96 V123"
+                  marker-end="url(#nested-arrow)"/>
+            <rect class="flow-node-green" x="340" y="127" width="110" height="39" rx="7"/>
+            <text class="flow-text" x="395" y="151">进入</text>
+
+            <path class="flow-line" d="M450 146 H475"
+                  marker-end="url(#nested-arrow)"/>
+            <rect class="flow-node-green" x="479" y="127" width="141" height="39" rx="7"/>
+            <text class="flow-text" x="549" y="151">执行并退出</text>
+
+            <path class="flow-line" d="M549 166 V187 H395 V199"
+                  marker-end="url(#nested-arrow)"/>
+
+            <rect class="flow-node-alt" x="295" y="203" width="200" height="39" rx="7"/>
+            <text class="flow-text" x="395" y="227">返回低优先级 ISR</text>
+
+            <path class="flow-line" d="M395 242 V270"
+                  marker-end="url(#nested-arrow)"/>
+
+            <rect class="flow-node-green" x="225" y="274" width="340" height="39" rx="7"/>
+            <text class="flow-text" x="395" y="298">低优先级 ISR 完成后退出</text>
+
+            <text class="flow-sub" x="320" y="339">概念性执行关系，不代表具体指令周期或固定嵌套深度</text>
+          </svg>
         </div>
+
+        <h3>嵌套中断需要满足的条件</h3>
+
+        <ul>
+          <li>当前执行环境允许接受更高优先级中断。</li>
+          <li>目标中断的硬件优先级、使能状态及芯片规则允许进入。</li>
+          <li>现场保存和恢复路径能够正确处理嵌套前后的状态。</li>
+          <li>中断栈或相应的栈空间能够容纳允许的嵌套层级。</li>
+          <li>中断退出顺序与实际入口方式保持一致。</li>
+        </ul>
+
+        <div class="note warning">
+          <strong>不能忽略内核状态约束：</strong>
+          在 RTOS 中，允许嵌套的条件还可能受内核执行状态限制。
+          不能仅凭硬件支持中断优先级，就推断任意内核执行位置都允许嵌套。
+        </div>
+
+        <p>
+          对 HRTOS 的具体嵌套行为，应结合内核对中断入口、嵌套处理和退出路径的实际实现进行核对，
+          并使用目标芯片验证允许的中断优先级组合与栈预算。
+        </p>
+      </section>
+
+      <section class="section" id="exit">
+        <h2>07. 中断退出与任务调度</h2>
+
+        <p>
+          中断退出不仅是 ISR 最后一条语句之后的返回操作。
+          对 RTOS 而言，还需要确保现场恢复、中断状态与可能发生的任务切换相互兼容。
+        </p>
+
+        <div class="code">ISR 完成必要的事件处理
+    ↓
+执行相应的中断退出逻辑
+    ↓
+检查适用的内核与调度条件
+    ├── 无需任务切换
+    │      ↓
+    │   恢复原执行路径
+    │
+    └── 需要任务切换
+           ↓
+        进入对应的任务切换路径
+           ↓
+        恢复目标任务执行环境</div>
+
+        <p>
+          不同内核的中断入口和退出机制可能存在明显差异。
+          有的实现直接使用标准中断返回指令，有的实现则通过专门的汇编入口、
+          内核状态管理或中断退出接口完成后续处理。
+        </p>
+
+        <div class="note">
+          <strong>HRTOS 实现提示：</strong>
+          对于通过跳转进入的专用中断路径，不能直接假定其与普通 C 函数调用具有相同的现场与返回语义。
+          应结合对应版本的中断入口代码和 <span class="inline-code">os_interrupt_exit()</span>
+          调用约定，确认返回地址、现场保护和退出流程。
+        </div>
+
+        <p>
+          <a href="/docs/system/context-switch-flow.html">阅读：上下文切换机制 →</a>
+        </p>
+        <p>
+          <a href="/docs/system/scheduling-flow.html">阅读：任务调度流程 →</a>
+        </p>
       </section>
 
       <section class="section" id="performance">
-        <h2>性能影响</h2>
+        <h2>08. 中断响应时间与实时性</h2>
 
-        <div class="code">
-1. ISR执行时间
-2. 中断嵌套层级
-3. 上下文保存开销
-4. CPU架构特性
-5. 调度触发频率
+        <p>
+          中断响应时间应当首先明确测量边界。
+          从物理事件发生到 ISR 开始执行的时间，与从事件发生到 ISR 完成的时间，
+          是两个不同的指标。
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>指标</th>
+                <th>典型边界</th>
+                <th>需要考虑的因素</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>中断响应延迟</td>
+                <td>中断事件或请求到 ISR 开始执行</td>
+                <td>硬件接受条件、当前指令、屏蔽状态、优先级和入口开销</td>
+              </tr>
+              <tr>
+                <td>ISR 执行时间</td>
+                <td>ISR 开始到 ISR 处理结束</td>
+                <td>指令路径、分支、数据访问、调用和中断标志处理</td>
+              </tr>
+              <tr>
+                <td>嵌套干扰时间</td>
+                <td>低优先级 ISR 被更高优先级中断延迟的时间</td>
+                <td>允许的嵌套中断、嵌套深度与各层执行时间</td>
+              </tr>
+              <tr>
+                <td>中断到任务响应时间</td>
+                <td>事件发生到目标任务开始处理</td>
+                <td>中断响应、ISR、调度决策、任务切换及其他干扰</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>最坏情况分析的基本要求</h3>
+
+        <ul>
+          <li>明确起点、终点以及需要覆盖的执行路径。</li>
+          <li>依据目标芯片和实际编译产物分析指令周期。</li>
+          <li>考虑中断屏蔽区间、允许的嵌套干扰和分支路径。</li>
+          <li>区分静态分析得到的上界、测试观测值与平均耗时。</li>
+          <li>记录芯片型号、时钟、编译选项和测量条件，确保结论可复现。</li>
+        </ul>
+
+        <div class="note success">
+          <strong>实时性分析的关键：</strong>
+          单次测量可以提供实际执行路径的耗时证据，但不能单独证明最坏情况上界。
+          要得到可信的上界，还需要覆盖相关控制流路径，并对中断与硬件时序条件作出合理约束。
+        </div>
+      </section>
+
+      <section class="section" id="verification">
+        <h2>09. 工程验证与排查</h2>
+
+        <p>
+          对中断机制进行工程验证时，可以把问题拆分为入口、服务执行、嵌套与退出四个部分，
+          逐项确认硬件行为和软件执行路径。
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <span class="step-no">01</span>
+            <div>
+              <h3>核对目标芯片配置</h3>
+              <p>确认中断源、使能位、优先级设置、触发方式及相关外设标志。</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <span class="step-no">02</span>
+            <div>
+              <h3>检查入口与现场保护</h3>
+              <p>检查中断入口指令、程序计数器处理、寄存器保存、栈变化及编译器生成代码。</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <span class="step-no">03</span>
+            <div>
+              <h3>验证嵌套和返回</h3>
+              <p>在受控条件下检查嵌套是否符合预期，并确认每一层中断均按正确顺序退出。</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <span class="step-no">04</span>
+            <div>
+              <h3>测量并交叉验证</h3>
+              <p>结合 GPIO、逻辑分析仪、反汇编和指令周期统计，核对实际测量边界与静态分析路径。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="note warning">
+          测量工具本身也可能影响时序。GPIO 操作、调试输出和额外的变量访问会引入开销；
+          应明确哪些开销属于被测路径，哪些属于测量方法。
+        </div>
+      </section>
+
+      <section class="section" id="summary">
+        <h2>10. 小结</h2>
+
+        <p>
+          中断机制的核心不只是快速进入 ISR，而是确保异步事件能够按照硬件规则和内核约束被正确处理，
+          并在中断结束后安全地返回原执行路径或进入适用的任务切换路径。
+        </p>
+
+        <p>
+          在 8051 上，入口方式、硬件堆栈、寄存器保护、中断优先级和返回语义都直接影响实现正确性。
+          对 HRTOS 的进一步分析，应以具体内核版本、汇编清单和目标芯片行为为依据，
+          逐步建立可验证的执行路径与实时性结论。
+        </p>
+
+        <div class="note">
+          本页中的流程图用于解释中断处理的一般机制，并非对所有芯片和 HRTOS 版本的逐指令描述。
+          有关具体嵌套限制、寄存器保存顺序、调度触发条件和最坏情况时间，
+          应以对应实现及测试证据为准。
         </div>
       </section>
 
     </div>
 
     <aside class="sidebar">
-
       <div class="box">
-        <h3>目录</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">机制</a>
-        <a href="#trigger">触发条件</a>
-        <a href="#execution-path">执行路径</a>
-        <a href="#isr">ISR原则</a>
-        <a href="#nested">中断嵌套</a>
-        <a href="#performance">性能分析</a>
+        <h2>本页目录</h2>
+        <nav aria-label="Page contents">
+          <a href="#overview">中断机制概述</a>
+          <a href="#architecture">整体执行流程</a>
+          <a href="#trigger">中断源与接受条件</a>
+          <a href="#entry">入口与现场保护</a>
+          <a href="#isr">ISR 设计原则</a>
+          <a href="#nested">中断嵌套</a>
+          <a href="#exit">中断退出与调度</a>
+          <a href="#performance">实时性分析</a>
+          <a href="#verification">工程验证</a>
+          <a href="#summary">总结</a>
+        </nav>
+      </div>
+
+      <div class="box related">
+        <h2>相关系统文档</h2>
+        <a href="/docs/system/index.html">System Overview</a>
+        <a href="/docs/system/context-switch-flow.html">Context Switch Flow</a>
+        <a href="/docs/system/scheduling-flow.html">Scheduling Flow</a>
       </div>
 
       <div class="box">
-        <h3>层级</h3>
-        <a href="/docs/system/index.html">System</a>
+        <h2>分析重点</h2>
+        <p class="muted" style="font-size:.88rem;margin:0">
+          中断入口、现场保护、嵌套条件、退出语义、任务切换及响应时间边界。
+        </p>
       </div>
-
     </aside>
-
   </div>
 
   <footer class="footer">
     © 2017–2026 HRTOS. System-level interrupt mechanism documentation.
   </footer>
-
 </main>
 
 <script src="https://hrtos.com/header.js"></script>
