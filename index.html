@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <title>HRTOS - 8051 Hard Real-Time Operating System | 硬实时操作系统</title>
-<meta name="description" content="HRTOS 是面向 51 单片机（8051）的完整硬实时操作系统生态，以硬实时内核为核心，提供任务调度、中断管理、内存控制、Shell、Modbus RTU、系统组件、API 文档与实验示例，为 8051 嵌入式开发提供完整的软件基础。">
+<meta name="description" content="HRTOS 是面向 8051 单片机的实时操作系统，围绕任务调度、中断管理、上下文切换与资源控制构建专用内核，并提供 Shell、Modbus RTU、系统组件、驱动、API 文档和实验示例。">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#050816">
 <link rel="canonical" href="https://hrtos.com/">
 <link rel="icon" type="image/svg+xml" href="/images/favicon.svg">
-<meta property="og:title" content="HRTOS - Hard Real-Time Operating System">
-<meta property="og:description" content="Complete hard real-time operating system ecosystem for 8051, covering the kernel, system components, communication modules, documentation and examples.">
+<meta property="og:title" content="HRTOS - 8051 实时操作系统">
+<meta property="og:description" content="面向 8051 单片机的专用实时操作系统，提供内核、系统组件、通信模块、驱动、技术文档与实验示例。">
 <meta property="og:url" content="https://hrtos.com/">
 <script type="application/ld+json">
 {
  "@context":"https://schema.org",
  "@type":"SoftwareApplication",
  "name":"HRTOS",
- "applicationCategory":"DeveloperApplication",
- "operatingSystem":"Embedded System",
- "description":"A complete hard real-time operating system ecosystem for 8051 microcontrollers."
+"applicationCategory": "DeveloperApplication",
+"operatingSystem": "8051-based embedded systems",
+"description": "HRTOS is a real-time operating system for 8051 microcontrollers, with a dedicated kernel, system components, communication modules, documentation and examples."
 }
 </script>
 <style>
@@ -85,7 +85,14 @@ h1,h2,h3,p{
   z-index:1;
 }
 
+/* 默认显示内容，确保 JavaScript 不可用时页面仍然可读 */
 .reveal{
+  opacity:1;
+  transform:none;
+}
+
+/* 只有 JavaScript 确认启用动画后，才使用进入视口效果 */
+.js-reveal .reveal{
   opacity:0;
   transform:translateY(28px);
   transition:
@@ -93,7 +100,7 @@ h1,h2,h3,p{
     transform 0.8s cubic-bezier(.22,1,.36,1);
 }
 
-.reveal.in-view{
+.js-reveal .reveal.in-view{
   opacity:1;
   transform:translateY(0);
 }
@@ -846,22 +853,22 @@ pre.code .type{color:#f472b6; font-weight:600;}
     <div class="eyebrow">8051 RTOS · Hard Real-Time · Complete Ecosystem</div>
     <h1>HRTOS</h1>
     <p class="hero-subtitle">
-面向 8051 的硬实时操作系统，以确定性调度、快速中断响应和工程级资源管理为核心，
-构建覆盖系统内核、系统组件、驱动模块、开发文档与实验示例的完整生态。
+面向经典 8051 单片机，专门设计任务调度、中断管理、上下文切换与资源控制机制，
+配套系统组件、外设驱动、技术文档和实验示例，支持从基础应用到复杂实时系统的开发。
 </p>
 
     <div class="hero-proof">
       <div class="proof-item">
         <span class="proof-label">8051 Native</span>
-        <span class="proof-copy">长期专注 8051 单片机，围绕经典 51 架构持续构建专用实时操作系统软件基础。</span>
+        <span class="proof-copy">立足经典 51 架构，围绕处理器执行模型、中断机制与有限存储资源，持续打磨系统设计与实现。</span>
       </div>
       <div class="proof-item">
         <span class="proof-label">Complete</span>
-        <span class="proof-copy">从实时内核到 Shell、Modbus RTU、驱动模块、开发文档与实验示例，贯穿 8051 开发全流程。</span>
+        <span class="proof-copy">覆盖实时内核、Shell、Modbus RTU、驱动与常用系统服务，让任务调度能力进一步连接实际应用。</span>
       </div>
       <div class="proof-item">
         <span class="proof-label">Maintained</span>
-        <span class="proof-copy">持续完善 HRTOS 生态，通过长期运行测试验证系统稳定性，为 8051 项目提供坚实、稳定的开发基础。</span>
+        <span class="proof-copy">重视功能回归、稳定性测试、问题修复与文档完善，让系统能力在持续维护中不断积累。</span>
       </div>
     </div>
 
@@ -877,18 +884,18 @@ pre.code .type{color:#f472b6; font-weight:600;}
     <div class="container">
       <div class="section-copy reveal">
         <span class="section-kicker">Ecosystem</span>
-        <h2>构建面向 8051 的完整 HRTOS 开发生态</h2>
-        <p class="section-lead">HRTOS 以实时内核为核心，围绕 8051 单片机持续构建完整的开发体系，覆盖实时内核、系统模块、驱动组件、文档体系与实验示例，让 51 单片机从传统裸机编程走向结构化、系统化开发。</p>
+        <h2>专用内核与完整开发体系</h2>
+        <p class="section-lead">HRTOS 不只关注多个任务如何运行，更关注 8051 应用中的任务组织、中断处理与系统资源管理。通过内核、系统组件、驱动、文档和示例的协同建设，帮助开发者从理解系统机制逐步走向工程集成。</p>
       </div>
 
       <div class="architecture-grid">
         <article class="panel-card large reveal">
           <span class="card-kicker">Hard Real-Time Kernel</span>
-          <h3>确定性的实时内核</h3>
-          <p>以优先级抢占调度、任务管理、中断处理、上下文切换与实时执行控制为核心，围绕任务运行顺序与执行节奏建立可预测的运行模型，为 8051 应用提供确定性的运行基础。</p>
+          <h3>实时内核</h3>
+          <p>以优先级抢占调度、任务管理、中断处理、上下文切换与实时执行控制为核心，针对 8051 的处理器架构、中断机制与资源约束进行专门设计，为应用提供有序、可控的实时运行基础。</p>
           <div class="architecture-meta">
-            <div class="meta-line">围绕关键任务建立可预测的调度路径与执行模型。</div>
-            <div class="meta-line">使系统行为能够分析、验证，并落实到具体硬件工程。</div>
+            <div class="meta-line">建立清晰的任务调度与执行机制。</div>
+            <div class="meta-line">支持系统行为分析与功能验证。</div>
           </div>
           <div class="link-row">
             <a href="/docs/architecture/index.html">查看系统架构 →</a>
@@ -897,12 +904,13 @@ pre.code .type{color:#f472b6; font-weight:600;}
 
         <article class="panel-card medium reveal">
           <span class="card-kicker">System Components</span>
-          <h3>面向工程的系统组件</h3>
-          <p>围绕实际嵌入式项目提供 Shell、Modbus RTU、IPC、内存管理等系统组件，扩展实时内核在真实工程中的应用能力。</p>
-          <div class="architecture-meta">
-            <div class="meta-line">从基础系统服务到常用工业通信组件，形成可复用的软件模块体系。</div>
-            <div class="meta-line">将 RTOS 内核能力延伸至实际应用项目。</div>
-          </div>
+          <h3>系统组件</h3>
+            <p>围绕实际嵌入式项目提供 Shell、Modbus RTU、IPC、内存管理等系统组件，覆盖任务协作、通信交互与资源管理等常见需求，帮助开发者将内核能力转化为可集成、可复用的工程功能。</p>
+            <div class="architecture-meta">
+              <div class="meta-line">模块化组织常用系统服务与通信功能。</div>
+              <div class="meta-line">为实际嵌入式项目提供组件支持。</div>
+            </div>
+          
           <div class="link-row">
           <a href="/docs/modules/index.html">系统组件 →</a>
         </div>
@@ -910,12 +918,13 @@ pre.code .type{color:#f472b6; font-weight:600;}
 
         <article class="panel-card small reveal">
           <span class="card-kicker">Development Ecosystem</span>
-          <h3>完整的开发体系</h3>
-          <p>提供系统手册、API 参考、快速入门、基础实验、外设驱动与完整工程示例，覆盖从学习、开发、调试到项目集成的完整开发过程。</p>
+          <h3>开发资源</h3>
+          <p>提供系统手册、API 参考、快速入门、基础实验、外设驱动与工程示例，帮助开发者理解系统机制、掌握接口用法，并逐步完成应用开发与项目集成。</p>
           <div class="architecture-meta">
-            <div class="meta-line">文档、示例与系统组件相互对应，降低开发与集成成本。</div>
-            <div class="meta-line">从基础实验到复杂项目，提供连续的软件开发路径。</div>
+            <div class="meta-line">文档与示例配套，便于学习和集成。</div>
+            <div class="meta-line">覆盖从基础实验到工程应用的开发过程。</div>
           </div>
+          
           <div class="link-row">
             <a href="/docs/index.html">进入文档中心 →</a>
           </div>
@@ -930,27 +939,27 @@ pre.code .type{color:#f472b6; font-weight:600;}
         <div class="trust-head">
           <div class="trust-summary">
             <span class="section-kicker">Foundation</span>
-            <h3>持续建设的 8051 RTOS 软件基础</h3>
-            <p>HRTOS 长期专注于 8051 架构，不追求无边界地扩展硬件平台，而是持续完善实时内核、系统组件、开发文档、实验示例。从实时内核到系统组件、驱动、文档与示例，HRTOS 持续为经典 51 架构构建长期可用、可持续维护的 RTOS 软件基础。</p>
+            <h3>不止于运行，更注重验证与维护</h3>
+            <p>一个面向工程应用的 RTOS，不仅要保障任务稳定运行，还应具备清晰的系统架构、可验证的关键功能，以及完善的开发文档、配套组件与工程示例，为实际项目开发、系统集成和长期维护提供全面支持。</p>
           </div>
           <div class="trust-badge">
             <strong>8051 Focus</strong>
-            <span>专注 8051 架构，以长期维护和持续完善为核心，不断补齐内核、组件、文档与示例，形成面向经典 51 单片机的完整 RTOS 开发体系。</span>
+            <span>HRTOS 围绕内核机制、系统组件、技术文档与实验示例持续建设，让系统实现、开发过程与后续维护形成完整的技术链路。</span>
           </div>
         </div>
 
         <div class="trust-grid">
           <div class="trust-item">
-            <strong>长期专注</strong>
-            <p>长期专注 8051 架构，围绕经典 51 单片机持续完善实时操作系统能力，而不是不断扩展到更多硬件平台。</p>
+            <strong>架构专注</strong>
+            <p>长期专注 8051 架构，深入研究 51 单片机的硬件特性、资源约束与运行机制，持续打磨内核设计、任务调度和底层控制能力。</p>
           </div>
           <div class="trust-item">
-            <strong>生态完整</strong>
-            <p>内核、API、系统模块、Modbus RTU、Shell、驱动、示例、开发手册与下载体系相互连接，形成完整的 8051 RTOS 开发链路。</p>
+            <strong>工程配套</strong>
+            <p>围绕实际工程开发需求，构建涵盖内核、组件、驱动、文档与示例的配套体系，打通从硬件机制到应用开发、系统集成的完整链路。</p>
           </div>
           <div class="trust-item">
-            <strong>持续维护</strong>
-            <p>持续进行功能验证、稳定性测试、问题修复与文档完善，让 HRTOS 不只是一个可以运行的内核，而是能够长期使用、持续维护的软件基础。</p>
+            <strong>持续验证</strong>
+            <p>通过功能回归、稳定性测试与性能分析，检验系统关键机制和运行表现，积累可追溯的测试依据，在验证与改进中不断提升系统可靠性。</p>
           </div>
         </div>
       </div>
@@ -961,8 +970,8 @@ pre.code .type{color:#f472b6; font-weight:600;}
     <div class="container">
       <div class="code-shell reveal">
         <span class="section-kicker">Kernel Path</span>
-        <h3>一个简单示例，展示 HRTOS 的任务模型</h3>
-        <p>HRTOS 提供统一的任务、调度与系统 API，并通过文档、组件与实验示例，将简单的任务创建扩展到完整的实时系统开发。</p>
+        <h3>掌握 HRTOS 基本用法</h3>
+        <p>通过简洁的任务示例，了解任务创建、任务入口与系统调度的基本使用方式。</p>
         <pre class="code"><span class="comment">// Example: Dual LED Task Demo</span>
 <span class="macro">#include</span> <span class="string">"hrtos.h"</span>
 
@@ -1046,7 +1055,7 @@ pre.code .type{color:#f472b6; font-weight:600;}
     );
 }
 </pre>
-        <p class="code-note">更多 API、系统机制、组件说明与工程示例，请进入文档中心。</p>
+        <p class="code-note">具体任务入口、参数、栈大小及硬件定义，请以目标芯片和对应 HRTOS 版本的 API 文档为准。</p>
       </div>
     </div>
   </section>
@@ -1054,8 +1063,8 @@ pre.code .type{color:#f472b6; font-weight:600;}
   <section class="section cta">
     <div class="container">
       <div class="cta-shell reveal">
-        <h2>让 8051 从裸机开发走向完整实时系统</h2>
-        <p>HRTOS 为 8051 开发提供从实时内核、系统组件到开发文档与实验示例的软件基础，让经典 51 架构也能够拥有更加系统化、工程化的 RTOS 开发体验。</p>
+        <h2>为 8051 打造完整实时操作系统</h2>
+        <p>从系统架构和 API 文档开始了解 HRTOS，也可以直接查看示例工程、驱动与系统组件。根据项目需求逐步完成技术评估、功能验证与工程集成。</p>
         <div class="cta-actions">
           <a class="btn primary" href="/docs/index.html">探索 HRTOS 生态</a>
           <a class="btn" href="/download/index.html">开始使用 HRTOS</a>
@@ -1066,7 +1075,7 @@ pre.code .type{color:#f472b6; font-weight:600;}
 </main>
 
 <footer class="footer">
-  <div>HRTOS — 面向 8051 的硬实时操作系统与软件生态</div>
+  <div>HRTOS — 面向 8051 的实时操作系统与工程开发体系</div>
 
   <div style="margin-top:14px; line-height:1.9;">
   <a href="/docs/index.html">文档中心</a> |
@@ -1093,24 +1102,43 @@ function updateNavbar() {
 updateNavbar();
 window.addEventListener('scroll', updateNavbar, { passive: true });
 
-const revealItems = document.querySelectorAll('.reveal');
-if (!reduceMotion && 'IntersectionObserver' in window) {
-  const observer = new IntersectionObserver((entries, io) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('in-view');
-        io.unobserve(entry.target);
-      }
-    });
-  }, {
-    threshold:0.16,
-    rootMargin:'0px 0px -8% 0px'
-  });
 
-  revealItems.forEach((item) => observer.observe(item));
-} else {
+const revealItems = document.querySelectorAll('.reveal');
+
+function showAllRevealItems() {
+  document.documentElement.classList.remove('js-reveal');
   revealItems.forEach((item) => item.classList.add('in-view'));
 }
+
+if ('IntersectionObserver' in window){
+  let observer;
+
+  try {
+    observer = new IntersectionObserver((entries, io) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.16,
+      rootMargin: '0px 0px -8% 0px'
+    });
+
+    document.documentElement.classList.add('js-reveal');
+
+    revealItems.forEach((item) => {
+      observer.observe(item);
+    });
+  } catch (error) {
+    if (observer) observer.disconnect();
+    showAllRevealItems();
+  }
+} else {
+  showAllRevealItems();
+}
+
 
 const canvas = document.getElementById('particles');
 const ctx = canvas ? canvas.getContext('2d') : null;
@@ -1152,15 +1180,15 @@ if (canvas && ctx) {
     for (let i = 0; i < particles.length; i += 1) {
       const p = particles[i];
 
-      if (!reduceMotion) {
+      
         p.x += p.vx;
         p.y += p.vy;
-      }
+      
 
       if (p.x < -20 || p.x > width + 20) p.vx *= -1;
       if (p.y < -20 || p.y > height + 20) p.vy *= -1;
 
-      if (!reduceMotion && pointer.x !== null && pointer.y !== null) {
+      if (pointer.x !== null && pointer.y !== null) {
         const dx = pointer.x - p.x;
         const dy = pointer.y - p.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -1195,9 +1223,9 @@ if (canvas && ctx) {
 
   function animate() {
     renderParticles();
-    if (!reduceMotion) {
+    
       requestAnimationFrame(animate);
-    }
+    
   }
 
   canvas.addEventListener('mousemove', (event) => {
