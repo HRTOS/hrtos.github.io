@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>确定性约束（Determinism Constraint） | HRTOS Why Layer</title>
-<meta name="description" content="定义实时系统的核心约束：确定性（Determinism），以及它如何成为系统设计的第一原则">
+<title>实时确定性：从设计约束到时间边界 | HRTOS</title>
+<meta name="description" content="理解实时系统的确定性约束：从执行路径、调度、中断响应到最坏情况执行时间分析，认识 HRTOS 面向 8051 的设计方向。">
 
 <meta name="page-role" content="why-layer">
 <meta name="semantic-node" content="determinism-constraint">
@@ -13,89 +14,129 @@
 <style>
 :root{
   --bg:#0f172a;
+  --panel:rgba(30,41,59,.55);
   --text:#e2e8f0;
   --muted:#94a3b8;
   --accent:#38bdf8;
   --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --shadow:0 20px 48px rgba(2,6,23,.22);
   --radius:10px;
 }
 
 *{box-sizing:border-box}
+
+html{scroll-behavior:smooth}
 
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+  line-height:1.8;
 }
 
-a{color:#7dd3fc;text-decoration:none}
+a{
+  color:#7dd3fc;
+  text-decoration:none;
+  transition:color .2s ease;
+}
+
 a:hover{color:var(--accent)}
 
-/* NAV */
 .nav{
+  position:sticky;
+  top:0;
+  z-index:10;
   display:flex;
   justify-content:space-between;
   align-items:center;
+  gap:20px;
   padding:14px 22px;
   border-bottom:1px solid var(--border);
-  background:rgba(15,23,42,.92);
+  background:rgba(15,23,42,.94);
+  backdrop-filter:blur(12px);
 }
 
 .nav-left{
-  font-weight:600;
+  font-weight:700;
+  letter-spacing:.5px;
+  white-space:nowrap;
+}
+
+.nav-right{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:8px 18px;
 }
 
 .nav-right a{
-  margin-left:14px;
   color:var(--muted);
   font-size:14px;
 }
 
+.nav-right a:hover,
 .nav-right a.active{
   color:var(--text);
 }
 
-/* layout */
 .container{
   max-width:980px;
   margin:0 auto;
-  padding:60px 22px;
+  padding:58px 22px 30px;
 }
 
-/* hero */
+.eyebrow{
+  margin-bottom:12px;
+  color:var(--accent);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+}
+
 h1{
-  font-size:clamp(2rem,4vw,3.2rem);
-  margin:0 0 10px;
+  margin:0 0 14px;
+  font-size:clamp(2rem,4vw,3rem);
+  line-height:1.25;
+  letter-spacing:-.5px;
 }
 
 .sub{
+  max-width:780px;
+  margin-bottom:36px;
   color:var(--muted);
-  margin-bottom:40px;
+  font-size:17px;
 }
 
-/* card */
+.section-title{
+  margin:38px 0 16px;
+  font-size:21px;
+  line-height:1.4;
+}
+
 .card{
-  background:rgba(30,41,59,.55);
+  margin-bottom:16px;
+  padding:22px 24px;
+  background:var(--panel);
   border:1px solid var(--border);
   border-radius:var(--radius);
-  padding:20px 22px;
-  margin-bottom:16px;
   box-shadow:var(--shadow);
 }
 
 .card h2{
   margin:0 0 10px;
-  font-size:18px;
   color:#dbeafe;
+  font-size:18px;
+  line-height:1.5;
 }
 
 .card p{
   margin:8px 0;
   color:var(--muted);
 }
+
+.card p:last-child{margin-bottom:0}
 
 .card-accent{
   border-left:3px solid var(--accent);
@@ -105,31 +146,133 @@ h1{
   border-left:3px solid #f59e0b;
 }
 
-.card-danger{
-  border-left:3px solid #ef4444;
+.card strong{
+  color:var(--text);
+  font-weight:600;
 }
 
-/* footer */
-.site-footer{
-  margin-top:60px;
-  border-top:1px solid var(--border);
-  padding:24px 0;
-  text-align:center;   /* ✅ 居中修复 */
+.concept-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+
+.concept{
+  padding:20px;
+  background:rgba(15,23,42,.48);
+  border:1px solid var(--border);
+  border-radius:8px;
+}
+
+.concept h3{
+  margin:0 0 8px;
+  color:#dbeafe;
+  font-size:16px;
+}
+
+.concept p{
+  margin:0;
   color:var(--muted);
   font-size:14px;
 }
 
-.site-footer a{
-  color:#7dd3fc;
-  margin:0 10px;
+.flow{
+  display:flex;
+  align-items:stretch;
+  gap:10px;
+  margin-top:18px;
+}
+
+.flow-item{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:66px;
+  padding:12px 8px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:rgba(15,23,42,.55);
+  color:#dbeafe;
+  font-size:14px;
+  text-align:center;
+}
+
+.flow-arrow{
+  display:flex;
+  align-items:center;
+  color:var(--accent);
+}
+
+.note{
+  margin-top:14px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.site-footer{
+  margin-top:48px;
+  border-top:1px solid var(--border);
+  padding:26px 22px;
+  color:var(--muted);
+  font-size:13px;
+  text-align:center;
+}
+
+.footer-inner{
+  max-width:820px;
+  margin:0 auto;
+}
+
+.footer-links{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px 20px;
+  margin-top:16px;
+}
+
+@media(max-width:640px){
+  .nav{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:8px;
+    padding:12px 16px;
+  }
+
+  .nav-right{
+    justify-content:flex-start;
+    gap:8px 14px;
+  }
+
+  .container{
+    padding:38px 16px 20px;
+  }
+
+  .sub{font-size:15px}
+
+  .card{padding:18px}
+
+  .concept-grid{grid-template-columns:1fr}
+
+  .flow{
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .flow-item{min-height:48px}
+
+  .flow-arrow{
+    justify-content:center;
+    transform:rotate(90deg);
+  }
 }
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
-<div class="nav">
+<nav class="nav">
   <div class="nav-left">HRTOS</div>
 
   <div class="nav-right">
@@ -138,106 +281,173 @@ h1{
     <a href="/system-view/index.html">系统</a>
     <a href="/docs/index.html">文档</a>
   </div>
-</div>
+</nav>
 
-<div class="container">
+<main class="container">
 
-  <h1>确定性约束（Determinism Constraint）</h1>
-  <div class="sub">实时系统的第一原则：系统行为必须可预测</div>
+  <div class="eyebrow">WHY HRTOS / 03</div>
 
-  <!-- definition -->
-  <div class="card card-accent">
-    <h2>核心定义</h2>
-    <p>
-      确定性指：在相同输入、状态与环境条件下，系统必须产生完全一致的执行结果与时间行为。
-    </p>
-    <p>
-      一致性不仅包括计算结果，还包括执行路径、调度顺序、中断时刻与延迟边界。
-    </p>
+  <h1>实时确定性：从设计约束到时间边界</h1>
+
+  <div class="sub">
+    实时系统不仅需要计算正确的结果，还需要在规定的时间约束内完成任务。
+    确定性设计的重点，是让关键执行行为能够被理解、评估，并在明确条件下进行验证。
   </div>
 
-  <!-- first principle -->
-  <div class="card card-warning">
-    <h2>为什么是第一原则</h2>
+  <section class="card card-accent">
+    <h2>01 / 什么是实时确定性？</h2>
     <p>
-      确定性不是优化目标，而是系统成立的前提条件。
+      确定性关注的是：当系统状态、输入、调度规则和运行条件明确时，
+      关键行为是否具有可解释、可预测的规律，以及响应时间是否能够得到合理分析。
     </p>
     <p>
-      如果行为不可预测，系统就无法用于任何控制类任务。
+      <strong>确定性不意味着每次执行都必须消耗完全相同的时间。</strong>
+      中断发生时刻、任务状态、分支条件和资源竞争都可能改变实际执行过程。
+      实时设计需要识别这些变化，并分析它们对关键任务响应时间的影响。
     </p>
+  </section>
+
+  <h2 class="section-title">02 / 确定性需要关注哪些维度？</h2>
+
+  <div class="concept-grid">
+
+    <div class="concept">
+      <h3>执行行为</h3>
+      <p>
+        分析关键代码路径、条件分支、循环次数和调用关系，
+        理解不同执行路径带来的工作量差异。
+      </p>
+    </div>
+
+    <div class="concept">
+      <h3>调度行为</h3>
+      <p>
+        明确任务优先级、抢占规则、时间片和任务状态转换，
+        分析任务何时能够获得处理器。
+      </p>
+    </div>
+
+    <div class="concept">
+      <h3>中断响应</h3>
+      <p>
+        关注中断屏蔽窗口、正在执行的指令、上下文保存、
+        中断嵌套以及中断退出后的调度行为。
+      </p>
+    </div>
+
+    <div class="concept">
+      <h3>时间边界</h3>
+      <p>
+        结合指令周期、执行路径、调度干扰和资源竞争，
+        评估关键操作的执行时间与任务响应时间。
+      </p>
+    </div>
+
   </div>
 
-  <!-- meaning -->
-  <div class="card">
-    <h2>约束的真实含义</h2>
-    <p>确定性必须同时满足两个维度：</p>
+  <section class="card">
+    <h2>03 / 可预测，不等于执行顺序永远固定</h2>
     <p>
-      • 执行路径确定性<br>
-      • 时间边界确定性
+      实时系统可以根据任务优先级、事件到达和任务状态改变执行顺序。
+      抢占式调度本身并不违背确定性；关键在于调度规则是否明确，
+      以及相关干扰能否在规定的运行条件下进行分析。
     </p>
     <p>
-      缺少任何一个，系统都无法进入强实时领域。
+      同样，执行路径可以因输入和状态而不同。
+      对实时分析而言，重要的是识别相关路径、明确分析假设，
+      并合理评估最不利情况下的时间开销。
     </p>
-  </div>
+  </section>
 
-  <!-- contrast -->
-  <div class="card card-danger">
-    <h2>与通用系统的差异</h2>
+  <section class="card card-warning">
+    <h2>04 / 从确定性设计到时间分析</h2>
     <p>
-      通用系统允许：调度变化、执行路径变化、延迟抖动。
+      对实时任务来说，平均执行时间通常不足以说明截止时间能否满足。
+      还需要关注最坏情况下的执行时间、任务释放与调度等待、
+      中断干扰、临界区以及共享资源造成的阻塞。
     </p>
     <p>
-      实时系统不允许这些变化，因为变化本身就是不确定性来源。
+      最坏情况执行时间（WCET）分析尝试在明确的处理器、编译结果、
+      输入与运行条件下，评估指定代码路径的时间上界。
+      分析结果的可信度取决于模型、假设、覆盖范围与验证证据，
+      不能仅凭一次测试或单个测量值就认定所有场景均有严格上界。
     </p>
-  </div>
+  </section>
 
-  <!-- levels -->
-  <div class="card">
-    <h2>确定性的三个层级</h2>
-    <p>
-      1. 逻辑确定性（结果固定）<br>
-      2. 调度确定性（顺序固定）<br>
-      3. 时间确定性（上界固定）
-    </p>
-  </div>
+  <h2 class="section-title">05 / 确定性如何映射到 HRTOS？</h2>
 
-  <!-- impact -->
-  <div class="card">
-    <h2>系统设计影响</h2>
+  <section class="card card-accent">
+    <h2>面向 8051 的内核设计</h2>
     <p>
-      为保证确定性，系统必须限制动态优化空间与非确定性路径。
+      HRTOS 面向 8051 单片机，围绕任务调度、中断处理、
+      上下文切换和资源管理构建专用内核。
+      在这一架构中，这些机制不是孤立的功能模块，
+      它们会共同影响任务响应时间和系统运行行为。
+    </p>
+
+    <div class="flow">
+      <div class="flow-item">中断处理</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">上下文管理</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">任务调度</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">响应时间分析</div>
+    </div>
+
+    <p class="note">
+      这是一条用于理解系统关系的概念链路，实际执行过程会因中断类型、
+      任务状态和调度条件而有所不同。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>从运行测试走向可分析性</h2>
+    <p>
+      测试可以发现缺陷、观察实际延迟并验证指定场景，
+      但测试结果本身不等于对所有可能执行路径的证明。
+      因此，HRTOS 的性能与时间分析工作还需要结合目标芯片、
+      编译后的机器代码、关键执行路径和中断条件逐步推进。
     </p>
     <p>
-      换取的是：可预测性与时间可证明性。
+      对 HRTOS 而言，确定性既是内核设计的重要方向，
+      也是持续开展测试、性能测量和 WCET 分析时需要面对的工程约束。
+      具体能力应结合目标硬件、系统配置及分析覆盖范围进行评估。
     </p>
-  </div>
+  </section>
 
-  <!-- mapping -->
-  <div class="card card-accent">
-    <h2>系统映射关系</h2>
+  <section class="card">
+    <h2>06 / 本页结论</h2>
     <p>
-      确定性 → 执行流（Execution Flow）<br>
-      确定性 → 调度循环（Scheduler Cycle）<br>
-      确定性 → 时间系统（Time System）
+      实时确定性不是要求系统中的每个操作都拥有相同的执行时间，
+      也不是要求任务调度永远保持固定顺序。
+      它强调的是：明确运行条件与时间要求，理解关键行为，
+      控制重要干扰，并为关键实时路径建立可信的时间评估依据。
     </p>
-  </div>
+    <p>
+      <strong>对 HRTOS 来说，方向是让 8051 上的实时行为更可预测、
+      更可分析，并通过持续测试与分析逐步积累工程证据。</strong>
+    </p>
+  </section>
 
-</div>
+</main>
 
-<!-- FOOTER -->
 <footer class="site-footer">
-  <div>© 2017–2026 HRTOS · WHY Layer</div>
+  <div class="footer-inner">
+    <div>© 2017–2026 HRTOS · WHY Layer</div>
 
-  <div style="margin-top:10px; max-width:820px; margin-left:auto; margin-right:auto;">
-    WHY 层用于定义实时系统成立的前提条件，包括时间确定性、调度约束与系统不可变规则。<br>
-    本层不描述实现细节，而是定义系统“为什么必须这样设计”。
-  </div>
+    <p>
+      WHY 层用于说明 HRTOS 的设计出发点与关键约束。
+      本页聚焦实时确定性及其与调度、中断、执行时间分析之间的关系；
+      具体实现请参阅系统架构、技术文档与相关测试资料。
+    </p>
 
-  <div style="margin-top:14px;">
-    <a href="/why/index.html">WHY 首页</a>
-    <a href="/why/01-real-time-problem.html">实时问题</a>
-    <a href="/why/02-why-general-os-fails.html">GPOS局限</a>
-    <a href="/system-view/index.html">System View →</a>
+    <div class="footer-links">
+      <a href="/why/index.html">WHY 首页</a>
+      <a href="/why/01-real-time-problem.html">实时问题</a>
+      <a href="/why/02-why-general-os-fails.html">通用系统与实时设计</a>
+      <a href="/system-view/index.html">System View →</a>
+    </div>
   </div>
 </footer>
 

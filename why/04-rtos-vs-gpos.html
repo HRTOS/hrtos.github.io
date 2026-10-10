@@ -1,19 +1,26 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>RTOS vs GPOS | HRTOS Why Layer</title>
-<meta name="description" content="RTOS 与 GPOS 的结构性差异分析">
+<title>RTOS vs GPOS：设计目标与实时约束 | HRTOS</title>
+<meta name="description" content="理解 RTOS 与 GPOS 在调度、响应时间、资源竞争和实时约束方面的设计差异，以及 HRTOS 面向 8051 的专用内核设计方向。">
+
+<meta name="page-role" content="why-layer">
+<meta name="semantic-node" content="rtos-vs-gpos">
 
 <style>
 :root{
   --bg:#0f172a;
+  --panel:rgba(30,41,59,.55);
   --text:#e2e8f0;
   --muted:#94a3b8;
   --border:rgba(148,163,184,.18);
   --accent:#38bdf8;
+  --shadow:0 16px 38px rgba(2,6,23,.2);
+  --radius:12px;
 }
 
 *{box-sizing:border-box}
@@ -23,77 +30,101 @@ body{
   background:var(--bg);
   color:var(--text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+  line-height:1.8;
 }
 
-/* ===== 全局容器（关键修复）===== */
-.container{
-  max-width:920px;
-  margin:0 auto;
-  padding:0 20px;
+a{
+  color:#7dd3fc;
+  text-decoration:none;
 }
 
-/* ===== NAV（彻底防溢出版本）===== */
+a:hover{color:var(--accent)}
+
 .nav{
   width:100%;
+  position:sticky;
+  top:0;
+  z-index:10;
   border-bottom:1px solid var(--border);
-  background:rgba(15,23,42,.9);
+  background:rgba(15,23,42,.94);
+  backdrop-filter:blur(12px);
 }
 
 .nav-inner{
-  max-width:920px;
+  max-width:980px;
   margin:0 auto;
-  padding:14px 20px;
+  padding:14px 22px;
   display:flex;
   justify-content:space-between;
   align-items:center;
+  gap:20px;
 }
 
 .nav-left{
   font-weight:700;
+  letter-spacing:.5px;
   white-space:nowrap;
+}
+
+.nav-right{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:8px 18px;
 }
 
 .nav a{
   color:var(--muted);
-  text-decoration:none;
-  margin-left:14px;
   font-size:14px;
 }
 
+.nav a:hover,
 .nav a.active{
   color:var(--text);
 }
 
-/* ===== 页面主体 ===== */
-.page{
-  padding:40px 0 60px;
+.container{
+  max-width:980px;
+  margin:0 auto;
+  padding:44px 22px 30px;
+}
+
+.eyebrow{
+  color:var(--accent);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  margin-bottom:12px;
 }
 
 h1{
-  font-size:clamp(1.8rem,3vw,2.6rem);
-  margin:20px 0 10px;
+  font-size:clamp(1.9rem,4vw,2.8rem);
+  line-height:1.3;
+  margin:0 0 12px;
 }
 
 .sub{
   color:var(--muted);
-  margin-bottom:28px;
+  font-size:16px;
+  max-width:780px;
+  margin-bottom:32px;
 }
 
-/* ===== block ===== */
 .block{
-  background:#111823;
+  background:var(--panel);
   border:1px solid var(--border);
-  border-radius:12px;
-  padding:18px;
-  margin-bottom:14px;
+  border-radius:var(--radius);
+  padding:22px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
 }
 
 .block h2{
-  margin:0 0 10px;
+  margin:0 0 12px;
   font-size:18px;
+  line-height:1.5;
   border-left:3px solid var(--accent);
-  padding-left:10px;
+  padding-left:11px;
 }
 
 .block p{
@@ -101,14 +132,36 @@ h1{
   color:var(--muted);
 }
 
-/* ===== grid 自动防爆 ===== */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:14px;
+.block strong{
+  color:var(--text);
+  font-weight:600;
 }
 
-/* ===== tag ===== */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+
+.compare-card{
+  padding:20px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:rgba(15,23,42,.42);
+  min-width:0;
+}
+
+.compare-card h3{
+  margin:0 0 10px;
+  font-size:17px;
+  color:#dbeafe;
+}
+
+.compare-card p{
+  margin:8px 0;
+  font-size:14px;
+}
+
 .tag{
   display:inline-block;
   font-size:12px;
@@ -116,114 +169,334 @@ h1{
   border:1px solid var(--border);
   border-radius:999px;
   color:var(--muted);
-  margin-bottom:8px;
+  margin-bottom:10px;
 }
 
-/* ===== footer（彻底居中修复）===== */
+.flow{
+  display:flex;
+  align-items:stretch;
+  gap:10px;
+  margin-top:18px;
+}
+
+.flow-item{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:14px 10px;
+  min-height:70px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:rgba(15,23,42,.48);
+  color:#dbeafe;
+  font-size:14px;
+}
+
+.flow-arrow{
+  display:flex;
+  align-items:center;
+  color:var(--accent);
+}
+
+.note{
+  font-size:13px;
+  color:var(--muted);
+  margin-top:12px;
+}
+
+.highlight{
+  border-left:3px solid var(--accent);
+}
+
 footer{
   border-top:1px solid var(--border);
-  margin-top:40px;
-  padding:24px 0;
+  margin-top:44px;
+  padding:26px 0;
   text-align:center;
   color:var(--muted);
 }
 
-footer a{
-  color:#7dd3fc;
-  text-decoration:none;
-  margin:0 8px;
+.footer-text{
+  max-width:780px;
+  margin:10px auto 0;
+  font-size:13px;
+  line-height:1.8;
+}
+
+.footer-links{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px 20px;
+  margin-top:16px;
   font-size:13px;
 }
 
-.footer-text{
-  max-width:760px;
-  margin:10px auto 0;
-  font-size:13px;
-  line-height:1.7;
+@media(max-width:640px){
+  .nav-inner{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:8px;
+    padding:12px 16px;
+  }
+
+  .nav-right{
+    justify-content:flex-start;
+    gap:8px 14px;
+  }
+
+  .container{
+    padding:34px 16px 20px;
+  }
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  .block{
+    padding:18px;
+  }
+
+  .flow{
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .flow-item{
+    min-height:48px;
+  }
+
+  .flow-arrow{
+    justify-content:center;
+    transform:rotate(90deg);
+  }
 }
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
-<div class="nav">
+<nav class="nav">
   <div class="nav-inner">
     <div class="nav-left">HRTOS</div>
-    <div>
+
+    <div class="nav-right">
       <a href="/index.html">首页</a>
       <a href="/why/index.html" class="active">Why</a>
       <a href="/system-view/index.html">系统</a>
       <a href="/docs/index.html">文档</a>
     </div>
   </div>
-</div>
+</nav>
 
-<!-- CONTENT -->
-<div class="container page">
+<main class="container">
 
-<h1>RTOS vs GPOS</h1>
-<div class="sub">实时系统与通用操作系统的结构性分界</div>
+  <div class="eyebrow">WHY HRTOS / 05</div>
 
-<div class="block">
-<h2>核心定义</h2>
-<p>RTOS：确定性优先</p>
-<p>GPOS：吞吐量优先</p>
-</div>
+  <h1>RTOS vs GPOS</h1>
 
-<div class="block">
-<h2>系统目标</h2>
-
-<div class="grid">
-  <div>
-    <span class="tag">RTOS</span>
-    <p>最坏情况可预测</p>
-    <p>时间是约束变量</p>
+  <div class="sub">
+    实时系统与通用操作系统的关键差异，不在于一个绝对追求速度、另一个完全不关心时间，
+    而在于系统设计如何处理时间约束、任务响应、调度干扰与最坏情况。
   </div>
 
-  <div>
-    <span class="tag">GPOS</span>
-    <p>平均性能优化</p>
-    <p>时间是统计结果</p>
-  </div>
-</div>
-</div>
+  <section class="block highlight">
+    <h2>01 / 核心区别：设计目标与约束</h2>
+    <p>
+      <strong>RTOS（实时操作系统）</strong>强调任务响应的可预测性，
+      将优先级、截止时间、响应延迟和资源竞争纳入内核设计与系统分析。
+    </p>
+    <p>
+      <strong>GPOS（通用操作系统）</strong>通常需要兼顾吞吐量、公平性、
+      交互体验、兼容性与广泛的应用场景。
+      这些目标可能与特定实时任务的要求形成取舍，但不意味着通用系统必然无法用于实时场景。
+    </p>
+  </section>
 
-<div class="block">
-<h2>结构冲突</h2>
-<p>一个控制“边界”，一个优化“平均值”</p>
-</div>
+  <section class="block">
+    <h2>02 / 两类系统通常关注什么？</h2>
 
-<div class="block">
-<h2>失败定义</h2>
-<p>RTOS：超时 = 错误</p>
-<p>GPOS：超时 = 波动</p>
-</div>
+    <div class="grid">
+      <div class="compare-card">
+        <span class="tag">RTOS</span>
+        <h3>围绕时间约束设计</h3>
+        <p>关注关键任务的响应时间与截止时间。</p>
+        <p>明确调度、抢占、中断与资源竞争的行为。</p>
+        <p>评估关键路径的执行开销和最不利情况。</p>
+        <p>在目标硬件与规定条件下验证实时要求。</p>
+      </div>
 
-<div class="block">
-<h2>System View 映射</h2>
-<p>
-执行流模型 / 调度循环模型 / 中断响应模型 / 时间约束系统
-</p>
-</div>
+      <div class="compare-card">
+        <span class="tag">GPOS</span>
+        <h3>兼顾多类系统目标</h3>
+        <p>关注整体吞吐量、交互体验与系统公平性。</p>
+        <p>需要兼顾大量应用、设备和运行场景。</p>
+        <p>可能采用复杂的调度与资源管理机制。</p>
+        <p>也可以通过实时调度、内核配置和系统工程满足某些实时需求。</p>
+      </div>
+    </div>
+
+    <p class="note">
+      以上是常见设计侧重点，不是对所有操作系统的绝对分类。
+      实时能力最终取决于具体实现、配置、硬件、负载和任务要求。
+    </p>
+  </section>
+
+  <section class="block">
+    <h2>03 / 真正的分界：能否满足时间约束</h2>
+    <p>
+      对实时任务而言，平均执行时间很短，并不必然意味着截止时间能够得到满足。
+      某些低概率但高延迟的情况，也可能影响系统是否符合要求。
+    </p>
+    <p>
+      因此，关键不是简单比较平均速度，而是分析任务执行时间、调度等待、
+      中断干扰、临界区与资源阻塞，并判断它们是否处于系统允许的时间范围内。
+    </p>
+
+    <div class="flow">
+      <div class="flow-item">明确任务期限</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">分析执行与干扰</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">评估响应时间</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">验证约束是否满足</div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>04 / 如何理解超时？</h2>
+
+    <div class="grid">
+      <div class="compare-card">
+        <h3>硬实时任务</h3>
+        <p>
+          如果截止时间是系统要求的一部分，任务错过期限就意味着该项实时要求未得到满足。
+          在安全关键或严格控制场景中，后果可能非常严重。
+        </p>
+      </div>
+
+      <div class="compare-card">
+        <h3>软实时任务</h3>
+        <p>
+          超时通常意味着服务质量下降，而不一定导致整个系统失效。
+          可以接受的延迟和超时频率，需要由具体应用需求决定。
+        </p>
+      </div>
+    </div>
+
+    <p class="note">
+      硬实时与软实时描述的是任务的时间要求及其违约后果，
+      不能简单地用来断言某一类操作系统的所有任务都具有相同的实时属性。
+    </p>
+  </section>
+
+  <section class="block">
+    <h2>05 / 为什么 8051 需要专门考虑内核结构？</h2>
+    <p>
+      在 8051 这类资源受限的单片机上，实时行为与具体处理器结构紧密相关。
+      寄存器组、堆栈空间、内存类型、编译器调用约定和中断机制，
+      都会影响上下文管理与任务切换的开销。
+    </p>
+    <p>
+      如果中断处理、上下文保存、调度和资源管理缺少整体设计，
+      就很难单独评估某一个内核功能对响应时间的实际影响。
+      因此，8051 实时内核需要在功能完整性、内存占用、运行开销与可维护性之间作出明确取舍。
+    </p>
+  </section>
+
+  <section class="block highlight">
+    <h2>06 / HRTOS 的设计方向</h2>
+    <p>
+      HRTOS 面向 8051 单片机，围绕任务调度、中断处理、上下文切换和资源管理构建专用内核，
+      并通过配套组件支持实际工程开发。
+    </p>
+
+    <div class="grid">
+      <div class="compare-card">
+        <h3>内核层</h3>
+        <p>
+          关注调度规则、中断行为、上下文管理和资源约束之间的协同，
+          而不是将它们视为彼此独立的功能。
+        </p>
+      </div>
+
+      <div class="compare-card">
+        <h3>工程层</h3>
+        <p>
+          通过 Shell、Modbus RTU、驱动、示例、技术文档和回归测试，
+          支持从内核使用到应用集成的开发过程。
+        </p>
+      </div>
+
+      <div class="compare-card">
+        <h3>验证层</h3>
+        <p>
+          结合目标芯片、编译结果、运行测试与最坏情况执行时间分析，
+          持续提高关键行为的可观察性和可分析性。
+        </p>
+      </div>
+
+      <div class="compare-card">
+        <h3>长期方向</h3>
+        <p>
+          在明确硬件与运行条件的基础上，持续改善关键路径的可预测性，
+          并以测试结果和分析证据支撑技术判断。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>07 / System View 映射</h2>
+    <p>
+      RTOS 的设计目标需要落实到具体系统机制。对于 HRTOS，
+      可以从以下几个方面观察时间约束如何贯穿内核：
+    </p>
+    <p>
+      执行流模型：关键代码路径与上下文变化。<br>
+      调度模型：任务优先级、抢占规则与等待时间。<br>
+      中断模型：响应入口、嵌套行为与中断屏蔽窗口。<br>
+      时间分析：执行开销、干扰因素与响应时间评估。
+    </p>
+    <p>
+      这些模型用于帮助理解和分析系统，并不意味着仅凭架构描述就能证明所有执行场景均满足严格的时间上界。
+    </p>
+  </section>
+
+  <section class="block highlight">
+    <h2>本页结论</h2>
+    <p>
+      RTOS 与 GPOS 的区别，应从设计目标、时间约束和具体实现来理解，
+      而不是把两类系统简单划分为“确定”与“不确定”。
+    </p>
+    <p>
+      对 HRTOS 而言，重点是针对 8051 的处理器结构和资源限制，
+      将中断、调度、上下文管理与时间分析纳入统一的工程设计，
+      并通过持续验证逐步提高关键实时行为的可预测性。
+    </p>
+  </section>
+
+</main>
 
 <footer>
   <div>© 2017–2026 HRTOS · WHY Layer</div>
 
   <div class="footer-text">
-    WHY 层用于定义实时系统成立的前提条件，包括时间确定性、调度约束与系统不可变规则。<br>
-    本层不描述实现细节，而是定义系统“为什么必须这样设计”。
+    WHY 层用于说明 HRTOS 的设计出发点、实时约束与架构取舍。
+    本页讨论 RTOS 与 GPOS 的常见差异，具体实时能力仍需结合目标硬件、
+    系统配置、任务要求和验证证据进行评估。
   </div>
 
-  <div style="margin-top:10px;">
+  <div class="footer-links">
     <a href="/why/index.html">WHY 首页</a>
     <a href="/why/01-real-time-problem.html">实时问题</a>
-    <a href="/why/02-why-general-os-fails.html">GPOS局限</a>
+    <a href="/why/02-why-general-os-fails.html">通用系统与实时设计</a>
     <a href="/system-view/index.html">System View →</a>
   </div>
 </footer>
-
-</div>
 
 </body>
 </html>

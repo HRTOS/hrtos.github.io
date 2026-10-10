@@ -1,11 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>实时问题的本质 | HRTOS Why Layer</title>
-<meta name="description" content="解释实时系统中时间约束的本质，以及为什么时间是系统正确性的核心条件">
+<title>实时问题的本质 | HRTOS</title>
+<meta name="description" content="理解实时系统中的时间约束、截止时间、确定性与最坏情况分析，以及这些原则对 8051 实时内核设计的意义。">
+
+<meta name="page-role" content="why-detail">
+<meta name="semantic-node" content="real-time-problem">
 
 <style>
 :root{
@@ -14,7 +18,7 @@
   --muted:#94a3b8;
   --accent:#38bdf8;
   --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
+  --shadow:0 16px 40px rgba(2,6,23,.24);
   --radius:10px;
 }
 
@@ -28,203 +32,434 @@ body{
   line-height:1.75;
 }
 
-/* NAV (补回统一导航) */
+a{
+  color:#7dd3fc;
+  text-decoration:none;
+  transition:color .2s ease;
+}
+
+a:hover{color:var(--accent)}
+
+/* NAV */
 .nav{
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:rgba(15,23,42,.94);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+}
+
+.nav-inner{
+  max-width:920px;
+  margin:0 auto;
+  padding:14px 20px;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:14px 24px;
-  border-bottom:1px solid rgba(148,163,184,.12);
-  background:rgba(11,15,20,.92);
-  position:sticky;
-  top:0;
+  gap:20px;
+}
+
+.nav-brand{
+  font-weight:700;
+  letter-spacing:.5px;
+  white-space:nowrap;
+}
+
+.nav-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:16px;
 }
 
 .nav a{
   color:var(--muted);
-  margin-left:14px;
-  text-decoration:none;
   font-size:14px;
 }
 
-.nav a.active{
-  color:#cfe3ff;
-}
+.nav a.active{color:#cfe3ff}
 
-/* layout */
+/* CONTENT */
 .container{
   max-width:920px;
   margin:0 auto;
-  padding:60px 24px;
+  padding:60px 20px;
+}
+
+.eyebrow{
+  color:var(--accent);
+  font-size:14px;
+  font-weight:600;
+  letter-spacing:1px;
+  margin-bottom:12px;
 }
 
 h1{
-  font-size:38px;
-  margin:0 0 10px;
+  font-size:clamp(30px,4vw,38px);
+  line-height:1.3;
+  margin:0 0 12px;
 }
 
 .sub{
   color:var(--muted);
-  margin-bottom:40px;
+  margin-bottom:38px;
+  max-width:780px;
 }
 
-/* card统一 */
+/* CARDS */
 .card{
-  background:rgba(17,24,35,.92);
+  background:rgba(17,24,35,.88);
   border:1px solid var(--border);
   border-radius:var(--radius);
   padding:22px;
-  margin-bottom:16px;
+  margin-bottom:18px;
   box-shadow:var(--shadow);
 }
 
+.card-core{
+  border-left:3px solid var(--accent);
+  background:#0f1722;
+}
+
 .card h2{
-  margin:0 0 10px;
-  font-size:18px;
+  margin:0 0 12px;
+  font-size:19px;
+  line-height:1.5;
   color:#cfe3ff;
   border-left:3px solid var(--accent);
   padding-left:10px;
 }
 
+.card p{
+  margin:0 0 12px;
+}
+
+.card p:last-child{margin-bottom:0}
+
+.keyline{
+  color:#f1f5f9;
+  font-size:18px;
+  font-weight:600;
+  margin:16px 0;
+}
+
 .en{
   color:var(--muted);
   font-size:14px;
-  margin-top:6px;
+  margin-top:10px;
 }
 
-/* footer（原样保留，不改内容结构） */
+.flow{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:16px;
+}
+
+.flow-item{
+  min-width:0;
+  padding:15px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:rgba(30,41,59,.38);
+}
+
+.flow-item strong{
+  display:block;
+  color:#dbeafe;
+  margin-bottom:5px;
+  font-size:15px;
+}
+
+.flow-item span{
+  display:block;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.callout{
+  margin-top:14px;
+  padding:13px 15px;
+  border-radius:8px;
+  background:rgba(56,189,248,.06);
+  border:1px solid rgba(56,189,248,.16);
+  color:#cbd5e1;
+  font-size:14px;
+}
+
+/* FOOTER */
 .site-footer{
   text-align:center;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding-top:12px;
+  border-top:1px solid var(--border);
+  padding:26px 20px;
   color:#8ea3be;
-  font-size:.95rem;
+  font-size:13px;
+}
+
+.footer-links{
+  margin-top:14px;
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:18px;
+}
+
+.footer-links a{font-size:13px}
+
+@media(max-width:600px){
+  .nav-inner{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:8px;
+    padding:13px 18px;
+  }
+
+  .nav-links{gap:14px}
+
+  .container{padding:42px 18px}
+
+  .card{padding:19px}
+
+  .flow{grid-template-columns:1fr}
 }
 </style>
 </head>
 
 <body>
 
-<!-- NAV（已补回，不改变你原结构逻辑） -->
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
-    <a href="/index.html">首页</a>
-    <a href="/why/index.html" class="active">Why</a>
-    <a href="/system-view/index.html">系统</a>
-    <a href="/docs/index.html">文档</a>
-  </div>
-</div>
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">HRTOS</div>
 
-<div class="container">
+    <div class="nav-links">
+      <a href="/index.html">首页</a>
+      <a href="/why/index.html" class="active">Why</a>
+      <a href="/system-view/index.html">系统</a>
+      <a href="/docs/index.html">文档</a>
+    </div>
+  </div>
+</nav>
+
+<main class="container">
+
+  <div class="eyebrow">WHY HRTOS / 01</div>
 
   <h1>实时问题的本质</h1>
-  <div class="sub">为什么“时间”在实时系统中是第一约束</div>
 
-  <div class="card">
+  <div class="sub">
+    实时系统关注的不只是任务能否完成，
+    还包括任务能否在规定的时间约束内完成。
+    理解这一点，是理解实时内核设计的起点。
+  </div>
+
+  <!-- CORE DEFINITION -->
+  <section class="card card-core">
     <h2>核心定义</h2>
-    <p>
-      在实时系统中，时间不是性能指标，而是系统正确性的组成部分。
-    </p>
-    <p>
-      如果一个任务在规定时间窗口内未完成，即使计算结果正确，也被视为错误。
-    </p>
-  </div>
 
-  <div class="card">
+    <p>
+      在实时系统中，计算结果的正确性与结果产生的时间都可能影响系统是否满足要求。
+    </p>
+
+    <p>
+      如果一个任务超过了规定的截止时间，
+      即使计算结果本身正确，也可能意味着该任务未能满足实时要求。
+    </p>
+
+    <div class="keyline">
+      实时正确性 = 功能要求 + 时间约束
+    </div>
+
+    <div class="en">
+      Real-time computing is concerned with both functional correctness and timing requirements.
+    </div>
+  </section>
+
+  <!-- TIME CONSTRAINT -->
+  <section class="card">
     <h2>时间约束的本质</h2>
-    <p>
-      实时系统的本质不是“更快”，而是“可预测”。
-    </p>
-    <p>
-      系统必须保证最坏情况下仍能在截止时间前完成任务。
-    </p>
-  </div>
 
-  <div class="card">
-    <h2>为什么必须存在时间约束系统（核心因果）</h2>
     <p>
-      实时系统的问题不是工程选择，而是结构性必然。
+      实时系统的目标不是单纯追求更快的平均执行速度，
+      而是使关键任务的响应行为满足规定的时间要求。
     </p>
 
     <p>
-      一旦系统引入外部事件（Interrupt / IO / Sensor），
-      执行流就变成：
+      对具有明确截止时间的任务，
+      需要分析任务执行时间、调度等待、中断干扰以及资源竞争等因素，
+      判断任务是否能够在规定的时间范围内完成。
     </p>
 
-    <p><b>Event + Scheduling + Execution + Time Constraint</b></p>
+    <div class="callout">
+      更快的平均速度不一定意味着更好的实时性能。
+      关键在于系统能否满足具体任务的时间约束。
+    </div>
+  </section>
+
+  <!-- CAUSAL STRUCTURE -->
+  <section class="card">
+    <h2>外部事件为什么会引入时间问题</h2>
 
     <p>
-      系统行为不再只依赖输入，而依赖“时间分布”。
+      当系统需要响应定时器、外部中断、通信数据或传感器事件时，
+      任务执行就不再只是一个独立的计算过程。
+      事件到达时间、当前系统状态和调度行为，
+      都可能影响最终的响应时刻。
     </p>
-  </div>
 
-  <div class="card">
-    <h2>时间与正确性的关系</h2>
-    <p>
-      正确性 = 结果 + 是否在截止时间前完成
-    </p>
-    <p>
-      延迟 = 逻辑错误，而不是性能问题
-    </p>
-  </div>
+    <div class="keyline">
+      Event → Interrupt → Scheduling → Execution → Response
+    </div>
 
-  <div class="card">
-    <h2>确定性（Determinism）</h2>
     <p>
-      每个操作必须具备可分析的执行时间上界。
+      因此，分析实时行为不仅需要理解任务本身，
+      还需要考虑任务如何被唤醒、何时获得处理器，
+      以及执行期间可能受到哪些干扰。
     </p>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>现实系统中的失败定义</h2>
+  <!-- DETERMINISM -->
+  <section class="card">
+    <h2>确定性与可分析性</h2>
+
     <p>
-      • 超时未完成<br>
-      • 响应超出上界<br>
-      • 调度破坏时间约束
+      确定性并不意味着系统中的每个操作都必须花费完全相同的时间。
+      更重要的是，关键执行路径的行为能够被理解，
+      相关的时间上界能够在明确的假设和条件下得到分析。
     </p>
-  </div>
 
-  <div class="card">
-    <h2>硬实时 vs 软实时</h2>
     <p>
-      硬实时：一次超时 = 系统失败<br>
-      软实时：允许偶发超时
+      对实时系统而言，需要重点关注任务响应时间、
+      中断延迟、调度等待、临界区以及最坏情况下的执行路径。
     </p>
-  </div>
 
-  <div class="card">
-    <h2>与 System View 对应关系</h2>
+    <div class="en">
+      Determinism is about predictable behavior under defined conditions, not identical execution time for every operation.
+    </div>
+  </section>
+
+  <!-- FAILURE CONDITIONS -->
+  <section class="card">
+    <h2>什么情况下会违反实时要求</h2>
+
+    <div class="flow">
+      <div class="flow-item">
+        <strong>任务超时</strong>
+        <span>任务未能在规定的截止时间前完成。</span>
+      </div>
+
+      <div class="flow-item">
+        <strong>响应超界</strong>
+        <span>事件到响应的延迟超过系统允许的范围。</span>
+      </div>
+
+      <div class="flow-item">
+        <strong>调度干扰</strong>
+        <span>高优先级任务、临界区或资源竞争影响关键任务响应。</span>
+      </div>
+
+      <div class="flow-item">
+        <strong>资源约束</strong>
+        <span>有限的内存、栈空间或其他资源影响任务正常执行。</span>
+      </div>
+    </div>
+
+    <p style="margin-top:16px;">
+      是否构成系统故障，取决于具体任务的时间要求、
+      系统安全与功能要求，以及超时后果。
+      不能将所有延迟都直接视为逻辑错误。
+    </p>
+  </section>
+
+  <!-- HARD / SOFT -->
+  <section class="card">
+    <h2>硬实时与软实时</h2>
+
     <p>
-      WHY 层定义“为什么必须这样设计”，System View 定义“如何实现”。
+      <strong>硬实时：</strong>
+      关键任务必须满足规定的截止时间，
+      超时可能构成不可接受的系统失败。
     </p>
-  </div>
 
-  <div class="card">
+    <p>
+      <strong>软实时：</strong>
+      超时通常会降低服务质量或系统效用，
+      但偶发超时不一定意味着整个系统失效。
+    </p>
+
+    <p>
+      硬实时与软实时描述的是任务时间要求及其违约后果，
+      并不能仅凭操作系统的名称或调度算法来判定。
+    </p>
+  </section>
+
+  <!-- HRTOS CONNECTION -->
+  <section class="card card-core">
+    <h2>这与 HRTOS 有什么关系</h2>
+
+    <p>
+      在 8051 平台上，处理器资源有限，
+      中断处理、寄存器上下文保存、任务切换和调度机制之间存在紧密联系。
+      这些机制不仅决定系统如何运行，也影响关键任务的实际响应时间。
+    </p>
+
+    <p>
+      HRTOS 围绕任务调度、中断管理、上下文切换和资源控制构建专用内核，
+      并持续推进测试与最坏情况执行时间分析，
+      以更系统地理解关键路径的时间成本。
+    </p>
+
+    <div class="callout">
+      对具体目标芯片而言，实时性能仍需结合实际编译结果、
+      系统配置、硬件条件和分析覆盖范围进行验证。
+      设计目标与已验证的保证应当明确区分。
+    </div>
+  </section>
+
+  <!-- CONCLUSION -->
+  <section class="card">
     <h2>核心结论</h2>
+
     <p>
-      实时系统是“时间作为一等约束变量”的计算模型。
+      实时系统不是简单地追求执行速度，
+      而是让系统行为满足明确的时间约束。
+      为此，需要理解任务执行、调度、中断、资源竞争与响应时间之间的关系。
     </p>
-  </div>
 
-</div>
+    <p>
+      这也是 HRTOS 设计与持续完善的出发点：
+      从实时需求出发，围绕 8051 的实际执行机制构建内核，
+      并通过测试、分析和长期维护逐步提高系统的可理解性与可验证性。
+    </p>
 
-<!-- ✅ 你要求：原 footer 完整保留，不改 -->
+    <p>
+      <a href="/why/index.html">返回 WHY 首页 →</a>
+      &nbsp;&nbsp;
+      <a href="/system-view/index.html">查看系统架构 →</a>
+      &nbsp;&nbsp;
+      <a href="/docs/index.html">查看技术文档 →</a>
+    </p>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
 <footer class="site-footer">
   <div style="margin-bottom:10px;">
     © 2017–2026 HRTOS · WHY Layer
   </div>
 
   <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:800px;margin:0 auto;">
-    WHY 层用于定义实时系统成立的前提条件，包括时间确定性、调度约束与系统不可变规则。<br>
-    本层不描述实现细节，而是定义系统“为什么必须这样设计”。
+    本页面介绍实时系统的基本原理与时间约束。
+    具体内核能力、资源要求和实时性能，应以对应版本的技术文档、
+    目标硬件测试及可复核的分析结果为准。
   </div>
 
-  <div style="margin-top:14px;font-size:13px;">
-    <a href="/why/index.html" style="color:#7dd3fc;margin-right:12px;">WHY 首页</a>
-    <a href="/why/01-real-time-problem.html" style="color:#7dd3fc;margin-right:12px;">实时问题</a>
-    <a href="/why/02-why-general-os-fails.html" style="color:#7dd3fc;margin-right:12px;">GPOS局限</a>
-    <a href="/system-view/index.html" style="color:#7dd3fc;">System View →</a>
+  <div class="footer-links">
+    <a href="/why/index.html">WHY 首页</a>
+    <a href="/why/01-real-time-problem.html">实时问题</a>
+    <a href="/why/02-why-general-os-fails.html">GPOS 设计取舍</a>
+    <a href="/system-view/index.html">System View →</a>
   </div>
 </footer>
 
