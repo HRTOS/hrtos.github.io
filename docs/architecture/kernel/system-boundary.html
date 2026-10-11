@@ -1,34 +1,48 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>系统边界（System Boundary）| HRTOS Architecture</title>
-<meta name="description" content="定义HRTOS内核与外部世界的边界模型：调度域、时间域、资源域与不确定性隔离">
+<title>系统边界 System Boundary | HRTOS Architecture</title>
+<meta name="description" content="HRTOS 系统边界架构说明：分析内核、应用任务与硬件环境之间的职责边界，以及时间、资源和外部事件约束如何影响实时系统的可预测性。" />
+<meta name="keywords" content="HRTOS,System Boundary,系统边界,8051 RTOS,实时系统,时间约束,资源约束,中断管理" />
+<link rel="canonical" href="https://hrtos.com/docs/architecture/kernel/system-boundary.html" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root{
-  --bg:#0f172a;
-  --border:rgba(148,163,184,.18);
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+  --sb-bg:#0b1120;
+  --sb-panel:#111c30;
+  --sb-panel-soft:#152238;
+  --sb-border:rgba(148,163,184,.17);
+  --sb-border-accent:rgba(56,189,248,.30);
+  --sb-text:#e5edf8;
+  --sb-muted:#9aabc2;
+  --sb-accent:#7dd3fc;
+  --sb-accent-strong:#38bdf8;
+  --sb-radius:14px;
+  --sb-shadow:0 18px 44px rgba(0,0,0,.17);
   color-scheme:dark;
 }
 
 *{box-sizing:border-box}
 
+html{
+  scroll-behavior:smooth;
+  scroll-padding-top:100px;
+}
+
 body{
   margin:0;
-  background:var(--bg);
-  color:var(--text);
+  background:
+    radial-gradient(ellipse at 82% 0%,rgba(14,116,144,.10),transparent 35%),
+    var(--sb-bg);
+  color:var(--sb-text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
+  line-height:1.8;
 }
 
 a{
@@ -36,108 +50,633 @@ a{
   text-decoration:none;
 }
 
+a:focus-visible{
+  outline:2px solid var(--sb-accent);
+  outline-offset:4px;
+}
+
 .page{
-  width:min(1180px, calc(100% - 40px));
+  width:min(1160px,calc(100% - 40px));
   margin:0 auto;
-  padding:96px 0 56px;
+  padding:104px 0 64px;
   display:grid;
-  gap:40px;
+  gap:35px;
 }
 
 .breadcrumb{
-  font-size:14px;
-  color:var(--muted);
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:9px;
+  color:var(--sb-muted);
+  font-size:13px;
 }
 
 .breadcrumb a{
-  color:#7dd3fc;
+  transition:color .2s ease;
+}
+
+.breadcrumb a:hover{
+  color:var(--sb-accent);
+}
+
+.breadcrumb .separator{
+  color:#52637a;
 }
 
 .hero{
-  display:grid;
-  gap:16px;
+  position:relative;
+  overflow:hidden;
+  padding:39px 36px;
+  border:1px solid var(--sb-border);
+  border-radius:20px;
+  background:
+    linear-gradient(120deg,rgba(14,116,144,.14),transparent 55%),
+    linear-gradient(155deg,#142239,#0e1729);
+  box-shadow:var(--sb-shadow);
 }
 
-.hero-label{
+.hero::after{
+  content:"BOUNDARY";
+  position:absolute;
+  right:20px;
+  bottom:-14px;
+  color:rgba(148,163,184,.045);
+  font-size:clamp(52px,9vw,105px);
+  line-height:1;
+  font-weight:800;
+  letter-spacing:.06em;
+  pointer-events:none;
+}
+
+.hero-content{
+  position:relative;
+  z-index:1;
+  max-width:850px;
+}
+
+.eyebrow{
   display:inline-flex;
-  width:fit-content;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.22);
-  color:#bae6fd;
-  font-size:14px;
+  align-items:center;
+  gap:9px;
+  margin-bottom:17px;
+  color:var(--sb-accent);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+
+.eyebrow::before{
+  content:"";
+  width:22px;
+  height:2px;
+  border-radius:2px;
+  background:var(--sb-accent-strong);
 }
 
 .hero h1{
   margin:0;
-  font-size:42px;
+  font-size:clamp(30px,4.5vw,45px);
+  line-height:1.3;
+  letter-spacing:-.035em;
 }
 
-.hero p{
-  margin:0;
-  max-width:820px;
-  color:var(--muted);
+.hero h1 span{
+  display:block;
+  margin-top:9px;
+  color:var(--sb-accent);
+  font-size:clamp(17px,2.2vw,22px);
+  font-weight:500;
+  letter-spacing:0;
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+.hero-description{
+  max-width:760px;
+  margin:22px 0 0;
+  color:#b1bfd2;
+  font-size:15px;
 }
 
-.card{
-  display:grid;
-  gap:12px;
-  padding:24px 22px;
-  min-height:160px;
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  transition:.22s ease;
+.hero-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin-top:23px;
 }
 
-.card:hover{
-  transform:translateY(-6px);
-  border-color:rgba(56,189,248,.38);
-}
-
-.card h3{
-  margin:0;
-  font-size:18px;
-}
-
-.card p{
-  margin:0;
-  color:var(--muted);
-  font-size:14px;
+.meta-item{
+  padding:5px 11px;
+  border:1px solid var(--sb-border);
+  border-radius:7px;
+  background:rgba(15,23,42,.42);
+  color:#c5d3e5;
+  font-size:12px;
 }
 
 .section{
   display:grid;
-  gap:12px;
+  gap:17px;
 }
 
-.section h2{
+.section-heading{
+  display:flex;
+  align-items:flex-start;
+  gap:15px;
+}
+
+.section-index{
+  display:grid;
+  place-items:center;
+  flex:0 0 38px;
+  width:38px;
+  height:38px;
+  border:1px solid var(--sb-border-accent);
+  border-radius:10px;
+  background:rgba(56,189,248,.07);
+  color:var(--sb-accent);
+  font-size:13px;
+  font-weight:700;
+}
+
+.section-heading h2{
   margin:0;
-  font-size:22px;
+  font-size:23px;
+  line-height:1.45;
+  letter-spacing:-.02em;
 }
 
-.section p{
-  margin:0;
-  color:var(--muted);
-}
-
-.footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:#8ea3be;
+.section-heading p{
+  margin:5px 0 0;
+  color:var(--sb-muted);
   font-size:14px;
 }
 
+.prose{
+  color:#bac8da;
+  font-size:14px;
+}
+
+.prose p{
+  margin:0 0 12px;
+}
+
+.prose p:last-child{
+  margin-bottom:0;
+}
+
+.prose strong{
+  color:#e5edf8;
+  font-weight:650;
+}
+
+.definition-panel{
+  padding:26px;
+  border:1px solid var(--sb-border);
+  border-radius:var(--sb-radius);
+  background:linear-gradient(145deg,rgba(21,34,56,.92),rgba(13,22,39,.92));
+}
+
+.definition-top{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.definition-label{
+  color:var(--sb-muted);
+  font-size:12px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.definition-equation{
+  margin:20px 0;
+  color:#f0f7ff;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:clamp(24px,4vw,34px);
+  font-weight:700;
+  letter-spacing:.015em;
+}
+
+.definition-equation span{
+  color:var(--sb-accent);
+}
+
+.definition-description{
+  max-width:780px;
+  margin:0;
+  color:var(--sb-muted);
+  font-size:13px;
+}
+
+.constraint-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+
+.constraint-card{
+  display:grid;
+  align-content:start;
+  gap:12px;
+  min-width:0;
+  padding:22px;
+  border:1px solid var(--sb-border);
+  border-radius:12px;
+  background:rgba(17,28,48,.75);
+  transition:border-color .2s ease,transform .2s ease;
+}
+
+.constraint-card:hover{
+  transform:translateY(-3px);
+  border-color:var(--sb-border-accent);
+}
+
+.constraint-code{
+  color:var(--sb-accent);
+  font-family:Consolas,"Courier New",monospace;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.08em;
+}
+
+.constraint-card h3{
+  margin:0;
+  font-size:17px;
+}
+
+.constraint-card p{
+  margin:0;
+  color:var(--sb-muted);
+  font-size:13px;
+}
+
+.constraint-examples{
+  display:grid;
+  gap:7px;
+  padding-top:12px;
+  border-top:1px solid var(--sb-border);
+}
+
+.constraint-examples span{
+  position:relative;
+  padding-left:13px;
+  color:#c4d2e4;
+  font-size:12px;
+}
+
+.constraint-examples span::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:.75em;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:var(--sb-accent-strong);
+}
+
+.boundary-model{
+  padding:25px;
+  border:1px solid var(--sb-border);
+  border-radius:var(--sb-radius);
+  background:rgba(17,28,48,.65);
+}
+
+.model-caption{
+  margin:0 0 19px;
+  color:var(--sb-muted);
+  font-size:13px;
+}
+
+.environment-flow{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 34px minmax(0,1.15fr) 34px minmax(0,1fr);
+  align-items:stretch;
+  gap:8px;
+}
+
+.environment-node{
+  display:grid;
+  align-content:center;
+  gap:9px;
+  min-height:145px;
+  padding:17px;
+  border:1px solid var(--sb-border);
+  border-radius:11px;
+  background:var(--sb-panel);
+}
+
+.environment-node.kernel{
+  border-color:var(--sb-border-accent);
+  background:linear-gradient(155deg,rgba(14,116,144,.15),rgba(17,28,48,.94));
+}
+
+.environment-node h3{
+  margin:0;
+  font-size:15px;
+}
+
+.environment-node p{
+  margin:0;
+  color:var(--sb-muted);
+  font-size:12px;
+}
+
+.environment-tag{
+  color:var(--sb-accent);
+  font-family:Consolas,"Courier New",monospace;
+  font-size:10px;
+  letter-spacing:.07em;
+}
+
+.environment-arrow{
+  display:grid;
+  place-items:center;
+  color:var(--sb-accent);
+  font-size:24px;
+}
+
+.boundary-note{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid var(--sb-border);
+  color:var(--sb-muted);
+  font-size:12px;
+}
+
+.domain-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+
+.domain-card{
+  padding:22px;
+  border:1px solid var(--sb-border);
+  border-radius:12px;
+  background:linear-gradient(155deg,rgba(21,34,56,.84),rgba(13,22,39,.84));
+}
+
+.domain-card h3{
+  margin:0 0 8px;
+  font-size:17px;
+}
+
+.domain-card p{
+  margin:0;
+  color:var(--sb-muted);
+  font-size:13px;
+}
+
+.domain-card .domain-role{
+  display:block;
+  margin-top:13px;
+  padding-top:12px;
+  border-top:1px solid var(--sb-border);
+  color:#c8d6e8;
+  font-size:12px;
+}
+
+.control-list{
+  display:grid;
+  gap:0;
+  border:1px solid var(--sb-border);
+  border-radius:12px;
+  overflow:hidden;
+}
+
+.control-row{
+  display:grid;
+  grid-template-columns:minmax(150px,.7fr) minmax(0,1.5fr);
+  gap:20px;
+  padding:17px 20px;
+  background:rgba(17,28,48,.62);
+}
+
+.control-row+.control-row{
+  border-top:1px solid var(--sb-border);
+}
+
+.control-row h3{
+  margin:0;
+  color:#e5edf8;
+  font-size:14px;
+}
+
+.control-row p{
+  margin:0;
+  color:var(--sb-muted);
+  font-size:13px;
+}
+
+.note{
+  padding:17px 20px;
+  border-left:3px solid var(--sb-accent-strong);
+  border-radius:0 9px 9px 0;
+  background:rgba(56,189,248,.055);
+  color:#b7c7db;
+  font-size:13px;
+}
+
+.note strong{
+  color:#e1f5ff;
+}
+
+.docs-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:13px;
+}
+
+.doc-link{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  min-width:0;
+  padding:17px;
+  border:1px solid var(--sb-border);
+  border-radius:11px;
+  background:rgba(17,28,48,.58);
+  transition:border-color .2s ease,background .2s ease;
+}
+
+.doc-link:hover{
+  border-color:var(--sb-border-accent);
+  background:rgba(21,34,56,.85);
+}
+
+.doc-link strong{
+  display:block;
+  font-size:13px;
+}
+
+.doc-link small{
+  display:block;
+  margin-top:5px;
+  color:var(--sb-muted);
+  font-size:11px;
+  line-height:1.6;
+}
+
+.doc-arrow{
+  flex:0 0 auto;
+  color:var(--sb-accent);
+  font-size:17px;
+}
+
+.back-row{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  padding-top:22px;
+  border-top:1px solid var(--sb-border);
+}
+
+.back-link{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  padding:10px 15px;
+  border:1px solid var(--sb-border);
+  border-radius:8px;
+  color:#c9d7e8;
+  font-size:13px;
+  transition:border-color .2s ease,color .2s ease;
+}
+
+.back-link:hover{
+  border-color:var(--sb-border-accent);
+  color:var(--sb-accent);
+}
+
+.back-note{
+  color:#71839b;
+  font-size:12px;
+}
+
+.footer{
+  padding-top:22px;
+  border-top:1px solid var(--sb-border);
+  color:#7588a1;
+  font-size:12px;
+  text-align:center;
+}
+
 @media(max-width:900px){
-  .grid{grid-template-columns:1fr;}
+  .constraint-grid{
+    grid-template-columns:1fr;
+  }
+
+  .docs-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .environment-flow{
+    grid-template-columns:minmax(0,1fr) 24px minmax(0,1.15fr);
+  }
+
+  .environment-flow .environment-node:last-child{
+    grid-column:1 / -1;
+  }
+
+  .environment-flow .environment-arrow:nth-of-type(4){
+    display:none;
+  }
+}
+
+@media(max-width:620px){
+  .page{
+    width:calc(100% - 28px);
+    padding-top:84px;
+    gap:27px;
+  }
+
+  .hero{
+    padding:27px 21px;
+    border-radius:15px;
+  }
+
+  .hero::after{
+    right:8px;
+    bottom:-3px;
+    font-size:48px;
+  }
+
+  .hero-description{
+    font-size:14px;
+  }
+
+  .section-heading{
+    gap:11px;
+  }
+
+  .section-index{
+    flex-basis:33px;
+    width:33px;
+    height:33px;
+  }
+
+  .section-heading h2{
+    font-size:20px;
+  }
+
+  .definition-panel,
+  .boundary-model{
+    padding:18px;
+  }
+
+  .domain-grid,
+  .docs-grid{
+    grid-template-columns:1fr;
+  }
+
+  .environment-flow{
+    grid-template-columns:1fr;
+  }
+
+  .environment-node,
+  .environment-node.kernel{
+    min-height:auto;
+    padding:18px;
+  }
+
+  .environment-arrow{
+    min-height:22px;
+    transform:rotate(90deg);
+  }
+
+  .environment-flow .environment-node:last-child{
+    grid-column:auto;
+  }
+
+  .environment-flow .environment-arrow:nth-of-type(4){
+    display:grid;
+  }
+
+  .control-row{
+    grid-template-columns:1fr;
+    gap:5px;
+    padding:15px;
+  }
+
+  .back-row{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    transition:none!important;
+  }
 }
 </style>
 </head>
@@ -146,100 +685,375 @@ a{
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/architecture/index.html">系统架构</a> /
-    <span>系统边界</span>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="separator">/</span>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <span class="separator">/</span>
+    <a href="/docs/architecture/kernel/index.html">内核架构</a>
+    <span class="separator">/</span>
+    <span aria-current="page">系统边界</span>
   </nav>
 
-  <!-- HERO -->
-  <section class="hero">
-    <span class="hero-label">HRTOS Architecture Model</span>
-    <h1>系统边界（System Boundary Layer）</h1>
-    <p>定义 Kernel 与外部环境之间的可计算分割结构，用于约束实时系统的可执行范围。</p>
+  <header class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">HRTOS · SYSTEM ARCHITECTURE</div>
+      <h1>
+        系统边界
+        <span>System Boundary &amp; Execution Constraints</span>
+      </h1>
+      <p class="hero-description">
+        系统边界用于描述内核、应用任务与硬件环境之间的职责分界，
+        并明确时间、资源和外部事件对系统执行行为的约束。
+        它为分析实时系统的可预测性、资源使用和验证范围提供统一的架构视角。
+      </p>
+      <div class="hero-meta">
+        <span class="meta-item">Execution Constraints</span>
+        <span class="meta-item">Resource Control</span>
+        <span class="meta-item">Predictability</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="section" id="definition">
+    <div class="section-heading">
+      <span class="section-index">01</span>
+      <div>
+        <h2>边界模型定义</h2>
+        <p>用一组约束维度描述系统运行所依赖的条件。</p>
+      </div>
+    </div>
+
+    <div class="definition-panel">
+      <div class="definition-top">
+        <span class="definition-label">Conceptual Constraint Model</span>
+        <span class="meta-item">架构分析模型</span>
+      </div>
+
+      <div class="definition-equation">
+        B = {<span>T</span>, <span>R</span>, <span>I</span>}
+      </div>
+
+      <p class="definition-description">
+        其中，T 表示时间约束，R 表示资源约束，I 表示外部事件与执行不确定性约束。
+        该表达式是用于组织系统边界分析的概念模型，并非 HRTOS 内核中的实际数据结构或可直接计算的数学保证。
+      </p>
+    </div>
+
+    <div class="prose">
+      <p>
+        系统边界不是简单地将 Kernel 与外部环境分开，而是明确：
+        哪些行为由内核控制，哪些条件由应用或硬件决定，以及这些条件如何影响系统的执行路径和实时响应。
+      </p>
+    </div>
   </section>
 
-
-
-
-
-<section class="section">
-  <h2>1. 边界模型定义</h2>
-
-  <p>系统边界定义 Kernel 与外部世界之间的可计算约束空间。</p>
-
-  <p><b>B = {Tb, Rb, Ib}</b></p>
-
-  <p>
-    Tb = 时间约束<br/>
-    Rb = 资源约束<br/>
-    Ib = 不确定性约束
-  </p>
-</section>
-
-<section class="section">
-  <h2>2. Kernel 在边界中的角色</h2>
-
-  <p><b>Kernel = 边界执行单元</b></p>
-
-  <p>负责保证所有执行行为符合系统边界约束。</p>
-
-  <p><b>禁止：</b>无界阻塞 / 不确定动态分配 / 越权访问</p>
-</section>
-
-
-
-  <!-- 4 GRID -->
-    <section class="section">
-      <h2>3. 系统域结构</h2>
-
-      <div class="grid">
-
-        <div class="card">
-          <h3>调度域</h3>
-          <p>已注册任务 + ready/running 状态 + 优先级约束集合</p>
-        </div>
-
-        <div class="card">
-          <h3>时间域</h3>
-          <p>任务执行必须满足确定性时间约束（Tb）</p>
-        </div>
-
-        <div class="card">
-          <h3>资源域</h3>
-          <p>内存、CPU、外设资源的可控分配边界（Rb）</p>
-        </div>
-
-        <div class="card">
-          <h3>不确定性域</h3>
-          <p>对外部事件扰动的隔离与约束（Ib）</p>
-        </div>
-
+  <section class="section" id="constraints">
+    <div class="section-heading">
+      <span class="section-index">02</span>
+      <div>
+        <h2>三类核心约束</h2>
+        <p>时间、资源和外部事件共同决定系统行为的分析范围。</p>
       </div>
-    </section>
+    </div>
 
-  <!-- 5 -->
-<section class="section">
-  <h2>4. 隔离机制</h2>
+    <div class="constraint-grid">
 
-  <p>
-    时间隔离 / 内存隔离 / 中断门控 / 优先级封顶
-  </p>
-</section>
+      <article class="constraint-card">
+        <span class="constraint-code">T / TIME</span>
+        <h3>时间约束</h3>
+        <p>
+          描述任务执行、中断响应、调度决策与上下文切换所涉及的时间要求和时间开销。
+        </p>
+        <div class="constraint-examples">
+          <span>任务截止时间与周期</span>
+          <span>中断响应及临界区时长</span>
+          <span>调度与上下文切换开销</span>
+        </div>
+      </article>
 
-  <!-- 6 -->
-<section class="section">
-  <h2>5. 系统意义</h2>
+      <article class="constraint-card">
+        <span class="constraint-code">R / RESOURCE</span>
+        <h3>资源约束</h3>
+        <p>
+          描述处理器、存储空间、任务栈和外设等有限资源的使用边界。
+        </p>
+        <div class="constraint-examples">
+          <span>DATA、IDATA 与 XDATA 使用量</span>
+          <span>任务栈与中断栈空间</span>
+          <span>CPU 占用及外设访问约束</span>
+        </div>
+      </article>
 
-  <p>
-    <b>系统边界 = Kernel 可执行约束的边界。</b>
-    没有系统边界，就没有可预测的 RTOS 行为。
-  </p>
-</section>
+      <article class="constraint-card">
+        <span class="constraint-code">I / INPUT</span>
+        <h3>外部事件与不确定性</h3>
+        <p>
+          描述外部输入、硬件时序和异步事件如何影响系统执行，以及分析时需要明确哪些前提条件。
+        </p>
+        <div class="constraint-examples">
+          <span>外部中断到达频率</span>
+          <span>通信流量与输入突发行为</span>
+          <span>硬件响应及环境假设</span>
+        </div>
+      </article>
 
+    </div>
+  </section>
+
+  <section class="section" id="boundary-structure">
+    <div class="section-heading">
+      <span class="section-index">03</span>
+      <div>
+        <h2>内核与外部环境的职责边界</h2>
+        <p>明确内核可以控制什么，以及哪些行为仍然依赖系统集成与硬件条件。</p>
+      </div>
+    </div>
+
+    <div class="boundary-model">
+      <p class="model-caption">
+        概念关系图：内核位于应用执行与硬件机制之间，依靠接口、调度和中断处理与两侧协作。
+      </p>
+
+      <div class="environment-flow">
+        <article class="environment-node">
+          <span class="environment-tag">APPLICATION</span>
+          <h3>应用与任务</h3>
+          <p>任务逻辑、资源请求、阻塞等待、数据处理和外部接口调用。</p>
+        </article>
+
+        <div class="environment-arrow" aria-hidden="true">↔</div>
+
+        <article class="environment-node kernel">
+          <span class="environment-tag">KERNEL</span>
+          <h3>内核控制机制</h3>
+          <p>任务状态管理、调度决策、上下文切换、内核服务及相关执行约束。</p>
+        </article>
+
+        <div class="environment-arrow" aria-hidden="true">↔</div>
+
+        <article class="environment-node">
+          <span class="environment-tag">HARDWARE</span>
+          <h3>处理器与外设</h3>
+          <p>CPU、定时器、中断控制、存储资源和外部设备行为。</p>
+        </article>
+      </div>
+
+      <div class="boundary-note">
+        双向箭头表示接口与控制关系，并不代表三个部分具有相同的控制能力。
+        实际边界取决于处理器架构、驱动实现、内核机制和应用约定。
+      </div>
+    </div>
+
+    <div class="prose">
+      <p>
+        Kernel 可以管理其实现范围内的调度规则、任务状态和执行现场，但不能仅凭内核自身就保证任意应用程序都满足截止时间，
+        也不能消除硬件故障、不可控外部输入或未受约束的中断行为。
+      </p>
+      <p>
+        因此，系统级实时性需要将内核机制与应用执行时间、驱动行为、中断负载和硬件条件一起分析。
+      </p>
+    </div>
+  </section>
+
+  <section class="section" id="domains">
+    <div class="section-heading">
+      <span class="section-index">04</span>
+      <div>
+        <h2>系统域结构</h2>
+        <p>从四个相互关联的领域，将抽象约束映射到工程实现。</p>
+      </div>
+    </div>
+
+    <div class="domain-grid">
+
+      <article class="domain-card">
+        <h3>调度域</h3>
+        <p>
+          关注任务的注册、状态、优先级及调度规则，分析任务在什么条件下能够获得执行机会。
+        </p>
+        <span class="domain-role">主要问题：谁可以运行，何时获得执行权？</span>
+      </article>
+
+      <article class="domain-card">
+        <h3>时间域</h3>
+        <p>
+          关注任务执行时间、中断延迟、临界区长度和调度开销，并明确响应时间分析所依赖的前提。
+        </p>
+        <span class="domain-role">主要问题：执行需要多久，响应是否满足要求？</span>
+      </article>
+
+      <article class="domain-card">
+        <h3>资源域</h3>
+        <p>
+          关注有限 RAM、程序空间、任务栈、CPU 时间和外设资源，明确资源容量与使用约束。
+        </p>
+        <span class="domain-role">主要问题：资源是否充足，使用是否可控？</span>
+      </article>
+
+      <article class="domain-card">
+        <h3>事件域</h3>
+        <p>
+          关注中断来源、事件到达频率、通信负载和异步输入，确定外部事件对执行路径的影响。
+        </p>
+        <span class="domain-role">主要问题：什么事件可能到达，最坏负载是什么？</span>
+      </article>
+
+    </div>
+  </section>
+
+  <section class="section" id="enforcement">
+    <div class="section-heading">
+      <span class="section-index">05</span>
+      <div>
+        <h2>边界如何落实到工程中</h2>
+        <p>将架构约束转化为实现规则、运行时控制和可验证的测量结果。</p>
+      </div>
+    </div>
+
+    <div class="control-list">
+      <div class="control-row">
+        <h3>调度与任务状态</h3>
+        <p>
+          通过明确的任务状态转换、优先级规则和调度路径，约束任务获得 CPU 执行权的方式。
+        </p>
+      </div>
+
+      <div class="control-row">
+        <h3>中断与临界区</h3>
+        <p>
+          明确中断优先级、允许的嵌套关系、临界区范围和中断退出行为，并测量关键路径的实际延迟。
+        </p>
+      </div>
+
+      <div class="control-row">
+        <h3>内存与栈管理</h3>
+        <p>
+          结合目标芯片的 DATA、IDATA、XDATA 容量和实际调用深度，评估任务栈、中断栈及内核数据结构的空间开销。
+        </p>
+      </div>
+
+      <div class="control-row">
+        <h3>驱动与外部输入</h3>
+        <p>
+          为驱动执行时间、通信数据量和事件到达频率建立适用的约束，避免将不可控输入默认视为有界行为。
+        </p>
+      </div>
+
+      <div class="control-row">
+        <h3>测试与时间分析</h3>
+        <p>
+          通过压力测试、时间测量和最坏情况分析检查关键执行路径，并记录目标硬件、编译配置和测试条件。
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>重要区别：</strong>
+      中断门控、优先级限制和资源管理等是可采用的控制手段，不代表系统自动具备完整的内存保护或硬实时保证。
+      具体能力应以 HRTOS 的实际实现、目标芯片能力和验证结果为准。
+    </div>
+  </section>
+
+  <section class="section" id="engineering-meaning">
+    <div class="section-heading">
+      <span class="section-index">06</span>
+      <div>
+        <h2>系统边界的工程意义</h2>
+        <p>边界的价值不在于提出抽象口号，而在于明确分析范围与验证条件。</p>
+      </div>
+    </div>
+
+    <div class="prose">
+      <p>
+        如果任务执行时间、中断负载、资源使用和外部输入都缺少明确约束，
+        就很难仅凭调度算法推导整个系统的响应上限。
+        系统边界的作用，是将这些条件显式化，让设计人员知道哪些行为可以由内核控制，
+        哪些需要应用与驱动配合，以及哪些必须通过测量或分析验证。
+      </p>
+      <p>
+        对资源受限的 8051 系统，这一点尤其重要：有限的 RAM、寄存器组、任务栈和中断处理路径，
+        都会影响系统可承受的任务规模、事件负载和执行开销。
+      </p>
+    </div>
+
+    <div class="note">
+      <strong>核心结论：</strong>
+      系统边界定义了实时性分析的前提与范围；内核机制负责落实其中一部分约束，
+      应用、驱动和硬件则共同决定系统最终能否满足目标要求。
+    </div>
+  </section>
+
+  <section class="section" id="related-docs">
+    <div class="section-heading">
+      <span class="section-index">07</span>
+      <div>
+        <h2>关联架构文档</h2>
+        <p>从系统边界进一步了解内核控制与实时执行机制。</p>
+      </div>
+    </div>
+
+    <div class="docs-grid">
+      <a class="doc-link" href="/docs/architecture/kernel/index.html">
+        <span>
+          <strong>内核架构</strong>
+          <small>返回内核架构文档入口</small>
+        </span>
+        <span class="doc-arrow">→</span>
+      </a>
+
+      <a class="doc-link" href="/docs/architecture/kernel/kernel-overview.html">
+        <span>
+          <strong>内核架构总览</strong>
+          <small>了解内核的整体职责与组织方式</small>
+        </span>
+        <span class="doc-arrow">→</span>
+      </a>
+
+      <a class="doc-link" href="/docs/architecture/kernel/kernel-structure.html">
+        <span>
+          <strong>内核结构</strong>
+          <small>了解调度、执行和中断等功能领域</small>
+        </span>
+        <span class="doc-arrow">→</span>
+      </a>
+
+      <a class="doc-link" href="/docs/architecture/kernel/kernel-flow.html">
+        <span>
+          <strong>内核执行流程</strong>
+          <small>了解内核控制路径与执行权转移</small>
+        </span>
+        <span class="doc-arrow">→</span>
+      </a>
+
+      <a class="doc-link" href="/docs/architecture/interrupt/index.html">
+        <span>
+          <strong>中断架构</strong>
+          <small>了解中断响应和中断处理机制</small>
+        </span>
+        <span class="doc-arrow">→</span>
+      </a>
+
+      <a class="doc-link" href="/docs/system/scheduling-flow.html">
+        <span>
+          <strong>任务调度流程</strong>
+          <small>了解调度决策与任务执行顺序</small>
+        </span>
+        <span class="doc-arrow">→</span>
+      </a>
+    </div>
+  </section>
+
+  <div class="back-row">
+    <a class="back-link" href="/docs/architecture/kernel/index.html">
+      <span aria-hidden="true">←</span>
+      返回内核架构
+    </a>
+    <span class="back-note">HRTOS · System Boundary Reference</span>
+  </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的内核结构模型。
+    © 2017–2026 HRTOS. 系统边界与实时执行约束架构文档。
   </footer>
 
 </main>

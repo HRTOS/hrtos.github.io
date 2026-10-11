@@ -1,34 +1,45 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>内存模型 | HRTOS 架构文档</title>
-<meta name="description" content="HRTOS 内存模型定义任务、内核与资源在运行时的内存分配与访问逻辑，用于保证实时性与确定性。" />
+<title>内存模型 Memory Model | HRTOS 架构文档</title>
+<meta name="description" content="HRTOS 内存模型架构文档，介绍运行时对象访问、生命周期、共享资源同步、内存分配及访问成本约束。" />
+<meta name="keywords" content="HRTOS, 8051, 内存模型, Memory Model, 运行时内存, 内存池, IPC, 任务同步, 实时系统" />
+<link rel="canonical" href="https://hrtos.com/docs/architecture/memory/memory-model.html" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root{
-  --bg:#0f172a;
-  --border:rgba(148,163,184,.18);
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+  --mm-bg:#0b1220;
+  --mm-panel:#111c30;
+  --mm-panel-2:#152238;
+  --mm-border:rgba(148,163,184,.17);
+  --mm-text:#e5edf8;
+  --mm-muted:#9aabc1;
+  --mm-accent:#38bdf8;
+  --mm-accent-soft:rgba(56,189,248,.08);
+  --mm-green:#6ee7b7;
+  --mm-amber:#fbbf24;
+  --mm-radius:15px;
   color-scheme:dark;
 }
 
 *{box-sizing:border-box}
 
+html{scroll-behavior:smooth}
+
 body{
   margin:0;
-  background:var(--bg);
-  color:var(--text);
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(14,116,144,.13),transparent 34%),
+    var(--mm-bg);
+  color:var(--mm-text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
+  line-height:1.75;
 }
 
 a{
@@ -36,269 +47,852 @@ a{
   text-decoration:none;
 }
 
+a:focus-visible{
+  outline:2px solid var(--mm-accent);
+  outline-offset:4px;
+  border-radius:4px;
+}
+
 .page{
-  width:min(1180px, calc(100% - 40px));
+  width:min(1160px,calc(100% - 40px));
   margin:0 auto;
   padding:96px 0 56px;
   display:grid;
-  gap:40px;
+  gap:34px;
 }
 
 .breadcrumb{
-  font-size:14px;
-  color:var(--muted);
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  color:var(--mm-muted);
+  font-size:13px;
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
-}
+.breadcrumb a{color:#8bdcff}
+.breadcrumb a:hover{color:#d5f3ff}
+.breadcrumb .sep{color:#52637a}
 
 .hero{
-  display:grid;
-  gap:16px;
+  position:relative;
+  overflow:hidden;
+  padding:clamp(26px,5vw,52px);
+  border:1px solid rgba(56,189,248,.2);
+  border-radius:22px;
+  background:
+    linear-gradient(120deg,rgba(14,116,144,.13),transparent 55%),
+    linear-gradient(145deg,#14243a,#0e1728 72%);
 }
 
-.hero-label{
-  display:inline-flex;
-  width:fit-content;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.22);
-  color:#bae6fd;
-  font-size:14px;
+.hero::after{
+  content:"MEMORY / MODEL";
+  position:absolute;
+  right:22px;
+  bottom:10px;
+  color:rgba(148,163,184,.055);
+  font-family:Consolas,monospace;
+  font-size:clamp(24px,5vw,54px);
+  font-weight:700;
+  letter-spacing:.08em;
+  pointer-events:none;
+  white-space:nowrap;
+}
+
+.hero-content{
+  position:relative;
+  z-index:1;
+  display:grid;
+  gap:18px;
+}
+
+.eyebrow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:#8bdcff;
+  font-family:Consolas,monospace;
+  font-size:12px;
+  letter-spacing:.13em;
+}
+
+.eyebrow::before{
+  content:"";
+  width:22px;
+  height:2px;
+  background:var(--mm-accent);
 }
 
 .hero h1{
   margin:0;
-  font-size:42px;
+  font-size:clamp(30px,5vw,46px);
+  line-height:1.2;
+  letter-spacing:-.035em;
+}
+
+.hero h1 span{
+  display:block;
+  margin-top:10px;
+  color:#83d9fb;
+  font-family:Consolas,"Segoe UI",sans-serif;
+  font-size:clamp(17px,2.5vw,23px);
+  font-weight:500;
+  letter-spacing:0;
 }
 
 .hero p{
+  max-width:800px;
   margin:0;
-  max-width:860px;
-  color:var(--muted);
+  color:#b0bfd2;
+  font-size:15px;
 }
 
 .meta{
   display:flex;
-  gap:10px;
   flex-wrap:wrap;
+  gap:8px;
 }
 
 .tag{
-  padding:6px 12px;
-  border:1px solid var(--border);
+  padding:5px 10px;
+  border:1px solid rgba(125,211,252,.19);
   border-radius:999px;
-  font-size:13px;
-  color:#bae6fd;
-  background:rgba(15,23,42,.4);
+  background:rgba(15,23,42,.42);
+  color:#b8e9fc;
+  font-size:12px;
 }
 
 .section{
   display:grid;
-  gap:12px;
+  gap:18px;
+  scroll-margin-top:90px;
+}
+
+.section-head{
+  display:grid;
+  gap:5px;
+}
+
+.section-kicker{
+  color:#69c9ee;
+  font-family:Consolas,monospace;
+  font-size:11px;
+  letter-spacing:.15em;
 }
 
 .section h2{
   margin:0;
-  font-size:22px;
+  font-size:clamp(21px,3vw,27px);
+  letter-spacing:-.02em;
 }
 
-.section p{
+.section-intro{
+  max-width:850px;
   margin:0;
-  color:var(--muted);
-}
-
-.model{
-  padding:22px;
-  border-radius:10px;
-  border:1px solid rgba(56,189,248,.18);
-  background:rgba(15,23,42,.6);
-  font-family:Consolas, monospace;
-  color:#7dd3fc;
+  color:var(--mm-muted);
   font-size:14px;
-  line-height:1.8;
 }
 
-.grid{
+.panel{
+  padding:clamp(18px,3vw,28px);
+  border:1px solid var(--mm-border);
+  border-radius:var(--mm-radius);
+  background:linear-gradient(155deg,rgba(21,34,56,.92),rgba(13,23,39,.96));
+}
+
+.model-flow{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+
+.flow-card{
+  position:relative;
+  min-width:0;
+  padding:18px 15px;
+  border:1px solid var(--mm-border);
+  border-radius:12px;
+  background:rgba(8,16,30,.5);
+}
+
+.flow-card .step{
+  display:block;
+  margin-bottom:9px;
+  color:#69c9ee;
+  font-family:Consolas,monospace;
+  font-size:11px;
+}
+
+.flow-card h3{
+  margin:0 0 7px;
+  font-size:14px;
+}
+
+.flow-card p{
+  margin:0;
+  color:var(--mm-muted);
+  font-size:12px;
+}
+
+.flow-card:not(:last-child)::after{
+  content:"›";
+  position:absolute;
+  top:50%;
+  right:-9px;
+  z-index:2;
+  transform:translateY(-50%);
+  color:#69c9ee;
+  font-size:21px;
+}
+
+.concept-grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+  gap:14px;
 }
 
-.card{
-  padding:22px;
+.concept-card{
+  padding:21px;
+  border:1px solid var(--mm-border);
+  border-radius:13px;
+  background:rgba(8,16,30,.4);
+}
+
+.concept-head{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:10px;
+}
+
+.concept-index{
+  display:grid;
+  place-items:center;
+  flex:0 0 36px;
+  width:36px;
+  height:36px;
+  border:1px solid rgba(56,189,248,.24);
   border-radius:10px;
-  border:1px solid var(--border);
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  background:var(--mm-accent-soft);
+  color:#8bdcff;
+  font-family:Consolas,monospace;
+  font-size:12px;
 }
 
-.card h3{
-  margin:0 0 10px;
-  font-size:18px;
-}
-
-.card p{
+.concept-card h3{
   margin:0;
-  color:var(--muted);
-  font-size:14px;
+  font-size:16px;
 }
-.model a{
+
+.concept-card p{
+  margin:0;
+  color:var(--mm-muted);
+  font-size:13px;
+}
+
+.concept-card .subline{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px solid rgba(148,163,184,.1);
+  color:#9bcde0;
+  font-size:12px;
+}
+
+.semantic-table-wrap{
+  overflow-x:auto;
+  border:1px solid var(--mm-border);
+  border-radius:13px;
+  background:rgba(8,16,30,.35);
+}
+
+.semantic-table{
+  width:100%;
+  min-width:650px;
+  border-collapse:collapse;
+  font-size:13px;
+}
+
+.semantic-table th,
+.semantic-table td{
+  padding:14px 16px;
+  border-bottom:1px solid rgba(148,163,184,.12);
+  text-align:left;
+  vertical-align:top;
+}
+
+.semantic-table th{
+  background:rgba(56,189,248,.065);
+  color:#b8e9fc;
+  font-size:12px;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.semantic-table td{color:#b3c1d3}
+.semantic-table td:first-child{
+  color:#e2edf9;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.semantic-table tr:last-child td{border-bottom:0}
+
+.semantic-table code{
+  color:#a5e6ff;
+  font-family:Consolas,monospace;
+}
+
+.rule-list{
+  display:grid;
+  gap:10px;
+  padding:0;
+  margin:0;
+  list-style:none;
+}
+
+.rule-list li{
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  gap:12px;
+  padding:14px 16px;
+  border:1px solid var(--mm-border);
+  border-radius:11px;
+  background:rgba(8,16,30,.38);
+}
+
+.rule-mark{
+  display:grid;
+  place-items:center;
+  width:25px;
+  height:25px;
+  border:1px solid rgba(110,231,183,.25);
+  border-radius:8px;
+  background:rgba(110,231,183,.06);
+  color:var(--mm-green);
+  font-family:Consolas,monospace;
+  font-size:12px;
+}
+
+.rule-list strong{
   display:block;
-  color:#7dd3fc;
-  text-decoration:none;
-  margin:4px 0;
-}
-
-.model a:hover{
-  color:#bae6fd;
-}
-.footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:#8ea3be;
+  margin-bottom:3px;
   font-size:14px;
 }
 
-@media(max-width:900px){
-  .grid{
-    grid-template-columns:1fr;
+.rule-list p{
+  margin:0;
+  color:var(--mm-muted);
+  font-size:13px;
+}
+
+.notice{
+  display:grid;
+  grid-template-columns:24px minmax(0,1fr);
+  gap:12px;
+  padding:18px 20px;
+  border:1px solid rgba(251,191,36,.2);
+  border-radius:12px;
+  background:rgba(120,80,10,.08);
+}
+
+.notice-mark{
+  display:grid;
+  place-items:center;
+  width:22px;
+  height:22px;
+  border:1px solid rgba(251,191,36,.45);
+  border-radius:50%;
+  color:var(--mm-amber);
+  font-size:12px;
+  font-weight:700;
+}
+
+.notice h3{
+  margin:0 0 5px;
+  color:#f7d68a;
+  font-size:14px;
+}
+
+.notice p{
+  margin:0;
+  color:#c0b9a6;
+  font-size:13px;
+}
+
+.related-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+
+.related-link{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  padding:18px;
+  border:1px solid var(--mm-border);
+  border-radius:12px;
+  background:rgba(17,28,48,.66);
+  transition:border-color .2s ease,background .2s ease,transform .2s ease;
+}
+
+.related-link:hover{
+  transform:translateY(-2px);
+  border-color:rgba(56,189,248,.4);
+  background:rgba(21,42,65,.85);
+}
+
+.related-link strong{font-size:14px}
+
+.related-link span{
+  color:var(--mm-muted);
+  font-size:12px;
+}
+
+.back-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:14px;
+  padding-top:6px;
+}
+
+.back-link{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  padding:9px 14px;
+  border:1px solid rgba(56,189,248,.25);
+  border-radius:9px;
+  color:#a9e5fb;
+  font-size:13px;
+  transition:background .2s ease,border-color .2s ease;
+}
+
+.back-link:hover{
+  background:rgba(56,189,248,.08);
+  border-color:rgba(56,189,248,.48);
+}
+
+.back-note{
+  color:#71849c;
+  font-size:12px;
+}
+
+.footer{
+  padding-top:22px;
+  border-top:1px solid rgba(148,163,184,.13);
+  color:#7f92aa;
+  text-align:center;
+  font-size:12px;
+}
+
+@media(max-width:800px){
+  .model-flow{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .flow-card:nth-child(2)::after{display:none}
+  .related-grid{grid-template-columns:1fr}
+}
+
+@media(max-width:600px){
+  .page{
+    width:calc(100% - 28px);
+    padding-top:82px;
+    gap:26px;
+  }
+
+  .hero{border-radius:16px}
+  .hero::after{right:12px;font-size:22px}
+  .concept-grid{grid-template-columns:1fr}
+  .model-flow{grid-template-columns:1fr}
+  .flow-card:not(:last-child)::after{
+    content:"↓";
+    top:auto;
+    right:50%;
+    bottom:-15px;
+    transform:translateX(50%);
+  }
+  .flow-card:nth-child(2)::after{display:block}
+  .flow-card:last-child::after{display:none}
+  .back-row{align-items:flex-start}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    transition:none!important;
+    animation:none!important;
   }
 }
 </style>
 </head>
 
 <body data-header="docs">
-
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/architecture/index.html">系统架构</a> /
-    <a href="/docs/architecture/memory/index.html">内存架构</a> /
-    <span>内存模型</span>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="sep">/</span>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <span class="sep">/</span>
+    <a href="/docs/architecture/memory/index.html">内存架构</a>
+    <span class="sep">/</span>
+    <span aria-current="page">内存模型</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS 架构模块</span>
-
-    <h1>内存模型（Memory Model）</h1>
-
-    <p>
-      内存模型定义任务、内核与资源之间的运行时内存访问结构。
-      用于约束运行时访问行为。
-    </p>
-
-    <div class="meta">
-      <span class="tag">Memory Model</span>
-      <span class="tag">Runtime Constraint</span>
-      <span class="tag">Kernel Interface</span>
+  <header class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">HRTOS / ARCHITECTURE / MEMORY</div>
+      <h1>
+        内存模型
+        <span>Memory Model</span>
+      </h1>
+      <p>
+        内存模型描述系统运行期间如何访问、管理和共享内存对象，
+        以及对象的生命周期、访问路径和资源成本如何受到约束。
+        它将物理存储布局与运行时行为连接起来，为内核设计、任务协作和资源分析提供统一视角。
+      </p>
+      <div class="meta">
+        <span class="tag">Runtime Access</span>
+        <span class="tag">Object Lifecycle</span>
+        <span class="tag">Resource Constraints</span>
+      </div>
     </div>
-  </section>
-<section class="section">
-  <h2>系统内存模型定义</h2>
+  </header>
 
-  <p>
-    HRTOS 内存模型描述系统在运行时对任务、内核与资源的统一访问规则。
-    它不是静态布局定义，而是运行时行为约束集合。
-  </p>
-
-  <p>
-    内存模型的核心作用是将“对象存在”转化为“对象如何被访问”，
-    并对访问路径施加确定性约束。
-  </p>
-
-  <p>
-    在实时系统中，内存访问本身即参与调度决策，因此必须纳入系统级设计。
-  </p>
-</section>
-
-<section class="section">
-  <h2>内存访问语义</h2>
-
-  <p>
-    每一类内存区域都对应不同的访问语义与约束等级：
-  </p>
-
-  <ul>
-    <li>Task Space：仅允许任务私有访问，由调度器切换控制</li>
-    <li>Kernel Space：系统唯一控制区，仅通过内核入口访问</li>
-    <li>Shared Memory：通过 IPC 机制进行受控访问</li>
-    <li>Heap Region：动态分配区，访问时间不可变但必须受限</li>
-  </ul>
-
-  <p>
-    这些语义共同构成系统“可执行边界”，用于约束非法路径传播。
-  </p>
-</section>
-
-<section class="section">
-  <h2>运行时约束模型</h2>
-
-  <p>
-    内存模型同时定义运行时约束条件，包括访问权限、生命周期与时序影响。
-  </p>
-
-  <p>
-    所有对象必须满足以下条件才能进入实时路径：
-  </p>
-
-  <ul>
-    <li>访问路径可追踪</li>
-    <li>生命周期可预测</li>
-    <li>分配与释放成本有界</li>
-    <li>跨任务访问必须显式同步</li>
-  </ul>
-
-  <p>
-    该模型用于确保系统在高负载情况下仍保持确定性行为。
-  </p>
-</section>
-
-<section class="section">
-  <h2>相关阅读</h2>
-
-  <div class="grid">
-
-    <a class="card" href="/docs/architecture/kernel/index.html">
-      <h3>内核架构</h3>
-      <p>理解内核控制层如何管理调度、中断与系统运行边界。</p>
-    </a>
-
-    <a class="card" href="/docs/architecture/ipc/index.html">
-      <h3>IPC 通信模型</h3>
-      <p>查看共享内存、消息队列与同步机制的通信实现方式。</p>
-    </a>
-
-    <a class="card" href="/docs/modules/memory/allocation.html">
-      <h3>堆管理机制</h3>
-      <p>分析动态内存分配策略、碎片控制与实时性影响。</p>
-    </a>
-
-    <a class="card" href="/docs/modules/memory/allocation.html">
-      <h3>内存池模型</h3>
-      <p>固定块分配模型，用于降低动态分配的不确定性。</p>
-    </a>
-
-    <a class="card" href="/docs/architecture/interrupt/index.html">
-      <h3>中断架构</h3>
-      <p>查看中断上下文如何访问内核内存与共享资源。</p>
-    </a>
-
-    <a class="card" href="/docs/architecture/scheduler/index.html">
-      <h3>调度器模型</h3>
-      <p>理解任务切换时栈保存、恢复与调度状态管理。</p>
-    </a>
-
+  <section class="section" id="definition">
+    <div class="section-head">
+      <div class="section-kicker">01 / DEFINITION</div>
+      <h2>从存储布局到运行时语义</h2>
+      <p class="section-intro">
+        内存布局关注存储空间与数据的组织方式；内存模型则关注运行过程中，
+        软件如何使用这些存储资源，以及访问行为需要满足哪些约束。
+      </p>
     </div>
 
-
+    <div class="panel">
+      <div class="model-flow">
+        <article class="flow-card">
+          <span class="step">LAYER / 01</span>
+          <h3>存储空间</h3>
+          <p>芯片 RAM、寻址方式、寄存器与实际容量。</p>
+        </article>
+        <article class="flow-card">
+          <span class="step">LAYER / 02</span>
+          <h3>运行时对象</h3>
+          <p>任务上下文、控制数据、队列、资源池及应用变量。</p>
+        </article>
+        <article class="flow-card">
+          <span class="step">LAYER / 03</span>
+          <h3>访问与生命周期</h3>
+          <p>对象由谁访问、何时有效、如何共享和释放。</p>
+        </article>
+        <article class="flow-card">
+          <span class="step">LAYER / 04</span>
+          <h3>工程约束</h3>
+          <p>容量、同步、访问成本及异常处理行为。</p>
+        </article>
+      </div>
+    </div>
   </section>
-  
+
+  <section class="section" id="semantics">
+    <div class="section-head">
+      <div class="section-kicker">02 / ACCESS SEMANTICS</div>
+      <h2>运行时访问语义</h2>
+      <p class="section-intro">
+        运行时访问规则由对象的用途、访问主体和内核接口共同决定。
+        以下是软件层面的逻辑分类，不代表 8051 硬件天然提供了相应的内存隔离。
+      </p>
+    </div>
+
+    <div class="concept-grid">
+      <article class="concept-card">
+        <div class="concept-head">
+          <span class="concept-index">01</span>
+          <h3>任务运行数据</h3>
+        </div>
+        <p>
+          包括任务执行过程中使用的栈、局部状态及任务相关控制信息。
+          任务切换时需要保存和恢复的具体内容，取决于 HRTOS 的上下文管理实现。
+        </p>
+        <div class="subline">Task Context · Stack · Execution State</div>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-head">
+          <span class="concept-index">02</span>
+          <h3>内核控制数据</h3>
+        </div>
+        <p>
+          包括调度状态、任务管理信息、资源索引和通信控制数据。
+          应明确其修改入口、并发访问关系及数据一致性要求。
+        </p>
+        <div class="subline">Kernel State · Control Data · Invariants</div>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-head">
+          <span class="concept-index">03</span>
+          <h3>共享对象与 IPC</h3>
+        </div>
+        <p>
+          多任务或中断可能访问同一对象。需要根据访问主体和并发关系，
+          选择消息传递、临界区或其他适用的同步方法。
+        </p>
+        <div class="subline">Shared State · IPC · Synchronization</div>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-head">
+          <span class="concept-index">04</span>
+          <h3>动态资源与内存池</h3>
+        </div>
+        <p>
+          对象可以来自动态分配器或预先建立的资源池。
+          分配策略、容量上限和失败处理方式决定其实际运行时特征。
+        </p>
+        <div class="subline">Allocation · Pool · Failure Handling</div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="lifecycle">
+    <div class="section-head">
+      <div class="section-kicker">03 / OBJECT LIFECYCLE</div>
+      <h2>对象生命周期与所有权</h2>
+      <p class="section-intro">
+        运行时内存管理不仅涉及空间是否足够，也涉及对象何时创建、何时有效、
+        能否被其他执行主体访问，以及何时可以安全回收。
+      </p>
+    </div>
+
+    <div class="panel">
+      <div class="model-flow">
+        <article class="flow-card">
+          <span class="step">PHASE / 01</span>
+          <h3>创建或初始化</h3>
+          <p>确定对象容量、初始状态及有效范围。</p>
+        </article>
+        <article class="flow-card">
+          <span class="step">PHASE / 02</span>
+          <h3>使用与访问</h3>
+          <p>通过明确的引用和访问路径操作对象。</p>
+        </article>
+        <article class="flow-card">
+          <span class="step">PHASE / 03</span>
+          <h3>共享或移交</h3>
+          <p>按约定同步访问，并明确引用或所有权变化。</p>
+        </article>
+        <article class="flow-card">
+          <span class="step">PHASE / 04</span>
+          <h3>释放或复用</h3>
+          <p>确认不再使用后回收资源，防止悬空访问和重复释放。</p>
+        </article>
+      </div>
+    </div>
+
+    <ul class="rule-list">
+      <li>
+        <span class="rule-mark">A</span>
+        <div>
+          <strong>生命周期明确</strong>
+          <p>明确对象的创建、有效期、失效条件及资源回收责任。</p>
+        </div>
+      </li>
+      <li>
+        <span class="rule-mark">B</span>
+        <div>
+          <strong>所有权可识别</strong>
+          <p>对于共享或动态对象，明确谁可以修改对象，以及谁负责释放或归还资源。</p>
+        </div>
+      </li>
+      <li>
+        <span class="rule-mark">C</span>
+        <div>
+          <strong>访问关系可检查</strong>
+          <p>检查任务、中断与内核路径是否可能并发访问同一对象，以及是否需要同步保护。</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="section" id="constraints">
+    <div class="section-head">
+      <div class="section-kicker">04 / RUNTIME CONSTRAINTS</div>
+      <h2>运行时约束模型</h2>
+      <p class="section-intro">
+        对实时系统而言，关键不是笼统地要求所有内存访问都具有相同成本，
+        而是识别关键路径中的访问行为，并对其资源需求和执行时间建立可验证的边界。
+      </p>
+    </div>
+
+    <div class="semantic-table-wrap">
+      <table class="semantic-table">
+        <thead>
+          <tr>
+            <th>约束维度</th>
+            <th>需要回答的问题</th>
+            <th>常见验证方式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>访问路径</td>
+            <td>对象由哪些任务、内核入口或中断处理路径访问？</td>
+            <td>代码审查、调用关系与访问路径分析。</td>
+          </tr>
+          <tr>
+            <td>生命周期</td>
+            <td>对象何时有效，何时可以安全释放或复用？</td>
+            <td>状态检查、所有权规则与边界测试。</td>
+          </tr>
+          <tr>
+            <td>容量边界</td>
+            <td>任务、队列、资源池及栈空间的上限是多少？</td>
+            <td>编译映射文件、静态统计、运行时计数和压力测试。</td>
+          </tr>
+          <tr>
+            <td>并发访问</td>
+            <td>任务切换或中断介入时，共享数据是否仍然一致？</td>
+            <td>临界区分析、同步机制审查及并发压力测试。</td>
+          </tr>
+          <tr>
+            <td>执行成本</td>
+            <td>分配、释放、访问与同步操作在关键路径上的成本如何？</td>
+            <td>结合实现分析、反汇编、测量及必要的最坏情况分析。</td>
+          </tr>
+          <tr>
+            <td>失败行为</td>
+            <td>资源耗尽、非法参数或对象失效时，系统如何处理？</td>
+            <td>错误路径检查、边界测试和故障注入。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section" id="realtime">
+    <div class="section-head">
+      <div class="section-kicker">05 / REAL-TIME IMPLICATIONS</div>
+      <h2>内存模型如何影响实时行为？</h2>
+      <p class="section-intro">
+        内存管理策略会影响任务执行路径、临界区长度、资源耗尽风险和上下文切换开销。
+        这些影响需要结合具体实现分析，不能只依据模型名称得出结论。
+      </p>
+    </div>
+
+    <div class="concept-grid">
+      <article class="concept-card">
+        <div class="concept-head">
+          <span class="concept-index">01</span>
+          <h3>固定容量资源</h3>
+        </div>
+        <p>
+          预先限定对象数量有利于明确资源上限。
+          仍需分析对象大小、分配算法、资源竞争及分配失败路径。
+        </p>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-head">
+          <span class="concept-index">02</span>
+          <h3>动态分配机制</h3>
+        </div>
+        <p>
+          动态分配的执行成本取决于算法和运行状态。
+          若用于严格时限路径，应证明成本上界，或考虑使用更易分析的固定资源方案。
+        </p>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-head">
+          <span class="concept-index">03</span>
+          <h3>共享访问与同步</h3>
+        </div>
+        <p>
+          同步机制可能引入等待或中断屏蔽时间。
+          应分析保护范围、访问主体和临界区对响应时间的影响。
+        </p>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-head">
+          <span class="concept-index">04</span>
+          <h3>上下文与栈资源</h3>
+        </div>
+        <p>
+          任务现场保存、中断嵌套和函数调用共同影响存储需求。
+          应根据实际内核路径与编译结果进行预算和验证。
+        </p>
+      </article>
+    </div>
+
+    <aside class="notice">
+      <span class="notice-mark">!</span>
+      <div>
+        <h3>设计模型不等于验证结论</h3>
+        <p>
+          明确访问规则能够帮助系统建立可分析的结构，但不能单独证明硬实时性。
+          实际结论还需要结合内核实现、编译器生成代码、目标硬件、
+          中断行为、执行时间分析与压力测试等证据。
+        </p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="section" id="related">
+    <div class="section-head">
+      <div class="section-kicker">06 / RELATED DOCUMENTATION</div>
+      <h2>相关阅读</h2>
+      <p class="section-intro">
+        从运行时内存语义继续了解内核控制、任务间通信与资源管理机制。
+      </p>
+    </div>
+
+    <div class="related-grid">
+      <a class="related-link" href="/docs/architecture/memory/memory-layout.html">
+        <strong>内存布局 Memory Layout</strong>
+        <span>了解硬件存储空间与运行时数据的组织关系。</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/memory/resource-contention.html">
+        <strong>资源竞争 Resource Contention</strong>
+        <span>分析共享资源访问、同步与执行行为之间的关系。</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/kernel/index.html">
+        <strong>内核架构 Kernel</strong>
+        <span>理解任务调度、上下文管理与内核控制路径。</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/ipc/index.html">
+        <strong>IPC 通信模型</strong>
+        <span>了解任务间消息传递、共享数据与同步机制。</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/interrupt/index.html">
+        <strong>中断架构 Interrupts</strong>
+        <span>分析中断处理路径中的现场保存与共享数据访问。</span>
+      </a>
+
+      <a class="related-link" href="/docs/modules/memory/allocation.html">
+        <strong>内存分配机制</strong>
+        <span>了解动态分配策略、资源限制及分配失败处理。</span>
+      </a>
+    </div>
+  </section>
+
+  <div class="back-row">
+    <a class="back-link" href="/docs/architecture/memory/index.html">
+      <span aria-hidden="true">←</span>
+      返回内存架构
+    </a>
+    <span class="back-note">HRTOS Architecture Documentation</span>
+  </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的内存模型体系。
+    © 2017–2026 HRTOS · 运行时内存模型与资源访问约束
   </footer>
 
 </main>

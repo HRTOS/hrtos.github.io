@@ -1,170 +1,740 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>内核架构 Kernel | HRTOS 架构模块</title>
-<meta name="description" content="HRTOS 内核架构模块，定义执行控制层、调度域与系统边界，是实时系统确定性运行的核心控制中心。" />
+<title>内核架构 Kernel | HRTOS Documentation</title>
+<meta name="description" content="深入了解 HRTOS 内核架构、任务上下文、中断控制、调度决策与执行流程，理解面向 8051 单片机的实时操作系统如何组织内核执行。" />
 <meta name="semantic-type" content="kernel-core-architecture" />
 <meta name="content-depth" content="system-level" />
-<link rel="stylesheet" href="https://hrtos.com/global.css">
+<meta name="robots" content="index,follow" />
+
+<link rel="canonical" href="https://hrtos.com/docs/architecture/kernel/" />
+<link rel="stylesheet" href="https://hrtos.com/global.css" />
 
 <style>
-:root{
-  --bg:#0f172a;
-  --border:rgba(148,163,184,.18);
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+:root {
+  --kernel-bg: #0b1120;
+  --kernel-panel: #111b2e;
+  --kernel-panel-soft: #0e192b;
+  --kernel-border: rgba(148, 163, 184, .17);
+  --kernel-text: #e5edf8;
+  --kernel-muted: #9baec5;
+  --kernel-dim: #71859f;
+  --kernel-accent: #67d5ff;
+  --kernel-accent-soft: rgba(56, 189, 248, .09);
+  --kernel-green: #7ddbb1;
+  --kernel-radius: 14px;
+  color-scheme: dark;
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
+* {
+  box-sizing: border-box;
 }
 
-a{
-  color:inherit;
-  text-decoration:none;
+html {
+  scroll-behavior: smooth;
 }
 
-.page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-  display:grid;
-  gap:40px;
+body {
+  margin: 0;
+  background: var(--kernel-bg);
+  color: var(--kernel-text);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.75;
 }
 
-.breadcrumb{
-  font-size:14px;
-  color:var(--muted);
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
+a:focus-visible {
+  outline: 2px solid var(--kernel-accent);
+  outline-offset: 5px;
+  border-radius: 4px;
 }
 
-.hero{
-  display:grid;
-  gap:16px;
+.page {
+  width: min(1120px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 94px 0 64px;
 }
 
-.hero-label{
-  display:inline-flex;
-  width:fit-content;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.22);
-  color:#bae6fd;
-  font-size:14px;
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 36px;
+  color: var(--kernel-dim);
+  font-size: 13px;
 }
 
-.hero h1{
-  margin:0;
-  font-size:42px;
+.breadcrumb a {
+  transition: color .2s ease;
 }
 
-.hero p{
-  margin:0;
-  max-width:860px;
-  color:var(--muted);
+.breadcrumb a:hover {
+  color: var(--kernel-accent);
 }
 
-/* ===== META（升级为“系统语义标签”） ===== */
-.meta{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
+.breadcrumb .separator {
+  color: #43546b;
 }
 
-.tag{
-  padding:6px 12px;
-  border:1px solid var(--border);
-  border-radius:999px;
-  font-size:13px;
-  color:#bae6fd;
-  background:rgba(15,23,42,.4);
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 25px;
+  color: var(--kernel-muted);
+  font-size: 13px;
+  transition: color .2s ease;
 }
 
-/* ===== SECTION ===== */
-.section{
-  display:grid;
-  gap:12px;
+.back-link:hover {
+  color: var(--kernel-accent);
 }
 
-.section h2{
-  margin:0;
-  font-size:22px;
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 44px 42px 38px;
+  border: 1px solid var(--kernel-border);
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at 90% 0%, rgba(56, 189, 248, .11), transparent 44%),
+    linear-gradient(145deg, #121f34 0%, #0d1728 72%);
 }
 
-.section p{
-  margin:0;
-  color:var(--muted);
+.hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 42px;
+  width: 76px;
+  height: 2px;
+  background: var(--kernel-accent);
 }
 
-/* ===== GRID ===== */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:20px;
+.eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 19px;
+  color: var(--kernel-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
-.card{
-  display:grid;
-  gap:12px;
-  padding:24px 22px;
-  min-height:180px;
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  transition:.22s ease;
+.eyebrow-mark {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--kernel-accent);
+  box-shadow: 0 0 12px rgba(103, 213, 255, .35);
 }
 
-.card:hover{
-  transform:translateY(-6px);
-  border-color:rgba(56,189,248,.38);
+.hero h1 {
+  max-width: 800px;
+  margin: 0;
+  font-size: clamp(31px, 5vw, 45px);
+  font-weight: 700;
+  letter-spacing: -.8px;
+  line-height: 1.25;
 }
 
-.card h3{
-  margin:0;
-  font-size:18px;
+.hero h1 span {
+  display: block;
+  margin-top: 10px;
+  color: #b7c9de;
+  font-size: .46em;
+  font-weight: 500;
+  letter-spacing: 1.5px;
 }
 
-.card p{
-  margin:0;
-  color:var(--muted);
-  font-size:14px;
+.hero-description {
+  max-width: 780px;
+  margin: 23px 0 0;
+  color: var(--kernel-muted);
+  font-size: 15px;
+  line-height: 1.95;
 }
 
-.card span{
-  margin-top:auto;
-  color:#7dd3fc;
-  font-weight:600;
-  font-size:14px;
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 26px;
 }
 
-.footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:#8ea3be;
-  font-size:14px;
+.meta-tag {
+  padding: 5px 10px;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 5px;
+  background: rgba(15, 23, 42, .34);
+  color: #c5d6e9;
+  font-size: 11px;
+  letter-spacing: .2px;
 }
 
-@media(max-width:900px){
-  .grid{
-    grid-template-columns:1fr;
+.section {
+  margin-top: 62px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.section-index {
+  flex: 0 0 auto;
+  padding-top: 5px;
+  color: var(--kernel-accent);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.section-title-wrap {
+  min-width: 0;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -.3px;
+  line-height: 1.45;
+}
+
+.section-heading p {
+  margin: 7px 0 0;
+  color: var(--kernel-muted);
+  font-size: 13px;
+}
+
+.definition {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(230px, .75fr);
+  gap: 26px;
+  align-items: stretch;
+}
+
+.definition-main {
+  padding: 26px 28px;
+  border: 1px solid var(--kernel-border);
+  border-radius: var(--kernel-radius);
+  background: var(--kernel-panel);
+}
+
+.definition-main h3 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.definition-main p {
+  margin: 0;
+  color: var(--kernel-muted);
+  font-size: 14px;
+}
+
+.definition-main p + p {
+  margin-top: 12px;
+}
+
+.definition-aside {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 15px;
+  padding: 24px;
+  border: 1px solid rgba(56, 189, 248, .19);
+  border-radius: var(--kernel-radius);
+  background: var(--kernel-accent-soft);
+}
+
+.aside-label {
+  color: var(--kernel-accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.definition-aside strong {
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.definition-aside p {
+  margin: 0;
+  color: var(--kernel-muted);
+  font-size: 12px;
+}
+
+.responsibility-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.responsibility {
+  min-width: 0;
+  padding: 22px 20px;
+  border: 1px solid var(--kernel-border);
+  border-radius: 11px;
+  background: var(--kernel-panel-soft);
+}
+
+.responsibility-number {
+  display: block;
+  margin-bottom: 16px;
+  color: var(--kernel-accent);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.responsibility h3 {
+  margin: 0 0 9px;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.responsibility p {
+  margin: 0;
+  color: var(--kernel-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.model-panel {
+  padding: 28px;
+  border: 1px solid var(--kernel-border);
+  border-radius: var(--kernel-radius);
+  background:
+    linear-gradient(145deg, rgba(17, 27, 46, .98), rgba(12, 21, 37, .98));
+}
+
+.model-intro {
+  max-width: 760px;
+  margin: 0 0 26px;
+  color: var(--kernel-muted);
+  font-size: 14px;
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.flow-step {
+  position: relative;
+  min-width: 0;
+  padding: 19px 14px;
+  border: 1px solid rgba(103, 213, 255, .18);
+  border-radius: 8px;
+  background: rgba(56, 189, 248, .045);
+  text-align: center;
+}
+
+.flow-step:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  z-index: 1;
+  width: 12px;
+  transform: translateY(-50%);
+  color: var(--kernel-accent);
+  font-size: 13px;
+}
+
+.flow-step strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.flow-step span {
+  display: block;
+  margin-top: 6px;
+  color: var(--kernel-dim);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.model-note {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 24px;
+  padding-top: 19px;
+  border-top: 1px solid var(--kernel-border);
+  color: var(--kernel-muted);
+  font-size: 12px;
+}
+
+.model-note strong {
+  flex: 0 0 auto;
+  color: var(--kernel-green);
+  font-weight: 600;
+}
+
+.architecture-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.architecture-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 205px;
+  padding: 25px 25px 22px;
+  border: 1px solid var(--kernel-border);
+  border-radius: 12px;
+  background: linear-gradient(145deg, #121e31, #0e1727);
+  transition: border-color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.architecture-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(103, 213, 255, .4);
+  background: linear-gradient(145deg, #16253a, #101b2d);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.card-code {
+  color: var(--kernel-accent);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.card-arrow {
+  color: var(--kernel-dim);
+  font-size: 18px;
+  transition: color .2s ease, transform .2s ease;
+}
+
+.architecture-card:hover .card-arrow {
+  transform: translateX(3px);
+  color: var(--kernel-accent);
+}
+
+.architecture-card h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.architecture-card p {
+  margin: 10px 0 20px;
+  color: var(--kernel-muted);
+  font-size: 13px;
+  line-height: 1.85;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 13px;
+  border-top: 1px solid var(--kernel-border);
+  color: var(--kernel-dim);
+  font-size: 11px;
+}
+
+.card-footer span:last-child {
+  color: var(--kernel-accent);
+}
+
+.boundary-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--kernel-border);
+  border-radius: var(--kernel-radius);
+}
+
+.boundary-column {
+  padding: 25px 27px;
+  background: var(--kernel-panel-soft);
+}
+
+.boundary-column + .boundary-column {
+  border-left: 1px solid var(--kernel-border);
+  background: rgba(17, 27, 46, .7);
+}
+
+.boundary-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 17px;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.boundary-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--kernel-accent);
+}
+
+.boundary-column:last-child .boundary-dot {
+  background: var(--kernel-green);
+}
+
+.boundary-column ul {
+  display: grid;
+  gap: 11px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.boundary-column li {
+  position: relative;
+  padding-left: 17px;
+  color: var(--kernel-muted);
+  font-size: 13px;
+}
+
+.boundary-column li::before {
+  content: "";
+  position: absolute;
+  top: 11px;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: #5f7793;
+}
+
+.boundary-footnote {
+  margin: 15px 0 0;
+  color: var(--kernel-dim);
+  font-size: 11px;
+}
+
+.next-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 62px;
+  padding: 28px 30px;
+  border: 1px solid rgba(103, 213, 255, .22);
+  border-radius: 13px;
+  background: linear-gradient(110deg, rgba(56, 189, 248, .085), rgba(17, 27, 46, .55));
+}
+
+.next-step h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.next-step p {
+  margin: 8px 0 0;
+  color: var(--kernel-muted);
+  font-size: 13px;
+}
+
+.next-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 15px;
+  border: 1px solid rgba(103, 213, 255, .3);
+  border-radius: 7px;
+  color: var(--kernel-accent);
+  font-size: 13px;
+  transition: background .2s ease;
+}
+
+.next-link:hover {
+  background: rgba(56, 189, 248, .1);
+}
+
+.footer {
+  margin-top: 55px;
+  padding-top: 22px;
+  border-top: 1px solid var(--kernel-border);
+  color: var(--kernel-dim);
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 800px) {
+  .page {
+    width: min(100% - 32px, 680px);
+    padding-top: 82px;
+  }
+
+  .hero {
+    padding: 34px 27px 30px;
+  }
+
+  .hero::after {
+    left: 27px;
+  }
+
+  .definition {
+    grid-template-columns: 1fr;
+  }
+
+  .responsibility-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .responsibility {
+    padding: 19px 20px;
+  }
+
+  .flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .flow-step:nth-child(2)::after {
+    display: none;
+  }
+
+  .architecture-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .page {
+    width: calc(100% - 28px);
+    padding-top: 76px;
+  }
+
+  .breadcrumb {
+    margin-bottom: 25px;
+    font-size: 12px;
+  }
+
+  .hero {
+    padding: 29px 21px 25px;
+    border-radius: 13px;
+  }
+
+  .hero::after {
+    left: 21px;
+  }
+
+  .hero h1 {
+    font-size: 31px;
+  }
+
+  .hero-description {
+    font-size: 14px;
+  }
+
+  .section {
+    margin-top: 46px;
+  }
+
+  .section-heading h2 {
+    font-size: 21px;
+  }
+
+  .definition-main,
+  .definition-aside,
+  .model-panel {
+    padding: 21px;
+  }
+
+  .flow {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-step {
+    padding: 15px;
+  }
+
+  .flow-step:not(:last-child)::after {
+    content: "↓";
+    top: auto;
+    right: 50%;
+    bottom: -17px;
+    display: block;
+    transform: translateX(50%);
+  }
+
+  .flow-step:nth-child(2)::after {
+    display: block;
+  }
+
+  .model-note {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .boundary-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .boundary-column + .boundary-column {
+    border-top: 1px solid var(--kernel-border);
+    border-left: 0;
+  }
+
+  .boundary-column {
+    padding: 22px;
+  }
+
+  .next-step {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 23px;
+  }
+
+  .next-link {
+    align-self: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
   }
 }
 </style>
@@ -174,110 +744,291 @@ a{
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/architecture/index.html">系统架构</a> /
-    <span>内核架构</span>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="separator">/</span>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <span class="separator">/</span>
+    <span aria-current="page">内核架构</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS Execution Core</span>
+  <a class="back-link" href="/docs/architecture/index.html">
+    <span aria-hidden="true">←</span>
+    返回系统架构
+  </a>
 
-    <h1>内核架构（Kernel）</h1>
+  <header class="hero">
+    <div class="eyebrow">
+      <span class="eyebrow-mark"></span>
+      HRTOS / KERNEL ARCHITECTURE
+    </div>
 
-    <p>
-      内核是 HRTOS 的控制边界定义层，用于约束调度行为与执行合法性。
+    <h1>
+      内核架构
+      <span>Kernel Architecture</span>
+    </h1>
+
+    <p class="hero-description">
+      内核是 HRTOS 的执行控制核心。它围绕任务上下文、中断处理、调度决策与系统状态管理，
+      组织处理器执行权的分配和转移，使应用任务能够在明确的内核规则下协同运行。
+      本页面从系统层面介绍内核的职责边界、控制模型与内部架构入口。
     </p>
 
-    <!-- 🔥 升级点：从“页面数量”→“系统能力模型” -->
-    <div class="meta">
-      <span class="tag">Execution Control Layer</span>
-      <span class="tag">Scheduling Domain</span>
-      <span class="tag">Interrupt Orchestration</span>
-      <span class="tag">Deterministic Boundary</span>
+    <div class="hero-meta" aria-label="架构关键词">
+      <span class="meta-tag">8051 Native</span>
+      <span class="meta-tag">Execution Control</span>
+      <span class="meta-tag">Task Scheduling</span>
+      <span class="meta-tag">Interrupt Management</span>
+      <span class="meta-tag">Resource Constraints</span>
+    </div>
+  </header>
+
+  <section class="section" aria-labelledby="definition-title">
+    <div class="section-heading">
+      <span class="section-index">01 / CORE</span>
+      <div class="section-title-wrap">
+        <h2 id="definition-title">内核的系统定位</h2>
+        <p>System Role &amp; Responsibility</p>
+      </div>
+    </div>
+
+    <div class="definition">
+      <div class="definition-main">
+        <h3>从任务管理到执行权控制</h3>
+        <p>
+          HRTOS 内核不仅需要记录任务状态、选择待运行任务，还需要协调中断处理与任务上下文的保存、恢复和切换。
+          这些机制共同决定了处理器在不同执行主体之间如何转移控制权。
+        </p>
+        <p>
+          对于资源受限的 8051 平台，寄存器组织、内部数据存储空间、中断入口以及编译器生成的代码都会影响内核设计。
+          因此，内核架构必须同时考虑执行行为、资源占用和底层处理器约束。
+        </p>
+      </div>
+
+      <aside class="definition-aside">
+        <span class="aside-label">Architectural Principle</span>
+        <strong>明确执行规则，控制状态转换，约束执行权转移。</strong>
+        <p>架构层描述职责与关系；具体时序和资源开销应以对应实现及测试结果为准。</p>
+      </aside>
     </div>
   </section>
 
-  <section class="section">
-  <h2>系统级定义（System Definition）</h2>
+  <section class="section" aria-labelledby="responsibility-title">
+    <div class="section-heading">
+      <span class="section-index">02 / SCOPE</span>
+      <div class="section-title-wrap">
+        <h2 id="responsibility-title">内核的核心职责</h2>
+        <p>Kernel Responsibility Domains</p>
+      </div>
+    </div>
 
-  <p>
-Kernel 的设计目标是定义系统执行的控制边界，而不是提供功能实现。
-</p>
+    <div class="responsibility-grid">
+      <article class="responsibility">
+        <span class="responsibility-number">DOMAIN / 01</span>
+        <h3>执行上下文</h3>
+        <p>
+          管理任务执行所需的上下文信息，并在符合内核规则的情况下保存和恢复处理器状态，
+          为任务切换提供底层基础。
+        </p>
+      </article>
 
-<p>
-它决定：
-</p>
+      <article class="responsibility">
+        <span class="responsibility-number">DOMAIN / 02</span>
+        <h3>调度与执行权</h3>
+        <p>
+          根据任务状态、优先级和调度策略确定后续执行主体，并协调事件发生后的调度判定与任务切换。
+        </p>
+      </article>
 
-<ul>
-  <li>哪些任务可以运行</li>
-  <li>何时允许调度发生</li>
-  <li>哪些状态迁移是合法的</li>
-</ul>
+      <article class="responsibility">
+        <span class="responsibility-number">DOMAIN / 03</span>
+        <h3>中断与状态协调</h3>
+        <p>
+          协调中断处理、内核执行与任务恢复之间的关系，使异步事件能够按照既定控制路径影响系统执行。
+        </p>
+      </article>
+    </div>
+  </section>
 
-<p>
-所有执行行为必须经过 Kernel 的统一判定。
-</p>
-</section>
-<section class="section">
-  <h2>Kernel 控制模型（Control Model）</h2>
+  <section class="section" aria-labelledby="model-title">
+    <div class="section-heading">
+      <span class="section-index">03 / MODEL</span>
+      <div class="section-title-wrap">
+        <h2 id="model-title">内核执行控制模型</h2>
+        <p>Event-Driven Execution Control</p>
+      </div>
+    </div>
 
-  <p>Kernel 控制模型是一个事件驱动的闭环系统。</p>
+    <div class="model-panel">
+      <p class="model-intro">
+        当中断、任务状态变化或其他内核事件发生时，系统需要根据当前执行环境和调度规则，
+        决定是否继续当前执行路径，或者将执行权交给其他任务。
+      </p>
 
-<p>其基本结构为：</p>
+      <div class="flow" aria-label="内核执行控制流程">
+        <div class="flow-step">
+          <strong>事件触发</strong>
+          <span>中断、延时到期或状态变化</span>
+        </div>
+        <div class="flow-step">
+          <strong>内核判定</strong>
+          <span>检查执行条件与调度规则</span>
+        </div>
+        <div class="flow-step">
+          <strong>执行权处理</strong>
+          <span>继续运行或切换上下文</span>
+        </div>
+        <div class="flow-step">
+          <strong>状态更新</strong>
+          <span>进入新的执行阶段</span>
+        </div>
+      </div>
 
-<p><strong>事件 → 决策 → 调度 → 状态转换</strong></p>
+      <div class="model-note">
+        <strong>阅读提示</strong>
+        <span>
+          以上为概念层控制模型，并不表示所有事件都会引起任务切换。
+          实际路径取决于事件类型、当前运行环境、调度策略以及具体内核实现。
+        </span>
+      </div>
+    </div>
+  </section>
 
-<p>Kernel 在每个事件点重新评估系统执行合法性。</p>
+  <section class="section" aria-labelledby="architecture-title">
+    <div class="section-heading">
+      <span class="section-index">04 / VIEWS</span>
+      <div class="section-title-wrap">
+        <h2 id="architecture-title">内核架构视图</h2>
+        <p>Kernel Architecture Reference</p>
+      </div>
+    </div>
 
-<ul>
-  <li>事件触发系统状态变化</li>
-  <li>内核进行调度判定</li>
-  <li>系统进入新的执行状态</li>
-</ul>
-</section>
-  <section class="section">
-    <h2>核心结构</h2>
-<p>Kernel 架构由以下子视图组成：</p>
-    <div class="grid">
+    <div class="architecture-grid">
 
-  <a class="card" href="kernel-overview.html">
-    <h3>内核总览</h3>
-    <p>定义内核在系统中的控制边界与职责模型。</p>
-    <span>进入 →</span>
-  </a>
+      <a class="architecture-card" href="kernel-overview.html">
+        <div class="card-top">
+          <span class="card-code">VIEW / 01</span>
+          <span class="card-arrow" aria-hidden="true">↗</span>
+        </div>
+        <h3>内核总览</h3>
+        <p>
+          从系统整体理解内核的定位、主要职责和关键机制之间的关系，
+          建立阅读后续技术文档所需的基础认知。
+        </p>
+        <div class="card-footer">
+          <span>Kernel Overview</span>
+          <span>查看视图 →</span>
+        </div>
+      </a>
 
-  <a class="card" href="kernel-structure.html">
-    <h3>内核结构</h3>
-    <p>解析调度器、中断与任务管理的内部组织关系。</p>
-    <span>进入 →</span>
-  </a>
+      <a class="architecture-card" href="kernel-structure.html">
+        <div class="card-top">
+          <span class="card-code">VIEW / 02</span>
+          <span class="card-arrow" aria-hidden="true">↗</span>
+        </div>
+        <h3>内核结构</h3>
+        <p>
+          了解任务管理、调度控制、中断处理及上下文管理等部分的组织关系，
+          进一步理解内核内部的职责划分。
+        </p>
+        <div class="card-footer">
+          <span>Kernel Structure</span>
+          <span>查看视图 →</span>
+        </div>
+      </a>
 
-  <a class="card" href="kernel-flow.html">
-    <h3>内核执行流程</h3>
-    <p>描述从中断触发到任务切换的完整执行链。</p>
-    <span>进入 →</span>
-  </a>
+      <a class="architecture-card" href="kernel-flow.html">
+        <div class="card-top">
+          <span class="card-code">VIEW / 03</span>
+          <span class="card-arrow" aria-hidden="true">↗</span>
+        </div>
+        <h3>内核执行流程</h3>
+        <p>
+          沿着事件进入、内核处理、调度判定和任务恢复的路径，
+          理解执行控制在不同阶段的衔接方式。
+        </p>
+        <div class="card-footer">
+          <span>Kernel Execution Flow</span>
+          <span>查看视图 →</span>
+        </div>
+      </a>
 
-  <!-- ⭐新增：关键权重页 -->
-  <a class="card" href="system-boundary.html">
-    <h3>内核控制模型</h3>
-    <p>定义内核如何进行调度决策、抢占判定与系统控制逻辑。</p>
-    <span>进入 →</span>
-  </a>
+      <a class="architecture-card" href="system-boundary.html">
+        <div class="card-top">
+          <span class="card-code">VIEW / 04</span>
+          <span class="card-arrow" aria-hidden="true">↗</span>
+        </div>
+        <h3>内核控制边界</h3>
+        <p>
+          从系统控制角度理解内核职责、执行规则与状态转换之间的关系，
+          明确架构约束和具体机制的区别。
+        </p>
+        <div class="card-footer">
+          <span>Kernel Control Boundary</span>
+          <span>查看视图 →</span>
+        </div>
+      </a>
 
-</div>
-  <p>
-Kernel 负责统一调度决策与系统状态收敛。
-</p>
-</section>
+    </div>
+  </section>
 
+  <section class="section" aria-labelledby="boundary-title">
+    <div class="section-heading">
+      <span class="section-index">05 / BOUNDARY</span>
+      <div class="section-title-wrap">
+        <h2 id="boundary-title">内核边界与平台约束</h2>
+        <p>Kernel Responsibilities &amp; Hardware Constraints</p>
+      </div>
+    </div>
 
+    <div class="boundary-panel">
+      <div class="boundary-column">
+        <div class="boundary-heading">
+          <span class="boundary-dot"></span>
+          内核负责协调
+        </div>
+        <ul>
+          <li>任务状态与可运行条件的管理</li>
+          <li>调度策略与执行主体的选择</li>
+          <li>任务上下文的保存、恢复与切换</li>
+          <li>中断处理与任务执行之间的衔接</li>
+          <li>内核对象和受控资源的管理机制</li>
+        </ul>
+      </div>
 
-  
+      <div class="boundary-column">
+        <div class="boundary-heading">
+          <span class="boundary-dot"></span>
+          实现受到约束
+        </div>
+        <ul>
+          <li>8051 寄存器组及处理器执行模型</li>
+          <li>DATA、IDATA、XDATA 等存储空间限制</li>
+          <li>中断优先级、入口与返回路径</li>
+          <li>编译器调用约定和生成代码特征</li>
+          <li>实际运行时的时延、栈空间与资源开销</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="boundary-footnote">
+      注：上述内容用于说明架构分析维度。具体支持范围、资源占用及实时性能，应以对应版本的实现、配置和测试数据为依据。
+    </p>
+  </section>
+
+  <section class="next-step" aria-label="下一步阅读">
+    <div>
+      <h2>从整体架构进入具体实现</h2>
+      <p>建议先阅读内核总览，再依次了解内部结构与执行流程。</p>
+    </div>
+    <a class="next-link" href="kernel-overview.html">
+      阅读内核总览
+      <span aria-hidden="true">→</span>
+    </a>
+  </section>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. Deterministic Kernel Architecture.
+    © 2017–2026 HRTOS. Kernel Architecture &amp; Technical Documentation.
   </footer>
 
 </main>

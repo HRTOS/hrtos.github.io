@@ -4,118 +4,501 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>优先级模型 | HRTOS 架构文档</title>
-<meta name="description" content="HRTOS 调度器优先级模型，定义任务优先级结构、抢占规则与实时调度行为。" />
+<title>优先级模型 | HRTOS Scheduler Architecture</title>
+<meta name="description" content="HRTOS 优先级模型文档，介绍 8051 实时操作系统中的任务优先级层级、普通任务与快速任务、中断执行层级及其与调度机制的关系。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root{
-  --bg:#0f172a;
-  --border:rgba(148,163,184,.18);
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+  --pm-bg:#0b1220;
+  --pm-panel:#111c2e;
+  --pm-panel-hover:#16263b;
+  --pm-border:rgba(148,163,184,.16);
+  --pm-text:#e5edf7;
+  --pm-muted:#9aabc1;
+  --pm-accent:#38bdf8;
+  --pm-accent-soft:rgba(56,189,248,.09);
+  --pm-radius:15px;
   color-scheme:dark;
 }
 
 *{box-sizing:border-box}
 
+html{scroll-behavior:smooth}
+
 body{
   margin:0;
-  background:var(--bg);
-  color:var(--text);
+  background:var(--pm-bg);
+  color:var(--pm-text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
+  line-height:1.75;
 }
 
-a{color:inherit;text-decoration:none}
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+a:focus-visible{
+  outline:2px solid var(--pm-accent);
+  outline-offset:4px;
+  border-radius:5px;
+}
 
 .page{
-  width:min(1180px, calc(100% - 40px));
+  width:min(1080px,calc(100% - 40px));
   margin:0 auto;
-  padding:96px 0 56px;
+  padding:94px 0 56px;
   display:grid;
-  gap:40px;
+  gap:43px;
 }
 
 .breadcrumb{
-  font-size:14px;
-  color:var(--muted);
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:9px;
+  color:var(--pm-muted);
+  font-size:13px;
 }
 
-.breadcrumb a{color:#7dd3fc}
+.breadcrumb a{color:#a8c6df}
+.breadcrumb a:hover{color:var(--pm-accent)}
+.breadcrumb .separator{color:#52647c}
 
 .hero{
-  display:grid;
-  gap:16px;
+  position:relative;
+  overflow:hidden;
+  padding:clamp(28px,5vw,48px);
+  border:1px solid rgba(56,189,248,.2);
+  border-radius:21px;
+  background:
+    radial-gradient(ellipse at 92% 5%,rgba(56,189,248,.12),transparent 38%),
+    linear-gradient(135deg,#14243a,#0e192b 72%);
 }
 
-.hero h1{margin:0;font-size:42px}
+.hero::after{
+  content:"PRIORITY";
+  position:absolute;
+  right:-5px;
+  bottom:-27px;
+  color:rgba(148,163,184,.045);
+  font-size:clamp(64px,12vw,130px);
+  font-weight:800;
+  letter-spacing:-.065em;
+  line-height:1;
+  pointer-events:none;
+}
 
-.hero p{margin:0;color:var(--muted);max-width:860px}
+.hero-content{position:relative;z-index:1}
 
-.meta{
+.eyebrow{
   display:flex;
+  align-items:center;
   gap:10px;
+  margin-bottom:19px;
+  color:#8edcff;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.14em;
+}
+
+.eyebrow::before{
+  content:"";
+  width:23px;
+  height:2px;
+  background:var(--pm-accent);
+}
+
+.hero h1{
+  margin:0;
+  font-size:clamp(30px,5vw,45px);
+  line-height:1.25;
+  letter-spacing:-.035em;
+}
+
+.hero h1 span{
+  display:block;
+  margin-top:9px;
+  color:#a9c4df;
+  font-size:clamp(17px,2.5vw,22px);
+  font-weight:500;
+  letter-spacing:0;
+}
+
+.hero p{
+  max-width:750px;
+  margin:21px 0 0;
+  color:#b4c3d6;
+  font-size:15px;
+  line-height:1.95;
+}
+
+.hero-tags{
+  display:flex;
   flex-wrap:wrap;
+  gap:8px;
+  margin-top:23px;
 }
 
 .tag{
-  padding:6px 12px;
-  border:1px solid var(--border);
-  border-radius:999px;
+  padding:5px 10px;
+  border:1px solid rgba(148,163,184,.2);
+  border-radius:6px;
+  background:rgba(7,16,29,.25);
+  color:#c3d5e8;
+  font-size:11px;
+}
+
+.section{display:grid;gap:18px}
+
+.section-heading{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr);
+  gap:13px;
+  align-items:start;
+}
+
+.section-number{
+  display:flex;
+  width:34px;
+  height:34px;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(56,189,248,.24);
+  border-radius:9px;
+  background:var(--pm-accent-soft);
+  color:#8edcff;
+  font-size:11px;
+  font-weight:700;
+}
+
+.section-heading h2{
+  margin:0;
+  font-size:21px;
+  line-height:1.5;
+}
+
+.section-heading p{
+  margin:4px 0 0;
+  color:var(--pm-muted);
   font-size:13px;
-  color:#bae6fd;
-  background:rgba(15,23,42,.4);
 }
 
-.section{display:grid;gap:12px}
-
-.section h2{margin:0;font-size:22px}
-
-.section p{margin:0;color:var(--muted)}
-
-.model{
-  padding:20px;
-  border-radius:10px;
-  border:1px solid rgba(56,189,248,.18);
-  background:rgba(15,23,42,.6);
-  font-family:Consolas, monospace;
-  color:#7dd3fc;
+.intro{
+  max-width:900px;
+  margin:0;
+  color:#b4c3d6;
   font-size:14px;
-  line-height:1.8;
+  line-height:1.95;
 }
 
-.grid{
+.level-panel{
+  overflow:hidden;
+  border:1px solid var(--pm-border);
+  border-radius:var(--pm-radius);
+  background:#0e1929;
+}
+
+.level-panel-header{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:18px 21px;
+  border-bottom:1px solid var(--pm-border);
+}
+
+.level-panel-header strong{font-size:14px}
+
+.level-panel-header span{
+  color:var(--pm-muted);
+  font-size:11px;
+}
+
+.level-list{
+  display:grid;
+  gap:0;
+  padding:8px 18px;
+}
+
+.level-row{
+  display:grid;
+  grid-template-columns:72px minmax(0,1fr) 110px;
+  align-items:center;
+  gap:16px;
+  padding:17px 7px;
+  border-bottom:1px solid rgba(148,163,184,.1);
+  scroll-margin-top:100px;
+}
+
+.level-row:last-child{border-bottom:0}
+
+.level-num{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:39px;
+  border:1px solid rgba(56,189,248,.23);
+  border-radius:8px;
+  background:rgba(56,189,248,.07);
+  color:#9bdfff;
+  font-family:Consolas,monospace;
+  font-size:17px;
+  font-weight:700;
+}
+
+.level-row.interrupt .level-num{
+  border-color:rgba(251,191,36,.25);
+  background:rgba(251,191,36,.07);
+  color:#f4cf82;
+}
+
+.level-row.idle .level-num{
+  border-color:rgba(148,163,184,.22);
+  background:rgba(148,163,184,.06);
+  color:#a5b3c5;
+}
+
+.level-info h3{
+  margin:0;
+  font-size:14px;
+}
+
+.level-info p{
+  margin:4px 0 0;
+  color:var(--pm-muted);
+  font-size:12px;
+  line-height:1.75;
+}
+
+.level-kind{
+  justify-self:end;
+  padding:5px 8px;
+  border:1px solid var(--pm-border);
+  border-radius:5px;
+  color:#a9bbd0;
+  font-size:10px;
+  text-align:center;
+  white-space:nowrap;
+}
+
+.level-row.interrupt .level-kind{
+  border-color:rgba(251,191,36,.2);
+  color:#e8c77e;
+}
+
+.level-row.idle .level-kind{color:#9caabd}
+
+.level-note{
+  margin:0;
+  padding:16px 21px;
+  border-top:1px solid var(--pm-border);
+  background:rgba(56,189,248,.035);
+  color:var(--pm-muted);
+  font-size:12px;
+  line-height:1.9;
+}
+
+.level-note strong{color:#d5e7f8}
+
+.model-grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+  gap:14px;
 }
 
-.card{
-  padding:22px;
+.model-card{
+  padding:21px;
+  border:1px solid var(--pm-border);
+  border-radius:var(--pm-radius);
+  background:linear-gradient(155deg,#142238,#101a2a);
+}
+
+.model-card h3{
+  margin:0 0 9px;
+  font-size:16px;
+}
+
+.model-card p{
+  margin:0;
+  color:var(--pm-muted);
+  font-size:13px;
+  line-height:1.9;
+}
+
+.model-card .label{
+  display:block;
+  margin-bottom:11px;
+  color:#7dd3fc;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.1em;
+}
+
+.code-model{
+  padding:19px 21px;
+  border:1px solid var(--pm-border);
+  border-radius:12px;
+  background:#0a1422;
+}
+
+.code-model .formula{
+  overflow-wrap:anywhere;
+  color:#9cdefb;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:clamp(13px,2vw,16px);
+  line-height:1.9;
+}
+
+.code-model p{
+  margin:11px 0 0;
+  color:var(--pm-muted);
+  font-size:12px;
+  line-height:1.9;
+}
+
+.compare{
+  overflow-x:auto;
+  border:1px solid var(--pm-border);
+  border-radius:12px;
+  background:rgba(17,28,46,.6);
+}
+
+.compare table{
+  width:100%;
+  border-collapse:collapse;
+  text-align:left;
+  font-size:12px;
+}
+
+.compare th,.compare td{
+  padding:14px 16px;
+  border-bottom:1px solid rgba(148,163,184,.12);
+  vertical-align:top;
+}
+
+.compare th{
+  background:rgba(148,163,184,.045);
+  color:#bcd0e5;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.compare td{color:var(--pm-muted)}
+.compare tr:last-child td{border-bottom:0}
+.compare td:first-child{color:#d9e7f5;font-weight:600;white-space:nowrap}
+
+.callout{
+  padding:17px 19px;
+  border-left:3px solid var(--pm-accent);
+  border-radius:0 9px 9px 0;
+  background:rgba(56,189,248,.055);
+  color:#b8c9dc;
+  font-size:12px;
+  line-height:1.95;
+}
+
+.callout strong{color:#e0effb}
+
+.related{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.related a{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:15px 16px;
+  border:1px solid var(--pm-border);
   border-radius:10px;
-  border:1px solid var(--border);
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  background:rgba(17,28,46,.65);
+  transition:border-color .2s ease,background .2s ease;
 }
 
-.card h3{margin:0 0 10px;font-size:18px}
+.related a:hover{
+  border-color:rgba(56,189,248,.4);
+  background:var(--pm-panel-hover);
+}
 
-.card p{margin:0;color:var(--muted);font-size:14px}
+.related strong{
+  display:block;
+  font-size:13px;
+}
+
+.related small{
+  display:block;
+  margin-top:3px;
+  color:var(--pm-muted);
+  font-size:11px;
+}
+
+.related .arrow{color:#7dd3fc}
+
+.bottom{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  padding-top:21px;
+  border-top:1px solid var(--pm-border);
+}
+
+.back-link{
+  color:#a8c6df;
+  font-size:13px;
+}
+
+.back-link:hover{color:#7dd3fc}
 
 .footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:#8ea3be;
-  font-size:14px;
+  color:#71839a;
+  font-size:12px;
+  text-align:right;
 }
 
-@media(max-width:900px){
-  .grid{grid-template-columns:1fr}
+@media(max-width:720px){
+  .model-grid{grid-template-columns:1fr}
+  .level-row{
+    grid-template-columns:58px minmax(0,1fr);
+    gap:12px;
+  }
+  .level-kind{
+    grid-column:2;
+    justify-self:start;
+    margin-top:-4px;
+  }
+  .related{grid-template-columns:1fr}
+}
+
+@media(max-width:520px){
+  .page{
+    width:calc(100% - 28px);
+    padding-top:78px;
+    gap:34px;
+  }
+  .hero{border-radius:16px}
+  .level-list{padding:5px 12px}
+  .level-row{padding:15px 3px}
+  .level-panel-header{padding:16px}
+  .level-note{padding:15px 16px}
+  .compare th,.compare td{padding:12px}
+  .bottom{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .footer{text-align:left}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important}
 }
 </style>
 </head>
@@ -124,128 +507,343 @@ a{color:inherit;text-decoration:none}
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/architecture/index.html">系统架构</a> /
-    <a href="/docs/architecture/scheduler/index.html">调度器</a> /
-    <span>优先级模型</span>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="separator">/</span>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <span class="separator">/</span>
+    <a href="/docs/architecture/scheduler/index.html">调度器</a>
+    <span class="separator">/</span>
+    <span aria-current="page">优先级模型</span>
   </nav>
 
-  <section class="hero">
-    <h1>优先级模型（Priority Model）</h1>
-    <p>定义任务在调度器中的执行顺序规则，是抢占式实时调度的核心机制。</p>
+  <header class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">HRTOS / SCHEDULER MODEL</div>
+      <h1>
+        优先级模型
+        <span>Priority Model</span>
+      </h1>
+      <p>
+        优先级用于表达不同执行实体之间的执行权关系。
+        在 HRTOS 中，理解优先级不仅要看数值高低，还需要区分普通任务、
+        快速任务与中断执行层级，并结合具体调度规则判断实际的执行行为。
+      </p>
+      <div class="hero-tags">
+        <span class="tag">Priority Hierarchy</span>
+        <span class="tag">Task Preemption</span>
+        <span class="tag">8051 Context Control</span>
+      </div>
+    </div>
+  </header>
 
-    <div class="meta">
-      <span class="tag">Preemptive Scheduling</span>
-      <span class="tag">RTOS Core</span>
-      <span class="tag">Deterministic Execution</span>
+  <section class="section" aria-labelledby="hierarchy-title">
+    <div class="section-heading">
+      <span class="section-number">01</span>
+      <div>
+        <h2 id="hierarchy-title">优先级层级</h2>
+        <p>从空闲任务、普通任务到快速任务和中断执行层级。</p>
+      </div>
+    </div>
+
+    <p class="intro">
+      HRTOS 使用 0–10 的优先级语义描述不同执行层级。
+      普通任务与快速任务属于任务执行域；中断处理及嵌套中断则涉及独立的中断控制路径。
+      因此，层级数值不能简单理解为所有执行实体都由同一个任务选择器统一排序。
+    </p>
+
+    <div class="level-panel">
+      <div class="level-panel-header">
+        <strong>HRTOS 优先级层级示意</strong>
+        <span>数值越高，优先级语义越高</span>
+      </div>
+
+      <div class="level-list">
+
+        <div class="level-row" id="lvl-10">
+          <div class="level-num">10</div>
+          <div class="level-info">
+            <h3>嵌套中断层级</h3>
+            <p>对应更高层级的嵌套中断处理路径，实际行为受中断控制规则约束。</p>
+          </div>
+          <span class="level-kind">中断控制</span>
+        </div>
+
+        <div class="level-row interrupt" id="lvl-9">
+          <div class="level-num">9</div>
+          <div class="level-info">
+            <h3>中断执行层级</h3>
+            <p>用于描述中断处理相关的执行层级；不能直接等同于普通任务优先级。</p>
+          </div>
+          <span class="level-kind">ISR 路径</span>
+        </div>
+
+        <div class="level-row" id="lvl-8">
+          <div class="level-num">8</div>
+          <div class="level-info">
+            <h3>快速任务层级</h3>
+            <p>快速任务执行域，独立于普通任务的任务编号与常规任务寄存器组安排。</p>
+          </div>
+          <span class="level-kind">快速任务</span>
+        </div>
+
+        <div class="level-row" id="lvl-1-7">
+          <div class="level-num">1–7</div>
+          <div class="level-info">
+            <h3>普通任务层级</h3>
+            <p>普通任务的优先级范围；实际运行顺序还取决于调度模式、就绪状态和切换条件。</p>
+          </div>
+          <span class="level-kind">普通任务</span>
+        </div>
+
+        <div class="level-row idle" id="lvl-0">
+          <div class="level-num">0</div>
+          <div class="level-info">
+            <h3>空闲层级</h3>
+            <p>空闲任务层级，在没有更高优先级的可运行任务时承担空闲执行职责。</p>
+          </div>
+          <span class="level-kind">Idle</span>
+        </div>
+
+      </div>
+
+      <p class="level-note">
+        <strong>阅读说明：</strong>
+        此处展示的是 HRTOS 的优先级语义层次，不是对 CPU 执行顺序的绝对保证。
+        中断是否能够嵌套、何时允许任务切换，以及快速任务与普通任务之间如何交接，
+        仍需结合中断架构和调度模型理解。
+      </p>
     </div>
   </section>
 
-  <section class="section">
-    <h2>优先级层级模型</h2>
-
-    <div class="model">
-
-<p><a href="#lvl-10">Level 10 : 硬实时 / 中断恢复路径</a></p>
-
-<p><a href="#lvl-9">Level 9  : ISR / 内核关键路径</a></p>
-
-<p><a href="#lvl-8">Level 8  : 高优先级实时任务</a></p>
-
-<p><a href="#lvl-1-7">Level 1-7: 普通任务（可抢占）</a></p>
-
-<p><a href="#lvl-0">Level 0  : Idle</a></p>
-
-<br/>
-
-<p>→ 层级含义：执行权 / 抢占强度 / 延迟上界</p>
-
-</div>
-
-    <p>
-      优先级不是排序，而是时间预算分配结构。
-      层级越高，允许的阻塞越少，响应上界越严格。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>语义模型</h2>
-
-    <p>Priority = f(Deadline, Preemption, Blocking, System Load)</p>
-
-    <p>
-      优先级反映的是“时间约束强度”，而不是任务重要性。
-    </p>
-
-    <p>
-      静态优先级定义设计意图，运行时优先级反映实际执行权。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>核心机制</h2>
-
-    <div class="grid">
-
-      <div class="card">
-        <h3>抢占机制</h3>
-        <p>高优先级任务可中断低优先级任务。</p>
+  <section class="section" aria-labelledby="semantics-title">
+    <div class="section-heading">
+      <span class="section-number">02</span>
+      <div>
+        <h2 id="semantics-title">优先级的语义</h2>
+        <p>优先级是调度规则的一部分，不等于完整的实时性评价。</p>
       </div>
+    </div>
 
-      <div class="card">
-        <h3>优先级继承</h3>
-        <p>避免锁导致的优先级反转。</p>
-      </div>
+    <div class="model-grid">
+      <article class="model-card">
+        <span class="label">EXECUTION ORDER</span>
+        <h3>执行权关系</h3>
+        <p>
+          优先级用于决定多个可运行任务之间的相对执行权。
+          在抢占式调度条件满足时，更高优先级任务可以获得优先执行机会；
+          具体何时切换取决于 HRTOS 的调度触发与内核控制规则。
+        </p>
+      </article>
 
-      <div class="card">
-        <h3>实时保护</h3>
-        <p>保证关键任务响应上界。</p>
-      </div>
+      <article class="model-card">
+        <span class="label">RUNTIME STATE</span>
+        <h3>配置与运行状态</h3>
+        <p>
+          任务配置优先级、运行时有效优先级和当前是否具备运行条件，
+          是需要分别理解的概念。任务被阻塞、挂起或等待资源时，
+          仅凭优先级数值无法判断它是否会立即执行。
+        </p>
+      </article>
+    </div>
 
-      <div class="card">
-        <h3>同级调度</h3>
-        <p>同优先级任务公平执行。</p>
-      </div>
-
+    <div class="code-model">
+      <div class="formula">运行决策 = f（优先级，任务状态，调度模式，切换条件）</div>
+      <p>
+        这是用于理解调度因素的概念表达式，并非 HRTOS 内核中的实际计算公式。
+        截止期限、执行时间、资源阻塞和系统负载主要用于任务设计与实时性分析，
+        不应未经实现依据就视为内核动态计算优先级的输入。
+      </p>
     </div>
   </section>
 
-  <section class="section">
-    <h2>设计目标</h2>
+  <section class="section" aria-labelledby="mechanism-title">
+    <div class="section-heading">
+      <span class="section-number">03</span>
+      <div>
+        <h2 id="mechanism-title">优先级与调度机制</h2>
+        <p>优先级决定相对执行权，调度机制决定执行权如何落实。</p>
+      </div>
+    </div>
 
-    <p>
-      可预测性 / 可抢占性 / 延迟上界控制 / 时间确定性
-    </p>
+    <div class="compare">
+      <table>
+        <thead>
+          <tr>
+            <th>机制</th>
+            <th>解决的问题</th>
+            <th>理解时需要注意</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>优先级抢占</td>
+            <td>更高优先级任务就绪时，何时能够获得执行机会。</td>
+            <td>需要考虑切换触发条件、中断状态与内核临界区。</td>
+          </tr>
+          <tr>
+            <td>时间片调度</td>
+            <td>符合相应调度条件的任务如何分配执行时间。</td>
+            <td>时间片规则与优先级抢占规则并非同一概念。</td>
+          </tr>
+          <tr>
+            <td>快速任务机制</td>
+            <td>为特定任务提供不同于普通任务的执行路径。</td>
+            <td>需要结合快速任务的上下文保存和切换机制分析。</td>
+          </tr>
+          <tr>
+            <td>中断嵌套</td>
+            <td>允许满足条件的更高层级中断打断当前中断处理。</td>
+            <td>受硬件中断能力、屏蔽状态和软件处理规则共同约束。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-    <p>
-      高优先级必须稀缺，否则系统失去时间分层意义。
-    </p>
-
-    <p>
-      每个高优先级任务必须提供明确截止时间与阻塞上界依据。
-    </p>
+    <div class="callout">
+      <strong>重要区别：</strong>
+      优先级继承是一种用于处理特定优先级反转问题的同步协议，
+      不是所有 RTOS 都会自动具备的通用能力。
+      在没有确认 HRTOS 对应的互斥资源协议及其实现前，
+      不应将优先级继承描述为内核已经提供的功能。
+    </div>
   </section>
 
-  <section class="section">
-    <h2>系统关联</h2>
+  <section class="section" aria-labelledby="design-title">
+    <div class="section-heading">
+      <span class="section-number">04</span>
+      <div>
+        <h2 id="design-title">优先级设计原则</h2>
+        <p>优先级配置应服务于可分析的执行需求，而不是单纯划分任务重要程度。</p>
+      </div>
+    </div>
 
-    <p>
-      Scheduler → Interrupt → Kernel 三者共同构成时间执行链。
-    </p>
+    <div class="model-grid">
+      <article class="model-card">
+        <span class="label">01 / REQUIREMENTS</span>
+        <h3>从响应需求出发</h3>
+        <p>
+          根据任务的响应需求、截止期限、执行频率和依赖关系设计优先级。
+          业务重要性可以作为设计因素，但不能替代对时间约束的分析。
+        </p>
+      </article>
 
-    <p>
-      优先级模型必须同时与中断优先级、锁策略和调度模型一致。
-    </p>
+      <article class="model-card">
+        <span class="label">02 / INTERFERENCE</span>
+        <h3>控制高优先级干扰</h3>
+        <p>
+          过多的高优先级工作可能增加低优先级任务的等待时间。
+          需要评估高优先级任务的执行频率、执行时长及其对其他任务的影响。
+        </p>
+      </article>
 
-    <p>
-      否则“优先级配置”与“实际执行顺序”会发生偏移。
-    </p>
+      <article class="model-card">
+        <span class="label">03 / BLOCKING</span>
+        <h3>明确资源阻塞</h3>
+        <p>
+          任务等待共享资源或进入临界区，可能使实际响应时间偏离仅根据优先级作出的判断。
+          应明确阻塞来源与持续时间。
+        </p>
+      </article>
+
+      <article class="model-card">
+        <span class="label">04 / VALIDATION</span>
+        <h3>验证实际执行路径</h3>
+        <p>
+          结合反汇编、时序测量、最坏情况分析和压力测试检查调度行为。
+          不同验证手段的覆盖范围不同，应明确各自能够支持的结论。
+        </p>
+      </article>
+    </div>
   </section>
 
-  <footer class="footer">
-    © 2017–2026 HRTOS. Priority Model.
-  </footer>
+  <section class="section" aria-labelledby="boundary-title">
+    <div class="section-heading">
+      <span class="section-number">05</span>
+      <div>
+        <h2 id="boundary-title">优先级与实时性边界</h2>
+        <p>高优先级意味着执行权优势，不意味着无条件的响应时间保证。</p>
+      </div>
+    </div>
+
+    <p class="intro">
+      任务的实际响应时间由执行时间、调度干扰、资源阻塞、中断活动以及系统开销等因素共同影响。
+      即使任务具有较高优先级，也可能受到中断屏蔽、不可抢占区间或其他执行约束影响。
+      因此，优先级配置是实时系统设计的重要基础，但不能单独作为满足截止期限的证明。
+    </p>
+
+    <div class="callout">
+      <strong>工程结论：</strong>
+      优先级模型定义任务执行权的相对关系；调度模型说明内核如何选择和切换任务；
+      实时性分析则需要在明确假设和开销边界的基础上，评估任务响应时间是否满足要求。
+      三者相互关联，但不能相互替代。
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="related-title">
+    <div class="section-heading">
+      <span class="section-number">06</span>
+      <div>
+        <h2 id="related-title">相关架构文档</h2>
+        <p>继续了解调度执行过程与系统运行机制。</p>
+      </div>
+    </div>
+
+    <div class="related">
+      <a href="/docs/architecture/scheduler/index.html">
+        <span>
+          <strong>调度器架构</strong>
+          <small>优先级、调度机制与理论的整体关系</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="/docs/architecture/scheduler/scheduling-model.html">
+        <span>
+          <strong>调度模型</strong>
+          <small>任务选择、切换条件与运行时行为</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="/docs/architecture/scheduler/scheduling-theory.html">
+        <span>
+          <strong>调度理论</strong>
+          <small>响应时间与可调度性分析</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="/docs/architecture/interrupt/index.html">
+        <span>
+          <strong>中断系统</strong>
+          <small>中断优先级、嵌套与执行路径</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="/docs/architecture/kernel/index.html">
+        <span>
+          <strong>内核架构</strong>
+          <small>内核执行控制与上下文切换</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="/docs/architecture/ipc/index.html">
+        <span>
+          <strong>IPC 与同步</strong>
+          <small>任务等待、资源竞争与阻塞关系</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+
+  <div class="bottom">
+    <a class="back-link" href="/docs/architecture/scheduler/index.html">← 返回调度器架构</a>
+    <footer class="footer">© 2017–2026 HRTOS · Priority Model</footer>
+  </div>
 
 </main>
 

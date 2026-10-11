@@ -1,256 +1,1006 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>资源竞争 | HRTOS 架构文档</title>
-<meta name="description" content="HRTOS 资源竞争模型：CPU、内存与同步资源在运行时的时间竞争与确定性约束机制。" />
+<title>资源竞争 Resource Contention | HRTOS 架构文档</title>
+<meta name="description" content="HRTOS 资源竞争架构文档，分析 CPU 执行权、中断干扰、共享资源、临界区与任务阻塞对实时响应和时间可分析性的影响。" />
+<meta name="keywords" content="HRTOS, 8051, 资源竞争, Resource Contention, 实时调度, 中断延迟, 临界区, 任务阻塞, WCET" />
+<link rel="canonical" href="https://hrtos.com/docs/architecture/memory/resource-contention.html" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root{
-  --bg:#0f172a;
-  --border:rgba(148,163,184,.18);
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+  --rc-bg:#0b1220;
+  --rc-panel:#111c30;
+  --rc-panel-2:#152238;
+  --rc-border:rgba(148,163,184,.17);
+  --rc-text:#e5edf8;
+  --rc-muted:#9aabc1;
+  --rc-accent:#38bdf8;
+  --rc-accent-soft:rgba(56,189,248,.08);
+  --rc-green:#6ee7b7;
+  --rc-amber:#fbbf24;
+  --rc-red:#fca5a5;
+  --rc-radius:15px;
   color-scheme:dark;
 }
 
 *{box-sizing:border-box}
 
+html{scroll-behavior:smooth}
+
 body{
   margin:0;
-  background:var(--bg);
-  color:var(--text);
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(14,116,144,.13),transparent 34%),
+    var(--rc-bg);
+  color:var(--rc-text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
+  line-height:1.75;
 }
 
-a{color:inherit;text-decoration:none;}
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+a:focus-visible{
+  outline:2px solid var(--rc-accent);
+  outline-offset:4px;
+  border-radius:4px;
+}
 
 .page{
-  width:min(1180px, calc(100% - 40px));
+  width:min(1160px,calc(100% - 40px));
   margin:0 auto;
   padding:96px 0 56px;
   display:grid;
-  gap:40px;
+  gap:34px;
 }
 
 .breadcrumb{
-  font-size:14px;
-  color:var(--muted);
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  color:var(--rc-muted);
+  font-size:13px;
 }
 
-.breadcrumb a{color:#7dd3fc;}
+.breadcrumb a{color:#8bdcff}
+.breadcrumb a:hover{color:#d5f3ff}
+.breadcrumb .sep{color:#52637a}
 
 .hero{
-  display:grid;
-  gap:16px;
+  position:relative;
+  overflow:hidden;
+  padding:clamp(26px,5vw,52px);
+  border:1px solid rgba(56,189,248,.2);
+  border-radius:22px;
+  background:
+    linear-gradient(120deg,rgba(14,116,144,.13),transparent 55%),
+    linear-gradient(145deg,#14243a,#0e1728 72%);
 }
 
-.hero-label{
-  display:inline-flex;
-  width:fit-content;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.22);
-  color:#bae6fd;
-  font-size:14px;
+.hero::after{
+  content:"RESOURCE / CONTENTION";
+  position:absolute;
+  right:22px;
+  bottom:10px;
+  color:rgba(148,163,184,.055);
+  font-family:Consolas,monospace;
+  font-size:clamp(20px,4.5vw,47px);
+  font-weight:700;
+  letter-spacing:.06em;
+  pointer-events:none;
+  white-space:nowrap;
+}
+
+.hero-content{
+  position:relative;
+  z-index:1;
+  display:grid;
+  gap:18px;
+}
+
+.eyebrow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:#8bdcff;
+  font-family:Consolas,monospace;
+  font-size:12px;
+  letter-spacing:.13em;
+}
+
+.eyebrow::before{
+  content:"";
+  width:22px;
+  height:2px;
+  background:var(--rc-accent);
 }
 
 .hero h1{
   margin:0;
-  font-size:42px;
+  font-size:clamp(29px,5vw,45px);
+  line-height:1.2;
+  letter-spacing:-.035em;
+}
+
+.hero h1 span{
+  display:block;
+  margin-top:10px;
+  color:#83d9fb;
+  font-family:Consolas,"Segoe UI",sans-serif;
+  font-size:clamp(17px,2.5vw,23px);
+  font-weight:500;
+  letter-spacing:0;
 }
 
 .hero p{
+  max-width:810px;
   margin:0;
-  max-width:860px;
-  color:var(--muted);
+  color:#b0bfd2;
+  font-size:15px;
 }
 
 .meta{
   display:flex;
-  gap:10px;
   flex-wrap:wrap;
+  gap:8px;
 }
 
 .tag{
-  padding:6px 12px;
-  border:1px solid var(--border);
+  padding:5px 10px;
+  border:1px solid rgba(125,211,252,.19);
   border-radius:999px;
-  font-size:13px;
-  color:#bae6fd;
-  background:rgba(15,23,42,.4);
+  background:rgba(15,23,42,.42);
+  color:#b8e9fc;
+  font-size:12px;
 }
 
 .section{
   display:grid;
-  gap:12px;
+  gap:18px;
+  scroll-margin-top:90px;
+}
+
+.section-head{
+  display:grid;
+  gap:5px;
+}
+
+.section-kicker{
+  color:#69c9ee;
+  font-family:Consolas,monospace;
+  font-size:11px;
+  letter-spacing:.15em;
 }
 
 .section h2{
   margin:0;
-  font-size:22px;
+  font-size:clamp(21px,3vw,27px);
+  letter-spacing:-.02em;
 }
 
-.section p{
+.section-intro{
+  max-width:850px;
   margin:0;
-  color:var(--muted);
-}
-
-.card{
-  padding:22px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
-}
-
-.footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:#8ea3be;
+  color:var(--rc-muted);
   font-size:14px;
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+.panel{
+  padding:clamp(18px,3vw,28px);
+  border:1px solid var(--rc-border);
+  border-radius:var(--rc-radius);
+  background:linear-gradient(155deg,rgba(21,34,56,.92),rgba(13,23,39,.96));
 }
 
-@media(max-width:900px){
-  .grid{grid-template-columns:1fr;}
+.summary-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+
+.summary-card{
+  padding:20px;
+  border:1px solid var(--rc-border);
+  border-radius:13px;
+  background:rgba(8,16,30,.45);
+}
+
+.summary-card .index{
+  display:block;
+  margin-bottom:12px;
+  color:#69c9ee;
+  font-family:Consolas,monospace;
+  font-size:11px;
+}
+
+.summary-card h3{
+  margin:0 0 8px;
+  font-size:15px;
+}
+
+.summary-card p{
+  margin:0;
+  color:var(--rc-muted);
+  font-size:13px;
+}
+
+.resource-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+
+.resource-card{
+  padding:21px;
+  border:1px solid var(--rc-border);
+  border-radius:13px;
+  background:rgba(8,16,30,.4);
+}
+
+.resource-head{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:10px;
+}
+
+.resource-icon{
+  display:grid;
+  place-items:center;
+  flex:0 0 38px;
+  width:38px;
+  height:38px;
+  border:1px solid rgba(56,189,248,.24);
+  border-radius:10px;
+  background:var(--rc-accent-soft);
+  color:#8bdcff;
+  font-family:Consolas,monospace;
+  font-size:12px;
+}
+
+.resource-card h3{
+  margin:0;
+  font-size:16px;
+}
+
+.resource-card p{
+  margin:0;
+  color:var(--rc-muted);
+  font-size:13px;
+}
+
+.resource-card .detail{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px solid rgba(148,163,184,.1);
+  color:#9bcde0;
+  font-size:12px;
+}
+
+.timeline{
+  display:grid;
+  gap:10px;
+}
+
+.timeline-row{
+  display:grid;
+  grid-template-columns:120px minmax(0,1fr);
+  gap:14px;
+  align-items:stretch;
+}
+
+.timeline-label{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:14px;
+  border:1px solid rgba(56,189,248,.2);
+  border-radius:10px;
+  background:rgba(56,189,248,.055);
+  color:#a8e4fa;
+  font-family:Consolas,monospace;
+  font-size:12px;
+  text-align:center;
+}
+
+.timeline-content{
+  padding:14px 17px;
+  border:1px solid var(--rc-border);
+  border-radius:10px;
+  background:rgba(8,16,30,.45);
+}
+
+.timeline-content strong{
+  display:block;
+  margin-bottom:4px;
+  font-size:14px;
+}
+
+.timeline-content p{
+  margin:0;
+  color:var(--rc-muted);
+  font-size:13px;
+}
+
+.mechanism-table-wrap{
+  overflow-x:auto;
+  border:1px solid var(--rc-border);
+  border-radius:13px;
+  background:rgba(8,16,30,.35);
+}
+
+.mechanism-table{
+  width:100%;
+  min-width:680px;
+  border-collapse:collapse;
+  font-size:13px;
+}
+
+.mechanism-table th,
+.mechanism-table td{
+  padding:14px 16px;
+  border-bottom:1px solid rgba(148,163,184,.12);
+  text-align:left;
+  vertical-align:top;
+}
+
+.mechanism-table th{
+  background:rgba(56,189,248,.065);
+  color:#b8e9fc;
+  font-size:12px;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.mechanism-table td{color:#b3c1d3}
+.mechanism-table td:first-child{
+  color:#e2edf9;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.mechanism-table tr:last-child td{border-bottom:0}
+
+.mechanism-table code{
+  color:#a5e6ff;
+  font-family:Consolas,monospace;
+}
+
+.analysis-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+
+.analysis-card{
+  padding:19px;
+  border:1px solid var(--rc-border);
+  border-radius:12px;
+  background:rgba(8,16,30,.4);
+}
+
+.analysis-card .label{
+  margin-bottom:10px;
+  color:#69c9ee;
+  font-family:Consolas,monospace;
+  font-size:11px;
+}
+
+.analysis-card h3{
+  margin:0 0 7px;
+  font-size:15px;
+}
+
+.analysis-card p{
+  margin:0;
+  color:var(--rc-muted);
+  font-size:13px;
+}
+
+.formula{
+  overflow-wrap:anywhere;
+  padding:18px;
+  border:1px solid rgba(56,189,248,.19);
+  border-radius:11px;
+  background:rgba(8,16,30,.55);
+  color:#a8e4fa;
+  font-family:Consolas,monospace;
+  font-size:14px;
+  text-align:center;
+}
+
+.formula-note{
+  margin:0;
+  color:var(--rc-muted);
+  font-size:12px;
+}
+
+.rule-list{
+  display:grid;
+  gap:10px;
+  padding:0;
+  margin:0;
+  list-style:none;
+}
+
+.rule-list li{
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  gap:12px;
+  padding:14px 16px;
+  border:1px solid var(--rc-border);
+  border-radius:11px;
+  background:rgba(8,16,30,.38);
+}
+
+.rule-mark{
+  display:grid;
+  place-items:center;
+  width:25px;
+  height:25px;
+  border:1px solid rgba(110,231,183,.25);
+  border-radius:8px;
+  background:rgba(110,231,183,.06);
+  color:var(--rc-green);
+  font-family:Consolas,monospace;
+  font-size:12px;
+}
+
+.rule-list strong{
+  display:block;
+  margin-bottom:3px;
+  font-size:14px;
+}
+
+.rule-list p{
+  margin:0;
+  color:var(--rc-muted);
+  font-size:13px;
+}
+
+.notice{
+  display:grid;
+  grid-template-columns:24px minmax(0,1fr);
+  gap:12px;
+  padding:18px 20px;
+  border:1px solid rgba(251,191,36,.2);
+  border-radius:12px;
+  background:rgba(120,80,10,.08);
+}
+
+.notice-mark{
+  display:grid;
+  place-items:center;
+  width:22px;
+  height:22px;
+  border:1px solid rgba(251,191,36,.45);
+  border-radius:50%;
+  color:var(--rc-amber);
+  font-size:12px;
+  font-weight:700;
+}
+
+.notice h3{
+  margin:0 0 5px;
+  color:#f7d68a;
+  font-size:14px;
+}
+
+.notice p{
+  margin:0;
+  color:#c0b9a6;
+  font-size:13px;
+}
+
+.related-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+
+.related-link{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  padding:18px;
+  border:1px solid var(--rc-border);
+  border-radius:12px;
+  background:rgba(17,28,48,.66);
+  transition:border-color .2s ease,background .2s ease,transform .2s ease;
+}
+
+.related-link:hover{
+  transform:translateY(-2px);
+  border-color:rgba(56,189,248,.4);
+  background:rgba(21,42,65,.85);
+}
+
+.related-link strong{font-size:14px}
+
+.related-link span{
+  color:var(--rc-muted);
+  font-size:12px;
+}
+
+.back-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:14px;
+  padding-top:6px;
+}
+
+.back-link{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  padding:9px 14px;
+  border:1px solid rgba(56,189,248,.25);
+  border-radius:9px;
+  color:#a9e5fb;
+  font-size:13px;
+  transition:background .2s ease,border-color .2s ease;
+}
+
+.back-link:hover{
+  background:rgba(56,189,248,.08);
+  border-color:rgba(56,189,248,.48);
+}
+
+.back-note{
+  color:#71849c;
+  font-size:12px;
+}
+
+.footer{
+  padding-top:22px;
+  border-top:1px solid rgba(148,163,184,.13);
+  color:#7f92aa;
+  text-align:center;
+  font-size:12px;
+}
+
+@media(max-width:850px){
+  .summary-grid,
+  .analysis-grid{grid-template-columns:1fr}
+  .related-grid{grid-template-columns:1fr}
+}
+
+@media(max-width:650px){
+  .page{
+    width:calc(100% - 28px);
+    padding-top:82px;
+    gap:26px;
+  }
+
+  .hero{border-radius:16px}
+  .hero::after{right:12px;font-size:19px}
+  .resource-grid{grid-template-columns:1fr}
+  .timeline-row{grid-template-columns:1fr;gap:7px}
+  .timeline-label{justify-content:flex-start;padding:9px 12px}
+  .back-row{align-items:flex-start}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    transition:none!important;
+    animation:none!important;
+  }
 }
 </style>
 </head>
 
 <body data-header="docs">
-
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/architecture/index.html">系统架构</a> /
-    <a href="/docs/architecture/memory/index.html">内存架构</a> /
-    <span>资源竞争</span>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="sep">/</span>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <span class="sep">/</span>
+    <a href="/docs/architecture/memory/index.html">内存架构</a>
+    <span class="sep">/</span>
+    <span aria-current="page">资源竞争</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS 架构模块</span>
+  <header class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">HRTOS / ARCHITECTURE / RESOURCE</div>
+      <h1>
+        资源竞争
+        <span>Resource Contention</span>
+      </h1>
+      <p>
+        资源竞争描述多个任务、中断或执行路径在共享处理器时间、
+        数据对象或同步资源时产生的等待、干扰与执行顺序约束。
+        对实时系统而言，关键不只是减少竞争，更是识别竞争来源、
+        限定其影响范围，并判断它对响应时间和截止期限的影响。
+      </p>
+      <div class="meta">
+        <span class="tag">Execution Interference</span>
+        <span class="tag">Blocking Time</span>
+        <span class="tag">Timing Analysis</span>
+      </div>
+    </div>
+  </header>
 
-    <h1>资源竞争（Resource Contention）</h1>
+  <section class="section" id="definition">
+    <div class="section-head">
+      <div class="section-kicker">01 / DEFINITION</div>
+      <h2>资源竞争的核心问题</h2>
+      <p class="section-intro">
+        当多个执行主体依赖同一资源时，它们的执行时间线可能发生耦合。
+        竞争会带来等待或干扰，但是否破坏实时性，取决于这些影响能否被正确约束和分析。
+      </p>
+    </div>
 
-    <p>
-      资源竞争描述多个执行流在同一时间窗口对系统资源产生的时间冲突与延迟传播现象，
-      是影响实时确定性的关键因素。
-    </p>
+    <div class="summary-grid">
+      <article class="summary-card">
+        <span class="index">FACTOR / 01</span>
+        <h3>竞争来源</h3>
+        <p>识别处理器执行权、中断处理时间、共享数据和同步资源等竞争来源。</p>
+      </article>
 
-    <div class="meta">
-      <span class="tag">Timing Model</span>
-      <span class="tag">Resource Conflict</span>
-      <span class="tag">Determinism Risk</span>
+      <article class="summary-card">
+        <span class="index">FACTOR / 02</span>
+        <h3>时间影响</h3>
+        <p>确定额外执行、等待、阻塞或中断干扰如何改变任务响应时间。</p>
+      </article>
+
+      <article class="summary-card">
+        <span class="index">FACTOR / 03</span>
+        <h3>可分析边界</h3>
+        <p>通过调度规则、临界区约束、资源上限与测量分析建立可验证的时间边界。</p>
+      </article>
     </div>
   </section>
 
-  <section class="section">
-    <h2>核心定义</h2>
+  <section class="section" id="types">
+    <div class="section-head">
+      <div class="section-kicker">02 / CONTENTION TYPES</div>
+      <h2>主要竞争类型</h2>
+      <p class="section-intro">
+        对 8051 等资源受限微控制器，优先关注处理器执行权、中断与共享状态。
+        其他平台特有的总线或 DMA 竞争，则应按目标硬件实际情况纳入分析。
+      </p>
+    </div>
 
-    <p>
-      资源竞争的本质不是“抢占资源”，而是执行路径在时间维度上的分叉与延迟传播。
-    </p>
+    <div class="resource-grid">
+      <article class="resource-card">
+        <div class="resource-head">
+          <span class="resource-icon">CPU</span>
+          <h3>处理器执行权竞争</h3>
+        </div>
+        <p>
+          多个就绪任务竞争有限的处理器时间。优先级、抢占策略、时间片与调度开销，
+          共同决定任务何时获得执行机会。
+        </p>
+        <div class="detail">关注：就绪任务、调度策略、执行时间与响应时间。</div>
+      </article>
 
-    <p>
-      当多个任务在同一资源上产生依赖时，系统行为从确定性执行转变为时间耦合系统。
-    </p>
+      <article class="resource-card">
+        <div class="resource-head">
+          <span class="resource-icon">ISR</span>
+          <h3>中断执行干扰</h3>
+        </div>
+        <p>
+          中断处理会占用处理器时间，并可能延迟当前任务或内核路径。
+          中断优先级、嵌套规则与处理时长决定其对任务执行的影响。
+        </p>
+        <div class="detail">关注：中断响应、嵌套层级、现场保存与中断执行时间。</div>
+      </article>
+
+      <article class="resource-card">
+        <div class="resource-head">
+          <span class="resource-icon">LOCK</span>
+          <h3>共享资源与临界区</h3>
+        </div>
+        <p>
+          多个执行主体访问共享数据时，可能需要临界区或同步保护。
+          保护范围过大可能增加等待时间或延长中断屏蔽时间。
+        </p>
+        <div class="detail">关注：共享对象、保护范围、同步开销与数据一致性。</div>
+      </article>
+
+      <article class="resource-card">
+        <div class="resource-head">
+          <span class="resource-icon">MEM</span>
+          <h3>内存与资源容量约束</h3>
+        </div>
+        <p>
+          有限 RAM、固定容量队列和资源池会限制系统可同时容纳的对象数量。
+          资源不足可能导致申请失败或改变应用的运行路径。
+        </p>
+        <div class="detail">关注：内存占用、对象上限、分配成本与失败处理。</div>
+      </article>
+    </div>
   </section>
 
-  <section class="section">
-    <h2>资源类型与时间属性</h2>
+  <section class="section" id="timeline">
+    <div class="section-head">
+      <div class="section-kicker">03 / TIMING INTERACTION</div>
+      <h2>竞争如何改变任务时间线？</h2>
+      <p class="section-intro">
+        竞争对时间的影响通常可以从额外执行、等待和阻塞三个方向分析。
+        具体路径取决于任务优先级、中断行为与同步机制。
+      </p>
+    </div>
 
-    <div class="grid">
-      <div class="card">
-        <h3>CPU 竞争</h3>
-        <p>表现为执行时间片分配变化，直接改变任务时间线。</p>
-      </div>
+    <div class="panel">
+      <div class="timeline">
+        <div class="timeline-row">
+          <div class="timeline-label">执行干扰</div>
+          <div class="timeline-content">
+            <strong>其他执行路径占用处理器</strong>
+            <p>
+              例如中断处理或更高优先级任务执行，使当前任务的连续执行时间被打断。
+            </p>
+          </div>
+        </div>
 
-      <div class="card">
-        <h3>内存竞争</h3>
-        <p>表现为 Cache / Bus / DMA 延迟，影响访问时间稳定性。</p>
-      </div>
+        <div class="timeline-row">
+          <div class="timeline-label">资源等待</div>
+          <div class="timeline-content">
+            <strong>当前任务无法立即使用所需资源</strong>
+            <p>
+              例如等待共享资源释放、消息到达或同步条件满足，任务可能进入阻塞状态。
+            </p>
+          </div>
+        </div>
 
-      <div class="card">
-        <h3>同步资源</h3>
-        <p>Mutex / Semaphore 引入阻塞，形成时间阻断结构。</p>
-      </div>
+        <div class="timeline-row">
+          <div class="timeline-label">延迟传递</div>
+          <div class="timeline-content">
+            <strong>上游延迟影响后续工作</strong>
+            <p>
+              如果后续任务依赖当前任务提供的数据或服务，上游延迟可能传递到下游，
+              但是否累积或放大，需要依据实际依赖关系分析。
+            </p>
+          </div>
+        </div>
 
-      <div class="card">
-        <h3>阻塞传播</h3>
-        <p>等待链会扩展为依赖图，引发全局抖动。</p>
+        <div class="timeline-row">
+          <div class="timeline-label">期限评估</div>
+          <div class="timeline-content">
+            <strong>判断任务能否在截止期限前完成</strong>
+            <p>
+              将执行时间、调度干扰、阻塞与其他相关开销纳入响应时间评估，
+              检查任务是否满足其时限要求。
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="section">
-    <h2>时间确定性破坏机制</h2>
+  <section class="section" id="mechanisms">
+    <div class="section-head">
+      <div class="section-kicker">04 / ANALYSIS MODEL</div>
+      <h2>竞争与响应时间分析</h2>
+      <p class="section-intro">
+        资源竞争需要落实到具体的时间项。下列关系用于建立分析思路，
+        并非适用于所有调度策略的完整响应时间公式。
+      </p>
+    </div>
 
-    <p>
-      资源竞争通过延迟注入、调度扰动与路径放大三种方式破坏系统确定性。
-    </p>
+    <div class="panel">
+      <div class="formula">
+        响应时间 = 执行时间 + 干扰时间 + 阻塞时间 + 其他相关开销
+      </div>
+      <p class="formula-note">
+        这是概念性分解。各项的定义、是否存在重叠，以及如何计算，
+        必须根据实际调度算法、中断模型和资源协议确定，避免重复计入。
+      </p>
+    </div>
 
-    <p>
-      延迟不会局部结束，而会沿任务链传播并放大。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>系统影响</h2>
-
-    <p>
-      资源竞争的最终影响不是性能下降，而是系统行为从可证明变为不可证明。
-    </p>
-
-    <p>
-      当 Worst Case Execution Time（最坏情况执行时间） 无法界定时，RTOS 将退化为不可预测执行模型。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>相关阅读</h2>
-
-    <div class="grid">
-
-      <a class="card" href="/docs/architecture/memory/memory-model.html">
-        <h3>内存模型</h3>
-        <p>理解任务、内核与共享资源的访问规则。</p>
-      </a>
-
-      <a class="card" href="/docs/architecture/kernel/index.html">
-        <h3>内核架构</h3>
-        <p>系统调度与资源控制核心。</p>
-      </a>
-
-      <a class="card" href="/docs/architecture/scheduler/index.html">
-        <h3>调度器模型</h3>
-        <p>任务切换与时间分配机制。</p>
-      </a>
-
-      <a class="card" href="/docs/architecture/ipc/index.html">
-        <h3>IPC 通信模型</h3>
-        <p>同步与共享资源访问方式。</p>
-      </a>
-
+    <div class="mechanism-table-wrap">
+      <table class="mechanism-table">
+        <thead>
+          <tr>
+            <th>时间项</th>
+            <th>主要来源</th>
+            <th>分析重点</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>执行时间</td>
+            <td>任务本身完成工作所需的处理器时间。</td>
+            <td>代码路径、输入条件、目标频率及最坏执行路径。</td>
+          </tr>
+          <tr>
+            <td>执行干扰</td>
+            <td>高优先级任务或中断处理占用处理器。</td>
+            <td>触发频率、执行上界、优先级与嵌套关系。</td>
+          </tr>
+          <tr>
+            <td>资源阻塞</td>
+            <td>等待共享资源、临界区或同步条件。</td>
+            <td>最大阻塞时长、资源访问顺序及潜在死锁条件。</td>
+          </tr>
+          <tr>
+            <td>系统开销</td>
+            <td>调度、上下文切换、计时与相关内核处理。</td>
+            <td>实际调用路径、测量结果及是否已包含在其他时间项中。</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </section>
+
+  <section class="section" id="control">
+    <div class="section-head">
+      <div class="section-kicker">05 / CONTROL STRATEGIES</div>
+      <h2>控制竞争影响的工程方法</h2>
+      <p class="section-intro">
+        目标不是完全消除系统中的所有竞争，而是让关键竞争有明确的规则、
+        可控的范围和可验证的最坏情况。
+      </p>
+    </div>
+
+    <ul class="rule-list">
+      <li>
+        <span class="rule-mark">01</span>
+        <div>
+          <strong>明确调度策略与优先级关系</strong>
+          <p>
+            明确哪些任务能够抢占其他任务、时间片如何分配，以及中断与任务执行之间的关系。
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="rule-mark">02</span>
+        <div>
+          <strong>限制临界区范围</strong>
+          <p>
+            只保护确实需要原子性或一致性的操作，避免在保护区中执行不必要的等待或长耗时处理。
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="rule-mark">03</span>
+        <div>
+          <strong>约束共享资源访问协议</strong>
+          <p>
+            明确资源获取与释放规则、访问顺序和失败路径；使用互斥或同步机制时，
+            还需考虑优先级反转和阻塞时间。
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="rule-mark">04</span>
+        <div>
+          <strong>限制资源容量并定义失败行为</strong>
+          <p>
+            为队列、资源池和其他有限资源设置上限，并明确资源耗尽时的返回值、恢复策略或降级行为。
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="rule-mark">05</span>
+        <div>
+          <strong>测量并验证关键时间路径</strong>
+          <p>
+            结合 GPIO 测量、反汇编、压力测试与最坏情况分析，验证调度、中断和资源访问的实际时间边界。
+          </p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="section" id="determinism">
+    <div class="section-head">
+      <div class="section-kicker">06 / DETERMINISM</div>
+      <h2>资源竞争与确定性</h2>
+      <p class="section-intro">
+        确定性并不意味着每次执行都必须耗时完全相同，
+        而是系统的关键行为及其时间边界能够在明确的假设下得到分析和验证。
+      </p>
+    </div>
+
+    <div class="analysis-grid">
+      <article class="analysis-card">
+        <div class="label">CASE / A</div>
+        <h3>竞争有界</h3>
+        <p>
+          竞争来源、资源协议和最大阻塞时间明确，可以将相关影响纳入响应时间分析。
+        </p>
+      </article>
+
+      <article class="analysis-card">
+        <div class="label">CASE / B</div>
+        <h3>竞争缺乏约束</h3>
+        <p>
+          例如临界区过长、资源等待没有明确上限或共享访问协议不清晰，
+          会使响应时间更难分析。
+        </p>
+      </article>
+
+      <article class="analysis-card">
+        <div class="label">CASE / C</div>
+        <h3>通过验证建立证据</h3>
+        <p>
+          使用实现审查、测量和必要的最坏情况分析，验证关键路径是否满足指定时限。
+        </p>
+      </article>
+    </div>
+
+    <aside class="notice">
+      <span class="notice-mark">!</span>
+      <div>
+        <h3>避免把风险等同于结论</h3>
+        <p>
+          资源竞争可能增加延迟和分析难度，但并不必然导致系统失去确定性。
+          同样，压力测试中未观察到超时，也不能单独证明所有运行条件下的最坏执行时间都有界。
+          实时性结论应建立在明确的系统假设、实现细节和验证证据之上。
+        </p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="section" id="related">
+    <div class="section-head">
+      <div class="section-kicker">07 / RELATED DOCUMENTATION</div>
+      <h2>相关阅读</h2>
+      <p class="section-intro">
+        从资源竞争继续深入了解内存访问、任务调度与任务间通信。
+      </p>
+    </div>
+
+    <div class="related-grid">
+      <a class="related-link" href="/docs/architecture/memory/memory-model.html">
+        <strong>内存模型 Memory Model</strong>
+        <span>了解运行时对象、共享访问与生命周期约束。</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/memory/memory-layout.html">
+        <strong>内存布局 Memory Layout</strong>
+        <span>了解 8051 存储空间与运行时数据的组织方式。</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/kernel/index.html">
+        <strong>内核架构 Kernel</strong>
+        <span>理解内核控制路径、任务执行与上下文管理。</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/scheduler/index.html">
+        <strong>调度器模型 Scheduler</strong>
+        <span>分析任务优先级、执行权分配和调度行为。</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/ipc/index.html">
+        <strong>IPC 通信模型</strong>
+        <span>了解消息传递、共享数据与同步机制。</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/interrupt/index.html">
+        <strong>中断架构 Interrupts</strong>
+        <span>分析中断执行、嵌套规则与任务响应时间。</span>
+      </a>
+    </div>
+  </section>
+
+  <div class="back-row">
+    <a class="back-link" href="/docs/architecture/memory/index.html">
+      <span aria-hidden="true">←</span>
+      返回内存架构
+    </a>
+    <span class="back-note">HRTOS Architecture Documentation</span>
+  </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. Resource Contention Model.
+    © 2017–2026 HRTOS · 资源竞争与实时行为分析
   </footer>
 
 </main>

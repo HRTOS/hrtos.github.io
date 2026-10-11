@@ -4,31 +4,35 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>调度模型 | HRTOS 架构文档</title>
-<meta name="description" content="HRTOS 调度模型定义任务如何在系统中被选择与执行，包括抢占式调度、时间片调度与实时调度策略。" />
+<title>调度模型 | HRTOS Scheduler Architecture</title>
+<meta name="description" content="HRTOS 调度模型文档，介绍任务就绪状态、调度触发条件、优先级决策、抢占与时间片机制，以及调度过程和上下文切换之间的关系。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root{
-  --bg:#0f172a;
-  --border:rgba(148,163,184,.18);
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+  --sm-bg:#0b1220;
+  --sm-panel:#111c2e;
+  --sm-panel-hover:#16263b;
+  --sm-border:rgba(148,163,184,.16);
+  --sm-text:#e5edf7;
+  --sm-muted:#9aabc1;
+  --sm-accent:#38bdf8;
+  --sm-accent-soft:rgba(56,189,248,.09);
+  --sm-radius:15px;
   color-scheme:dark;
 }
 
 *{box-sizing:border-box}
 
+html{scroll-behavior:smooth}
+
 body{
   margin:0;
-  background:var(--bg);
-  color:var(--text);
+  background:var(--sm-bg);
+  color:var(--sm-text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
+  line-height:1.75;
 }
 
 a{
@@ -36,126 +40,442 @@ a{
   text-decoration:none;
 }
 
+a:focus-visible{
+  outline:2px solid var(--sm-accent);
+  outline-offset:4px;
+  border-radius:5px;
+}
+
 .page{
-  width:min(1180px, calc(100% - 40px));
+  width:min(1080px,calc(100% - 40px));
   margin:0 auto;
-  padding:96px 0 56px;
+  padding:94px 0 56px;
   display:grid;
-  gap:40px;
+  gap:43px;
 }
 
 .breadcrumb{
-  font-size:14px;
-  color:var(--muted);
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:9px;
+  color:var(--sm-muted);
+  font-size:13px;
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
-}
+.breadcrumb a{color:#a8c6df}
+.breadcrumb a:hover{color:var(--sm-accent)}
+.breadcrumb .separator{color:#52647c}
 
 .hero{
-  display:grid;
-  gap:16px;
+  position:relative;
+  overflow:hidden;
+  padding:clamp(28px,5vw,48px);
+  border:1px solid rgba(56,189,248,.2);
+  border-radius:21px;
+  background:
+    radial-gradient(ellipse at 92% 5%,rgba(56,189,248,.12),transparent 38%),
+    linear-gradient(135deg,#14243a,#0e192b 72%);
 }
 
-.hero-label{
-  display:inline-flex;
-  width:fit-content;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.22);
-  color:#bae6fd;
-  font-size:14px;
+.hero::after{
+  content:"SCHEDULING";
+  position:absolute;
+  right:-8px;
+  bottom:-25px;
+  color:rgba(148,163,184,.045);
+  font-size:clamp(54px,10vw,112px);
+  font-weight:800;
+  letter-spacing:-.065em;
+  line-height:1;
+  pointer-events:none;
+}
+
+.hero-content{position:relative;z-index:1}
+
+.eyebrow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:19px;
+  color:#8edcff;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.14em;
+}
+
+.eyebrow::before{
+  content:"";
+  width:23px;
+  height:2px;
+  background:var(--sm-accent);
 }
 
 .hero h1{
   margin:0;
-  font-size:42px;
+  font-size:clamp(30px,5vw,45px);
+  line-height:1.25;
+  letter-spacing:-.035em;
+}
+
+.hero h1 span{
+  display:block;
+  margin-top:9px;
+  color:#a9c4df;
+  font-size:clamp(17px,2.5vw,22px);
+  font-weight:500;
+  letter-spacing:0;
 }
 
 .hero p{
-  margin:0;
-  max-width:860px;
-  color:var(--muted);
+  max-width:760px;
+  margin:21px 0 0;
+  color:#b4c3d6;
+  font-size:15px;
+  line-height:1.95;
 }
 
-.meta{
+.hero-tags{
   display:flex;
-  gap:10px;
   flex-wrap:wrap;
+  gap:8px;
+  margin-top:23px;
 }
 
 .tag{
-  padding:6px 12px;
-  border:1px solid var(--border);
-  border-radius:999px;
+  padding:5px 10px;
+  border:1px solid rgba(148,163,184,.2);
+  border-radius:6px;
+  background:rgba(7,16,29,.25);
+  color:#c3d5e8;
+  font-size:11px;
+}
+
+.section{display:grid;gap:18px}
+
+.section-heading{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr);
+  gap:13px;
+  align-items:start;
+}
+
+.section-number{
+  display:flex;
+  width:34px;
+  height:34px;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(56,189,248,.24);
+  border-radius:9px;
+  background:var(--sm-accent-soft);
+  color:#8edcff;
+  font-size:11px;
+  font-weight:700;
+}
+
+.section-heading h2{
+  margin:0;
+  font-size:21px;
+  line-height:1.5;
+}
+
+.section-heading p{
+  margin:4px 0 0;
+  color:var(--sm-muted);
   font-size:13px;
-  color:#bae6fd;
-  background:rgba(15,23,42,.4);
 }
 
-.section{
-  display:grid;
-  gap:12px;
-}
-
-.section h2{
+.intro{
+  max-width:920px;
   margin:0;
-  font-size:22px;
-}
-
-.section p{
-  margin:0;
-  color:var(--muted);
-}
-
-.model{
-  padding:22px;
-  border-radius:10px;
-  border:1px solid rgba(56,189,248,.18);
-  background:rgba(15,23,42,.6);
-  font-family:Consolas, monospace;
-  color:#7dd3fc;
+  color:#b4c3d6;
   font-size:14px;
-  line-height:1.8;
+  line-height:1.95;
 }
 
-.grid{
+.principle-grid{
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
 }
 
-.card{
-  padding:22px;
+.principle{
+  padding:20px;
+  border:1px solid var(--sm-border);
+  border-radius:var(--sm-radius);
+  background:linear-gradient(155deg,#142238,#101a2a);
+}
+
+.principle .label{
+  display:block;
+  margin-bottom:11px;
+  color:#7dd3fc;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.1em;
+}
+
+.principle h3{
+  margin:0 0 8px;
+  font-size:16px;
+}
+
+.principle p{
+  margin:0;
+  color:var(--sm-muted);
+  font-size:12px;
+  line-height:1.9;
+}
+
+.flow-panel{
+  padding:clamp(18px,4vw,28px);
+  border:1px solid var(--sm-border);
+  border-radius:var(--sm-radius);
+  background:#0e1929;
+}
+
+.flow-heading{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:21px;
+}
+
+.flow-heading strong{font-size:14px}
+.flow-heading span{color:var(--sm-muted);font-size:11px}
+
+.flow{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr) 22px minmax(0,1fr);
+  align-items:stretch;
+  gap:7px;
+}
+
+.flow-node{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  justify-content:center;
+  min-height:112px;
+  padding:15px 12px;
+  border:1px solid rgba(148,163,184,.19);
   border-radius:10px;
-  border:1px solid var(--border);
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
+  background:var(--sm-panel);
+  text-align:center;
 }
 
-.card h3{
-  margin:0 0 10px;
+.flow-node.primary{
+  border-color:rgba(56,189,248,.35);
+  background:linear-gradient(150deg,rgba(56,189,248,.1),#111c2e);
+}
+
+.flow-node .num{
+  margin-bottom:8px;
+  color:#7dd3fc;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.1em;
+}
+
+.flow-node strong{font-size:13px;line-height:1.6}
+
+.flow-node small{
+  margin-top:6px;
+  color:var(--sm-muted);
+  font-size:11px;
+  line-height:1.6;
+}
+
+.flow-arrow{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#6e9dbd;
   font-size:18px;
 }
 
-.card p{
+.flow-caption{
+  margin:18px 0 0;
+  padding-top:15px;
+  border-top:1px solid var(--sm-border);
+  color:var(--sm-muted);
+  font-size:12px;
+  line-height:1.9;
+}
+
+.state-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+
+.state-card{
+  display:grid;
+  grid-template-columns:12px minmax(0,1fr);
+  gap:12px;
+  padding:17px;
+  border:1px solid var(--sm-border);
+  border-radius:11px;
+  background:rgba(17,28,46,.65);
+}
+
+.state-dot{
+  width:9px;
+  height:9px;
+  margin-top:7px;
+  border-radius:50%;
+  background:#38bdf8;
+  box-shadow:0 0 0 4px rgba(56,189,248,.09);
+}
+
+.state-card h3{margin:0 0 5px;font-size:14px}
+
+.state-card p{
   margin:0;
-  color:var(--muted);
-  font-size:14px;
+  color:var(--sm-muted);
+  font-size:12px;
+  line-height:1.85;
 }
 
-.footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:#8ea3be;
-  font-size:14px;
+.model-box{
+  padding:20px;
+  border:1px solid var(--sm-border);
+  border-radius:12px;
+  background:#0a1422;
 }
 
-@media(max-width:900px){
-  .grid{
-    grid-template-columns:1fr;
+.model-box .formula{
+  overflow-wrap:anywhere;
+  color:#9cdefb;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:clamp(13px,2vw,15px);
+  line-height:1.9;
+}
+
+.model-box p{
+  margin:11px 0 0;
+  color:var(--sm-muted);
+  font-size:12px;
+  line-height:1.9;
+}
+
+.mode-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+
+.mode-card{
+  padding:21px;
+  border:1px solid var(--sm-border);
+  border-radius:var(--sm-radius);
+  background:linear-gradient(155deg,#142238,#101a2a);
+}
+
+.mode-card .label{
+  display:block;
+  margin-bottom:11px;
+  color:#7dd3fc;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.1em;
+}
+
+.mode-card h3{margin:0 0 9px;font-size:16px}
+
+.mode-card p{
+  margin:0;
+  color:var(--sm-muted);
+  font-size:13px;
+  line-height:1.9;
+}
+
+.callout{
+  padding:17px 19px;
+  border-left:3px solid var(--sm-accent);
+  border-radius:0 9px 9px 0;
+  background:rgba(56,189,248,.055);
+  color:#b8c9dc;
+  font-size:12px;
+  line-height:1.95;
+}
+
+.callout strong{color:#e0effb}
+
+.related{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.related a{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:15px 16px;
+  border:1px solid var(--sm-border);
+  border-radius:10px;
+  background:rgba(17,28,46,.65);
+  transition:border-color .2s ease,background .2s ease;
+}
+
+.related a:hover{
+  border-color:rgba(56,189,248,.4);
+  background:var(--sm-panel-hover);
+}
+
+.related strong{display:block;font-size:13px}
+
+.related small{
+  display:block;
+  margin-top:3px;
+  color:var(--sm-muted);
+  font-size:11px;
+}
+
+.related .arrow{color:#7dd3fc}
+
+.bottom{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  padding-top:21px;
+  border-top:1px solid var(--sm-border);
+}
+
+.back-link{color:#a8c6df;font-size:13px}
+.back-link:hover{color:#7dd3fc}
+
+.footer{color:#71839a;font-size:12px;text-align:right}
+
+@media(max-width:760px){
+  .principle-grid{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr;gap:6px}
+  .flow-node{min-height:82px}
+  .flow-arrow{height:17px;transform:rotate(90deg)}
+  .state-grid,.mode-grid{grid-template-columns:1fr}
+}
+
+@media(max-width:520px){
+  .page{
+    width:calc(100% - 28px);
+    padding-top:78px;
+    gap:34px;
   }
+  .hero{border-radius:16px}
+  .bottom{align-items:flex-start;flex-direction:column}
+  .footer{text-align:left}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important}
 }
 </style>
 </head>
@@ -164,122 +484,347 @@ a{
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/architecture/index.html">系统架构</a> /
-    <a href="/docs/architecture/scheduler/index.html">调度器</a> /
-    <span>调度模型</span>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="separator">/</span>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <span class="separator">/</span>
+    <a href="/docs/architecture/scheduler/index.html">调度器</a>
+    <span class="separator">/</span>
+    <span aria-current="page">调度模型</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS 调度核心</span>
+  <header class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">HRTOS / SCHEDULING MODEL</div>
+      <h1>
+        调度模型
+        <span>Scheduling Model</span>
+      </h1>
+      <p>
+        调度模型描述任务如何从就绪状态进入执行状态，以及系统在任务状态、
+        优先级或时间条件发生变化时，如何决定是否需要进行任务切换。
+        它连接任务管理、优先级规则、中断处理与上下文切换，是理解内核运行路径的关键。
+      </p>
+      <div class="hero-tags">
+        <span class="tag">Ready-State Management</span>
+        <span class="tag">Priority-Based Decision</span>
+        <span class="tag">Context Switching</span>
+        <span class="tag">8051 RTOS</span>
+      </div>
+    </div>
+  </header>
 
-    <h1>调度模型（Scheduling Model）</h1>
+  <section class="section" aria-labelledby="definition-title">
+    <div class="section-heading">
+      <span class="section-number">01</span>
+      <div>
+        <h2 id="definition-title">调度模型定义</h2>
+        <p>调度决策建立在任务状态和内核规则之上。</p>
+      </div>
+    </div>
 
-    <p>
-      调度模型定义系统如何从多个任务中选择执行对象，是实时操作系统中决定执行顺序与响应延迟的核心机制。
+    <p class="intro">
+      调度器并不是简单地在每次中断发生时重新选择任务。
+      系统需要先处理事件对任务状态的影响，再根据调度规则判断是否发生执行权转换。
+      事件可能使任务就绪、使当前任务阻塞或改变时间相关状态；
+      只有当执行条件和调度规则允许时，才会进入相应的任务切换路径。
     </p>
 
-    <div class="meta">
-      <span class="tag">Scheduling System Model</span>
-<span class="tag">Time Deterministic Kernel</span>
-<span class="tag">Preemption Control System</span>
+    <div class="model-box">
+      <div class="formula">调度决策 = f（就绪任务，优先级，调度模式，切换条件）</div>
+      <p>
+        这是用于解释调度输入的概念模型，并非 HRTOS 内核中的实际函数或源代码表达式。
+        中断、超时和 IPC 等事件可能改变任务状态，但它们的处理路径及是否触发任务切换，
+        需要以具体内核实现为准。
+      </p>
+    </div>
+
+    <div class="principle-grid">
+      <article class="principle">
+        <span class="label">INPUT / 01</span>
+        <h3>任务状态</h3>
+        <p>哪些任务已就绪、哪些任务正在运行，以及哪些任务因等待或其他条件暂时不能运行。</p>
+      </article>
+
+      <article class="principle">
+        <span class="label">RULE / 02</span>
+        <h3>调度规则</h3>
+        <p>优先级、调度模式和时间片规则共同约束任务执行权的选择与交接。</p>
+      </article>
+
+      <article class="principle">
+        <span class="label">ACTION / 03</span>
+        <h3>执行状态转换</h3>
+        <p>系统可能继续当前任务，也可能在满足切换条件后保存当前上下文并恢复另一个任务。</p>
+      </article>
     </div>
   </section>
-  <section class="section">
-  <h2>调度模型定义</h2>
 
-  <p>
-    调度模型本质是一个系统状态选择函数：
-    <strong>S(t) = f(中断，优先级，系统状态，资源可用性)</strong>
-  </p>
-
-  
-
-  <ul>
-  <li>输入可枚举（Requirement for analyzable state space）</li>
-  <li>调度点有限（Bounded scheduling points）</li>
-  <li>状态更新顺序一致（Deterministic state transition order）</li>
-</ul>
-<p>
-    它在每次事件触发点重新计算系统下一执行状态，包括任务释放、中断退出、超时与 IPC 唤醒。
-  </p>
-</section>
-
-<section class="section">
-  <h2>调度流程模型</h2>
-
-  <div class="model">
-
-<p><strong>调度控制闭环</strong></p>
-
-<p>1. 中断 / 事件触发</p>
-<p>↓</p>
-<p>2. 就绪队列更新</p>
-<p>↓</p>
-<p>3. 优先级评估</p>
-<p>↓</p>
-<p>4. 调度决策</p>
-<p>↓</p>
-<p>5. 上下文切换</p>
-<p>↓</p>
-<p>6. 任务执行</p>
-
-</div>
-
-
-
- <ul>
-  <li>就绪更新：Event → Ready Set</li>
-  <li>优先级评估：Ready Set → Execution Decision</li>
-  <li>上下文切换：Decision → CPU State Transition</li>
-</ul>
-    <p>
-    调度过程由就绪集、运行集、阻塞集与超时集构成。
-    核心是把外部事件快速转换为 CPU 所有权变化。
-  </p>
-</section>
-
-
-
-
-<section class="section">
-  <h2>调度类型</h2>
-
-  <div class="grid">
-
-    <div class="card">
-      <h3>抢占式调度</h3>
-      <p>高优先级任务可打断低优先级任务。</p>
+  <section class="section" aria-labelledby="flow-title">
+    <div class="section-heading">
+      <span class="section-number">02</span>
+      <div>
+        <h2 id="flow-title">调度决策流程</h2>
+        <p>从事件处理到执行权转换，区分状态更新与上下文切换。</p>
+      </div>
     </div>
 
-    <div class="card">
-      <h3>时间片调度</h3>
-      <p>同级任务轮转执行。</p>
+    <div class="flow-panel">
+      <div class="flow-heading">
+        <strong>概念性调度流程</strong>
+        <span>Conceptual Execution Path</span>
+      </div>
+
+      <div class="flow">
+        <div class="flow-node">
+          <span class="num">STEP 01</span>
+          <strong>事件或调度条件出现</strong>
+          <small>中断、超时、任务主动调用等</small>
+        </div>
+
+        <div class="flow-arrow" aria-hidden="true">→</div>
+
+        <div class="flow-node">
+          <span class="num">STEP 02</span>
+          <strong>更新相关状态</strong>
+          <small>就绪、阻塞、等待与时间状态</small>
+        </div>
+
+        <div class="flow-arrow" aria-hidden="true">→</div>
+
+        <div class="flow-node primary">
+          <span class="num">STEP 03</span>
+          <strong>判断是否需要切换</strong>
+          <small>结合优先级与调度规则</small>
+        </div>
+      </div>
+
+      <div class="flow" style="margin-top:8px">
+        <div class="flow-node">
+          <span class="num">STEP 04A</span>
+          <strong>继续当前任务</strong>
+          <small>切换条件不成立时</small>
+        </div>
+
+        <div class="flow-arrow" aria-hidden="true">↔</div>
+
+        <div class="flow-node">
+          <span class="num">STEP 04B</span>
+          <strong>保存与恢复上下文</strong>
+          <small>切换条件成立时进入切换路径</small>
+        </div>
+
+        <div class="flow-arrow" aria-hidden="true">→</div>
+
+        <div class="flow-node primary">
+          <span class="num">STEP 05</span>
+          <strong>任务继续执行</strong>
+          <small>新执行状态开始运行</small>
+        </div>
+      </div>
+
+      <p class="flow-caption">
+        图示用于解释调度的逻辑过程，不代表所有事件都沿同一条固定代码路径执行。
+        中断处理、内核临界区、任务主动让出执行权和时钟节拍处理，可能具有不同的入口和切换条件。
+      </p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="state-title">
+    <div class="section-heading">
+      <span class="section-number">03</span>
+      <div>
+        <h2 id="state-title">任务状态与调度</h2>
+        <p>任务的优先级决定相对执行权，任务状态决定它当前是否具备运行资格。</p>
+      </div>
     </div>
 
-    <div class="card">
-      <h3>实时调度</h3>
-      <p>保证截止时间可达。</p>
+    <div class="state-grid">
+      <article class="state-card">
+        <span class="state-dot"></span>
+        <div>
+          <h3>就绪任务</h3>
+          <p>已具备运行条件、可以参与调度选择的任务。多个任务同时就绪时，执行顺序由调度规则决定。</p>
+        </div>
+      </article>
+
+      <article class="state-card">
+        <span class="state-dot"></span>
+        <div>
+          <h3>当前运行任务</h3>
+          <p>当前占用处理器执行的任务。发生事件后，系统可能继续执行它，也可能切换到其他任务。</p>
+        </div>
+      </article>
+
+      <article class="state-card">
+        <span class="state-dot"></span>
+        <div>
+          <h3>阻塞或等待中的任务</h3>
+          <p>等待时间、消息、同步条件或其他事件的任务，通常需要相应条件满足后才能重新参与调度。</p>
+        </div>
+      </article>
+
+      <article class="state-card">
+        <span class="state-dot"></span>
+        <div>
+          <h3>空闲任务</h3>
+          <p>当没有更高优先级的可运行任务时，系统可执行空闲任务。其具体运行方式取决于内核实现。</p>
+        </div>
+      </article>
     </div>
 
-    <div class="card">
-      <h3>事件驱动调度</h3>
-      <p>中断/信号触发执行。</p>
+    <div class="callout">
+      <strong>术语说明：</strong>
+      “就绪集”“阻塞集”“超时集”可用于分析任务状态，但不应据此推断内核一定维护四个独立的物理队列或集合。
+      文档中的逻辑状态分类与实际数据结构应当分别描述。
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="modes-title">
+    <div class="section-heading">
+      <span class="section-number">04</span>
+      <div>
+        <h2 id="modes-title">调度行为与机制</h2>
+        <p>不同机制解决不同问题，不应把它们视为互相排斥的调度类型。</p>
+      </div>
     </div>
 
+    <div class="mode-grid">
+      <article class="mode-card">
+        <span class="label">PREEMPTION</span>
+        <h3>抢占式调度</h3>
+        <p>
+          在符合调度条件时，更高优先级的就绪任务可以获得执行机会。
+          实际切换仍受内核临界区、中断状态及具体调度规则约束。
+        </p>
+      </article>
+
+      <article class="mode-card">
+        <span class="label">TIME SLICE</span>
+        <h3>时间片调度</h3>
+        <p>
+          时间片机制用于限制特定任务连续占用处理器的时间。
+          是否轮转、哪些优先级参与轮转，以及时间片到期后的行为，
+          需要按照 HRTOS 的具体规则理解。
+        </p>
+      </article>
+
+      <article class="mode-card">
+        <span class="label">EVENT HANDLING</span>
+        <h3>事件驱动与任务唤醒</h3>
+        <p>
+          中断、超时或通信事件可能改变任务状态并使任务重新就绪。
+          事件发生本身不意味着必然进行上下文切换。
+        </p>
+      </article>
+
+      <article class="mode-card">
+        <span class="label">REAL-TIME ANALYSIS</span>
+        <h3>实时性分析</h3>
+        <p>
+          实时分析评估任务响应时间与截止期限之间的关系。
+          它需要结合执行时间、干扰、阻塞和系统开销，而不是单靠调度策略名称作出结论。
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="timing-title">
+    <div class="section-heading">
+      <span class="section-number">05</span>
+      <div>
+        <h2 id="timing-title">调度开销与响应时间</h2>
+        <p>调度决策的成本也是任务时序分析的一部分。</p>
+      </div>
+    </div>
+
+    <p class="intro">
+      任务响应时间不仅包括任务本身的执行时间，也可能受到更高优先级任务、中断处理、
+      资源等待和上下文切换等因素的影响。对于资源受限的 8051 系统，
+      保存与恢复寄存器、栈空间安排和中断控制路径尤其值得关注。
+    </p>
+
+    <div class="model-box">
+      <div class="formula">响应时间分析 = 执行时间 + 干扰 + 阻塞 + 相关系统开销</div>
+      <p>
+        这是用于组织分析项目的概念表达式，不是适用于所有调度算法的完整数学公式。
+        进行正式计算时，需要根据调度策略定义各项的边界与计数方式，避免遗漏或重复计算开销。
+      </p>
+    </div>
+
+    <div class="callout">
+      <strong>分析原则：</strong>
+      测得的平均切换时间可以帮助评估性能，但不能直接代替最坏情况下的时间上界。
+      若要对截止期限作出保证，还需明确最坏情况执行时间、任务到达模式、阻塞上界、
+      中断干扰与测量或分析方法的适用范围。
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="related-title">
+    <div class="section-heading">
+      <span class="section-number">06</span>
+      <div>
+        <h2 id="related-title">相关架构文档</h2>
+        <p>从调度机制继续深入到优先级规则、理论分析与内核执行路径。</p>
+      </div>
+    </div>
+
+    <div class="related">
+      <a href="/docs/architecture/scheduler/index.html">
+        <span>
+          <strong>调度器架构</strong>
+          <small>调度体系与核心模型总览</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="/docs/architecture/scheduler/priority-model.html">
+        <span>
+          <strong>优先级模型</strong>
+          <small>任务执行权与优先级层级</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="/docs/architecture/scheduler/scheduling-theory.html">
+        <span>
+          <strong>调度理论</strong>
+          <small>响应时间与可调度性分析</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="/docs/architecture/kernel/index.html">
+        <span>
+          <strong>内核架构</strong>
+          <small>内核执行控制与上下文切换</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="/docs/architecture/interrupt/index.html">
+        <span>
+          <strong>中断系统</strong>
+          <small>中断处理与任务切换之间的关系</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="/docs/architecture/ipc/index.html">
+        <span>
+          <strong>IPC 与同步</strong>
+          <small>消息、等待与任务唤醒</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+
+  <div class="bottom">
+    <a class="back-link" href="/docs/architecture/scheduler/index.html">← 返回调度器架构</a>
+    <footer class="footer">© 2017–2026 HRTOS · Scheduling Model</footer>
   </div>
-
-
-    <p>
-    实际系统通常混合使用多种调度方式，不同负载区域对应不同策略。
-  </p>
-</section>
-
-
-  <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的调度模型体系。
-  </footer>
 
 </main>
 

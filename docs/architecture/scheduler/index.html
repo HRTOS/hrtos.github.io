@@ -4,31 +4,35 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>调度器 Scheduler | HRTOS 架构模块</title>
-<meta name="description" content="HRTOS 调度器架构入口，包含优先级模型、调度模型与调度理论，定义实时系统任务选择与执行机制。" />
+<title>调度器架构 | HRTOS Scheduler Architecture</title>
+<meta name="description" content="HRTOS 调度器架构文档，系统介绍优先级模型、运行时调度模型与可调度性理论，解析任务选择、抢占关系及实时约束之间的联系。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root{
-  --bg:#0f172a;
-  --border:rgba(148,163,184,.18);
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+  --scheduler-bg:#0b1220;
+  --scheduler-panel:#111c2e;
+  --scheduler-panel-soft:#142238;
+  --scheduler-border:rgba(148,163,184,.16);
+  --scheduler-text:#e5edf7;
+  --scheduler-muted:#9aabc1;
+  --scheduler-accent:#38bdf8;
+  --scheduler-accent-soft:rgba(56,189,248,.09);
+  --scheduler-radius:16px;
   color-scheme:dark;
 }
 
 *{box-sizing:border-box}
 
+html{scroll-behavior:smooth}
+
 body{
   margin:0;
-  background:var(--bg);
-  color:var(--text);
+  background:var(--scheduler-bg);
+  color:var(--scheduler-text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
+  line-height:1.75;
 }
 
 a{
@@ -36,128 +40,529 @@ a{
   text-decoration:none;
 }
 
+a:focus-visible{
+  outline:2px solid var(--scheduler-accent);
+  outline-offset:4px;
+  border-radius:5px;
+}
+
 .page{
-  width:min(1180px, calc(100% - 40px));
+  width:min(1120px,calc(100% - 40px));
   margin:0 auto;
-  padding:96px 0 56px;
+  padding:94px 0 58px;
   display:grid;
-  gap:40px;
+  gap:48px;
 }
 
 .breadcrumb{
-  font-size:14px;
-  color:var(--muted);
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  align-items:center;
+  color:var(--scheduler-muted);
+  font-size:13px;
 }
 
-.breadcrumb a{ color:#7dd3fc; }
+.breadcrumb a{
+  color:#a8c6df;
+  transition:color .2s ease;
+}
+
+.breadcrumb a:hover{color:var(--scheduler-accent)}
+
+.breadcrumb .separator{color:#52647c}
 
 .hero{
-  display:grid;
-  gap:16px;
+  position:relative;
+  overflow:hidden;
+  padding:clamp(28px,5vw,54px);
+  border:1px solid rgba(56,189,248,.19);
+  border-radius:22px;
+  background:
+    radial-gradient(ellipse at 88% 8%,rgba(56,189,248,.12),transparent 36%),
+    linear-gradient(135deg,#13233a 0%,#0e192b 58%,#101b2d 100%);
 }
 
-.hero-label{
-  display:inline-flex;
-  width:fit-content;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.22);
-  color:#bae6fd;
-  font-size:14px;
+.hero::after{
+  content:"SCHEDULER";
+  position:absolute;
+  right:-8px;
+  bottom:-36px;
+  color:rgba(148,163,184,.045);
+  font-size:clamp(58px,11vw,124px);
+  font-weight:800;
+  letter-spacing:-.06em;
+  line-height:1;
+  pointer-events:none;
+}
+
+.hero-content{
+  position:relative;
+  z-index:1;
+  max-width:790px;
+}
+
+.eyebrow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:20px;
+  color:#8edcff;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+
+.eyebrow::before{
+  content:"";
+  width:24px;
+  height:2px;
+  background:var(--scheduler-accent);
 }
 
 .hero h1{
   margin:0;
-  font-size:42px;
+  font-size:clamp(32px,5vw,48px);
+  line-height:1.2;
+  letter-spacing:-.035em;
 }
 
-.hero p{
-  margin:0;
-  max-width:860px;
-  color:var(--muted);
+.hero h1 span{
+  display:block;
+  margin-top:10px;
+  color:#a8c4df;
+  font-size:clamp(17px,2.5vw,23px);
+  font-weight:500;
+  letter-spacing:0;
 }
 
-.meta{
+.hero-description{
+  max-width:720px;
+  margin:23px 0 0;
+  color:#b1c0d3;
+  font-size:16px;
+  line-height:1.95;
+}
+
+.hero-tags{
   display:flex;
-  gap:10px;
   flex-wrap:wrap;
+  gap:9px;
+  margin-top:25px;
 }
 
 .tag{
-  padding:6px 12px;
-  border:1px solid var(--border);
-  border-radius:999px;
-  font-size:13px;
-  color:#bae6fd;
-  background:rgba(15,23,42,.4);
+  padding:6px 11px;
+  border:1px solid rgba(148,163,184,.2);
+  border-radius:7px;
+  background:rgba(7,16,29,.28);
+  color:#c5d5e8;
+  font-size:12px;
 }
 
 .section{
   display:grid;
-  gap:12px;
+  gap:18px;
 }
 
-.section h2{
+.section-heading{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:14px;
+  align-items:start;
+}
+
+.section-number{
+  display:flex;
+  width:34px;
+  height:34px;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(56,189,248,.25);
+  border-radius:9px;
+  background:var(--scheduler-accent-soft);
+  color:#8edcff;
+  font-size:12px;
+  font-weight:700;
+}
+
+.section-heading h2{
   margin:0;
   font-size:22px;
+  line-height:1.45;
+  letter-spacing:-.015em;
 }
 
-.section p{
+.section-heading p{
+  margin:5px 0 0;
+  color:var(--scheduler-muted);
+  font-size:14px;
+}
+
+.intro-copy{
+  max-width:900px;
   margin:0;
-  color:var(--muted);
+  color:#b5c3d5;
+  font-size:15px;
 }
 
-.grid{
+.principles{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:20px;
+  gap:14px;
 }
 
-.card{
-  display:grid;
-  gap:12px;
-  padding:24px 22px;
-  min-height:180px;
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  transition:.22s ease;
+.principle{
+  min-width:0;
+  padding:21px;
+  border:1px solid var(--scheduler-border);
+  border-radius:var(--scheduler-radius);
+  background:linear-gradient(160deg,rgba(20,34,56,.9),rgba(15,25,42,.9));
 }
 
-.card:hover{
-  transform:translateY(-6px);
-  border-color:rgba(56,189,248,.38);
-}
-
-.card h3{
-  margin:0;
-  font-size:18px;
-}
-
-.card p{
-  margin:0;
-  color:var(--muted);
-  font-size:14px;
-}
-
-.card span{
-  margin-top:auto;
+.principle-label{
+  display:block;
+  margin-bottom:11px;
   color:#7dd3fc;
-  font-weight:600;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+}
+
+.principle h3{
+  margin:0 0 8px;
+  font-size:17px;
+}
+
+.principle p{
+  margin:0;
+  color:var(--scheduler-muted);
+  font-size:13px;
+  line-height:1.8;
+}
+
+.flow-panel{
+  padding:clamp(20px,4vw,32px);
+  border:1px solid var(--scheduler-border);
+  border-radius:var(--scheduler-radius);
+  background:#0e192a;
+}
+
+.flow-caption{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:22px;
+}
+
+.flow-caption strong{
   font-size:14px;
 }
+
+.flow-caption span{
+  color:var(--scheduler-muted);
+  font-size:12px;
+}
+
+.flow{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr) 26px minmax(0,1fr);
+  align-items:stretch;
+  gap:8px;
+}
+
+.flow-node{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-height:112px;
+  padding:16px 13px;
+  border:1px solid rgba(148,163,184,.2);
+  border-radius:11px;
+  background:var(--scheduler-panel);
+  text-align:center;
+  transition:border-color .2s ease,background .2s ease;
+}
+
+a.flow-node:hover{
+  border-color:rgba(56,189,248,.55);
+  background:#152740;
+}
+
+.flow-node .flow-index{
+  margin-bottom:8px;
+  color:#7dd3fc;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.1em;
+}
+
+.flow-node strong{
+  font-size:14px;
+  line-height:1.5;
+}
+
+.flow-node small{
+  margin-top:6px;
+  color:var(--scheduler-muted);
+  font-size:11px;
+  line-height:1.6;
+}
+
+.flow-arrow{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#6e9dbd;
+  font-size:19px;
+}
+
+.flow-footnote{
+  margin:19px 0 0;
+  padding-top:16px;
+  border-top:1px solid var(--scheduler-border);
+  color:var(--scheduler-muted);
+  font-size:12px;
+  line-height:1.8;
+}
+
+.model-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+}
+
+.model-card{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  padding:23px;
+  border:1px solid var(--scheduler-border);
+  border-radius:var(--scheduler-radius);
+  background:linear-gradient(160deg,#142238,#101a2a);
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;
+}
+
+.model-card:hover{
+  transform:translateY(-3px);
+  border-color:rgba(56,189,248,.42);
+  background:linear-gradient(160deg,#182b44,#111e30);
+}
+
+.model-card-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:19px;
+}
+
+.model-index{
+  color:#7dd3fc;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.08em;
+}
+
+.model-kind{
+  padding:4px 8px;
+  border:1px solid var(--scheduler-border);
+  border-radius:5px;
+  color:#a8b9cc;
+  font-size:10px;
+}
+
+.model-card h3{
+  margin:0;
+  font-size:19px;
+}
+
+.model-card .english{
+  display:block;
+  margin-top:5px;
+  color:#91a9c3;
+  font-size:12px;
+  font-weight:500;
+}
+
+.model-card p{
+  margin:15px 0 20px;
+  color:var(--scheduler-muted);
+  font-size:13px;
+  line-height:1.85;
+}
+
+.model-card .card-link{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:auto;
+  padding-top:14px;
+  border-top:1px solid var(--scheduler-border);
+  color:#8edcff;
+  font-size:13px;
+  font-weight:600;
+}
+
+.model-card .card-link span:last-child{
+  transition:transform .2s ease;
+}
+
+.model-card:hover .card-link span:last-child{
+  transform:translateX(4px);
+}
+
+.scope-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+
+.scope-card{
+  padding:23px;
+  border:1px solid var(--scheduler-border);
+  border-radius:var(--scheduler-radius);
+  background:rgba(17,28,46,.7);
+}
+
+.scope-card h3{
+  margin:0 0 12px;
+  font-size:16px;
+}
+
+.scope-card p{
+  margin:0;
+  color:var(--scheduler-muted);
+  font-size:13px;
+  line-height:1.9;
+}
+
+.scope-card strong{
+  color:#d8e8f8;
+  font-weight:600;
+}
+
+.note{
+  padding:18px 20px;
+  border-left:3px solid #38bdf8;
+  border-radius:0 10px 10px 0;
+  background:rgba(56,189,248,.055);
+  color:#b4c6da;
+  font-size:13px;
+  line-height:1.9;
+}
+
+.note strong{color:#d8efff}
+
+.related-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.related-link{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:15px 17px;
+  border:1px solid var(--scheduler-border);
+  border-radius:10px;
+  background:rgba(17,28,46,.62);
+  transition:border-color .2s ease,background .2s ease;
+}
+
+.related-link:hover{
+  border-color:rgba(56,189,248,.4);
+  background:var(--scheduler-panel-soft);
+}
+
+.related-link strong{
+  display:block;
+  font-size:13px;
+}
+
+.related-link small{
+  display:block;
+  margin-top:3px;
+  color:var(--scheduler-muted);
+  font-size:11px;
+}
+
+.related-link .arrow{
+  color:#7dd3fc;
+  font-size:16px;
+}
+
+.page-bottom{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  padding-top:22px;
+  border-top:1px solid var(--scheduler-border);
+}
+
+.back-link{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  color:#a8c6df;
+  font-size:13px;
+  transition:color .2s ease;
+}
+
+.back-link:hover{color:#7dd3fc}
 
 .footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:#8ea3be;
-  font-size:14px;
+  color:#71839a;
+  font-size:12px;
+  text-align:right;
 }
 
-@media(max-width:900px){
-  .grid{ grid-template-columns:1fr; }
+@media(max-width:820px){
+  .principles,.model-grid{grid-template-columns:1fr}
+  .principle{padding:19px}
+  .model-card{padding:21px}
+  .flow{
+    grid-template-columns:1fr;
+    gap:7px;
+  }
+  .flow-node{min-height:85px}
+  .flow-arrow{
+    height:18px;
+    transform:rotate(90deg);
+  }
+}
+
+@media(max-width:600px){
+  .page{
+    width:calc(100% - 28px);
+    padding-top:78px;
+    gap:36px;
+  }
+  .hero{border-radius:16px}
+  .hero-description{font-size:14px}
+  .section-heading h2{font-size:20px}
+  .scope-grid,.related-list{grid-template-columns:1fr}
+  .page-bottom{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .footer{text-align:left}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    transition:none!important;
+    animation:none!important;
+  }
 }
 </style>
 </head>
@@ -166,112 +571,271 @@ a{
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/architecture/index.html">系统架构</a> /
-    <span>调度器</span>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="separator">/</span>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <span class="separator">/</span>
+    <span aria-current="page">调度器</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS 架构模块</span>
-    <h1>调度器（Scheduler）</h1>
+  <header class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">HRTOS / SYSTEM ARCHITECTURE</div>
+      <h1>
+        调度器架构
+        <span>Scheduler Architecture</span>
+      </h1>
+      <p class="hero-description">
+        调度器连接任务优先级、运行时任务选择与时间约束。
+        本模块从优先级控制、调度执行模型和可调度性理论三个层面，
+        梳理 HRTOS 的任务调度机制及其与系统实时行为之间的关系。
+      </p>
+      <div class="hero-tags">
+        <span class="tag">Task Scheduling</span>
+        <span class="tag">Priority Control</span>
+        <span class="tag">Real-Time Analysis</span>
+        <span class="tag">8051 Architecture</span>
+      </div>
+    </div>
+  </header>
 
-    <p>
-      调度器负责决定系统中哪个任务在何时执行，是实时系统时间控制的核心组件。
+  <section class="section" aria-labelledby="overview-title">
+    <div class="section-heading">
+      <span class="section-number">01</span>
+      <div>
+        <h2 id="overview-title">模块概述</h2>
+        <p>从执行权分配到实时约束分析，建立完整的调度认知。</p>
+      </div>
+    </div>
+
+    <p class="intro-copy">
+      在 RTOS 中，任务调度决定就绪任务如何竞争处理器执行权。
+      调度行为不仅取决于任务优先级，还受到任务状态、调度触发条件、
+      中断活动以及内核执行规则的共同影响。
+      因此，理解调度器需要同时区分“谁更有资格运行”“系统何时重新选择任务”
+      和“给定约束是否能够满足”这三个不同问题。
     </p>
 
-    <div class="meta">
-      <span class="tag">Time Control Core</span>
-      <span class="tag">Execution Decision Layer</span>
-      <span class="tag">Deterministic Scheduling</span>
+    <div class="principles">
+      <article class="principle">
+        <span class="principle-label">01 / PRIORITY</span>
+        <h3>执行权如何分配</h3>
+        <p>通过优先级规则表达任务之间的执行权关系，并明确抢占与优先级变化的语义。</p>
+      </article>
+
+      <article class="principle">
+        <span class="principle-label">02 / DECISION</span>
+        <h3>何时选择下一个任务</h3>
+        <p>根据任务状态和调度触发条件执行任务选择，确定运行时的切换行为。</p>
+      </article>
+
+      <article class="principle">
+        <span class="principle-label">03 / ANALYSIS</span>
+        <h3>时间约束能否满足</h3>
+        <p>结合执行时间、干扰、阻塞和调度开销，分析任务响应时间及可调度性边界。</p>
+      </article>
     </div>
   </section>
 
-  <section class="section">
-    <h2>模块概述</h2>
+  <section class="section" aria-labelledby="structure-title">
+    <div class="section-heading">
+      <span class="section-number">02</span>
+      <div>
+        <h2 id="structure-title">调度体系结构</h2>
+        <p>三个核心模型相互关联，但承担不同的分析职责。</p>
+      </div>
+    </div>
 
-    <p>
-      调度器将任务集、时间约束与资源状态统一映射为执行决策，是系统确定性的关键来源。
-    </p>
+    <div class="flow-panel">
+      <div class="flow-caption">
+        <strong>调度机制的三个核心层次</strong>
+        <span>Conceptual Architecture</span>
+      </div>
 
-    <p>
-      其核心关注点是响应时间上界、阻塞传播与抢占一致性，而不是吞吐量或平均性能。
-    </p>
+      <div class="flow">
+        <a class="flow-node" href="priority-model.html">
+          <span class="flow-index">LAYER 01</span>
+          <strong>优先级模型</strong>
+          <small>Priority Model · 执行权关系</small>
+        </a>
 
-    <p>
-      调度器同时也是系统各模块的时间约束中心：任务设计、IPC、中断与内存模型都需与其对齐。
-    </p>
-  </section>
+        <div class="flow-arrow" aria-hidden="true">→</div>
 
-  <section class="section">
-    <h2>调度系统结构</h2>
+        <a class="flow-node" href="scheduling-model.html">
+          <span class="flow-index">LAYER 02</span>
+          <strong>调度模型</strong>
+          <small>Scheduling Model · 运行时决策</small>
+        </a>
 
-<div class="card" style="font-family:Consolas, monospace; color:#7dd3fc;">
+        <div class="flow-arrow" aria-hidden="true">→</div>
 
-<a href="/docs/architecture/interrupt/index.html">Interrupt System（事件触发层）</a>
-↓
-<a href="/docs/architecture/scheduler/scheduling-theory.html">Scheduling Theory（可证明性层）</a>
-↓
-<a href="/docs/architecture/scheduler/scheduling-model.html">Scheduling Model（执行决策层）</a>
-↓
-<a href="/docs/architecture/scheduler/priority-model.html">Priority Model（优先级控制层）</a>
-↓
-<a href="/docs/architecture/kernel/index.html">Kernel Execution（执行控制层）</a>
+        <a class="flow-node" href="scheduling-theory.html">
+          <span class="flow-index">LAYER 03</span>
+          <strong>调度理论</strong>
+          <small>Scheduling Theory · 时间约束分析</small>
+        </a>
+      </div>
 
-</div>
-
-    <p>
-      三层结构分别描述：可调度性边界、运行时决策逻辑与优先级抢占关系。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>系统意义</h2>
-
-    <p>
-      调度器定义系统是否具备时间确定性，是 RTOS 的时间中枢。
-    </p>
-
-    <p>
-      它不仅决定任务执行顺序，也决定系统是否仍然满足实时约束。
-    </p>
-
-    <p>
-      一旦调度模型失效，系统将从确定性系统退化为概率性行为系统。
-    </p>
-  </section>
-
-  <section class="section">
-    <h2>核心模型</h2>
-
-    <div class="grid">
-
-      <a class="card" href="priority-model.html">
-        <h3>优先级控制层</h3>
-        <p>定义任务抢占与执行权重。</p>
-        <span>进入 →</span>
-      </a>
-
-      <a class="card" href="scheduling-model.html">
-        <h3>执行调度层</h3>
-        <p>定义运行时任务选择机制。</p>
-        <span>进入 →</span>
-      </a>
-
-      <a class="card" href="scheduling-theory.html">
-        <h3>理论证明层</h3>
-        <p>基于时间约束定义可调度性边界。</p>
-        <span>进入 →</span>
-      </a>
-
+      <p class="flow-footnote">
+        以上为文档的逻辑组织关系，并不表示内核在运行时严格按此顺序调用三个独立组件。
+        中断系统负责事件触发与处理，内核负责执行控制与上下文切换；
+        它们共同影响调度行为，但不等同于调度模型本身。
+      </p>
     </div>
   </section>
 
+  <section class="section" aria-labelledby="models-title">
+    <div class="section-heading">
+      <span class="section-number">03</span>
+      <div>
+        <h2 id="models-title">核心模型与专题文档</h2>
+        <p>沿着三个方向深入理解 HRTOS 调度体系。</p>
+      </div>
+    </div>
 
+    <div class="model-grid">
+      <a class="model-card" href="priority-model.html">
+        <div class="model-card-top">
+          <span class="model-index">MODEL / 01</span>
+          <span class="model-kind">规则层</span>
+        </div>
+        <h3>优先级模型<span class="english">Priority Model</span></h3>
+        <p>
+          了解任务优先级的组织方式、优先级之间的执行权关系，
+          以及抢占规则如何影响任务运行顺序。
+        </p>
+        <div class="card-link">
+          <span>阅读优先级模型</span>
+          <span aria-hidden="true">→</span>
+        </div>
+      </a>
 
-  <footer class="footer">
-    © 2017–2026 HRTOS. 调度器架构体系。
-  </footer>
+      <a class="model-card" href="scheduling-model.html">
+        <div class="model-card-top">
+          <span class="model-index">MODEL / 02</span>
+          <span class="model-kind">机制层</span>
+        </div>
+        <h3>调度模型<span class="english">Scheduling Model</span></h3>
+        <p>
+          了解任务就绪与运行状态、调度触发条件、
+          任务选择过程以及时间片和抢占机制的协同关系。
+        </p>
+        <div class="card-link">
+          <span>阅读调度模型</span>
+          <span aria-hidden="true">→</span>
+        </div>
+      </a>
+
+      <a class="model-card" href="scheduling-theory.html">
+        <div class="model-card-top">
+          <span class="model-index">MODEL / 03</span>
+          <span class="model-kind">分析层</span>
+        </div>
+        <h3>调度理论<span class="english">Scheduling Theory</span></h3>
+        <p>
+          从执行时间、任务干扰、资源阻塞和截止期限出发，
+          理解实时任务的响应时间分析与可调度性条件。
+        </p>
+        <div class="card-link">
+          <span>阅读调度理论</span>
+          <span aria-hidden="true">→</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="boundary-title">
+    <div class="section-heading">
+      <span class="section-number">04</span>
+      <div>
+        <h2 id="boundary-title">调度器的职责边界</h2>
+        <p>调度是实时行为的重要组成部分，但不是唯一决定因素。</p>
+      </div>
+    </div>
+
+    <div class="scope-grid">
+      <article class="scope-card">
+        <h3>调度器关注什么</h3>
+        <p>
+          <strong>任务选择规则、优先级关系、调度时机与执行权转换。</strong>
+          这些机制决定了任务在竞争处理器时如何获得执行机会，
+          以及系统在满足触发条件后如何进行调度决策。
+        </p>
+      </article>
+
+      <article class="scope-card">
+        <h3>系统实时性还取决于什么</h3>
+        <p>
+          <strong>中断延迟、临界区长度、上下文切换开销、资源阻塞与任务执行时间。</strong>
+          即使调度规则正确，如果这些因素缺乏约束或测量依据，
+          也不能仅凭调度策略就推导出端到端的实时保证。
+        </p>
+      </article>
+    </div>
+
+    <div class="note">
+      <strong>工程判断：</strong>
+      优先级规则清晰，不代表所有任务必然满足截止期限；
+      压力测试长期通过，也不等于已经证明最坏情况下的响应时间上界。
+      对实时性作出结论时，应明确分析假设、测量条件、系统开销及尚未覆盖的边界情况。
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="related-title">
+    <div class="section-heading">
+      <span class="section-number">05</span>
+      <div>
+        <h2 id="related-title">关联架构模块</h2>
+        <p>调度器与中断、内核执行和资源管理共同构成系统运行基础。</p>
+      </div>
+    </div>
+
+    <div class="related-list">
+      <a class="related-link" href="/docs/architecture/interrupt/index.html">
+        <span>
+          <strong>中断系统</strong>
+          <small>事件响应、嵌套中断与调度触发条件</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/kernel/index.html">
+        <span>
+          <strong>内核架构</strong>
+          <small>执行控制、上下文切换与内核边界</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/memory/index.html">
+        <span>
+          <strong>内存架构</strong>
+          <small>任务栈、内存布局与资源约束</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a class="related-link" href="/docs/architecture/ipc/index.html">
+        <span>
+          <strong>进程间通信与同步</strong>
+          <small>任务协作、同步等待与资源阻塞</small>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+
+  <div class="page-bottom">
+    <a class="back-link" href="/docs/architecture/index.html">
+      <span aria-hidden="true">←</span>
+      <span>返回系统架构</span>
+    </a>
+
+    <footer class="footer">
+      © 2017–2026 HRTOS · Scheduler Architecture
+    </footer>
+  </div>
 
 </main>
 
