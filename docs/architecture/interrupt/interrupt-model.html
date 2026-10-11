@@ -1,317 +1,955 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>中断模型 | HRTOS 文档中心</title>
-<meta name="description" content="HRTOS 中断模型说明，包括中断源、优先级、ISR执行与任务恢复机制。" />
+<title>中断模型（Interrupt Model） | HRTOS Documentation</title>
+<meta name="description" content="HRTOS 8051 中断模型：中断请求、硬件响应、ISR 入口、上下文管理、中断嵌套及退出路径的架构说明。" />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://hrtos.com/docs/architecture/interrupt/interrupt-model.html" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root {
-  --bg: #0f172a;
-  --border: rgba(148, 163, 184, 0.16);
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
-  --radius: 10px;
+  --im-bg: #0b1120;
+  --im-panel: rgba(17, 29, 49, 0.84);
+  --im-border: rgba(148, 163, 184, 0.16);
+  --im-text: #e5edf8;
+  --im-muted: #9aadc4;
+  --im-accent: #67d5f5;
+  --im-accent-soft: rgba(103, 213, 245, 0.08);
+  --im-code: #080e1a;
+  --im-radius: 14px;
+  --im-shadow: 0 18px 44px rgba(0, 0, 0, 0.19);
   color-scheme: dark;
 }
 
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  line-height: 1.75;
+.im-page,
+.im-page * {
+  box-sizing: border-box;
 }
 
-a { color: inherit; text-decoration: none; }
-
-.page {
-  width: min(1180px, calc(100% - 40px));
+.im-page {
+  position: relative;
+  isolation: isolate;
+  width: min(1220px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 96px 0 56px;
-  display: grid;
-  gap: 40px;
+  padding: 42px 0 64px;
+  color: var(--im-text);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
 }
 
-.breadcrumb {
-  font-size: 14px;
-  color: var(--muted);
+.im-page::before {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: -24px;
+  right: -24px;
+  height: 460px;
+  content: "";
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 12% 10%, rgba(14, 165, 233, 0.13), transparent 42%),
+    radial-gradient(ellipse at 87% 7%, rgba(59, 130, 246, 0.09), transparent 39%);
 }
 
-.breadcrumb a { color: #7dd3fc; }
-
-.hero {
-  display: grid;
-  gap: 16px;
+.im-page a {
+  color: var(--im-accent);
+  text-decoration: none;
+  text-underline-offset: 4px;
 }
 
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 14px;
+.im-page a:hover {
+  text-decoration: underline;
 }
 
-.hero h1 {
-  margin: 0;
-  font-size: 42px;
-}
-
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-}
-
-.meta {
+.im-breadcrumb {
   display: flex;
-  gap: 10px;
   flex-wrap: wrap;
-}
-
-.tag {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 30px;
+  color: var(--im-muted);
   font-size: 13px;
-  color: #bae6fd;
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0,1fr) 280px;
-  gap: 28px;
+.im-separator {
+  color: #52677f;
 }
 
-.content {
-  display: grid;
-  gap: 22px;
+.im-hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 30px;
+  padding: 35px 34px 32px;
+  border: 1px solid rgba(103, 213, 245, 0.19);
+  border-radius: 20px;
+  background: linear-gradient(120deg, rgba(17, 37, 61, 0.97), rgba(12, 22, 39, 0.94));
+  box-shadow: var(--im-shadow);
 }
 
-.section {
-  display: grid;
-  gap: 12px;
-  padding: 24px 22px;
-  background: linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+.im-hero::after {
+  position: absolute;
+  top: -110px;
+  right: -70px;
+  width: 320px;
+  height: 320px;
+  content: "";
+  pointer-events: none;
+  border: 1px solid rgba(103, 213, 245, 0.10);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 36px rgba(103, 213, 245, 0.025),
+    0 0 0 76px rgba(103, 213, 245, 0.018);
 }
 
-.section h2 {
+.im-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 17px;
+  color: #a9e9fa;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.im-eyebrow::before {
+  width: 22px;
+  height: 2px;
+  content: "";
+  background: var(--im-accent);
+}
+
+.im-hero h1 {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 15px;
+  color: #f1f7ff;
+  font-size: clamp(30px, 4.2vw, 45px);
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+}
+
+.im-hero h1 span {
+  display: block;
+  margin-top: 10px;
+  color: var(--im-accent);
+  font-size: clamp(17px, 2.2vw, 23px);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.im-hero p {
+  position: relative;
+  z-index: 1;
+  max-width: 810px;
   margin: 0;
-  font-size: 24px;
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
+  color: #b3c4d9;
+  font-size: 15px;
 }
 
-.section p { margin: 0; color: var(--muted); }
+.im-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
 
-.note {
+.im-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 6px;
+  background: rgba(5, 13, 26, 0.28);
+  color: #b8cde1;
+  font-size: 12px;
+}
+
+.im-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  align-items: start;
+  gap: 25px;
+}
+
+.im-content {
+  display: grid;
+  min-width: 0;
+  gap: 20px;
+}
+
+.im-section {
+  min-width: 0;
+  padding: 26px;
+  border: 1px solid var(--im-border);
+  border-radius: var(--im-radius);
+  background: linear-gradient(150deg, rgba(20, 34, 55, 0.88), rgba(12, 21, 37, 0.95));
+  box-shadow: var(--im-shadow);
+  scroll-margin-top: 100px;
+}
+
+.im-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  color: #eef6ff;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.im-section h2::before {
+  flex: 0 0 3px;
+  width: 3px;
+  height: 23px;
+  border-radius: 3px;
+  content: "";
+  background: var(--im-accent);
+}
+
+.im-section h3 {
+  margin: 22px 0 9px;
+  color: #dceaf9;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.im-section h3:first-child {
+  margin-top: 0;
+}
+
+.im-section p {
+  margin: 0 0 14px;
+  color: var(--im-muted);
+  font-size: 14px;
+}
+
+.im-section p:last-child {
+  margin-bottom: 0;
+}
+
+.im-section strong {
+  color: #e2f4ff;
+  font-weight: 650;
+}
+
+.im-section ul,
+.im-section ol {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-left: 21px;
+  color: var(--im-muted);
+  font-size: 14px;
+}
+
+.im-section li::marker {
+  color: var(--im-accent);
+}
+
+.im-section code {
+  padding: 2px 5px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 4px;
+  background: rgba(2, 8, 20, 0.65);
+  color: #a9e8fb;
+  font-family: Consolas, "Cascadia Code", monospace;
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+}
+
+.im-note {
+  margin-top: 17px;
   padding: 14px 16px;
-  border-left: 3px solid var(--accent);
+  border: 1px solid rgba(103, 213, 245, 0.15);
+  border-left: 3px solid var(--im-accent);
   border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
+  background: var(--im-accent-soft);
+  color: #b9cde0;
+  font-size: 13px;
 }
 
-.code {
-  background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
-  border-radius: 8px;
-  padding: 16px;
+.im-note strong {
+  color: #c9f1fc;
+}
+
+.im-model-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.im-model-card {
+  padding: 17px;
+  border: 1px solid var(--im-border);
+  border-radius: 10px;
+  background: rgba(4, 12, 25, 0.43);
+}
+
+.im-model-index {
+  margin-bottom: 7px;
+  color: var(--im-accent);
   font-family: Consolas, monospace;
-  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.im-model-card h3 {
+  margin: 0 0 7px;
+  color: #e0edf9;
+  font-size: 15px;
+}
+
+.im-model-card p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.im-flow {
+  display: grid;
+  gap: 0;
+  margin-top: 20px;
+}
+
+.im-flow-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 13px;
+  padding-bottom: 21px;
+}
+
+.im-flow-step:last-child {
+  padding-bottom: 0;
+}
+
+.im-flow-step:not(:last-child)::after {
+  position: absolute;
+  top: 34px;
+  bottom: 0;
+  left: 17px;
+  width: 1px;
+  content: "";
+  background: rgba(103, 213, 245, 0.24);
+}
+
+.im-flow-index {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 35px;
+  height: 35px;
+  place-items: center;
+  border: 1px solid rgba(103, 213, 245, 0.27);
+  border-radius: 9px;
+  background: #10243a;
+  color: #a9eafa;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.im-flow-body h3 {
+  margin: 3px 0 5px;
+  font-size: 14px;
+}
+
+.im-flow-body p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.im-code {
+  margin: 16px 0;
+  padding: 18px;
+  overflow-x: auto;
+  border: 1px solid rgba(103, 213, 245, 0.14);
+  border-radius: 9px;
+  background: var(--im-code);
+  color: #b8d3eb;
+  font-family: Consolas, "Cascadia Code", monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  white-space: pre;
+}
+
+.im-code-label {
+  margin-bottom: -6px;
+  color: #8098b4;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.im-table-wrap {
+  width: 100%;
+  margin-top: 17px;
+  overflow-x: auto;
+  border: 1px solid var(--im-border);
+  border-radius: 9px;
+}
+
+.im-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.im-table th,
+.im-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  vertical-align: top;
+}
+
+.im-table th {
+  background: rgba(4, 12, 25, 0.68);
+  color: #c7d8eb;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.im-table td {
+  color: var(--im-muted);
+}
+
+.im-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.im-sidebar {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 14px;
+}
+
+.im-side-box {
+  padding: 18px;
+  border: 1px solid var(--im-border);
+  border-radius: 12px;
+  background: rgba(15, 27, 46, 0.84);
+}
+
+.im-side-box h2 {
+  margin: 0 0 13px;
+  color: #e4effb;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.im-side-links {
+  display: grid;
+  gap: 4px;
+}
+
+.im-side-links a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: #a9bbd0;
+  font-size: 12px;
   line-height: 1.65;
 }
 
-.sidebar {
+.im-side-links a:hover {
+  background: rgba(103, 213, 245, 0.07);
+  color: #c6f2ff;
+  text-decoration: none;
+}
+
+.im-side-description {
+  margin: 0;
+  color: #93a8c1;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.im-related {
   display: grid;
-  gap: 16px;
+  gap: 9px;
 }
 
-.box {
-  padding: 18px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: rgba(30,41,59,.56);
+.im-related a {
+  font-size: 12px;
+  line-height: 1.7;
 }
 
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 16px;
+.im-bottom-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
 }
 
-.box a {
+.im-bottom-link {
   display: block;
-  color: #7dd3fc;
-  font-size: 14px;
-  margin-bottom: 8px;
+  padding: 15px 17px;
+  border: 1px solid var(--im-border);
+  border-radius: 10px;
+  background: rgba(15, 27, 46, 0.76);
 }
 
-.footer {
+.im-bottom-link span {
+  display: block;
+  margin-bottom: 4px;
+  color: #8299b4;
+  font-size: 11px;
+}
+
+.im-bottom-link strong {
+  color: #bcefff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.im-footer {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(148, 163, 184, 0.13);
+  color: #8195ae;
+  font-size: 12px;
   text-align: center;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148,163,184,.14);
-  color: #8ea3be;
-  font-size: 14px;
 }
 
-@media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
+@media (max-width: 960px) {
+  .im-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .im-sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .im-sidebar .im-side-box:first-child {
+    grid-row: span 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .im-page {
+    width: min(100% - 26px, 1220px);
+    padding-top: 27px;
+  }
+
+  .im-hero {
+    padding: 25px 21px;
+    border-radius: 15px;
+  }
+
+  .im-section {
+    padding: 21px 18px;
+  }
+
+  .im-section h2 {
+    font-size: 19px;
+  }
+
+  .im-model-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .im-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .im-sidebar .im-side-box:first-child {
+    grid-row: auto;
+  }
+
+  .im-bottom-nav {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .im-page *,
+  .im-page *::before,
+  .im-page *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
 }
 </style>
 </head>
 
 <body data-header="docs">
 
-<main class="page">
+<main class="im-page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/architecture/index.html">系统架构</a> /
-    <span>中断模型</span>
+  <nav class="im-breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="im-separator">/</span>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <span class="im-separator">/</span>
+    <a href="/docs/architecture/interrupt/index.html">中断机制</a>
+    <span class="im-separator">/</span>
+    <span aria-current="page">中断模型</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS 文档中心</span>
-
-    <h1>中断模型（Interrupt Model）</h1>
-
+  <header class="im-hero">
+    <div class="im-eyebrow">Architecture / Interrupt</div>
+    <h1>
+      中断模型
+      <span>Interrupt Model</span>
+    </h1>
     <p>
-      描述 HRTOS 如何接收中断请求、执行 ISR，并在中断结束后恢复或切换任务。
+      从 8051 硬件中断请求到 HRTOS 中断入口、ISR 执行和退出处理，
+      梳理硬件响应与内核上下文管理之间的关系。
     </p>
-
-    <div class="meta">
-      <span class="tag">系统架构</span>
-      <span class="tag">中断模型</span>
-      <span class="tag">实时系统</span>
+    <div class="im-tags">
+      <span class="im-tag">8051 Architecture</span>
+      <span class="im-tag">Interrupt Entry</span>
+      <span class="im-tag">Context Management</span>
+      <span class="im-tag">HRTOS 4.0</span>
     </div>
-  </section>
+  </header>
 
-  <div class="layout">
+  <div class="im-layout">
 
-    <div class="content">
+    <div class="im-content">
 
-      <section class="section" id="overview">
-        <h2>概述</h2>
+      <section class="im-section" id="overview">
+        <h2>01 / 中断模型的职责</h2>
 
         <p>
-          中断模型用于处理异步事件，定义系统如何响应外部输入并保持实时性。
+          中断机制用于响应异步于当前任务执行流的事件。
+          在典型 8051 系统中，中断请求由定时器、串口、外部中断等硬件功能产生；
+          处理器根据芯片规定的中断使能和优先级规则决定何时响应。
         </p>
 
         <p>
-          事件通常来自定时器、GPIO、串口等外设，中断控制器按优先级仲裁并触发 ISR。
+          HRTOS 的中断模型不仅涉及处理器如何进入中断入口，
+          还涉及软件如何管理中断执行期间需要维护的状态，以及中断退出时如何衔接内核的后续执行。
         </p>
 
-        <ul>
-          <li>保证实时响应能力</li>
-          <li>维持系统执行确定性</li>
-          <li>支持中断嵌套与优先级抢占</li>
-          <li>与调度系统协同运行</li>
-        </ul>
-      </section>
+        <div class="im-model-grid">
+          <article class="im-model-card">
+            <div class="im-model-index">LAYER 01</div>
+            <h3>处理器与外设</h3>
+            <p>负责产生中断请求，并依据目标芯片的硬件规则响应中断。</p>
+          </article>
+          <article class="im-model-card">
+            <div class="im-model-index">LAYER 02</div>
+            <h3>中断入口</h3>
+            <p>将硬件中断响应衔接到实际入口代码，处理内核要求的软件状态。</p>
+          </article>
+          <article class="im-model-card">
+            <div class="im-model-index">LAYER 03</div>
+            <h3>ISR 处理逻辑</h3>
+            <p>执行与中断源有关的必要处理，完成状态读取、确认或其他受约束的操作。</p>
+          </article>
+          <article class="im-model-card">
+            <div class="im-model-index">LAYER 04</div>
+            <h3>退出与后续执行</h3>
+            <p>完成中断退出所需的处理，再依据实际控制流继续执行或进入内核安排的其他路径。</p>
+          </article>
+        </div>
 
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-
-        <ol>
-          <li>外设产生中断请求</li>
-          <li>CPU 接收并进行优先级仲裁</li>
-          <li>保存上下文并进入 ISR</li>
-          <li>执行中断处理逻辑</li>
-          <li>退出 ISR 并触发调度判断</li>
-        </ol>
-
-        <p>
-          ISR 执行结束后由调度器决定恢复当前任务或切换到更高优先级任务。
-        </p>
-      </section>
-
-      <section class="section" id="interface">
-        <h2>关键结构</h2>
-
-        <p>
-          中断模型由中断源、入口、ISR、内核通知与退出机制组成。
-        </p>
-
-        <div class="code">
-Interrupt Source  <span style="color:#94a3b8;">// 外设触发中断</span><br>
-Interrupt Entry   <span style="color:#94a3b8;">// CPU进入ISR</span><br>
-ISR Handler       <span style="color:#94a3b8;">// 中断处理逻辑</span><br>
-Kernel Notify     <span style="color:#94a3b8;">// 通知内核更新状态</span><br>
-Interrupt Exit    <span style="color:#94a3b8;">// 恢复或切换任务</span>
-</div>
-
-        <p>
-          各模块职责清晰，构成完整中断处理链路。
-        </p>
-      </section>
-
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
-
-        <div class="code">
-外部事件 → 中断请求 → 优先级仲裁 → ISR执行 → 调度判断 → 任务恢复/切换
+        <div class="im-note">
+          <strong>架构边界：</strong>
+          以上是理解中断机制的分层模型，不代表 HRTOS 每次中断都经过完全相同的函数调用序列。
+          实际路径应以目标芯片、HRTOS 4.0 源码及最终编译结果为准。
         </div>
       </section>
 
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
-
-        <ul>
-          <li><strong>中断嵌套：</strong>高优先级可抢占低优先级 ISR</li>
-          <li><strong>优先级控制：</strong>保证关键事件优先执行</li>
-          <li><strong>软中断：</strong>支持软件触发异步事件</li>
-          <li><strong>延迟处理：</strong>降低 ISR 执行负载</li>
-        </ul>
+      <section class="im-section" id="hardware">
+        <h2>02 / 硬件响应与软件入口</h2>
 
         <p>
-          这些机制用于在实时性与系统开销之间取得平衡。
+          8051 的中断响应由具体芯片的硬件规则决定。
+          请求产生后，处理器是否能够立即响应，取决于当前指令、中断使能状态、优先级以及正在执行的中断等条件。
+        </p>
+
+        <p>
+          进入硬件中断入口，不等于处理器已经保存了完整的任务上下文。
+          处理器的硬件响应动作与 HRTOS 所需的软件上下文管理，是两个需要分别理解的层次。
+        </p>
+
+        <div class="im-table-wrap">
+          <table class="im-table">
+            <thead>
+              <tr>
+                <th>层次</th>
+                <th>主要职责</th>
+                <th>核对依据</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>硬件响应</td>
+                <td>按芯片规则识别可响应的请求，并转入对应中断入口。</td>
+                <td>芯片数据手册与指令集说明。</td>
+              </tr>
+              <tr>
+                <td>入口代码</td>
+                <td>执行实际固件安排的跳转、状态保存及相关处理。</td>
+                <td>汇编源代码与反汇编结果。</td>
+              </tr>
+              <tr>
+                <td>内核上下文管理</td>
+                <td>维护 HRTOS 执行路径所要求的任务或内核状态。</td>
+                <td>内核实现、头文件与目标编译结果。</td>
+              </tr>
+              <tr>
+                <td>中断退出</td>
+                <td>完成相应退出处理，并衔接内核定义的后续执行路径。</td>
+                <td>退出接口实现及实际控制流。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="im-note">
+          不能仅凭通用 RTOS 的工作方式，就断定 HRTOS 使用某个固定的 ISR 包装函数、
+          完整自动寄存器保存方案或统一的中断控制器抽象层。
+        </div>
+      </section>
+
+      <section class="im-section" id="execution">
+        <h2>03 / 一次中断的执行链路</h2>
+
+        <p>
+          从架构视角，可以把一次中断处理拆分为以下阶段。
+          这张流程用于说明各阶段之间的关系；具体指令、函数调用和分支条件应以实际实现为准。
+        </p>
+
+        <div class="im-flow">
+          <div class="im-flow-step">
+            <div class="im-flow-index">01</div>
+            <div class="im-flow-body">
+              <h3>中断请求形成</h3>
+              <p>外设或外部输入产生请求。请求的具体来源与清除方式由芯片和外设定义。</p>
+            </div>
+          </div>
+          <div class="im-flow-step">
+            <div class="im-flow-index">02</div>
+            <div class="im-flow-body">
+              <h3>处理器响应</h3>
+              <p>处理器依据当前执行状态、使能条件与优先级规则判断何时进入中断入口。</p>
+            </div>
+          </div>
+          <div class="im-flow-step">
+            <div class="im-flow-index">03</div>
+            <div class="im-flow-body">
+              <h3>入口与必要状态处理</h3>
+              <p>执行目标固件实际定义的入口指令及软件状态管理，不能假定所有上下文都由硬件自动保存。</p>
+            </div>
+          </div>
+          <div class="im-flow-step">
+            <div class="im-flow-index">04</div>
+            <div class="im-flow-body">
+              <h3>ISR 执行</h3>
+              <p>运行中断服务逻辑，并遵守该中断路径对寄存器、共享状态及执行时间的约束。</p>
+            </div>
+          </div>
+          <div class="im-flow-step">
+            <div class="im-flow-index">05</div>
+            <div class="im-flow-body">
+              <h3>退出处理</h3>
+              <p>通过目标实现规定的退出路径完成中断相关处理，再继续后续执行。</p>
+            </div>
+          </div>
+          <div class="im-flow-step">
+            <div class="im-flow-index">06</div>
+            <div class="im-flow-body">
+              <h3>继续执行或发生切换</h3>
+              <p>实际结果取决于 HRTOS 的退出逻辑和当时的内核状态，不能假定每次中断退出都会切换任务。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="im-code-label">Conceptual execution path</div>
+        <pre class="im-code">Interrupt Request
+        |
+        v
+Hardware Response
+        |
+        v
+Interrupt Entry / Required State Handling
+        |
+        v
+ISR Execution
+        |
+        v
+Interrupt Exit Processing
+        |
+        v
+Continue Execution or Kernel-Controlled Transition</pre>
+
+        <p>
+          中断响应延迟、ISR 执行时间与退出后的任务切换时间是不同的测量对象。
+          若分析事件到任务完成响应的总时间，应将相关阶段分别测量或计算后再建立完整模型。
         </p>
       </section>
 
+      <section class="im-section" id="context">
+        <h2>04 / 上下文管理与退出机制</h2>
+
+        <p>
+          上下文管理的目标是确保控制流转换前后，内核所要求保留的状态能够按约定得到维护。
+          在资源受限的 8051 平台上，寄存器使用、堆栈布局、入口方式与编译器生成代码都可能影响实现。
+        </p>
+
+        <p>
+          因此，不能把任务上下文切换与硬件中断响应视为同一个动作。
+          前者服务于任务执行环境之间的转换；后者负责响应中断请求。
+          两者可以在内核执行路径上相互衔接，但其触发条件和状态管理目标并不相同。
+        </p>
+
+        <h3>HRTOS 中断退出接口</h3>
+
+        <p>
+          <code>os_interrupt_exit()</code> 是 HRTOS 中断退出路径中需要重点关注的接口。
+          在阅读其实现时，应同时核对入口代码如何进入、软件保存了哪些状态，以及退出后实际跳转到何处。
+        </p>
+
+        <div class="im-note">
+          <strong>源码核验原则：</strong>
+          不应仅凭函数名称推断该接口内部一定执行调度、恢复全部寄存器或切换任务。
+          这些职责应通过 HRTOS 4.0 的真实实现确认。
+        </div>
+      </section>
+
+      <section class="im-section" id="nesting">
+        <h2>05 / 中断嵌套与优先级约束</h2>
+
+        <p>
+          中断优先级决定不同请求在目标硬件规则下的响应关系。
+          但“优先级较高”并不意味着在任何时刻都能无条件抢占正在执行的中断。
+          是否允许嵌套，还取决于芯片的中断控制规则、当前使能状态和内核入口实现。
+        </p>
+
+        <h3>核对嵌套行为时，应确认</h3>
+        <ul>
+          <li>目标芯片实际支持的中断优先级和嵌套规则。</li>
+          <li>中断入口与执行期间的中断使能状态。</li>
+          <li>内核对中断期间寄存器、堆栈和执行状态的管理方式。</li>
+          <li>不同中断路径之间是否共享资源或存在重入风险。</li>
+          <li>退出处理如何与正在执行的中断及内核状态衔接。</li>
+        </ul>
+
+        <p>
+          嵌套支持不仅是优先级配置问题，还涉及上下文正确性、堆栈预算和共享状态安全。
+          未经源码与目标芯片验证，不应将固定嵌套层数、任意重入能力或通用软件中断机制写成系统既定特性。
+        </p>
+      </section>
+
+      <section class="im-section" id="design">
+        <h2>06 / ISR 设计与系统协作</h2>
+
+        <p>
+          ISR 应优先完成对当前中断源必要的处理，并谨慎控制执行时间和共享状态访问。
+          复杂工作是否适合移交任务执行，需要根据 HRTOS 实际提供的通信与同步机制决定，不能默认系统存在通用的 Bottom Half 或所有常见的 FromISR API。
+        </p>
+
+        <div class="im-model-grid">
+          <article class="im-model-card">
+            <div class="im-model-index">DESIGN 01</div>
+            <h3>限制处理范围</h3>
+            <p>只在中断路径内执行必要工作，避免无必要的长循环与高成本处理。</p>
+          </article>
+          <article class="im-model-card">
+            <div class="im-model-index">DESIGN 02</div>
+            <h3>保护共享状态</h3>
+            <p>检查 ISR 与任务之间的数据访问，明确原子性、可重入性及同步约束。</p>
+          </article>
+          <article class="im-model-card">
+            <div class="im-model-index">DESIGN 03</div>
+            <h3>核对资源预算</h3>
+            <p>结合目标编译结果检查堆栈使用、寄存器保存与嵌套情况下的资源需求。</p>
+          </article>
+          <article class="im-model-card">
+            <div class="im-model-index">DESIGN 04</div>
+            <h3>验证真实路径</h3>
+            <p>用源码、反汇编和实测确认入口、退出及任务衔接行为，而非只依赖概念图。</p>
+          </article>
+        </div>
+
+        <div class="im-note">
+          实时性不是单纯追求最短 ISR。正确性、共享状态安全、堆栈预算和可验证的响应时间必须同时满足。
+        </div>
+      </section>
+
+      <section class="im-section" id="summary">
+        <h2>07 / 本页小结</h2>
+
+        <p>
+          HRTOS 的中断模型需要同时理解处理器硬件响应与内核软件管理。
+          硬件中断入口、ISR 执行、上下文维护和退出后的控制流是相互关联的阶段，但不应被混为同一操作。
+        </p>
+
+        <p>
+          对具体机制的判断应以目标芯片资料、HRTOS 4.0 源码、反汇编和可重复测试为依据。
+          这种以实际实现为中心的描述方式，能够为中断流程、响应延迟与最坏情况分析提供一致的技术基础。
+        </p>
+      </section>
+
+      <nav class="im-bottom-nav" aria-label="相关技术文档">
+        <a class="im-bottom-link" href="/docs/architecture/interrupt/interrupt-flow.html">
+          <span>RELATED DOCUMENT</span>
+          <strong>中断流程（Interrupt Flow）</strong>
+        </a>
+        <a class="im-bottom-link" href="/docs/architecture/interrupt/interrupt-latency.html">
+          <span>RELATED DOCUMENT</span>
+          <strong>中断延迟（Interrupt Latency）</strong>
+        </a>
+      </nav>
+
     </div>
 
-    <aside class="sidebar">
+    <aside class="im-sidebar" aria-label="页面导航">
 
-      <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键结构</a>
-        <a href="#flow">运行流程</a>
-      </div>
+      <section class="im-side-box">
+        <h2>本页目录</h2>
+        <nav class="im-side-links">
+          <a href="#overview">01 · 中断模型的职责</a>
+          <a href="#hardware">02 · 硬件与软件入口</a>
+          <a href="#execution">03 · 执行链路</a>
+          <a href="#context">04 · 上下文与退出</a>
+          <a href="#nesting">05 · 嵌套与优先级</a>
+          <a href="#design">06 · ISR 设计</a>
+          <a href="#summary">07 · 本页小结</a>
+        </nav>
+      </section>
 
-      <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程</a>
-        <a href="/docs/architecture/interrupt/interrupt-latency.html">中断延迟</a>
-        <a href="/system-view/03-interrupt-flow.html">系统中断流模型</a>
-      </div>
+      <section class="im-side-box">
+        <h2>阅读提示</h2>
+        <p class="im-side-description">
+          本页描述中断架构与阶段关系，不替代具体芯片数据手册、HRTOS 4.0 源码或编译结果。涉及入口、退出和嵌套行为的结论，都应以实际实现为准。
+        </p>
+      </section>
 
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/architecture/index.html">系统架构模块</a>
-      </div>
+      <section class="im-side-box">
+        <h2>相关文档</h2>
+        <nav class="im-related">
+          <a href="/docs/architecture/interrupt/index.html">中断机制架构总览</a>
+          <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程</a>
+          <a href="/docs/architecture/interrupt/interrupt-latency.html">中断延迟</a>
+          <a href="/docs/architecture/scheduler/index.html">调度器架构</a>
+          <a href="/docs/architecture/kernel/index.html">内核架构</a>
+        </nav>
+      </section>
 
     </aside>
 
   </div>
 
-  <footer class="footer">
+  <footer class="im-footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的技术文档。
   </footer>
 

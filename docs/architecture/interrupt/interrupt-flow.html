@@ -1,334 +1,836 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>HRTOS 中断流程（Interrupt Flow） | ISR 执行与调度概览</title>
-<meta name="description" content="HRTOS 中断流程详解，包括中断触发、CPU上下文保存、ISR执行、嵌套中断处理及调度影响。" />
-
-<link rel="stylesheet" href="https://hrtos.com/global.css">
+<title>中断流程（Interrupt Flow） | HRTOS 系统架构</title>
+<meta
+  name="description"
+  content="HRTOS 中断流程文档，介绍 8051 中断入口、ISR 执行、中断嵌套、中断退出与任务调度之间的关系。"
+/>
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/architecture/interrupt/interrupt-flow.html" />
+<link rel="stylesheet" href="https://hrtos.com/global.css" />
 
 <style>
 :root {
-  --bg: #0f172a;
-  --surface: rgba(15, 23, 42, 0.72);
-  --border: rgba(148, 163, 184, 0.16);
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
-  --radius: 10px;
+  --if-bg: #0b1220;
+  --if-panel: rgba(17, 27, 46, 0.88);
+  --if-panel-soft: rgba(20, 32, 52, 0.72);
+  --if-border: rgba(148, 163, 184, 0.16);
+  --if-border-active: rgba(56, 189, 248, 0.42);
+  --if-text: #e5edf8;
+  --if-muted: #9aabc1;
+  --if-accent: #38bdf8;
+  --if-accent-soft: #bae6fd;
+  --if-radius: 12px;
+  --if-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
   color-scheme: dark;
 }
 
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
+}
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--if-text);
+  background:
+    radial-gradient(
+      ellipse at 12% 0%,
+      rgba(14, 116, 144, 0.15),
+      transparent 36rem
+    ),
+    radial-gradient(
+      ellipse at 100% 28%,
+      rgba(37, 99, 235, 0.08),
+      transparent 34rem
+    ),
+    var(--if-bg);
+  font-family:
+    "Segoe UI",
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
   line-height: 1.75;
 }
 
-a { color: inherit; text-decoration: none; }
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent 78%);
+}
 
-.page {
-  width: min(1180px, calc(100% - 40px));
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--if-accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.if-page {
+  position: relative;
+  z-index: 1;
+  width: min(1160px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 96px 0 56px;
-  display: grid;
-  gap: 40px;
+  padding: 108px 0 56px;
 }
 
-.breadcrumb {
-  font-size: 14px;
-  color: var(--muted);
-}
-
-.breadcrumb a { color: #7dd3fc; }
-
-.hero {
-  display: grid;
-  gap: 16px;
-}
-
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 14px;
-}
-
-.hero h1 {
-  margin: 0;
-  font-size: 42px;
-}
-
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-}
-
-.meta {
+.if-breadcrumb {
   display: flex;
-  gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 32px;
+  color: var(--if-muted);
+  font-size: 0.86rem;
 }
 
-.tag {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 13px;
-  color: #bae6fd;
+.if-breadcrumb a {
+  color: var(--if-accent-soft);
 }
 
-.layout {
+.if-breadcrumb a:hover {
+  color: #fff;
+}
+
+.if-separator {
+  color: #52647b;
+}
+
+.if-hero {
   display: grid;
-  grid-template-columns: minmax(0,1fr) 280px;
-  gap: 28px;
+  gap: 19px;
+  padding-bottom: 38px;
+  border-bottom: 1px solid var(--if-border);
 }
 
-.content {
+.if-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--if-accent-soft);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.if-eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--if-accent);
+}
+
+.if-hero h1 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(2.15rem, 5vw, 3.7rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.if-hero h1 span {
+  display: block;
+  margin-top: 11px;
+  color: var(--if-accent);
+  font-size: 0.46em;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.if-intro {
+  max-width: 830px;
+  margin: 0;
+  color: var(--if-muted);
+  font-size: 1rem;
+}
+
+.if-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.if-tag {
+  padding: 5px 10px;
+  border: 1px solid var(--if-border);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.48);
+  color: #c6d8eb;
+  font-size: 0.78rem;
+}
+
+.if-layout {
   display: grid;
-  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) 258px;
+  gap: 24px;
+  align-items: start;
+  margin-top: 36px;
 }
 
-.section {
+.if-content {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.if-section {
+  display: grid;
+  gap: 17px;
+  min-width: 0;
+  padding: 25px;
+  border: 1px solid var(--if-border);
+  border-radius: var(--if-radius);
+  background: linear-gradient(
+    155deg,
+    rgba(25, 39, 62, 0.83),
+    rgba(13, 22, 38, 0.93)
+  );
+  box-shadow: var(--if-shadow);
+  scroll-margin-top: 100px;
+}
+
+.if-section-heading {
+  display: grid;
+  gap: 7px;
+}
+
+.if-kicker {
+  color: var(--if-accent);
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.if-section h2 {
+  margin: 0;
+  color: #f1f5f9;
+  font-size: clamp(1.3rem, 2.5vw, 1.65rem);
+  line-height: 1.35;
+}
+
+.if-section h3 {
+  margin: 0;
+  color: #e5edf8;
+  font-size: 1rem;
+}
+
+.if-section p {
+  margin: 0;
+  color: var(--if-muted);
+  font-size: 0.93rem;
+}
+
+.if-subsection {
+  display: grid;
+  gap: 8px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.if-note {
+  padding: 16px 18px;
+  border-left: 3px solid var(--if-accent);
+  border-radius: 0 8px 8px 0;
+  background: rgba(14, 116, 144, 0.09);
+  color: #c5d5e8;
+  font-size: 0.9rem;
+}
+
+.if-note strong {
+  color: #e0f2fe;
+}
+
+.if-flow {
+  display: grid;
+  gap: 0;
+  padding: 17px 20px;
+  border: 1px solid var(--if-border);
+  border-radius: 10px;
+  background: rgba(7, 14, 27, 0.7);
+}
+
+.if-flow-step {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 14px 0;
+}
+
+.if-flow-step + .if-flow-step {
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.if-flow-number {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 8px;
+  background: rgba(14, 116, 144, 0.12);
+  color: var(--if-accent-soft);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.if-flow-step h3 {
+  margin: 0 0 5px;
+  font-size: 0.94rem;
+}
+
+.if-flow-step p {
+  font-size: 0.88rem;
+}
+
+.if-code {
+  overflow-x: auto;
+  padding: 18px;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  border-radius: 9px;
+  background: #070d19;
+  color: #b8e6ff;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.84rem;
+  line-height: 1.85;
+  white-space: pre;
+  tab-size: 4;
+}
+
+.if-code-label {
+  margin-bottom: -7px;
+  color: #8399b5;
+  font-size: 0.76rem;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.if-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 21px;
+  color: var(--if-muted);
+  font-size: 0.91rem;
+}
+
+.if-list li::marker {
+  color: var(--if-accent);
+}
+
+.if-sidebar {
+  position: sticky;
+  top: 92px;
+  display: grid;
+  gap: 14px;
+}
+
+.if-sidebox {
   display: grid;
   gap: 12px;
-  padding: 24px 22px;
-  background: linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  padding: 18px;
+  border: 1px solid var(--if-border);
+  border-radius: 11px;
+  background: rgba(17, 27, 46, 0.8);
 }
 
-.section h2 {
+.if-sidebox h2 {
   margin: 0;
-  font-size: 24px;
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
+  color: #edf6ff;
+  font-size: 0.93rem;
 }
 
-.section p { margin: 0; color: var(--muted); }
-
-.note {
-  padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
-}
-
-.code {
-  background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
-  border-radius: 8px;
-  padding: 16px;
-  font-family: Consolas, monospace;
-  color: #7dd3fc;
-  line-height: 1.65;
-  white-space: pre-line;
-}
-
-.sidebar {
+.if-side-links {
   display: grid;
-  gap: 16px;
+  gap: 3px;
 }
 
-.box {
-  padding: 18px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: rgba(30,41,59,.56);
+.if-side-links a {
+  padding: 7px 8px;
+  border-radius: 6px;
+  color: var(--if-muted);
+  font-size: 0.84rem;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
 }
 
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 16px;
+.if-side-links a:hover {
+  color: var(--if-accent-soft);
+  background: rgba(56, 189, 248, 0.08);
 }
 
-.box a {
+.if-sidebox .if-related-link {
   display: block;
-  color: #7dd3fc;
-  font-size: 14px;
-  margin-bottom: 8px;
+  color: var(--if-accent-soft);
+  font-size: 0.84rem;
 }
 
-.footer {
+.if-sidebox .if-related-link:hover {
+  color: #fff;
+}
+
+.if-side-note {
+  margin: 0;
+  color: var(--if-muted);
+  font-size: 0.83rem;
+}
+
+.if-footer {
+  margin-top: 56px;
+  padding-top: 22px;
+  border-top: 1px solid var(--if-border);
+  color: #7f91a9;
+  font-size: 0.84rem;
   text-align: center;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148,163,184,.14);
-  color: #8ea3be;
-  font-size: 14px;
 }
 
-@media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
+@media (max-width: 900px) {
+  .if-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .if-sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    order: -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .if-page {
+    width: min(100% - 28px, 1160px);
+    padding-top: 88px;
+  }
+
+  .if-breadcrumb {
+    margin-bottom: 24px;
+    font-size: 0.81rem;
+  }
+
+  .if-hero {
+    gap: 16px;
+    padding-bottom: 29px;
+  }
+
+  .if-hero h1 {
+    font-size: clamp(2rem, 9vw, 2.8rem);
+  }
+
+  .if-layout {
+    gap: 15px;
+    margin-top: 25px;
+  }
+
+  .if-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .if-section {
+    gap: 15px;
+    padding: 19px;
+  }
+
+  .if-flow {
+    padding: 10px 14px;
+  }
+
+  .if-flow-step {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .if-code {
+    padding: 14px;
+    font-size: 0.77rem;
+  }
+
+  .if-footer {
+    margin-top: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
 </style>
 </head>
 
 <body data-header="docs">
 
-<main class="page">
+<main class="if-page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/architecture/index.html">系统架构</a> /
-    <span>中断流程</span>
+  <nav class="if-breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="if-separator" aria-hidden="true">/</span>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <span class="if-separator" aria-hidden="true">/</span>
+    <a href="/docs/architecture/interrupt/index.html">中断架构</a>
+    <span class="if-separator" aria-hidden="true">/</span>
+    <span aria-current="page">中断流程</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS 文档中心</span>
+  <header class="if-hero">
+    <div class="if-eyebrow">Interrupt Execution Path</div>
 
-    <h1>中断流程（Interrupt Flow）</h1>
+    <h1>
+      中断流程
+      <span>Interrupt Flow &amp; Task Switching</span>
+    </h1>
 
-    <p>
-      定义外部事件打断任务执行并切换到 ISR 的完整处理路径。
+    <p class="if-intro">
+      本文说明中断处理与 HRTOS 内核运行之间的关系。
+      重点是区分中断入口、ISR 执行、中断退出、调度决策与任务上下文切换，
+      避免将它们简化为一个连续且固定的操作。
     </p>
 
-    <div class="meta">
-      <span class="tag">系统架构</span>
-      <span class="tag">中断机制</span>
-      <span class="tag">实时系统</span>
+    <div class="if-tags">
+      <span class="if-tag">8051 中断处理</span>
+      <span class="if-tag">ISR</span>
+      <span class="if-tag">嵌套与调度</span>
     </div>
-  </section>
+  </header>
 
-  <div class="layout">
+  <div class="if-layout">
 
-    <div class="content">
+    <div class="if-content">
 
-      <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          中断用于响应异步事件，使 CPU 在任意时刻暂停当前任务并进入 ISR。
-        </p>
-        <p>
-          常见来源包括定时器、GPIO、串口、DMA 等硬件或系统异常。
-        </p>
-        <p>
-          HRTOS 支持优先级嵌套与中断屏蔽，保证实时响应与执行确定性。
-        </p>
-      </section>
-
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-
-        <p>
-          当中断触发时，CPU 保存当前上下文并跳转 ISR；执行完成后由调度器决定恢复或切换任务。
-        </p>
-
-        <h3>中断分类</h3>
-        <p>
-          分为外部中断（GPIO / 外设）与内部中断（定时器 / 异常），通过向量表映射 ISR。
-        </p>
-
-        <h3>上下文保存</h3>
-        <p>
-          ISR 进入前保存寄存器与状态信息，通常由硬件完成，RTOS 可扩展优化路径。
-        </p>
-
-        <h3>嵌套与优先级</h3>
-        <p>
-          支持高优先级中断打断低优先级 ISR，但需限制嵌套深度以避免栈风险。
-        </p>
-
-        <h3>屏蔽与延迟处理</h3>
-        <p>
-          临界区可屏蔽中断；非关键逻辑可延迟到任务上下文执行（Bottom Half）。
-        </p>
-
-        <h3>与调度器关系</h3>
-        <p>
-          ISR 结束后触发调度检查，若有更高优先级任务则立即切换，否则恢复当前任务。
-        </p>
-
-        <div class="note">
-          ISR 应保持短小、确定，不建议执行复杂计算或阻塞操作。
-        </div>
-      </section>
-
-      <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
-
-        <div class="code">
-os_enter_critical()   // 进入临界区
-os_exit_critical()    // 恢复中断
-os_in_isr()           // 判断ISR上下文
-os_interrupt_id()     // 获取中断编号
-os_interrupt_exit()   // ISR退出并触发调度
+      <section class="if-section" id="overview">
+        <div class="if-section-heading">
+          <div class="if-kicker">01 / Overview</div>
+          <h2>中断流程概述</h2>
         </div>
 
         <p>
-          这些接口的重点不是“能做什么”，而是“在哪个阶段使用”。
+          中断机制使处理器能够响应异步事件。对于运行在 8051 平台上的 HRTOS，
+          分析中断流程时，需要同时考虑处理器的中断行为、内核对执行状态的管理，
+          以及中断处理与任务调度之间的联系。
         </p>
 
-        <ul>
-          <li>临界区仅保护极短窗口</li>
-          <li>ISR 内保持逻辑轻量</li>
-          <li>退出阶段负责调度触发与状态闭合</li>
+        <p>
+          中断入口不等同于完整的任务上下文切换；ISR 执行结束也不意味着
+          一定会切换到另一个任务。具体行为取决于中断处理路径、内核状态和调度条件。
+        </p>
+
+        <div class="if-note">
+          <strong>本文范围：</strong>
+          介绍中断处理的概念性阶段及其关系。实际寄存器保存方式、嵌套条件和退出路径，
+          应以 HRTOS 4.0 对应源码及目标芯片行为为准。
+        </div>
+      </section>
+
+      <section class="if-section" id="stages">
+        <div class="if-section-heading">
+          <div class="if-kicker">02 / Execution Stages</div>
+          <h2>中断处理的主要阶段</h2>
+        </div>
+
+        <div class="if-flow">
+
+          <div class="if-flow-step">
+            <span class="if-flow-number">01</span>
+            <div>
+              <h3>中断请求与处理器响应</h3>
+              <p>
+                外设或定时器产生中断请求后，处理器根据当前中断使能状态、
+                优先级规则及自身执行状态决定何时响应。
+              </p>
+            </div>
+          </div>
+
+          <div class="if-flow-step">
+            <span class="if-flow-number">02</span>
+            <div>
+              <h3>进入中断处理路径</h3>
+              <p>
+                处理器转入相应的中断入口。硬件与软件分别承担哪些状态保存工作，
+                取决于 8051 具体实现、编译器生成代码及 HRTOS 的中断入口设计。
+              </p>
+            </div>
+          </div>
+
+          <div class="if-flow-step">
+            <span class="if-flow-number">03</span>
+            <div>
+              <h3>执行 ISR</h3>
+              <p>
+                中断服务程序处理对应事件。ISR 中使用的寄存器、共享数据和内核接口，
+                都需要符合 HRTOS 的中断上下文约束。
+              </p>
+            </div>
+          </div>
+
+          <div class="if-flow-step">
+            <span class="if-flow-number">04</span>
+            <div>
+              <h3>可能发生的中断嵌套</h3>
+              <p>
+                如果当前执行状态与中断优先级规则允许更高优先级的中断被接纳，
+                执行路径可能进入嵌套处理。可嵌套条件和实际深度必须以实现为准。
+              </p>
+            </div>
+          </div>
+
+          <div class="if-flow-step">
+            <span class="if-flow-number">05</span>
+            <div>
+              <h3>中断退出与后续处理</h3>
+              <p>
+                ISR 按照规定的退出路径完成处理。是否需要调度、何时恢复任务上下文，
+                取决于内核的中断退出机制及当前系统状态。
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <p>
+          上述阶段是用于理解机制的概念模型，不代表每次中断都必然经过完全相同的路径，
+          也不代表所有阶段都由同一段代码完成。
+        </p>
+      </section>
+
+      <section class="if-section" id="context">
+        <div class="if-section-heading">
+          <div class="if-kicker">03 / Context &amp; State</div>
+          <h2>中断入口与上下文保存</h2>
+        </div>
+
+        <p>
+          上下文是程序继续执行所需的处理器状态。对 8051 系统而言，
+          具体涉及哪些寄存器、寄存器组和栈内容，取决于当前执行环境与中断处理实现。
+        </p>
+
+        <div class="if-subsection">
+          <h3>硬件中断响应</h3>
+          <p>
+            不能笼统地认为硬件会自动保存完整的 C 程序或 RTOS 任务上下文。
+            硬件响应、中断入口代码与内核上下文管理之间的责任需要分别确认。
+          </p>
+        </div>
+
+        <div class="if-subsection">
+          <h3>ISR 执行状态</h3>
+          <p>
+            ISR 可能使用寄存器、栈空间或共享变量。若中断能够嵌套，
+            还需要分析嵌套层次对这些资源的影响。
+          </p>
+        </div>
+
+        <div class="if-subsection">
+          <h3>任务上下文切换</h3>
+          <p>
+            任务切换涉及保存当前任务的可恢复状态，并恢复目标任务的状态。
+            这与进入 ISR 时所需的状态处理有关联，但两者不能直接等同。
+          </p>
+        </div>
+
+        <div class="if-note">
+          <strong>分析建议：</strong>
+          对具体寄存器保存顺序和栈占用，应结合编译后的汇编、内核汇编入口、
+          C 代码调用关系及目标芯片手册核对，不宜仅凭通用 RTOS 模型推断。
+        </div>
+      </section>
+
+      <section class="if-section" id="nesting">
+        <div class="if-section-heading">
+          <div class="if-kicker">04 / Nested Interrupts</div>
+          <h2>中断嵌套与优先级</h2>
+        </div>
+
+        <p>
+          中断优先级用于控制不同中断请求之间的响应关系，但需要区分
+          8051 硬件中断优先级和 HRTOS 内部用于描述任务或内核执行顺序的优先级概念。
+        </p>
+
+        <p>
+          嵌套中断并不是只由“数值更高”决定。处理器的中断接纳规则、
+          中断使能状态、当前执行路径以及 HRTOS 的入口与退出设计，
+          都可能影响中断能否嵌套。
+        </p>
+
+        <ul class="if-list">
+          <li>确认目标芯片实际支持的中断优先级和响应规则。</li>
+          <li>确认 HRTOS 对中断入口、嵌套与退出的具体处理方式。</li>
+          <li>结合 ISR 的栈使用量评估嵌套带来的额外资源开销。</li>
+          <li>不要在缺少源码或测量依据时假定固定的嵌套层数。</li>
         </ul>
       </section>
 
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
-        <div class="code">
-中断触发 → 保存上下文 → 执行 ISR →（可嵌套）→ ISR退出 → 调度检查 → 任务恢复/切换
+      <section class="if-section" id="scheduler">
+        <div class="if-section-heading">
+          <div class="if-kicker">05 / Interrupt &amp; Scheduler</div>
+          <h2>中断退出与任务调度</h2>
+        </div>
+
+        <p>
+          中断处理可能改变系统状态，例如产生待处理事件或使任务具备继续运行的条件。
+          但“发生中断”“请求调度”和“实际切换任务”是三个不同层次的问题。
+        </p>
+
+        <div class="if-subsection">
+          <h3>调度请求</h3>
+          <p>
+            中断处理路径可能向内核提出调度需求。提出需求本身不等于
+            已经完成任务选择或上下文切换。
+          </p>
+        </div>
+
+        <div class="if-subsection">
+          <h3>调度决策</h3>
+          <p>
+            调度器依据当前任务状态和系统调度规则确定后续执行安排。
+            是否在某个中断退出点执行调度，需要以 HRTOS 实际实现为准。
+          </p>
+        </div>
+
+        <div class="if-subsection">
+          <h3>任务恢复或切换</h3>
+          <p>
+            后续执行可能恢复被中断的执行环境，也可能沿着内核允许的路径
+            切换到其他任务。两种情况需要通过具体代码路径加以区分。
+          </p>
+        </div>
+
+        <div class="if-note">
+          <strong>关键区别：</strong>
+          调度器负责决定后续运行安排，上下文切换负责落实执行环境的保存与恢复。
+          分析中断流程时，不应将二者写成同一个步骤。
         </div>
       </section>
 
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
+      <section class="if-section" id="interfaces">
+        <div class="if-section-heading">
+          <div class="if-kicker">06 / Implementation Notes</div>
+          <h2>关键实现与接口核对</h2>
+        </div>
 
-        <ul>
-          <li><strong>优先级嵌套：</strong>高优先级中断可抢占低优先级 ISR</li>
-          <li><strong>中断屏蔽：</strong>保护关键代码段数据一致性</li>
-          <li><strong>延迟处理：</strong>将复杂逻辑移出 ISR</li>
-          <li><strong>向量管理：</strong>快速定位 ISR，支持动态注册</li>
-          <li><strong>嵌套限制：</strong>通常限制 1~2 层防止栈溢出</li>
+        <p>
+          在 HRTOS 中，具体中断接口应以当前版本的头文件和内核实现为准。
+          不应仅依据通用 RTOS 的命名习惯推断某个接口存在或具有特定行为。
+        </p>
+
+        <div class="if-code-label">已知的中断退出接口</div>
+
+        <div class="if-code">os_interrupt_exit();</div>
+
+        <p>
+          该接口需要结合其实际定义、调用位置及对应的汇编或 C 实现阅读。
+          由于中断入口和普通函数调用的执行环境可能不同，
+          不能仅凭函数名推断它内部完成的所有操作。
+        </p>
+
+        <ul class="if-list">
+          <li>核对接口声明、实现位置和合法调用上下文。</li>
+          <li>核对 ISR 是如何进入，以及退出路径如何返回。</li>
+          <li>核对是否存在嵌套中断专用的执行路径。</li>
+          <li>核对调度请求与实际任务切换之间的关系。</li>
         </ul>
+
+        <div class="if-note">
+          <strong>注意：</strong>
+          本页不将 <code>os_enter_critical()</code>、
+          <code>os_exit_critical()</code>、
+          <code>os_in_isr()</code> 或 <code>os_interrupt_id()</code>
+          列为已确认接口。使用前请先核对 HRTOS 当前版本的真实声明。
+        </div>
+      </section>
+
+      <section class="if-section" id="summary">
+        <div class="if-section-heading">
+          <div class="if-kicker">07 / Summary</div>
+          <h2>本页小结</h2>
+        </div>
+
+        <p>
+          理解 HRTOS 中断流程的关键，不是简单记住一条固定箭头链，
+          而是明确处理器中断响应、ISR 执行、嵌套处理、中断退出、
+          调度决策和任务上下文切换各自的职责。
+        </p>
+
+        <p>
+          在进一步分析响应延迟或最坏执行时间时，应将这些阶段拆分，
+          明确测量边界，并结合目标芯片、编译结果与 HRTOS 具体实现验证。
+        </p>
       </section>
 
     </div>
 
-    <aside class="sidebar">
+    <aside class="if-sidebar">
 
-      <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
+      <nav class="if-sidebox" aria-label="本文目录">
+        <h2>本文目录</h2>
+        <div class="if-side-links">
+          <a href="#overview">中断流程概述</a>
+          <a href="#stages">主要处理阶段</a>
+          <a href="#context">入口与上下文</a>
+          <a href="#nesting">中断嵌套与优先级</a>
+          <a href="#scheduler">中断与调度</a>
+          <a href="#interfaces">接口与实现核对</a>
+          <a href="#summary">本页小结</a>
+        </div>
+      </nav>
+
+      <div class="if-sidebox">
+        <h2>相关文档</h2>
+        <div class="if-side-links">
+          <a class="if-related-link" href="index.html">中断架构入口 →</a>
+          <a class="if-related-link" href="interrupt-model.html">中断模型 →</a>
+          <a class="if-related-link" href="interrupt-latency.html">中断延迟 →</a>
+          <a class="if-related-link" href="/docs/architecture/scheduler/index.html">调度器架构 →</a>
+          <a class="if-related-link" href="/docs/architecture/kernel/index.html">内核架构 →</a>
+          <a class="if-related-link" href="/docs/modules/task/index.html">任务管理 →</a>
+        </div>
       </div>
 
-      <div class="box">
-        <h3>相关页面</h3>
-        <a href="/system-view/03-interrupt-flow.html">系统中断流模型</a>
-        <a href="/docs/system/scheduling-flow.html">调度循环</a>
-        <a href="/docs/modules/task/index.html">任务管理</a>
-        <a href="/docs/architecture/interrupt/interrupt-model.html">中断模型</a>
-      </div>
-
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/architecture/index.html">系统架构模块</a>
+      <div class="if-sidebox">
+        <h2>阅读重点</h2>
+        <p class="if-side-note">
+          先区分中断入口与任务上下文切换，再分析嵌套条件和中断退出路径。
+          对时序结论，应明确测试边界与目标平台。
+        </p>
       </div>
 
     </aside>
 
   </div>
 
-  <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的技术文档。
+  <footer class="if-footer">
+    <p>© 2017–2026 HRTOS. 面向嵌入式实时系统的技术文档。</p>
   </footer>
 
 </main>

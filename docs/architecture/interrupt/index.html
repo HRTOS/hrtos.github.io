@@ -1,192 +1,558 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>中断架构 | HRTOS 文档中心</title>
-<meta name="description" content="HRTOS 中断架构文档，包括中断流程、中断延迟与中断模型，用于理解实时系统的事件响应机制。">
-
-<link rel="stylesheet" href="https://hrtos.com/global.css">
+<title>Interrupt Architecture | HRTOS 中断架构</title>
+<meta
+  name="description"
+  content="HRTOS 中断架构文档，介绍中断模型、中断处理流程与中断响应延迟，帮助理解 8051 实时操作系统中的中断机制及其与任务调度的关系。"
+/>
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/architecture/interrupt/index.html" />
+<link rel="stylesheet" href="https://hrtos.com/global.css" />
 
 <style>
-:root{
-  --bg:#0f172a;
-  --surface:rgba(15,23,42,.72);
-  --surface-hover:rgba(30,41,59,.92);
-  --border:rgba(148,163,184,.18);
-  --border-strong:rgba(56,189,248,.38);
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+:root {
+  --int-bg: #0b1220;
+  --int-panel: rgba(17, 27, 46, 0.88);
+  --int-panel-hover: rgba(23, 38, 61, 0.96);
+  --int-border: rgba(148, 163, 184, 0.16);
+  --int-border-active: rgba(56, 189, 248, 0.46);
+  --int-text: #e5edf8;
+  --int-muted: #9aabc1;
+  --int-accent: #38bdf8;
+  --int-accent-soft: #bae6fd;
+  --int-radius: 13px;
+  --int-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
+  color-scheme: dark;
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
-  overflow-x:hidden;
+* {
+  box-sizing: border-box;
 }
 
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background-image:
-    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
-  background-size:28px 28px;
-  opacity:.14;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
 }
 
-a{
-  color:inherit;
-  text-decoration:none;
-}
-
-.page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-  position:relative;
-  z-index:1;
-}
-
-.breadcrumb{
-  margin-bottom:28px;
-  font-size:.92rem;
-  color:var(--muted);
-}
-
-.breadcrumb a{
-  color:#7dd3fc;
-}
-
-.hero{
-  margin-bottom:56px;
-}
-
-.hero-label{
-  display:inline-block;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.24);
-  color:#bae6fd;
-  font-size:.9rem;
-  margin-bottom:18px;
-}
-
-.hero h1{
-  margin:0 0 16px;
-  font-size:clamp(2.3rem,5vw,4rem);
-  line-height:1.08;
-  font-weight:700;
-}
-
-.hero p{
-  margin:0;
-  max-width:760px;
-  color:var(--muted);
-  font-size:1rem;
-}
-
-.meta{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:18px;
-}
-
-.tag{
-  padding:6px 12px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  background:rgba(15,23,42,.45);
-  color:#bae6fd;
-  font-size:.84rem;
-}
-
-.section{
-  margin-bottom:56px;
-}
-
-.section h2{
-  margin:0 0 12px;
-  font-size:1.5rem;
-}
-
-.section p{
-  margin:0 0 22px;
-  color:var(--muted);
-}
-
-.grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
-}
-
-.card{
-  display:grid;
-  gap:12px;
-  padding:24px 22px;
-  min-height:180px;
+body {
+  margin: 0;
+  color: var(--int-text);
   background:
-    linear-gradient(
-      180deg,
-      rgba(30,41,59,.8),
-      rgba(15,23,42,.92)
-    );
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  transition:.22s ease;
+    radial-gradient(
+      ellipse at 10% 0%,
+      rgba(14, 116, 144, 0.15),
+      transparent 35rem
+    ),
+    radial-gradient(
+      ellipse at 100% 30%,
+      rgba(37, 99, 235, 0.08),
+      transparent 34rem
+    ),
+    var(--int-bg);
+  font-family:
+    "Segoe UI",
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+  line-height: 1.75;
 }
 
-.card:hover{
-  transform:translateY(-6px);
-  border-color:var(--border-strong);
-  background:var(--surface-hover);
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent 78%);
 }
 
-.card h3{
-  margin:0;
-  font-size:1.12rem;
-  color:#f8fafc;
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.card p{
-  margin:0;
-  font-size:.95rem;
-  color:var(--muted);
+a:focus-visible {
+  outline: 2px solid var(--int-accent);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
-.card span{
-  margin-top:auto;
-  color:#7dd3fc;
-  font-size:.92rem;
-  font-weight:600;
+.int-page {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 108px 0 56px;
 }
 
-.footer{
-  padding-top:24px;
-  border-top:1px solid rgba(148,163,184,.14);
-  text-align:center;
-  font-size:.9rem;
-  color:#8ea3be;
+.int-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 34px;
+  color: var(--int-muted);
+  font-size: 0.88rem;
 }
 
-@media(max-width:900px){
-  .grid{
-    grid-template-columns:1fr;
+.int-breadcrumb a {
+  color: var(--int-accent-soft);
+  transition: color 0.2s ease;
+}
+
+.int-breadcrumb a:hover {
+  color: #fff;
+}
+
+.int-breadcrumb-separator {
+  color: #52647b;
+}
+
+.int-hero {
+  display: grid;
+  gap: 21px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--int-border);
+}
+
+.int-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--int-accent-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.int-eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--int-accent);
+}
+
+.int-hero h1 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(2.2rem, 5.2vw, 4rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1.14;
+}
+
+.int-hero h1 span {
+  display: block;
+  margin-top: 12px;
+  color: var(--int-accent);
+  font-size: 0.47em;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.int-intro {
+  max-width: 820px;
+  margin: 0;
+  color: var(--int-muted);
+  font-size: 1.02rem;
+}
+
+.int-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.int-tag {
+  padding: 5px 10px;
+  border: 1px solid var(--int-border);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.48);
+  color: #c6d8eb;
+  font-size: 0.78rem;
+}
+
+.int-section {
+  display: grid;
+  gap: 21px;
+  margin-top: 48px;
+}
+
+.int-section-heading {
+  display: grid;
+  gap: 8px;
+}
+
+.int-kicker {
+  color: var(--int-accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.int-section-heading h2 {
+  margin: 0;
+  color: #f1f5f9;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
+}
+
+.int-section-heading p {
+  max-width: 790px;
+  margin: 0;
+  color: var(--int-muted);
+  font-size: 0.94rem;
+}
+
+.int-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+  gap: 18px;
+}
+
+.int-overview-main,
+.int-overview-side {
+  padding: 24px;
+  border: 1px solid var(--int-border);
+  border-radius: var(--int-radius);
+  background: linear-gradient(
+    150deg,
+    rgba(25, 39, 62, 0.84),
+    rgba(13, 22, 38, 0.9)
+  );
+}
+
+.int-overview-main h3,
+.int-overview-side h3 {
+  margin: 0 0 12px;
+  color: #edf6ff;
+  font-size: 1.05rem;
+}
+
+.int-overview-main p,
+.int-overview-side p {
+  margin: 0;
+  color: var(--int-muted);
+  font-size: 0.92rem;
+}
+
+.int-overview-main p + p,
+.int-overview-side p + p {
+  margin-top: 12px;
+}
+
+.int-topic-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.int-topic-list li {
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  color: #cbd8e8;
+  font-size: 0.89rem;
+}
+
+.int-topic-mark {
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 6px;
+  background: rgba(14, 116, 144, 0.12);
+  color: var(--int-accent-soft);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.72rem;
+}
+
+.int-note {
+  padding: 17px 20px;
+  border-left: 3px solid var(--int-accent);
+  border-radius: 0 8px 8px 0;
+  background: rgba(14, 116, 144, 0.09);
+  color: #c5d5e8;
+  font-size: 0.91rem;
+}
+
+.int-note strong {
+  color: #e0f2fe;
+}
+
+.int-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.int-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 250px;
+  padding: 23px;
+  border: 1px solid var(--int-border);
+  border-radius: 12px;
+  background: linear-gradient(
+    155deg,
+    rgba(25, 39, 62, 0.87),
+    rgba(13, 22, 38, 0.92)
+  );
+  box-shadow: var(--int-shadow);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.int-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--int-border-active);
+  background: var(--int-panel-hover);
+}
+
+.int-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.int-card-number {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 9px;
+  background: rgba(14, 116, 144, 0.12);
+  color: var(--int-accent-soft);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.int-card h3 {
+  margin: 0;
+  color: #f1f5f9;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.int-card-en {
+  display: block;
+  margin-top: 2px;
+  color: #8298b3;
+  font-size: 0.74rem;
+  font-weight: 500;
+}
+
+.int-card p {
+  margin: 0;
+  color: var(--int-muted);
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+.int-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 23px;
+  color: var(--int-accent-soft);
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.int-card-link::after {
+  content: "→";
+  transition: transform 0.2s ease;
+}
+
+.int-card:hover .int-card-link::after {
+  transform: translateX(4px);
+}
+
+.int-concept-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.int-concept {
+  padding: 21px 22px;
+  border: 1px solid var(--int-border);
+  border-radius: 11px;
+  background: rgba(17, 27, 46, 0.7);
+}
+
+.int-concept h3 {
+  margin: 0 0 8px;
+  color: #eaf4ff;
+  font-size: 0.98rem;
+}
+
+.int-concept p {
+  margin: 0;
+  color: var(--int-muted);
+  font-size: 0.9rem;
+}
+
+.int-reading-path {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--int-border);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.56);
+}
+
+.int-reading-item {
+  display: grid;
+  grid-template-columns: minmax(145px, 0.7fr) minmax(0, 1.5fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 22px;
+  transition: background 0.2s ease;
+}
+
+.int-reading-item + .int-reading-item {
+  border-top: 1px solid var(--int-border);
+}
+
+.int-reading-item:hover {
+  background: rgba(30, 41, 59, 0.55);
+}
+
+.int-reading-title {
+  color: #e5edf8;
+  font-weight: 650;
+}
+
+.int-reading-desc {
+  color: var(--int-muted);
+  font-size: 0.88rem;
+}
+
+.int-reading-arrow {
+  color: var(--int-accent);
+  font-size: 1.1rem;
+}
+
+.int-footer {
+  margin-top: 60px;
+  padding-top: 22px;
+  border-top: 1px solid var(--int-border);
+  color: #7f91a9;
+  font-size: 0.84rem;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .int-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .int-overview {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .int-page {
+    width: min(100% - 28px, 1120px);
+    padding-top: 88px;
+  }
+
+  .int-breadcrumb {
+    margin-bottom: 25px;
+    font-size: 0.82rem;
+  }
+
+  .int-hero {
+    gap: 17px;
+    padding-bottom: 30px;
+  }
+
+  .int-hero h1 {
+    font-size: clamp(2.05rem, 9vw, 3rem);
+  }
+
+  .int-section {
+    gap: 17px;
+    margin-top: 39px;
+  }
+
+  .int-grid,
+  .int-concept-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .int-card {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .int-card-link {
+    padding-top: 17px;
+  }
+
+  .int-overview-main,
+  .int-overview-side {
+    padding: 20px;
+  }
+
+  .int-reading-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 5px 12px;
+    padding: 17px;
+  }
+
+  .int-reading-title,
+  .int-reading-desc {
+    grid-column: 1;
+  }
+
+  .int-reading-arrow {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .int-footer {
+    margin-top: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }
 </style>
@@ -194,94 +560,227 @@ a{
 
 <body data-header="docs">
 
-<main class="page">
+<main class="int-page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/architecture/index.html">系统架构</a> /
-    <span>中断架构</span>
+  <nav class="int-breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="int-breadcrumb-separator" aria-hidden="true">/</span>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <span class="int-breadcrumb-separator" aria-hidden="true">/</span>
+    <span aria-current="page">中断架构</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS 架构模块</span>
+  <header class="int-hero">
+    <div class="int-eyebrow">Interrupt Architecture</div>
 
-    <h1>中断架构（Interrupt Architecture）</h1>
+    <h1>
+      中断架构
+      <span>Interrupt Model &amp; Response Path</span>
+    </h1>
 
-    <p>
-      HRTOS Interrupt Architecture 定义系统中断处理机制的组织方式，以及中断与内核、调度器之间的关系。
+    <p class="int-intro">
+      中断是嵌入式实时系统响应外部事件的重要机制。
+      本模块围绕 HRTOS 的中断模型、处理流程与响应延迟展开，
+      并重点区分中断处理、调度决策和任务上下文切换之间的关系。
     </p>
 
-    <div class="meta">
-      <span class="tag">3 个主题</span>
-      <span class="tag">系统架构</span>
-      <span class="tag">RTOS Core</span>
+    <div class="int-tags" aria-label="文档主题">
+      <span class="int-tag">8051 中断机制</span>
+      <span class="int-tag">响应延迟</span>
+      <span class="int-tag">内核与调度</span>
+    </div>
+  </header>
+
+  <section class="int-section" aria-labelledby="overview-title">
+    <div class="int-section-heading">
+      <div class="int-kicker">01 / Overview</div>
+      <h2 id="overview-title">中断架构概览</h2>
+      <p>
+        从中断机制的基本组成入手，建立对事件响应过程及其系统影响的整体认识。
+      </p>
+    </div>
+
+    <div class="int-overview">
+      <article class="int-overview-main">
+        <h3>中断机制关注什么？</h3>
+        <p>
+          在 8051 系统中，中断响应不仅涉及处理器对中断请求的响应，
+          还涉及中断服务程序的执行，以及中断处理与系统运行状态之间的关系。
+        </p>
+        <p>
+          对 RTOS 而言，还需要进一步分析中断处理是否引起调度请求、
+          调度决策何时发生，以及任务上下文在何时保存和恢复。
+          这些阶段彼此相关，但不应直接视为同一个操作。
+        </p>
+      </article>
+
+      <aside class="int-overview-side">
+        <h3>本模块的三个主题</h3>
+        <ul class="int-topic-list">
+          <li>
+            <span class="int-topic-mark">01</span>
+            <span>中断流程：关注处理阶段及其与任务运行的关系。</span>
+          </li>
+          <li>
+            <span class="int-topic-mark">02</span>
+            <span>中断延迟：关注延迟定义、影响因素与测量方法。</span>
+          </li>
+          <li>
+            <span class="int-topic-mark">03</span>
+            <span>中断模型：关注中断机制的组成与组织方式。</span>
+          </li>
+        </ul>
+      </aside>
+    </div>
+
+    <div class="int-note">
+      <strong>重要区分：</strong>
+      中断响应时间、ISR 执行时间和中断退出后的任务切换时间是不同的分析对象。
+      具体测量边界与处理顺序应以目标芯片、HRTOS 实现和测试方法为准。
     </div>
   </section>
 
-  <section class="section">
-  <h2>中断架构概览</h2>
-  <p>
-    HRTOS 中断架构负责定义系统如何组织中断处理机制。
-  </p>
-  <p>
-    整个中断架构由多个组成部分构成，包括中断入口、ISR、中断优先级以及中断与调度器之间的关系。
-    本模块介绍 HRTOS 中断架构的整体设计思想，各子页面分别介绍不同组成部分。
-  </p>
+  <section class="int-section" aria-labelledby="topics-title">
+    <div class="int-section-heading">
+      <div class="int-kicker">02 / Technical Topics</div>
+      <h2 id="topics-title">核心技术主题</h2>
+      <p>
+        三个专题分别从执行流程、时间特性和结构模型三个角度展开。
+      </p>
+    </div>
 
-</section>
+    <div class="int-grid">
 
-<section class="section">
-  <h2>设计原则</h2>
-  <ul>
-    <li><strong>快速响应：</strong>中断机制必须保证高优先级事件能够尽快被 CPU 处理。</li>
-    <li><strong>最小延迟：</strong>通过优化 ISR 和中断嵌套策略，减少对关键任务的阻塞。</li>
-    <li><strong>可扩展性：</strong>中断架构允许用户根据外设需求增加新的中断源或自定义 ISR。</li>
-    <li><strong>系统确定性：</strong>即使存在多个并发中断，调度器和任务恢复机制也能保持系统行为可预测。</li>
-  </ul>
-
-
-</section>
-
-
-
-  <section class="section">
-    <h2>核心主题</h2>
-    <p>本模块包含以下主题：</p>
-
-    <div class="grid">
-
-      <a class="card" href="interrupt-flow.html">
-        <h3>中断流程</h3>
+      <a class="int-card" href="interrupt-flow.html">
+        <div class="int-card-top">
+          <span class="int-card-number">01</span>
+          <h3>
+            中断流程
+            <span class="int-card-en">Interrupt Flow</span>
+          </h3>
+        </div>
         <p>
-          了解中断从触发到ISR执行，再到任务恢复的完整处理路径。
+          从中断请求与服务程序入手，理解中断处理的主要阶段，
+          以及中断退出、调度请求和任务恢复之间的关系。
         </p>
-        <span>查看详情 →</span>
+        <span class="int-card-link">阅读中断流程</span>
       </a>
 
-      <a class="card" href="interrupt-latency.html">
-        <h3>中断延迟</h3>
+      <a class="int-card" href="interrupt-latency.html">
+        <div class="int-card-top">
+          <span class="int-card-number">02</span>
+          <h3>
+            中断延迟
+            <span class="int-card-en">Interrupt Latency</span>
+          </h3>
+        </div>
         <p>
-          分析中断响应时间、延迟来源以及实时性能影响因素。
+          理解中断响应延迟的定义、潜在影响因素与测量边界，
+          为实时性能测试和最坏情况分析建立基础。
         </p>
-        <span>查看详情 →</span>
+        <span class="int-card-link">阅读中断延迟</span>
       </a>
 
-      <a class="card" href="interrupt-model.html">
-        <h3>中断模型</h3>
+      <a class="int-card" href="interrupt-model.html">
+        <div class="int-card-top">
+          <span class="int-card-number">03</span>
+          <h3>
+            中断模型
+            <span class="int-card-en">Interrupt Model</span>
+          </h3>
+        </div>
         <p>
-          理解中断源、优先级、ISR 与任务恢复的整体结构模型。
+          从结构层面了解中断机制及其相关概念，
+          并进一步研究优先级、中断嵌套和任务运行之间的关系。
         </p>
-        <span>查看详情 →</span>
+        <span class="int-card-link">阅读中断模型</span>
       </a>
 
     </div>
-  
+  </section>
 
-</section>
+  <section class="int-section" aria-labelledby="principles-title">
+    <div class="int-section-heading">
+      <div class="int-kicker">03 / Analysis Principles</div>
+      <h2 id="principles-title">理解中断机制的关键原则</h2>
+      <p>
+        分析中断系统时，需要把处理器行为、内核机制与实测结果区分开来。
+      </p>
+    </div>
 
+    <div class="int-concept-grid">
+      <article class="int-concept">
+        <h3>明确时间边界</h3>
+        <p>
+          说明延迟从哪个事件开始、到哪个事件结束。
+          不同测量边界得到的结果不能直接混为一谈。
+        </p>
+      </article>
 
-  <footer class="footer">
-    © 2017–2026 HRTOS. 面向嵌入式实时系统的技术文档。
+      <article class="int-concept">
+        <h3>区分中断与调度</h3>
+        <p>
+          ISR 执行、中断退出、调度器选择任务和上下文切换
+          可能发生关联，但各自具有不同的职责。
+        </p>
+      </article>
+
+      <article class="int-concept">
+        <h3>结合目标平台</h3>
+        <p>
+          中断行为与 8051 内核、芯片扩展、编译器生成代码及系统配置有关。
+          分析结论应明确对应的目标环境。
+        </p>
+      </article>
+
+      <article class="int-concept">
+        <h3>以实现和测量为依据</h3>
+        <p>
+          中断嵌套条件、临界区影响与响应时间上限，
+          应通过实际代码、编译结果和测试数据进行确认。
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section class="int-section" aria-labelledby="path-title">
+    <div class="int-section-heading">
+      <div class="int-kicker">04 / Reading Path</div>
+      <h2 id="path-title">推荐阅读顺序</h2>
+      <p>
+        建议先理解结构，再跟踪执行过程，最后分析时间特性。
+      </p>
+    </div>
+
+    <div class="int-reading-path">
+      <a class="int-reading-item" href="interrupt-model.html">
+        <span class="int-reading-title">中断模型</span>
+        <span class="int-reading-desc">
+          先了解中断机制的组成、术语和基本组织方式。
+        </span>
+        <span class="int-reading-arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a class="int-reading-item" href="interrupt-flow.html">
+        <span class="int-reading-title">中断流程</span>
+        <span class="int-reading-desc">
+          再研究中断处理阶段，以及它与调度和任务恢复的关系。
+        </span>
+        <span class="int-reading-arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a class="int-reading-item" href="interrupt-latency.html">
+        <span class="int-reading-title">中断延迟</span>
+        <span class="int-reading-desc">
+          最后明确测量边界、影响因素与实时性能分析方法。
+        </span>
+        <span class="int-reading-arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+
+  <footer class="int-footer">
+    <p>© 2017–2026 HRTOS. 面向嵌入式实时系统的技术文档。</p>
   </footer>
 
 </main>

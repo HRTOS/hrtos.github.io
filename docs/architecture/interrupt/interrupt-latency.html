@@ -1,340 +1,978 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>中断延迟 | HRTOS 文档中心</title>
-<meta name="description" content="HRTOS 中断延迟机制说明，包括响应时间、ISR进入延迟、影响因素与优化策略。" />
+<title>中断延迟（Interrupt Latency） | HRTOS Documentation</title>
+<meta name="description" content="HRTOS 8051 中断延迟技术说明：响应延迟定义、时间组成、中断屏蔽、上下文处理、测量方法与最坏情况分析。" />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://hrtos.com/docs/architecture/interrupt/interrupt-latency.html" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root {
-  --bg: #0f172a;
-  --surface: rgba(15, 23, 42, 0.72);
-  --border: rgba(148, 163, 184, 0.16);
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
-  --radius: 10px;
+  --il-bg: #0b1120;
+  --il-panel: rgba(17, 29, 49, 0.78);
+  --il-panel-strong: #111d31;
+  --il-border: rgba(148, 163, 184, 0.16);
+  --il-text: #e5edf8;
+  --il-muted: #9aaec6;
+  --il-accent: #67d5f5;
+  --il-accent-soft: rgba(103, 213, 245, 0.09);
+  --il-code: #080e1a;
+  --il-radius: 14px;
+  --il-shadow: 0 18px 46px rgba(0, 0, 0, 0.20);
   color-scheme: dark;
 }
 
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  line-height: 1.75;
+.il-page,
+.il-page * {
+  box-sizing: border-box;
 }
 
-a { color: inherit; text-decoration: none; }
-
-.page {
-  width: min(1180px, calc(100% - 40px));
+.il-page {
+  position: relative;
+  isolation: isolate;
+  width: min(1220px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 96px 0 56px;
-  display: grid;
-  gap: 40px;
+  padding: 42px 0 64px;
+  color: var(--il-text);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
 }
 
-.breadcrumb {
-  font-size: 14px;
-  color: var(--muted);
+.il-page::before {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: -24px;
+  right: -24px;
+  height: 440px;
+  content: "";
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 12% 10%, rgba(14, 165, 233, 0.13), transparent 42%),
+    radial-gradient(ellipse at 85% 8%, rgba(59, 130, 246, 0.10), transparent 38%);
 }
 
-.breadcrumb a { color: #7dd3fc; }
-
-.hero {
-  display: grid;
-  gap: 16px;
+.il-page a {
+  color: var(--il-accent);
+  text-decoration: none;
+  text-underline-offset: 4px;
 }
 
-.hero-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  font-size: 14px;
+.il-page a:hover {
+  text-decoration: underline;
 }
 
-.hero h1 {
-  margin: 0;
-  font-size: 42px;
-}
-
-.hero p {
-  margin: 0;
-  max-width: 820px;
-  color: var(--muted);
-}
-
-.meta {
+.il-breadcrumb {
   display: flex;
-  gap: 10px;
   flex-wrap: wrap;
-}
-
-.tag {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 30px;
+  color: var(--il-muted);
   font-size: 13px;
-  color: #bae6fd;
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0,1fr) 280px;
-  gap: 28px;
+.il-breadcrumb .il-separator {
+  color: #52677f;
 }
 
-.content {
-  display: grid;
-  gap: 22px;
+.il-hero {
+  position: relative;
+  padding: 34px 34px 32px;
+  margin-bottom: 30px;
+  overflow: hidden;
+  border: 1px solid rgba(103, 213, 245, 0.19);
+  border-radius: 20px;
+  background:
+    linear-gradient(120deg, rgba(17, 37, 61, 0.96), rgba(12, 22, 39, 0.92));
+  box-shadow: var(--il-shadow);
 }
 
-.section {
+.il-hero::after {
+  position: absolute;
+  top: -92px;
+  right: -54px;
+  width: 300px;
+  height: 300px;
+  content: "";
+  pointer-events: none;
+  border: 1px solid rgba(103, 213, 245, 0.10);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 34px rgba(103, 213, 245, 0.025),
+    0 0 0 70px rgba(103, 213, 245, 0.02);
+}
+
+.il-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 17px;
+  color: #a9e9fa;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.il-eyebrow::before {
+  width: 22px;
+  height: 2px;
+  content: "";
+  background: var(--il-accent);
+}
+
+.il-hero h1 {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 15px;
+  color: #f1f7ff;
+  font-size: clamp(30px, 4.2vw, 45px);
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+}
+
+.il-hero h1 span {
+  display: block;
+  margin-top: 10px;
+  color: var(--il-accent);
+  font-size: clamp(17px, 2.2vw, 23px);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.il-hero p {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  margin: 0;
+  color: #b3c4d9;
+  font-size: 15px;
+}
+
+.il-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.il-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 6px;
+  background: rgba(5, 13, 26, 0.28);
+  color: #b8cde1;
+  font-size: 12px;
+}
+
+.il-layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  align-items: start;
+  gap: 25px;
+}
+
+.il-content {
+  display: grid;
+  min-width: 0;
+  gap: 20px;
+}
+
+.il-section {
+  min-width: 0;
+  padding: 26px;
+  border: 1px solid var(--il-border);
+  border-radius: var(--il-radius);
+  background: linear-gradient(150deg, rgba(20, 34, 55, 0.86), rgba(12, 21, 37, 0.94));
+  box-shadow: var(--il-shadow);
+  scroll-margin-top: 100px;
+}
+
+.il-section h2 {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  padding: 24px 22px;
-  background: linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  margin: 0 0 18px;
+  color: #eef6ff;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.45;
 }
 
-.section h2 {
-  margin: 0;
-  font-size: 24px;
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
+.il-section h2::before {
+  flex: 0 0 3px;
+  width: 3px;
+  height: 23px;
+  border-radius: 3px;
+  content: "";
+  background: var(--il-accent);
 }
 
-.section p {
-  margin: 0;
-  color: var(--muted);
+.il-section h3 {
+  margin: 22px 0 9px;
+  color: #dceaf9;
+  font-size: 16px;
+  font-weight: 650;
 }
 
-.note {
+.il-section h3:first-child {
+  margin-top: 0;
+}
+
+.il-section p {
+  margin: 0 0 14px;
+  color: var(--il-muted);
+  font-size: 14px;
+}
+
+.il-section p:last-child {
+  margin-bottom: 0;
+}
+
+.il-section strong {
+  color: #e2f4ff;
+  font-weight: 650;
+}
+
+.il-section ul,
+.il-section ol {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-left: 21px;
+  color: var(--il-muted);
+  font-size: 14px;
+}
+
+.il-section li::marker {
+  color: var(--il-accent);
+}
+
+.il-section code,
+.il-sidebar code {
+  padding: 2px 5px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 4px;
+  background: rgba(2, 8, 20, 0.65);
+  color: #a9e8fb;
+  font-family: Consolas, "Cascadia Code", monospace;
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+}
+
+.il-note {
+  margin-top: 17px;
   padding: 14px 16px;
-  border-left: 3px solid var(--accent);
+  border: 1px solid rgba(103, 213, 245, 0.15);
+  border-left: 3px solid var(--il-accent);
   border-radius: 8px;
-  background: rgba(15,23,42,.6);
-  color: var(--muted);
+  background: var(--il-accent-soft);
+  color: #b9cde0;
+  font-size: 13px;
 }
 
-.code {
-  background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
-  border-radius: 8px;
-  padding: 16px;
-  font-family: Consolas, monospace;
-  color: #7dd3fc;
+.il-note strong {
+  color: #c9f1fc;
+}
+
+.il-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 19px;
+}
+
+.il-metric {
+  padding: 16px 15px;
+  border: 1px solid var(--il-border);
+  border-radius: 10px;
+  background: rgba(4, 12, 25, 0.42);
+}
+
+.il-metric-label {
+  margin-bottom: 7px;
+  color: var(--il-accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.il-metric p {
+  margin: 0;
+  color: #a8bad0;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.il-formula {
+  margin: 16px 0;
+  padding: 17px 19px;
+  overflow-x: auto;
+  border: 1px solid rgba(103, 213, 245, 0.16);
+  border-radius: 9px;
+  background: var(--il-code);
+  color: #b9edfc;
+  font-family: Consolas, "Cascadia Code", monospace;
+  font-size: 14px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.il-timeline {
+  display: grid;
+  gap: 0;
+  margin-top: 18px;
+}
+
+.il-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 13px;
+  padding-bottom: 19px;
+}
+
+.il-step:last-child {
+  padding-bottom: 0;
+}
+
+.il-step:not(:last-child)::after {
+  position: absolute;
+  top: 31px;
+  bottom: 0;
+  left: 16px;
+  width: 1px;
+  content: "";
+  background: rgba(103, 213, 245, 0.24);
+}
+
+.il-step-number {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 33px;
+  height: 33px;
+  place-items: center;
+  border: 1px solid rgba(103, 213, 245, 0.28);
+  border-radius: 9px;
+  background: #10243a;
+  color: #a9eafa;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.il-step h3 {
+  margin: 2px 0 5px;
+  font-size: 14px;
+}
+
+.il-step p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.il-table-wrap {
+  width: 100%;
+  margin-top: 17px;
+  overflow-x: auto;
+  border: 1px solid var(--il-border);
+  border-radius: 9px;
+}
+
+.il-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.il-table th,
+.il-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  vertical-align: top;
+}
+
+.il-table th {
+  background: rgba(4, 12, 25, 0.68);
+  color: #c7d8eb;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.il-table td {
+  color: var(--il-muted);
+}
+
+.il-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.il-code {
+  margin: 15px 0;
+  padding: 17px 19px;
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 9px;
+  background: var(--il-code);
+  color: #b8d3eb;
+  font-family: Consolas, "Cascadia Code", monospace;
+  font-size: 12px;
+  line-height: 1.85;
+  white-space: pre;
+}
+
+.il-code-label {
+  margin-bottom: -5px;
+  color: #8098b4;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.il-sidebar {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 14px;
+}
+
+.il-side-box {
+  padding: 18px;
+  border: 1px solid var(--il-border);
+  border-radius: 12px;
+  background: rgba(15, 27, 46, 0.82);
+}
+
+.il-side-box h2 {
+  margin: 0 0 13px;
+  color: #e4effb;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.il-side-links {
+  display: grid;
+  gap: 4px;
+}
+
+.il-side-links a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: #a9bbd0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.il-side-links a:hover {
+  background: rgba(103, 213, 245, 0.07);
+  color: #c6f2ff;
+  text-decoration: none;
+}
+
+.il-side-description {
+  margin: 0;
+  color: #93a8c1;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.il-related {
+  display: grid;
+  gap: 9px;
+}
+
+.il-related a {
+  font-size: 12px;
   line-height: 1.65;
 }
 
-.sidebar {
+.il-bottom-nav {
   display: grid;
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
 }
 
-.box {
-  padding: 18px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: rgba(30,41,59,.56);
-}
-
-.box h3 {
-  margin: 0 0 12px;
-  font-size: 16px;
-}
-
-.box a {
+.il-bottom-link {
   display: block;
-  color: #7dd3fc;
-  font-size: 14px;
-  margin-bottom: 8px;
+  padding: 15px 17px;
+  border: 1px solid var(--il-border);
+  border-radius: 10px;
+  background: rgba(15, 27, 46, 0.76);
 }
 
-.footer {
+.il-bottom-link span {
+  display: block;
+  margin-bottom: 4px;
+  color: #8299b4;
+  font-size: 11px;
+}
+
+.il-bottom-link strong {
+  color: #bcefff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.il-footer {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(148, 163, 184, 0.13);
+  color: #8195ae;
+  font-size: 12px;
   text-align: center;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148,163,184,.14);
-  color: #8ea3be;
-  font-size: 14px;
 }
 
-@media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
+@media (max-width: 960px) {
+  .il-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .il-sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .il-sidebar .il-side-box:first-child {
+    grid-row: span 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .il-page {
+    width: min(100% - 26px, 1220px);
+    padding-top: 27px;
+  }
+
+  .il-hero {
+    padding: 25px 21px;
+    border-radius: 15px;
+  }
+
+  .il-section {
+    padding: 21px 18px;
+  }
+
+  .il-section h2 {
+    font-size: 19px;
+  }
+
+  .il-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .il-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .il-sidebar .il-side-box:first-child {
+    grid-row: auto;
+  }
+
+  .il-bottom-nav {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .il-page *,
+  .il-page *::before,
+  .il-page *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
 }
 </style>
 </head>
 
 <body data-header="docs">
 
-<main class="page">
+<main class="il-page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">文档中心</a> /
-    <a href="/docs/architecture/index.html">系统架构</a> /
-    <span>中断延迟</span>
+  <nav class="il-breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="il-separator">/</span>
+    <a href="/docs/architecture/index.html">系统架构</a>
+    <span class="il-separator">/</span>
+    <a href="/docs/architecture/interrupt/index.html">中断机制</a>
+    <span class="il-separator">/</span>
+    <span aria-current="page">中断延迟</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS 文档中心</span>
-
-    <h1>中断延迟（Interrupt Latency）</h1>
-
+  <header class="il-hero">
+    <div class="il-eyebrow">Architecture / Interrupt</div>
+    <h1>
+      中断延迟
+      <span>Interrupt Latency</span>
+    </h1>
     <p>
-      从中断触发到 ISR 执行之间的时间间隔，是实时系统响应能力的核心指标。
+      从中断请求到指定处理阶段之间的时间，是分析实时响应能力的重要依据。
+      对 8051 系统而言，测量边界、指令执行状态、中断屏蔽和内核入口开销，都可能影响最终结果。
     </p>
-
-    <div class="meta">
-      <span class="tag">系统架构</span>
-      <span class="tag">实时性分析</span>
-      <span class="tag">中断机制</span>
+    <div class="il-tags">
+      <span class="il-tag">8051 Architecture</span>
+      <span class="il-tag">Response Time</span>
+      <span class="il-tag">Worst-Case Analysis</span>
+      <span class="il-tag">HRTOS 4.0</span>
     </div>
-  </section>
+  </header>
 
-  <div class="layout">
+  <div class="il-layout">
 
-    <div class="content">
+    <div class="il-content">
 
-      <section class="section" id="overview">
-        <h2>概述</h2>
-
-        <p>
-          中断延迟表示外部事件发生到 ISR 开始执行之间的时间差，是实时系统关键性能指标之一。
-        </p>
+      <section class="il-section" id="overview">
+        <h2>01 / 概念与测量边界</h2>
 
         <p>
-          延迟越小且越稳定，系统响应越及时，对外部事件的确定性越高。
+          中断延迟（Interrupt Latency）描述中断请求发生后，处理器到达某个明确的中断处理测量点所经历的时间。
+          在工程测试中，常将 ISR 入口或 ISR 中的指定标记点作为终点，但两种测量口径并不相同。
         </p>
+
+        <div class="il-formula">
+          T_latency = T_measurement_end − T_interrupt_request
+        </div>
 
         <p>
-          在 HRTOS 中，该指标与
-          <a href="/docs/architecture/scheduler/index.html">调度系统</a>、
-          <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程</a>
-          共同构成完整响应链路。
+          其中，起点可以是外部引脚上的有效边沿、外设中断请求形成的时刻，或测试系统能够可靠识别的其他事件。
+          终点则必须明确规定，例如 ISR 第一条软件指令、入口代码完成后的标记点，或用户 ISR 中的 GPIO 翻转位置。
         </p>
 
-        <div class="note">
-          延迟通常由：硬件响应 + 当前指令执行 + 中断屏蔽 + 上下文保存 + ISR入口开销组成。
+        <div class="il-metric-grid">
+          <div class="il-metric">
+            <div class="il-metric-label">响应延迟</div>
+            <p>请求到达指定处理测量点的时间，不应默认包含整个 ISR 的执行过程。</p>
+          </div>
+          <div class="il-metric">
+            <div class="il-metric-label">中断处理时间</div>
+            <p>从所选 ISR 起点到所选处理终点的执行时间，取决于代码路径与运行条件。</p>
+          </div>
+          <div class="il-metric">
+            <div class="il-metric-label">响应链路总时间</div>
+            <p>从外部事件到任务完成相应工作的时间，还可能包含 ISR、调度、切换与任务处理。</p>
+          </div>
+        </div>
+
+        <div class="il-note">
+          <strong>关键原则：</strong>
+          比较不同系统或不同版本的延迟数据时，必须统一起点、终点、时钟条件、编译配置和中断负载。
+          单独给出一个延迟数字，并不足以说明完整的实时性能。
         </div>
       </section>
 
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
+      <section class="il-section" id="composition">
+        <h2>02 / 延迟由哪些因素组成</h2>
 
         <p>
-          中断触发后，CPU 完成当前指令并检查屏蔽状态，随后保存上下文并进入 ISR。
+          8051 的中断响应不是单一的固定软件函数调用。
+          从请求产生到用户 ISR 开始执行，可能经历处理器当前指令完成、中断使能与优先级条件检查、
+          更高优先级中断的影响，以及内核或编译器相关的入口处理。
         </p>
 
-        <p>
-          ISR 结束后调用 <code>os_interrupt_exit()</code>，由调度器决定是否发生任务切换。
-        </p>
+        <div class="il-timeline">
+          <div class="il-step">
+            <div class="il-step-number">01</div>
+            <div>
+              <h3>请求产生与识别</h3>
+              <p>外设或引脚产生中断请求。请求形成时刻与测试仪器实际观察到的信号边沿，可能并不完全相同。</p>
+            </div>
+          </div>
+          <div class="il-step">
+            <div class="il-step-number">02</div>
+            <div>
+              <h3>处理器响应条件</h3>
+              <p>当前指令执行、中断使能状态、优先级规则以及正在处理的中断，都会影响何时能够响应新请求。</p>
+            </div>
+          </div>
+          <div class="il-step">
+            <div class="il-step-number">03</div>
+            <div>
+              <h3>中断入口处理</h3>
+              <p>处理器进入相应中断入口后，还可能执行跳转、软件保存、寄存器或内核状态处理等操作。具体开销取决于目标实现。</p>
+            </div>
+          </div>
+          <div class="il-step">
+            <div class="il-step-number">04</div>
+            <div>
+              <h3>到达测量终点</h3>
+              <p>执行到所选 ISR 标记点时，记录响应延迟。若测量点放在更靠后的代码中，结果也会包含此前执行的指令。</p>
+            </div>
+          </div>
+        </div>
 
-        <div class="note">
-          降低中断延迟的关键在于缩短 ISR 执行时间，避免阻塞与长临界区。
+        <div class="il-note">
+          不应把所有阶段都视为每次必然出现、开销固定且可以直接相加的独立项。
+          应根据实际中断入口、编译结果和测试路径，建立与目标固件相符的时间模型。
         </div>
       </section>
 
-      <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
+      <section class="il-section" id="influences">
+        <h2>03 / 影响延迟的主要因素</h2>
 
-        <div class="code">
-           os_interrupt_id() // 获取当前中断编号<br> 
-           os_enter_critical() // 进入临界区（关闭中断）<br> 
-           os_exit_critical() // 退出临界区（恢复中断）<br> 
-           os_in_isr() // 判断当前是否运行在中断上下文中<br> 
-           os_queue_send_from_isr() // 中断中发送邮箱消息<br> 
-           os_event_set_from_isr() // 中断中设置事件标志<br> 
-           os_semaphore_post_from_isr() // 中断中释放信号量<br> 
-           os_msgq_send_from_isr() // 中断中发送消息队列数据<br> 
-           os_schedule_request() // 请求调度器重新调度<br> 
-           os_interrupt_exit() // 完成中断退出
-           </div>
+        <div class="il-table-wrap">
+          <table class="il-table">
+            <thead>
+              <tr>
+                <th>因素</th>
+                <th>影响方式</th>
+                <th>分析重点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>当前指令</td>
+                <td>处理器通常需要遵循目标指令集规定的中断响应时序。</td>
+                <td>检查指令周期与指令边界。</td>
+              </tr>
+              <tr>
+                <td>中断使能状态</td>
+                <td>中断被屏蔽时，请求可能无法立即进入相应处理路径。</td>
+                <td>统计屏蔽窗口的长度与发生条件。</td>
+              </tr>
+              <tr>
+                <td>优先级与嵌套</td>
+                <td>已在执行的中断及优先级规则可能推迟其他请求的处理。</td>
+                <td>核对实际硬件与内核的优先级行为。</td>
+              </tr>
+              <tr>
+                <td>入口代码</td>
+                <td>跳转、软件状态保存和其他入口操作会影响指定测量点的到达时间。</td>
+                <td>结合反汇编与目标编译配置核算。</td>
+              </tr>
+              <tr>
+                <td>测试方法</td>
+                <td>GPIO 翻转、探针插入和测量仪器均可能改变或影响观测结果。</td>
+                <td>记录测量点及测试开销。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <p>
-          这些接口覆盖 ISR 中常见操作：状态判断、通信、同步与调度触发。
+          在 8051 内核中，尤其需要区分处理器硬件完成的中断响应动作与软件实现的上下文管理。
+          不能假定硬件已经自动保存了所有 C 运行环境或 HRTOS 任务上下文。
         </p>
 
+        <p>
+          同样，不能仅凭系统是否使用抢占式调度，就推断某次硬件中断的入口延迟。
+          中断响应与任务调度相关，但它们对应不同的时间边界。
+        </p>
+      </section>
+
+      <section class="il-section" id="masking">
+        <h2>04 / 中断屏蔽与最坏情况</h2>
+
+        <p>
+          对实时响应而言，中断屏蔽窗口是必须重点检查的因素之一。
+          如果某段代码暂时禁止目标中断响应，那么该窗口可能直接推迟中断处理。
+          即使平均延迟很低，偶发的长屏蔽区间也可能显著抬高最大观测值。
+        </p>
+
+        <h3>分析时应关注</h3>
         <ul>
-          <li>临界区仅用于极短保护窗口</li>
-          <li>ISR 内只做必要事件处理</li>
-          <li>退出阶段负责调度检查</li>
+          <li>全局中断禁止与单个中断源屏蔽的区别。</li>
+          <li>屏蔽开始和恢复的位置是否覆盖了所有相关代码路径。</li>
+          <li>嵌套中断、较高优先级中断以及重复请求是否影响目标事件。</li>
+          <li>临界区执行时间是否随分支、循环、编译优化或共享状态变化。</li>
+          <li>测试是否覆盖了响应最不利的指令与系统运行状态。</li>
         </ul>
-      </section>
 
-      <section class="section" id="flow">
-        <h2>运行流程</h2>
+        <div class="il-note">
+          <strong>避免混淆：</strong>
+          缩短 ISR 本身通常有助于降低处理占用时间和后续请求的等待；
+          但对一个已经可以被处理器接纳的中断来说，ISR 后半段的执行时间不等同于它到达 ISR 入口之前的延迟。
+        </div>
+
+        <h3>平均值与最坏情况</h3>
+        <p>
+          平均延迟可以描述常见负载下的表现，却不能单独证明实时响应上界。
+          测试得到的最大值也只代表已覆盖样本中的最大观测结果，不能自动等同于数学上已经证明的最坏情况上界。
+        </p>
 
         <p>
-          中断触发 → CPU完成当前指令 → 保存上下文 → 进入ISR → ISR处理 → 退出 → 调度检查 → 任务恢复/切换
+          对最坏情况中断延迟（Worst-Case Interrupt Latency）的分析，需要结合目标芯片的中断响应规则、
+          实际指令路径、中断屏蔽行为、优先级约束和明确的环境假设。
+          如果条件尚未全部覆盖，应将结果表述为实测最大值或限定条件下的分析结果，而不是无条件的硬实时保证。
         </p>
       </section>
 
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
+      <section class="il-section" id="measurement">
+        <h2>05 / 测量与验证方法</h2>
 
         <p>
-          中断延迟受硬件与软件共同影响，包括 CPU 架构、总线访问、中断控制器、临界区长度等因素。
+          对 HRTOS 这类面向 8051 的系统，推荐将示波器或逻辑分析仪测量与固件反汇编分析结合起来。
+          外部测量有助于观察真实的引脚时间关系；反汇编则用于解释入口指令、标记指令和相关执行路径的成本。
+        </p>
+
+        <h3>方法 A：外部信号与 GPIO 标记</h3>
+        <ol>
+          <li>选择可重复触发的外部中断事件，并确定请求的观测起点。</li>
+          <li>在指定 ISR 测量点翻转 GPIO，确保标记代码本身足够简单。</li>
+          <li>使用示波器或逻辑分析仪测量请求信号与标记信号的时间差。</li>
+          <li>在记录中说明标记位于硬件入口、内核入口之后，还是用户 ISR 的某个位置。</li>
+          <li>分别测试典型状态与不利状态，并保存时钟、编译配置及测试条件。</li>
+        </ol>
+
+        <h3>方法 B：反汇编与周期审计</h3>
+        <ol>
+          <li>确认测试使用的 HEX、目标芯片、时钟频率和编译选项。</li>
+          <li>定位实际中断向量及从入口到测量点的指令路径。</li>
+          <li>按照目标芯片的指令周期规则，计算每条相关指令的执行成本。</li>
+          <li>检查中断屏蔽、嵌套条件与可能的入口路径差异。</li>
+          <li>将静态计算与实测结果交叉验证，并解释测量偏差。</li>
+        </ol>
+
+        <div class="il-code-label">测量记录建议</div>
+        <pre class="il-code">Target MCU       : 实际目标芯片型号
+Clock / Mode     : 实际时钟频率及工作模式
+Compiler Config  : 编译器版本与关键选项
+Request Point    : 中断请求的观测起点
+Measure Point    : ISR 中明确指定的测量终点
+Interrupt State  : 中断使能、屏蔽与优先级条件
+Instrumentation  : GPIO 标记方式及测量设备
+Result           : 样本数、最小值、平均值、最大值
+Analysis         : 反汇编周期核算与结果差异</pre>
+
+        <div class="il-note">
+          GPIO 标记位置越靠后，测量值中包含的软件执行成本越多。
+          若目标是测量内核入口延迟，不能直接将用户 ISR 中较晚位置的测量结果当作入口延迟。
+        </div>
+      </section>
+
+      <section class="il-section" id="hrtos">
+        <h2>06 / HRTOS 中断路径与调度的关系</h2>
+
+        <p>
+          HRTOS 的中断响应分析需要结合 8051 处理器行为、实际中断入口代码以及内核对上下文的管理方式。
+          硬件中断进入、内核状态处理、ISR 执行和中断退出，属于一条相互关联但各有测量边界的执行链。
         </p>
 
         <p>
-          优化通常集中在 ISR 设计与系统调度策略上。
+          <code>os_interrupt_exit()</code> 是 HRTOS 中需要重点核对的中断退出接口。
+          对 ISR 入口、上下文处理以及退出后的实际控制流，应以当前 HRTOS 4.0 的源代码、汇编实现和目标编译结果为准。
         </p>
 
+        <div class="il-formula">
+          外部事件 → 中断请求 → 处理器响应 → 内核 / ISR 入口处理
+          → ISR 执行 → 中断退出处理 → 后续执行路径
+        </div>
+
+        <p>
+          中断退出后是否以及何时发生任务切换，需要结合内核实现和当时的调度条件判断。
+          任务切换时间不应直接计入所有中断入口延迟的定义中；
+          如果关注的是事件到任务响应的总时间，则应单独测量或分析调度与上下文切换阶段。
+        </p>
+
+        <div class="il-note">
+          本页不将未经核对的通用 RTOS API 当作 HRTOS 已有接口。
+          中断编号获取、ISR 上下文判断、临界区控制及中断内通信接口，均应以 HRTOS 4.0 实际公开的头文件与实现为准。
+        </div>
+      </section>
+
+      <section class="il-section" id="optimization">
+        <h2>07 / 优化原则与验证闭环</h2>
+
+        <h3>优先优化可证明的时间来源</h3>
         <ul>
-          <li>保持 ISR 极短</li>
-          <li>减少关闭中断时间</li>
-          <li>合理配置中断优先级</li>
-          <li>关注最坏情况延迟（WCIL）</li>
+          <li><strong>检查屏蔽窗口：</strong>找出不必要的长时间中断屏蔽，并确认修改后共享状态仍然安全。</li>
+          <li><strong>核对入口路径：</strong>使用反汇编识别实际执行的入口指令，而不是仅凭 C 代码估算开销。</li>
+          <li><strong>控制 ISR 工作量：</strong>避免不必要的循环、长时间计算和无必要的阻塞操作。</li>
+          <li><strong>检查嵌套条件：</strong>验证优先级与嵌套行为是否符合目标芯片及内核的真实实现。</li>
+          <li><strong>重复测量：</strong>在相同条件下比较修改前后的延迟分布，并保留固件版本与测试记录。</li>
         </ul>
 
+        <h3>建立闭环</h3>
+        <div class="il-formula">
+          明确指标 → 建立测量方法 → 获取实测数据
+          → 分析反汇编路径 → 定位时间来源
+          → 修改实现 → 重复验证
+        </div>
+
         <p>
-          对实时系统而言，最坏情况延迟比平均值更重要。
+          对实时内核而言，优化的目标不只是降低某一次测量的数字，
+          而是理解延迟来自哪里、哪些条件会使它增大，以及修改后能否在可重复的测试和明确的假设下得到验证。
         </p>
       </section>
+
+      <section class="il-section" id="summary">
+        <h2>08 / 本页小结</h2>
+
+        <p>
+          中断延迟是实时系统响应分析的重要指标，但只有在测量边界清晰的前提下才具有可比性。
+          对 HRTOS 8051 平台，应把处理器响应、入口处理、ISR 执行、中断退出和任务切换分开分析，再根据实际需求组合成完整的响应时间模型。
+        </p>
+
+        <p>
+          实测数据用于观察真实运行表现，反汇编与周期审计用于解释指令路径，
+          而最坏情况上界则需要明确的系统假设和足够严谨的分析。三者相互补充，不能互相替代。
+        </p>
+      </section>
+
+      <nav class="il-bottom-nav" aria-label="相关技术文档">
+        <a class="il-bottom-link" href="/docs/architecture/interrupt/interrupt-flow.html">
+          <span>PREVIOUS / RELATED</span>
+          <strong>中断流程（Interrupt Flow）</strong>
+        </a>
+        <a class="il-bottom-link" href="/docs/architecture/interrupt/index.html">
+          <span>MODULE OVERVIEW</span>
+          <strong>中断机制架构总览</strong>
+        </a>
+      </nav>
 
     </div>
 
-    <aside class="sidebar">
+    <aside class="il-sidebar" aria-label="页面导航">
 
-      <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
-      </div>
+      <section class="il-side-box">
+        <h2>本页目录</h2>
+        <nav class="il-side-links">
+          <a href="#overview">01 · 概念与测量边界</a>
+          <a href="#composition">02 · 延迟组成</a>
+          <a href="#influences">03 · 影响因素</a>
+          <a href="#masking">04 · 屏蔽与最坏情况</a>
+          <a href="#measurement">05 · 测量与验证</a>
+          <a href="#hrtos">06 · HRTOS 中断路径</a>
+          <a href="#optimization">07 · 优化原则</a>
+          <a href="#summary">08 · 本页小结</a>
+        </nav>
+      </section>
 
-      <div class="box">
-        <h3>相关页面</h3>
-        <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程</a>
-        <a href="/system-view/03-interrupt-flow.html">系统中断流模型</a>
-        <a href="/docs/system/scheduling-flow.html">调度循环</a>
-      </div>
+      <section class="il-side-box">
+        <h2>分析重点</h2>
+        <p class="il-side-description">
+          先定义请求起点和 ISR 测量终点，再核对中断屏蔽、入口指令、嵌套条件与测试开销。不要把 ISR 执行时间和任务切换时间混入不匹配的指标。
+        </p>
+      </section>
 
-      <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/architecture/index.html">系统架构模块</a>
-      </div>
+      <section class="il-side-box">
+        <h2>相关文档</h2>
+        <nav class="il-related">
+          <a href="/docs/architecture/interrupt/index.html">中断机制架构</a>
+          <a href="/docs/architecture/interrupt/interrupt-flow.html">中断流程与退出处理</a>
+          <a href="/docs/architecture/scheduler/index.html">调度器架构</a>
+          <a href="/docs/architecture/kernel/index.html">内核架构</a>
+          <a href="/docs/modules/task/index.html">任务与上下文切换</a>
+        </nav>
+      </section>
 
     </aside>
 
   </div>
 
-  <footer class="footer">
+  <footer class="il-footer">
     © 2017–2026 HRTOS. 面向嵌入式实时系统的技术文档。
   </footer>
 
