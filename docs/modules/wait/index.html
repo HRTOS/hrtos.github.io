@@ -1,525 +1,910 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>Wait Module | HRTOS Module Documentation</title>
-
-<meta name="description" content="HRTOS等待机制模块文档，包含统一等待模型、状态管理、超时机制以及任务阻塞与唤醒流程。" />
+<title>Wait Module | HRTOS Waiting & Blocking Mechanism</title>
+<meta name="description" content="HRTOS Wait 模块文档：任务等待状态、阻塞与唤醒、超时处理，以及 Wait 与任务调度和 IPC 同步机制之间的关系。" />
+<meta name="keywords" content="HRTOS, Wait Module, 8051 RTOS, 任务等待, 任务阻塞, 超时机制, IPC, Task Synchronization" />
+<meta name="robots" content="index,follow" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
-
 <style>
-
-:root{
-  --bg:#0f172a;
-  --border:rgba(148,163,184,.18);
-  --border-strong:rgba(56,189,248,.38);
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+:root {
+  --wait-bg: #0a1020;
+  --wait-panel: #111b2e;
+  --wait-panel-soft: #0d1729;
+  --wait-text: #e6edf8;
+  --wait-muted: #9aabc3;
+  --wait-accent: #38bdf8;
+  --wait-teal: #5eead4;
+  --wait-border: rgba(148,163,184,.17);
+  --wait-radius: 16px;
+  color-scheme: dark;
 }
 
-
-*{box-sizing:border-box}
-
-
-body{
- margin:0;
- background:var(--bg);
- color:var(--text);
- font-family:"Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
- line-height:1.7;
- overflow-x:hidden;
+* {
+  box-sizing: border-box;
 }
 
-
-body::before{
- content:"";
- position:fixed;
- inset:0;
- pointer-events:none;
- background-image:
- linear-gradient(rgba(148,163,184,.08) 1px,transparent 1px),
- linear-gradient(90deg,rgba(148,163,184,.08) 1px,transparent 1px);
- background-size:28px 28px;
- opacity:.14;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
 }
 
-
-a{
- color:inherit;
- text-decoration:none;
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(56,189,248,.09), transparent 34%),
+    var(--wait-bg);
+  color: var(--wait-text);
+  font-family: "Segoe UI", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
 }
 
-
-.page{
-
- width:min(1180px,calc(100% - 40px));
- margin:0 auto;
- padding:96px 0 56px;
- position:relative;
- z-index:1;
-
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-
-
-.breadcrumb{
-
- margin-bottom:28px;
- font-size:.92rem;
- color:var(--muted);
-
+.page {
+  position: relative;
+  z-index: 1;
+  width: min(1200px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 100px 0 56px;
 }
 
-
-.breadcrumb a{
- color:#7dd3fc;
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 27px;
+  color: var(--wait-muted);
+  font-size: .84rem;
 }
 
-
-
-.hero{
-
- margin-bottom:56px;
-
+.breadcrumb a {
+  color: #7dd3fc;
 }
 
-
-
-.hero-label{
-
- display:inline-block;
- padding:8px 14px;
- border-radius:999px;
- border:1px solid rgba(56,189,248,.24);
- color:#bae6fd;
- font-size:.9rem;
- margin-bottom:18px;
-
+.breadcrumb a:hover {
+  color: var(--wait-teal);
 }
 
-
-
-.hero h1{
-
- margin:0 0 16px;
- font-size:clamp(2.3rem,5vw,4rem);
- line-height:1.08;
-
+.breadcrumb .separator {
+  color: #52627a;
 }
 
-
-
-.hero p{
-
- margin:0;
- max-width:760px;
- color:var(--muted);
-
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 56px);
+  border: 1px solid var(--wait-border);
+  border-radius: 23px;
+  background:
+    linear-gradient(125deg, rgba(56,189,248,.09), transparent 48%),
+    linear-gradient(145deg, #142139, #0d1628 76%);
 }
 
-
-
-.meta{
-
- display:flex;
- gap:10px;
- flex-wrap:wrap;
- margin-top:18px;
-
+.hero::after {
+  content: "WAIT";
+  position: absolute;
+  right: -9px;
+  bottom: -43px;
+  color: rgba(148,163,184,.045);
+  font-size: clamp(5rem, 15vw, 11rem);
+  font-weight: 850;
+  letter-spacing: .04em;
+  line-height: 1;
+  pointer-events: none;
 }
 
-
-
-.tag{
-
- padding:6px 12px;
- border-radius:999px;
- border:1px solid var(--border);
- background:rgba(15,23,42,.45);
- color:#bae6fd;
- font-size:.84rem;
-
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 17px;
+  color: var(--wait-teal);
+  font-size: .78rem;
+  font-weight: 750;
+  letter-spacing: .13em;
+  text-transform: uppercase;
 }
 
-
-
-.section{
-
- margin-bottom:56px;
-
+.hero-label::before {
+  content: "";
+  width: 22px;
+  height: 2px;
+  background: currentColor;
 }
 
-
-
-.section h2{
-
- margin:0 0 12px;
- font-size:1.5rem;
-
+.hero h1 {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 3.7rem);
+  line-height: 1.18;
+  letter-spacing: -.035em;
 }
 
-
-
-.section p{
-
- margin:0 0 22px;
- color:var(--muted);
-
+.hero h1 span {
+  color: #7dd3fc;
 }
 
-
-
-.grid{
-
- display:grid;
- grid-template-columns:repeat(2,minmax(0,1fr));
- gap:20px;
-
+.hero-description {
+  position: relative;
+  z-index: 1;
+  max-width: 770px;
+  margin: 20px 0 0;
+  color: #b7c5d9;
+  font-size: 1.02rem;
 }
 
-
-
-.card{
-
- display:grid;
- gap:12px;
- padding:24px 22px;
- min-height:180px;
-
- background:linear-gradient(
- 180deg,
- rgba(30,41,59,.8),
- rgba(15,23,42,.92)
- );
-
- border:1px solid var(--border);
- border-radius:var(--radius);
-
- box-shadow:var(--shadow);
-
- transition:.22s ease;
-
+.hero-meta {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 26px;
 }
 
-
-
-.card:hover{
-
- transform:translateY(-6px);
- border-color:var(--border-strong);
- background:rgba(30,64,175,.18);
-
+.tag {
+  padding: 5px 11px;
+  border: 1px solid rgba(148,163,184,.2);
+  border-radius: 999px;
+  background: rgba(2,6,23,.28);
+  color: #cbd5e1;
+  font-size: .78rem;
 }
 
-
-
-.card h3{
-
- margin:0;
- font-size:1.12rem;
- color:#f8fafc;
-
+.content-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  align-items: start;
+  gap: 25px;
+  margin-top: 28px;
 }
 
-
-
-.card p{
-
- margin:0;
- font-size:.95rem;
- color:var(--muted);
-
+.main-content {
+  min-width: 0;
 }
 
-
-
-.card span{
-
- margin-top:auto;
- color:#7dd3fc;
- font-size:.92rem;
- font-weight:600;
-
+.section {
+  margin-bottom: 22px;
+  scroll-margin-top: 100px;
 }
 
-
-
-.footer{
-
- padding-top:24px;
- border-top:1px solid rgba(148,163,184,.14);
- text-align:center;
- font-size:.9rem;
- color:#8ea3be;
-
+.section-panel {
+  padding: clamp(22px, 3vw, 31px);
+  border: 1px solid var(--wait-border);
+  border-radius: var(--wait-radius);
+  background: linear-gradient(145deg, rgba(17,27,46,.96), rgba(13,23,41,.96));
 }
 
-
-
-@media(max-width:900px){
-
-.grid{
- grid-template-columns:1fr;
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  margin-bottom: 13px;
 }
 
+.section-number {
+  display: grid;
+  flex: 0 0 35px;
+  width: 35px;
+  height: 35px;
+  place-items: center;
+  border: 1px solid rgba(56,189,248,.25);
+  border-radius: 10px;
+  background: rgba(56,189,248,.08);
+  color: var(--wait-accent);
+  font-size: .8rem;
+  font-weight: 750;
 }
 
+.section-heading h2 {
+  margin: 1px 0 0;
+  font-size: 1.28rem;
+  line-height: 1.5;
+  letter-spacing: -.015em;
+}
 
+.section-intro {
+  margin: 0 0 21px;
+  color: var(--wait-muted);
+  font-size: .94rem;
+}
+
+.section p {
+  color: #c2cede;
+}
+
+.section p:last-child {
+  margin-bottom: 0;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 11px;
+  margin-top: 21px;
+}
+
+.overview-item {
+  padding: 17px 15px;
+  border: 1px solid var(--wait-border);
+  border-radius: 12px;
+  background: rgba(2,6,23,.24);
+}
+
+.overview-index {
+  margin-bottom: 10px;
+  color: var(--wait-accent);
+  font-family: Consolas, monospace;
+  font-size: .77rem;
+  font-weight: 700;
+}
+
+.overview-item h3 {
+  margin: 0 0 7px;
+  color: #e6edf8;
+  font-size: .97rem;
+}
+
+.overview-item p {
+  margin: 0;
+  color: var(--wait-muted);
+  font-size: .84rem;
+  line-height: 1.7;
+}
+
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.topic-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 204px;
+  flex-direction: column;
+  padding: 21px;
+  overflow: hidden;
+  border: 1px solid var(--wait-border);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(30,41,59,.68), rgba(13,23,41,.88));
+  transition: border-color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.topic-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--wait-accent);
+  transition: width .2s ease;
+}
+
+.topic-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(56,189,248,.4);
+  background: linear-gradient(145deg, rgba(30,64,95,.42), rgba(13,23,41,.96));
+}
+
+.topic-card:hover::after {
+  width: 100%;
+}
+
+.topic-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 17px;
+}
+
+.topic-code {
+  color: var(--wait-accent);
+  font-family: Consolas, monospace;
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+
+.topic-type {
+  padding: 3px 8px;
+  border: 1px solid rgba(148,163,184,.16);
+  border-radius: 6px;
+  color: var(--wait-muted);
+  font-size: .7rem;
+}
+
+.topic-card h3 {
+  margin: 0 0 9px;
+  color: #f1f5f9;
+  font-size: 1.06rem;
+}
+
+.topic-card p {
+  margin: 0;
+  color: var(--wait-muted);
+  font-size: .89rem;
+  line-height: 1.75;
+}
+
+.topic-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 21px;
+  color: #7dd3fc;
+  font-size: .85rem;
+  font-weight: 650;
+}
+
+.topic-link .arrow {
+  transition: transform .2s ease;
+}
+
+.topic-card:hover .arrow {
+  transform: translateX(4px);
+}
+
+.design-list {
+  display: grid;
+  gap: 11px;
+}
+
+.design-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 14px;
+  padding: 17px;
+  border: 1px solid var(--wait-border);
+  border-radius: 12px;
+  background: rgba(2,6,23,.2);
+}
+
+.design-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(56,189,248,.22);
+  border-radius: 11px;
+  background: rgba(56,189,248,.07);
+  color: #7dd3fc;
+  font-size: .8rem;
+  font-weight: 750;
+}
+
+.design-item h3 {
+  margin: 0 0 5px;
+  color: #e2e8f0;
+  font-size: .96rem;
+}
+
+.design-item p {
+  margin: 0;
+  color: var(--wait-muted);
+  font-size: .88rem;
+  line-height: 1.75;
+}
+
+.callout {
+  margin-top: 19px;
+  padding: 15px 17px;
+  border: 1px solid rgba(56,189,248,.18);
+  border-left: 3px solid var(--wait-accent);
+  border-radius: 0 10px 10px 0;
+  background: rgba(56,189,248,.045);
+}
+
+.callout strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #bae6fd;
+  font-size: .89rem;
+}
+
+.callout p {
+  margin: 0;
+  color: #b7c5d9;
+  font-size: .88rem;
+}
+
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.related-card {
+  display: block;
+  padding: 18px;
+  border: 1px solid var(--wait-border);
+  border-radius: 12px;
+  background: rgba(2,6,23,.22);
+  transition: border-color .2s ease, background .2s ease;
+}
+
+.related-card:hover {
+  border-color: rgba(56,189,248,.38);
+  background: rgba(56,189,248,.045);
+}
+
+.related-label {
+  margin-bottom: 8px;
+  color: var(--wait-accent);
+  font-family: Consolas, monospace;
+  font-size: .73rem;
+  font-weight: 700;
+}
+
+.related-card h3 {
+  margin: 0 0 6px;
+  color: #e6edf8;
+  font-size: 1rem;
+}
+
+.related-card p {
+  margin: 0;
+  color: var(--wait-muted);
+  font-size: .84rem;
+}
+
+.sidebar {
+  position: sticky;
+  top: 90px;
+  display: grid;
+  gap: 14px;
+}
+
+.side-box {
+  padding: 17px;
+  border: 1px solid var(--wait-border);
+  border-radius: 13px;
+  background: rgba(15,23,42,.8);
+}
+
+.side-title {
+  margin: 0 0 12px;
+  color: #e2e8f0;
+  font-size: .88rem;
+  font-weight: 750;
+}
+
+.side-links {
+  display: grid;
+  gap: 3px;
+}
+
+.side-links a {
+  display: block;
+  padding: 7px 9px;
+  border-radius: 7px;
+  color: var(--wait-muted);
+  font-size: .84rem;
+  transition: background .18s ease, color .18s ease;
+}
+
+.side-links a:hover {
+  background: rgba(56,189,248,.07);
+  color: #bae6fd;
+}
+
+.side-divider {
+  height: 1px;
+  margin: 13px 0;
+  background: var(--wait-border);
+}
+
+.side-note {
+  margin: 0;
+  color: var(--wait-muted);
+  font-size: .82rem;
+  line-height: 1.75;
+}
+
+.footer {
+  margin-top: 34px;
+  padding-top: 23px;
+  border-top: 1px solid var(--wait-border);
+  color: #8191a8;
+  font-size: .83rem;
+  text-align: center;
+}
+
+@media (max-width: 960px) {
+  .content-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .page {
+    width: calc(100% - 26px);
+    padding-top: 84px;
+  }
+
+  .hero {
+    padding: 27px 21px;
+    border-radius: 17px;
+  }
+
+  .section-panel {
+    padding: 20px 16px;
+  }
+
+  .topic-grid,
+  .related-grid,
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .topic-card {
+    min-height: 180px;
+  }
+
+  .design-item {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 11px;
+    padding: 14px;
+  }
+
+  .design-icon {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: .01ms !important;
+  }
+}
 </style>
-
 </head>
-
 
 <body data-header="docs">
 
-
 <main class="page">
 
-
-
-<nav class="breadcrumb">
-
-<a href="/docs/index.html">Docs</a> /
-
-<a href="/docs/modules/index.html">Modules</a> /
-
-<span>Wait（等待机制）</span>
-
-</nav>
-
-
-
-
-<section class="hero">
-
-
-<span class="hero-label">HRTOS Module</span>
-
-
-<h1>Wait 等待机制模块</h1>
-
-
-<p>
-Wait模块是HRTOS任务阻塞与同步的核心基础，
-负责管理任务等待状态、资源等待、超时控制以及唤醒恢复。
-</p>
-
-
-
-<div class="meta">
-
-<span class="tag">4 Topics</span>
-
-<span class="tag">Kernel Core</span>
-
-<span class="tag">Task Synchronization</span>
-
-</div>
-
-
-</section>
-
-
-
-
-
-<section class="section">
-
-
-<h2>核心内容</h2>
-
-
-<p>
-统一描述任务如何进入等待状态，以及等待结束后的恢复流程。
-</p>
-
-
-
-<div class="grid">
-
-
-
-<a class="card" href="mechanism.html">
-
-<h3>等待机制</h3>
-
-<p>
-介绍os_wait核心接口、TCB等待信息以及资源等待队列模型。
-</p>
-
-<span>进入 →</span>
-
-</a>
-
-
-
-<a class="card" href="state-model.html">
-
-<h3>等待状态模型</h3>
-
-<p>
-说明WAIT状态、wait_type以及任务状态转换关系。
-</p>
-
-<span>进入 →</span>
-
-</a>
-
-
-
-<a class="card" href="timeout.html">
-
-<h3>超时机制</h3>
-
-<p>
-描述tick驱动的等待超时处理与任务恢复流程。
-</p>
-
-<span>进入 →</span>
-
-</a>
-
-
-
-<a class="card" href="usage.html">
-
-<h3>使用方式</h3>
-
-<p>
-介绍delay、sem、mutex、message、event等接口如何使用WAIT。
-</p>
-
-<span>进入 →</span>
-
-</a>
-
-
-
-</div>
-
-
-</section>
-
-
-
-
-
-<section class="section">
-
-
-<h2>核心设计</h2>
-
-
-<div class="grid">
-
-
-<a class="card" href="mechanism.html">
-
-<h3>统一等待模型</h3>
-
-<p>
-所有阻塞行为统一映射到WAIT体系，
-减少内核状态复杂度。
-</p>
-
-<span>查看 →</span>
-
-</a>
-
-
-
-<a class="card" href="/docs/modules/task/state-model.html">
-
-<h3>任务状态系统</h3>
-
-<p>
-WAIT作为任务生命周期中的核心状态，
-与调度器共同完成任务切换。
-</p>
-
-<span>查看 →</span>
-
-</a>
-
-
-</div>
-
-
-</section>
-
-
-
-
-
-<section class="section">
-
-
-<h2>相关模块</h2>
-
-
-
-<div class="grid">
-
-
-
-<a class="card" href="/docs/modules/task/index.html">
-
-<h3>Task</h3>
-
-<p>
-任务生命周期、状态模型以及上下文管理。
-</p>
-
-<span>查看 →</span>
-
-</a>
-
-
-
-
-<a class="card" href="/docs/modules/ipc/index.html">
-
-<h3>IPC Communication</h3>
-
-<p>
-信号量、Mutex、消息队列、事件等同步对象。
-</p>
-
-<span>查看 →</span>
-
-</a>
-
-
-
-</div>
-
-
-</section>
-
-
-
-
-<footer class="footer">
-
-© 2017–2026 HRTOS. Embedded real-time system documentation.
-
-</footer>
-
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/docs/index.html">Docs</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/index.html">Modules</a>
+    <span class="separator">/</span>
+    <span aria-current="page">Wait · 等待机制</span>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-label">HRTOS · Kernel Module</div>
+
+    <h1><span>Wait</span> 等待机制</h1>
+
+    <p class="hero-description">
+      理解任务等待、阻塞状态、超时处理与唤醒恢复之间的关系。
+      从等待接口进入内核状态管理，梳理 Wait 与任务调度、时间管理及 IPC 同步机制的协作边界。
+    </p>
+
+    <div class="hero-meta">
+      <span class="tag">Kernel Core</span>
+      <span class="tag">Task State</span>
+      <span class="tag">Timeout Handling</span>
+      <span class="tag">Task Synchronization</span>
+    </div>
+  </header>
+
+  <div class="content-layout">
+
+    <div class="main-content">
+
+      <section class="section" id="overview">
+        <div class="section-panel">
+          <div class="section-heading">
+            <span class="section-number">01</span>
+            <h2>模块概览</h2>
+          </div>
+
+          <p class="section-intro">
+            Wait 关注的不是某一个等待 API，而是任务在等待期间的状态管理，
+            以及等待条件满足或超时发生之后，内核如何继续处理任务。
+          </p>
+
+          <div class="overview-grid">
+            <article class="overview-item">
+              <div class="overview-index">01 / ENTER</div>
+              <h3>进入等待</h3>
+              <p>记录等待相关信息，并按具体接口语义改变任务的执行状态。</p>
+            </article>
+
+            <article class="overview-item">
+              <div class="overview-index">02 / RESOLVE</div>
+              <h3>等待处理</h3>
+              <p>由相应的时间推进或同步事件处理等待条件及可能的超时。</p>
+            </article>
+
+            <article class="overview-item">
+              <div class="overview-index">03 / RESUME</div>
+              <h3>恢复执行资格</h3>
+              <p>等待结束后更新相关状态，使任务能够按调度规则继续运行。</p>
+            </article>
+          </div>
+
+          <div class="callout">
+            <strong>模块定位</strong>
+            <p>
+              Wait 与 Task、Time 和 IPC 关系密切，但这些模块的职责并不相同：
+              任务状态属于任务管理范畴，时间推进属于时间管理范畴，
+              同步对象则负责各自的资源与事件语义。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="topics">
+        <div class="section-panel">
+          <div class="section-heading">
+            <span class="section-number">02</span>
+            <h2>核心文档</h2>
+          </div>
+
+          <p class="section-intro">
+            按照从机制到状态、再到超时和应用的顺序，逐步理解等待系统。
+          </p>
+
+          <div class="topic-grid">
+
+            <a class="topic-card" href="mechanism.html">
+              <div class="topic-top">
+                <span class="topic-code">WAIT / 01</span>
+                <span class="topic-type">Mechanism</span>
+              </div>
+              <h3>等待机制</h3>
+              <p>
+                从 os_wait 等待入口出发，理解等待信息如何参与任务状态管理，
+                并核对实际内核中的相关数据结构与处理路径。
+              </p>
+              <span class="topic-link">
+                阅读机制说明
+                <span class="arrow" aria-hidden="true">→</span>
+              </span>
+            </a>
+
+            <a class="topic-card" href="state-model.html">
+              <div class="topic-top">
+                <span class="topic-code">WAIT / 02</span>
+                <span class="topic-type">State Model</span>
+              </div>
+              <h3>等待状态模型</h3>
+              <p>
+                了解 WAIT 状态、wait_type 与任务状态转换的关系，
+                区分任务处于等待、就绪和实际运行等不同阶段。
+              </p>
+              <span class="topic-link">
+                查看状态模型
+                <span class="arrow" aria-hidden="true">→</span>
+              </span>
+            </a>
+
+            <a class="topic-card" href="timeout.html">
+              <div class="topic-top">
+                <span class="topic-code">WAIT / 03</span>
+                <span class="topic-type">Timeout</span>
+              </div>
+              <h3>超时机制</h3>
+              <p>
+                了解等待计数、Tick 时间推进与超时结果之间的关系，
+                并分析等待结束后任务如何进入后续处理流程。
+              </p>
+              <span class="topic-link">
+                查看超时机制
+                <span class="arrow" aria-hidden="true">→</span>
+              </span>
+            </a>
+
+            <a class="topic-card" href="usage.html">
+              <div class="topic-top">
+                <span class="topic-code">WAIT / 04</span>
+                <span class="topic-type">Usage</span>
+              </div>
+              <h3>使用方式</h3>
+              <p>
+                从实际接口使用角度理解任务延时、资源等待及同步操作，
+                并区分不同接口各自的等待语义。
+              </p>
+              <span class="topic-link">
+                查看使用说明
+                <span class="arrow" aria-hidden="true">→</span>
+              </span>
+            </a>
+
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="design">
+        <div class="section-panel">
+          <div class="section-heading">
+            <span class="section-number">03</span>
+            <h2>核心设计关注点</h2>
+          </div>
+
+          <p class="section-intro">
+            阅读 Wait 模块时，建议重点关注以下几个内核边界。
+          </p>
+
+          <div class="design-list">
+
+            <article class="design-item">
+              <div class="design-icon">01</div>
+              <div>
+                <h3>等待状态与任务状态</h3>
+                <p>
+                  等待信息用于描述任务为何暂时不能继续执行；
+                  任务状态则参与调度器对任务当前执行资格的判断。
+                  两者相关，但不应在文档中不加区分地混为一谈。
+                </p>
+              </div>
+            </article>
+
+            <article class="design-item">
+              <div class="design-icon">02</div>
+              <div>
+                <h3>等待条件与超时结果</h3>
+                <p>
+                  等待结束可能与时间到期有关，也可能与具体同步条件有关。
+                  需要依据实际接口确认成功、超时及其他结果如何区分和传递。
+                </p>
+              </div>
+            </article>
+
+            <article class="design-item">
+              <div class="design-icon">03</div>
+              <div>
+                <h3>唤醒与调度</h3>
+                <p>
+                  任务从等待状态恢复后，不代表它必然立即获得 CPU。
+                  它后续何时运行，还取决于任务状态、调度规则及当前执行上下文。
+                </p>
+              </div>
+            </article>
+
+            <article class="design-item">
+              <div class="design-icon">04</div>
+              <div>
+                <h3>时间管理与同步对象</h3>
+                <p>
+                  Tick 可以为时间相关等待提供基础，但资源等待还涉及相应对象的状态与操作语义。
+                  不应仅凭共用等待机制，就推断所有同步对象使用相同的数据结构或唤醒路径。
+                </p>
+              </div>
+            </article>
+
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="related">
+        <div class="section-panel">
+          <div class="section-heading">
+            <span class="section-number">04</span>
+            <h2>相关模块</h2>
+          </div>
+
+          <p class="section-intro">
+            Wait 位于任务管理、时间管理与进程间通信的交汇处。
+            结合这些模块，可以更完整地理解等待与恢复执行的过程。
+          </p>
+
+          <div class="related-grid">
+
+            <a class="related-card" href="/docs/modules/task/index.html">
+              <div class="related-label">TASK MANAGEMENT</div>
+              <h3>Task · 任务管理</h3>
+              <p>任务生命周期、状态模型与上下文管理。</p>
+            </a>
+
+            <a class="related-card" href="/docs/modules/ipc/index.html">
+              <div class="related-label">INTER-PROCESS COMMUNICATION</div>
+              <h3>IPC · 进程间通信</h3>
+              <p>查看同步与通信对象的相关模块文档。</p>
+            </a>
+
+            <a class="related-card" href="/docs/modules/time/index.html">
+              <div class="related-label">TIME MANAGEMENT</div>
+              <h3>Time · 时间管理</h3>
+              <p>了解系统 Tick、延时及相关时间接口。</p>
+            </a>
+
+            <a class="related-card" href="/docs/modules/index.html">
+              <div class="related-label">DOCUMENTATION MAP</div>
+              <h3>Modules · 模块总览</h3>
+              <p>返回 HRTOS 模块文档入口，继续探索内核结构。</p>
+            </a>
+
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <aside class="sidebar" aria-label="模块导航">
+
+      <div class="side-box">
+        <h2 class="side-title">本页导航</h2>
+        <nav class="side-links">
+          <a href="#overview">模块概览</a>
+          <a href="#topics">核心文档</a>
+          <a href="#design">核心设计关注点</a>
+          <a href="#related">相关模块</a>
+        </nav>
+      </div>
+
+      <div class="side-box">
+        <h2 class="side-title">Wait Documentation</h2>
+        <nav class="side-links">
+          <a href="mechanism.html">等待机制</a>
+          <a href="state-model.html">等待状态模型</a>
+          <a href="timeout.html">超时机制</a>
+          <a href="usage.html">使用方式</a>
+        </nav>
+      </div>
+
+      <div class="side-box">
+        <h2 class="side-title">模块关系</h2>
+        <nav class="side-links">
+          <a href="/docs/modules/task/index.html">Task</a>
+          <a href="/docs/modules/time/index.html">Time</a>
+          <a href="/docs/modules/ipc/index.html">IPC</a>
+        </nav>
+        <div class="side-divider"></div>
+        <p class="side-note">
+          建议先理解任务状态模型，再阅读等待机制与超时处理，
+          最后结合具体同步接口分析实际调用流程。
+        </p>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. Embedded real-time system documentation.
+  </footer>
 
 </main>
 
-
 <script src="https://hrtos.com/header.js"></script>
-
 
 </body>
 </html>

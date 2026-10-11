@@ -1,43 +1,57 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>事件机制（Event） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS事件机制（Event）用于任务间同步与条件触发，是一种轻量级IPC同步机制。" />
-<link rel="canonical" href="https://hrtos.com/docs/modules/ipc/event.html">
-
-<meta name="keywords" content="RTOS事件机制, IPC事件, os_event, 任务同步, 嵌入式系统, 实时操作系统, HRTOS事件机制">
-<meta name="robots" content="index, follow">
-<link rel="stylesheet" href="https://hrtos.com/global.css">
+<title>事件机制 Event：任务同步与唤醒 | HRTOS 文档中心</title>
+<meta
+  name="description"
+  content="HRTOS 事件机制 Event 技术文档，介绍事件状态标志、等待任务管理、事件触发、任务唤醒流程、接口与典型应用场景。"
+/>
+<meta
+  name="keywords"
+  content="HRTOS, 事件机制, Event, IPC, 任务同步, 事件等待, 任务唤醒, 8051操作系统"
+/>
+<meta name="robots" content="index, follow" />
+<link
+  rel="canonical"
+  href="https://hrtos.com/docs/modules/ipc/event.html"
+/>
+<link rel="stylesheet" href="https://hrtos.com/global.css" />
 
 <style>
 :root {
   --bg: #0f172a;
   --surface: rgba(15, 23, 42, 0.72);
   --surface-card: rgba(30, 41, 59, 0.72);
-  --surface-hover: rgba(30, 64, 175, 0.18);
-  --border: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(56, 189, 248, 0.36);
+  --surface-hover: rgba(30, 41, 59, 0.92);
+  --border: rgba(148, 163, 184, 0.18);
+  --border-strong: rgba(56, 189, 248, 0.42);
   --text: #e2e8f0;
   --muted: #94a3b8;
   --accent: #38bdf8;
-  --shadow: 0 20px 48px rgba(2, 6, 23, 0.34);
+  --shadow: 0 16px 38px rgba(2, 6, 23, 0.24);
   --radius: 10px;
   color-scheme: dark;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+}
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height: 1.75;
+  font-family: "Segoe UI", "SF Pro Display",
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
   overflow-x: hidden;
 }
 
@@ -45,115 +59,469 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
+  z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px);
+    linear-gradient(
+      rgba(148, 163, 184, 0.07) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(148, 163, 184, 0.07) 1px,
+      transparent 1px
+    );
   background-size: 28px 28px;
-  opacity: 0.14;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.65), transparent 90%);
+  opacity: 0.13;
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.65),
+    transparent 90%
+  );
 }
 
-a { color: inherit; text-decoration: none; }
+
+.back-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: -14px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(30, 41, 59, .62);
+  color: #bae6fd;
+  font-size: .9rem;
+  text-decoration: none;
+  transition: border-color .18s ease, background .18s ease;
+}
+
+.back-link:hover {
+  border-color: rgba(56, 189, 248, .5);
+  background: rgba(30, 41, 59, .9);
+}
+
+.back-context {
+  color: var(--muted);
+  font-size: .84rem;
+}
+
+@media (max-width: 640px) {
+  .back-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
 
 .page {
+  position: relative;
+  z-index: 1;
   width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 96px 0 56px;
+  padding: 100px 0 56px;
   display: grid;
-  gap: 40px;
+  gap: 34px;
 }
 
-.breadcrumb { font-size: 0.92rem; color: var(--muted); }
-.breadcrumb a { color: #7dd3fc; }
+/* 面包屑 */
 
-.hero { display: grid; gap: 16px; }
-
-.hero-label {
-  display: inline-flex;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(56,189,248,.22);
-  color: #bae6fd;
-  width: fit-content;
-}
-
-.hero h1 { margin: 0; font-size: clamp(2.2rem,5vw,3.4rem); }
-.hero p { margin: 0; color: var(--muted); }
-
-.meta { display: flex; gap: 10px; flex-wrap: wrap; }
-
-.tag {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  color: #bae6fd;
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: 1fr 280px;
-  gap: 28px;
-}
-
-.section {
-  padding: 22px;
-  background: rgba(30,41,59,.72);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-
-.section h2 {
-  margin: 0 0 10px;
-  border-left: 3px solid var(--accent);
-  padding-left: 12px;
-}
-
-.section p { margin: 0; color: var(--muted); }
-
-.code {
-  background: #020617;
-  border: 1px solid rgba(56,189,248,.14);
-  padding: 14px;
-  border-radius: 8px;
-  color: #7dd3fc;
-  font-family: Consolas, monospace;
-  white-space: pre-wrap;
-}
-
-.note {
-  border-left: 3px solid var(--accent);
-  padding: 12px 14px;
-  background: rgba(15,23,42,.6);
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
   color: var(--muted);
-  border-radius: 6px;
-}
-
-.sidebar { display: grid; gap: 16px; }
-
-.box {
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: rgba(30,41,59,.56);
-}
-
-.box h3 { margin: 0 0 10px; }
-
-.box a { display: block; margin-bottom: 6px; color: #7dd3fc; }
-
-.footer {
-  text-align: center;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148,163,184,.14);
-  color: #8ea3be;
   font-size: 0.9rem;
 }
 
+.breadcrumb a {
+  color: #7dd3fc;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb .separator {
+  color: #64748b;
+}
+
+/* 页面标题 */
+
+.hero {
+  display: grid;
+  gap: 17px;
+  max-width: 920px;
+}
+
+.hero-label {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 13px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.06);
+  color: #bae6fd;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.hero h1 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(2.15rem, 5vw, 3.5rem);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.hero-intro {
+  max-width: 820px;
+  margin: 0;
+  color: #a7b6ca;
+  font-size: 1.04rem;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.tag {
+  padding: 5px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: #bae6fd;
+  font-size: 0.83rem;
+  background: rgba(30, 41, 59, 0.35);
+}
+
+/* 主体布局 */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 264px;
+  align-items: start;
+  gap: 24px;
+}
+
+.content {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.section {
+  min-width: 0;
+  padding: 25px;
+  background: linear-gradient(
+    155deg,
+    rgba(30, 41, 59, 0.8),
+    rgba(15, 23, 42, 0.88)
+  );
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  scroll-margin-top: 100px;
+}
+
+.section h2 {
+  margin: 0 0 15px;
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+  color: #f1f5f9;
+  font-size: 1.28rem;
+  line-height: 1.45;
+}
+
+.section h3 {
+  margin: 20px 0 8px;
+  color: #e2e8f0;
+  font-size: 1.02rem;
+}
+
+.section p {
+  margin: 0 0 13px;
+  color: #b0bdcf;
+  font-size: 0.95rem;
+}
+
+.section p:last-child {
+  margin-bottom: 0;
+}
+
+.section ul,
+.section ol {
+  margin: 12px 0 0;
+  padding-left: 23px;
+  color: #b0bdcf;
+  font-size: 0.94rem;
+}
+
+.section li {
+  margin: 7px 0;
+  padding-left: 3px;
+}
+
+.section strong {
+  color: #e2e8f0;
+}
+
+.inline-code {
+  padding: 2px 6px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 4px;
+  background: rgba(2, 6, 23, 0.55);
+  color: #7dd3fc;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+/* 代码区 */
+
+.code {
+  max-width: 100%;
+  padding: 16px 18px;
+  overflow-x: auto;
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 8px;
+  background: #020617;
+  color: #bae6fd;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.9rem;
+  line-height: 1.85;
+  white-space: pre;
+}
+
+.code-caption {
+  margin-bottom: 9px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+/* 提示 */
+
+.note {
+  margin-top: 16px;
+  padding: 13px 15px;
+  border-left: 3px solid var(--accent);
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.68);
+  color: #b8c6d8;
+  font-size: 0.91rem;
+}
+
+.note strong {
+  color: #e0f2fe;
+}
+
+.note.warning {
+  border-left-color: #fbbf24;
+}
+
+.note.warning strong {
+  color: #fde68a;
+}
+
+/* 流程 */
+
+.flow {
+  display: grid;
+  gap: 9px;
+  margin-top: 15px;
+}
+
+.flow-step {
+  padding: 13px 15px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgba(15, 23, 42, 0.62);
+  color: #dbeafe;
+  font-size: 0.92rem;
+}
+
+.flow-step strong {
+  color: #7dd3fc;
+}
+
+.flow-arrow {
+  color: #64748b;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* 特性列表 */
+
+.feature-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.feature {
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.feature h3 {
+  margin: 0 0 6px;
+  font-size: 0.97rem;
+}
+
+.feature p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+/* 侧边栏 */
+
+.sidebar {
+  position: sticky;
+  top: 88px;
+  display: grid;
+  gap: 15px;
+}
+
+.box {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(30, 41, 59, 0.56);
+}
+
+.box h2,
+.box h3 {
+  margin: 0 0 12px;
+  color: #f1f5f9;
+  font-size: 1rem;
+}
+
+.box p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.box nav {
+  display: grid;
+  gap: 7px;
+}
+
+.box nav a,
+.box .text-link {
+  display: block;
+  padding: 7px 9px;
+  border-radius: 5px;
+  color: #a8c7e8;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.box nav a:hover,
+.box .text-link:hover {
+  background: rgba(56, 189, 248, 0.08);
+  color: #7dd3fc;
+}
+
+.box nav a.current {
+  background: rgba(56, 189, 248, 0.09);
+  color: #7dd3fc;
+}
+
+/* 页脚 */
+
+.footer {
+  padding-top: 22px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8496ad;
+  text-align: center;
+  font-size: 0.88rem;
+}
+
+.footer p {
+  margin: 0;
+}
+
 @media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    width: calc(100% - 28px);
+    padding-top: 88px;
+    padding-bottom: 36px;
+    gap: 27px;
+  }
+
+  .section {
+    padding: 19px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 8vw, 2.7rem);
+  }
+
+  .feature-list {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .code {
+    padding: 13px;
+    font-size: 0.82rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
 </style>
 </head>
@@ -162,128 +530,411 @@ a { color: inherit; text-decoration: none; }
 
 <main class="page">
 
-<nav class="breadcrumb">
-  <a href="/docs/index.html">文档</a> /
-  <a href="/docs/modules/index.html">模块</a> /
-  <a href="/docs/modules/ipc/index.html">IPC</a> /
-  <span>事件机制</span>
-</nav>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="separator" aria-hidden="true">/</span>
+    <a href="/docs/modules/index.html">核心模块</a>
+    <span class="separator" aria-hidden="true">/</span>
+    <a href="/docs/modules/ipc/index.html">任务间通信</a>
+    <span class="separator" aria-hidden="true">/</span>
+    <span aria-current="page">事件机制</span>
+  </nav>
 
-<section class="hero">
-  <span class="hero-label">HRTOS Documentation</span>
-  <h1>事件机制（Event）</h1>
-  <p>基于事件标志位的轻量级同步机制，用于任务间状态通知与条件触发，不传递数据，仅表达状态。</p>
+  
+<div class="back-row">
+  <a class="back-link" href="/docs/modules/ipc/index.html">
+    <span aria-hidden="true">←</span>
+    <span>返回 IPC 通信机制</span>
+  </a>
+  <span class="back-context">核心模块 / 任务间通信</span>
+</div>
 
-  <div class="meta">
-    <span class="tag">状态同步</span>
-    <span class="tag">事件触发</span>
-    <span class="tag">轻量IPC</span>
-  </div>
-</section>
+  <header class="hero">
+    <span class="hero-label">HRTOS / 任务间通信</span>
 
-<section class="section">
-<h2>定义</h2>
-<p>Event 是基于 OS_RES 资源结构的状态标志机制，通过 value + wait_mask 实现任务同步。</p>
-</section>
+    <h1>事件机制（Event）</h1>
 
-<div class="layout">
+    <p class="hero-intro">
+      事件机制用于表达和通知系统中的特定状态。
+      任务可以等待某个事件发生，由其他任务或符合接口调用条件的中断处理程序触发事件，
+      从而完成异步通知与任务同步。
+      与消息队列不同，事件的核心是状态通知，而不是传递一段数据。
+    </p>
 
-<div class="content">
+    <div class="meta">
+      <span class="tag">状态同步</span>
+      <span class="tag">任务唤醒</span>
+      <span class="tag">事件通知</span>
+      <span class="tag">IPC</span>
+    </div>
+  </header>
 
-<section class="section">
-<h2>核心接口</h2>
-<div class="code">
-os_event_init(u8 id)
+  <div class="layout">
+
+    <article class="content">
+
+      <section class="section" id="definition">
+        <h2>一、机制定义</h2>
+
+        <p>
+          Event 是一种用于任务间状态通知的同步机制。
+          事件触发方负责报告某个条件已经发生，等待方则在需要时等待该条件，
+          并在事件满足等待条件后继续执行。
+        </p>
+
+        <p>
+          根据当前 HRTOS 实现说明，事件使用资源结构
+          <span class="inline-code">OS_RES</span>
+          中的状态字段与等待信息组织事件状态和等待任务。
+          具体实现涉及 <span class="inline-code">value</span>、
+          <span class="inline-code">wait_mask</span> 和
+          <span class="inline-code">wait_cnt</span> 等字段。
+        </p>
+
+        <div class="note">
+          <strong>理解重点：</strong>
+          事件表达的是条件或状态通知。它不应被直接理解为消息队列，
+          也不应在没有确认实现细节的情况下，假设每次事件触发都会对应一次独立的数据传递。
+        </div>
+      </section>
+
+      <section class="section" id="interfaces">
+        <h2>二、核心接口</h2>
+
+        <p>
+          当前事件机制涉及以下接口。它们的具体返回值、参数约束、
+          资源编号规则及失败处理方式，应以 HRTOS 对应版本的头文件和实现为准。
+        </p>
+
+        <div class="code">os_event_init(u8 id)
 os_event_delete(u8 id)
 os_event_query(u8 id)
 os_event_write(u8 id)
-os_event_wait(u8 id, u16 tick)
-</div>
-</section>
+os_event_wait(u8 id, u16 tick)</div>
 
-<section class="section">
-<h2>实现机制</h2>
-<p>
-事件使用 OS_RES[obj].value 作为状态标志，wait_mask 记录等待任务位图，wait_cnt 统计等待数量。
-</p>
-<p>
-写事件时关闭中断 EA，设置 value=1，并扫描 wait_mask 唤醒任务（wake_task）。
-</p>
-<p>
-等待时若 value 已置位则立即返回，否则进入 os_wait(WAIT_EVENT) 阻塞。
-</p>
-<div class="note">
-事件属于“状态保持型同步”，不会自动清除，需由任务显式 reset（delete）。
-</div>
-</section>
+        <h3>接口职责概览</h3>
 
-<section class="section">
-<h2>执行流程</h2>
-<p>
-等待流程：check → return / block → wait_queue  
-</p>
-<p>
-触发流程：EA off → set value → scan wait_mask → wake_task → EA on
-</p>
-</section>
+        <ul>
+          <li>
+            <strong>初始化：</strong>
+            <span class="inline-code">os_event_init()</span>
+            用于事件资源的初始化。
+          </li>
+          <li>
+            <strong>删除：</strong>
+            <span class="inline-code">os_event_delete()</span>
+            用于执行事件资源相关的删除操作。是否同时清除事件状态，
+            需要以实际实现为准。
+          </li>
+          <li>
+            <strong>查询：</strong>
+            <span class="inline-code">os_event_query()</span>
+            用于查询事件相关状态，具体返回语义以接口定义为准。
+          </li>
+          <li>
+            <strong>触发：</strong>
+            <span class="inline-code">os_event_write()</span>
+            用于写入或触发事件。
+          </li>
+          <li>
+            <strong>等待：</strong>
+            <span class="inline-code">os_event_wait()</span>
+            用于等待事件，并通过 <span class="inline-code">tick</span>
+            参数表达等待时间约束；具体超时语义以实现为准。
+          </li>
+        </ul>
 
-<section class="section">
-<h2>关键结构（内部）</h2>
-<div class="code">
-OS_RES[obj].value      // 事件状态
-OS_RES[obj].wait_mask  // 等待任务位图
-OS_RES[obj].wait_cnt   // 等待计数
-</div>
-</section>
+        <div class="note warning">
+          <strong>注意：</strong>
+          不要将事件删除与事件状态复位直接视为同一操作。
+          如果当前版本没有独立的复位接口，应根据实际源码确认事件状态的清除方式。
+        </div>
+      </section>
 
-<section class="section">
-<h2>特性说明</h2>
-<p class="note">
-• 不传递数据，仅表示状态<br>
-• 支持超时等待<br>
-• 支持多任务广播唤醒<br>
-• 中断/任务均可触发<br>
-• 事件保持直到显式清除
-</p>
-</section>
+      <section class="section" id="implementation">
+        <h2>三、内部实现机制</h2>
 
-<section class="section">
-<h2>典型用途</h2>
-<p>
-外设完成通知、中断同步、状态机触发、多任务广播信号。
-</p>
-</section>
+        <p>
+          根据当前提供的实现描述，事件机制通过资源结构保存事件状态，
+          并记录正在等待该事件的任务信息。
+        </p>
 
-</div>
+        <div class="code">OS_RES[obj].value
+OS_RES[obj].wait_mask
+OS_RES[obj].wait_cnt</div>
 
-<aside class="sidebar">
+        <ul>
+          <li>
+            <strong>value：</strong>
+            事件状态标志。具体取值与状态转换规则以实现为准。
+          </li>
+          <li>
+            <strong>wait_mask：</strong>
+            等待任务位图，用于记录与该事件关联的等待任务。
+          </li>
+          <li>
+            <strong>wait_cnt：</strong>
+            等待数量相关字段，用于维护等待任务的统计信息。
+          </li>
+        </ul>
 
-<div class="box">
-<h3>相关接口</h3>
-<a href="#">os_event_init</a>
-<a href="#">os_event_write</a>
-<a href="#">os_event_wait</a>
-</div>
+        <h3>事件触发</h3>
 
-<div class="box">
-<h3>模块导航</h3>
-<a href="/docs/modules/ipc/index.html">IPC首页</a>
-<a href="/docs/modules/ipc/semaphore.html">信号量</a>
-<a href="/docs/modules/ipc/message-queue.html">消息队列</a>
-</div>
+        <p>
+          根据现有实现说明，触发事件时会进入临界区，更新事件状态，
+          检查等待任务位图，并调用相应的任务唤醒处理逻辑。
+          完成相关处理后，再恢复中断状态。
+        </p>
 
-<div class="box">
-<h3>学习路径</h3>
-<a href="#">Event → Semaphore → MQ</a>
-</div>
+        <h3>事件等待</h3>
 
-</aside>
+        <p>
+          等待方调用事件等待接口后，需要根据事件当前状态决定后续行为。
+          如果条件已经满足，可以按接口定义直接返回；
+          如果条件尚未满足，则进入等待机制，等待事件触发或等待条件结束。
+        </p>
 
-</div>
+        <div class="note">
+          这里描述的是事件机制的总体执行思路。
+          临界区的具体实现、中断状态的保存与恢复方式、
+          唤醒任务后的调度时机，应结合 HRTOS 对应版本源码阅读。
+        </div>
+      </section>
 
-<footer class="footer">
-© 2017–2026 HRTOS. Event IPC Module.
-</footer>
+      <section class="section" id="flow">
+        <h2>四、执行流程</h2>
+
+        <h3>等待流程</h3>
+
+        <div class="flow">
+          <div class="flow-step">
+            <strong>01</strong>　任务调用事件等待接口
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-step">
+            <strong>02</strong>　检查事件状态及等待条件
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-step">
+            <strong>03A</strong>　条件满足：按照接口定义返回
+          </div>
+          <div class="flow-step">
+            <strong>03B</strong>　条件不满足：进入等待机制
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-step">
+            <strong>04</strong>　事件触发、等待结束或发生超时
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-step">
+            <strong>05</strong>　任务根据实际返回结果继续处理
+          </div>
+        </div>
+
+        <h3>触发流程</h3>
+
+        <div class="flow">
+          <div class="flow-step">
+            <strong>01</strong>　调用事件触发接口
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-step">
+            <strong>02</strong>　进入必要的临界区
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-step">
+            <strong>03</strong>　更新事件状态
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-step">
+            <strong>04</strong>　检查等待任务并执行相应唤醒处理
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-step">
+            <strong>05</strong>　完成临界区处理，恢复相应执行状态
+          </div>
+        </div>
+
+        <div class="note warning">
+          上述流程用于说明机制，不代表所有分支都必然依次执行。
+          实际返回路径、超时竞争处理以及是否立即发生任务切换，
+          需要以对应版本的事件实现与调度器代码为准。
+        </div>
+      </section>
+
+      <section class="section" id="characteristics">
+        <h2>五、机制特性与使用边界</h2>
+
+        <div class="feature-list">
+          <div class="feature">
+            <h3>状态通知</h3>
+            <p>
+              适合表达某个条件发生、操作完成或状态发生变化，
+              而不是传输具体的数据内容。
+            </p>
+          </div>
+
+          <div class="feature">
+            <h3>等待与唤醒</h3>
+            <p>
+              可以将任务等待条件与事件触发联系起来，
+              减少任务仅为检查条件而反复轮询的需要。
+            </p>
+          </div>
+
+          <div class="feature">
+            <h3>多任务协调</h3>
+            <p>
+              实际可唤醒的任务数量、唤醒规则与调度行为，
+              由事件实现和等待机制共同决定。
+            </p>
+          </div>
+
+          <div class="feature">
+            <h3>超时约束</h3>
+            <p>
+              等待接口提供 tick 参数。超时单位、边界条件与返回结果
+              应以当前版本接口定义为准。
+            </p>
+          </div>
+        </div>
+
+        <div class="note">
+          <strong>关于事件状态保持：</strong>
+          是否保持已触发状态、是否自动清除、多个等待任务如何处理，
+          都属于具体实现语义。使用前应确认事件状态更新与复位规则，
+          不宜仅凭 Event 这一名称推断行为。
+        </div>
+      </section>
+
+      <section class="section" id="applications">
+        <h2>六、典型应用场景</h2>
+
+        <ul>
+          <li>
+            <strong>外设操作完成通知：</strong>
+            在满足相应调用约束的情况下，由操作完成处理路径通知等待任务。
+          </li>
+          <li>
+            <strong>中断与任务协作：</strong>
+            将事件作为通知手段，使任务在需要时等待某个中断相关条件。
+          </li>
+          <li>
+            <strong>状态机推进：</strong>
+            当某个条件满足后通知任务继续执行下一阶段逻辑。
+          </li>
+          <li>
+            <strong>多个任务的状态协调：</strong>
+            当多个任务需要关注同一个状态时，可评估使用事件进行同步。
+          </li>
+        </ul>
+
+        <div class="note warning">
+          中断服务程序能否直接调用事件接口，取决于该接口的实现、
+          临界区策略及内核规定。使用前应确认接口的中断调用约束，
+          不应默认所有事件接口均可在中断中安全调用。
+        </div>
+      </section>
+
+      <section class="section" id="comparison">
+        <h2>七、事件与其他通信机制的区别</h2>
+
+        <h3>事件与信号量</h3>
+        <p>
+          事件通常用于表达某种状态或条件；
+          信号量通常用于同步操作或表达可用资源数量。
+          两者的具体行为仍取决于 HRTOS 的实际实现。
+        </p>
+
+        <h3>事件与消息队列</h3>
+        <p>
+          事件侧重于通知某个条件发生，
+          消息队列则用于在发送方与接收方之间传递消息内容。
+          如果任务必须获取数据本身，仅有事件通知通常并不足够，
+          还需要相应的数据传递或共享机制。
+        </p>
+
+        <h3>事件与互斥锁</h3>
+        <p>
+          事件侧重状态通知与等待；
+          互斥锁侧重对共享资源的互斥访问。
+          如果需要保护共享数据，不应将事件通知本身当作互斥保护。
+        </p>
+      </section>
+
+      <section class="section" id="summary">
+        <h2>八、总结</h2>
+
+        <p>
+          事件机制是 HRTOS 任务间通信体系中的一种同步手段。
+          理解它时，重点不只是记住接口名称，还应明确事件状态如何变化、
+          等待任务如何登记、触发后如何唤醒，以及超时与调度如何配合。
+        </p>
+
+        <p>
+          阅读实现时，建议优先核对事件资源初始化与删除、
+          状态更新、等待队列维护、任务唤醒及临界区处理，
+          从而把接口行为与内核执行路径联系起来。
+        </p>
+      </section>
+
+    </article>
+
+    <aside class="sidebar" aria-label="页面辅助导航">
+
+      <section class="box">
+        <h2>本页目录</h2>
+        <nav aria-label="本页章节">
+          <a href="#definition">机制定义</a>
+          <a href="#interfaces">核心接口</a>
+          <a href="#implementation">内部实现机制</a>
+          <a href="#flow">执行流程</a>
+          <a href="#characteristics">特性与使用边界</a>
+          <a href="#applications">典型应用场景</a>
+          <a href="#comparison">与其他机制的区别</a>
+          <a href="#summary">总结</a>
+        </nav>
+      </section>
+
+      <section class="box">
+        <h2>通信机制</h2>
+        <nav aria-label="通信机制导航">
+          <a class="current"
+             href="/docs/modules/ipc/event.html"
+             aria-current="page">事件机制</a>
+          <a href="/docs/modules/ipc/semaphore.html">信号量</a>
+          <a href="/docs/modules/ipc/mutex.html">互斥锁</a>
+          <a href="/docs/modules/ipc/message-queue.html">消息队列</a>
+          <a href="/docs/modules/ipc/mailbox.html">邮箱</a>
+        </nav>
+      </section>
+
+      <section class="box">
+        <h2>相关模块</h2>
+        <nav aria-label="相关模块导航">
+          <a href="/docs/modules/ipc/index.html">通信机制总览</a>
+          <a href="/docs/modules/task/index.html">任务管理</a>
+          <a href="/docs/modules/wait/index.html">等待机制</a>
+          <a href="/docs/modules/scheduler/index.html">调度管理</a>
+        </nav>
+      </section>
+
+      <section class="box">
+        <h2>阅读提示</h2>
+        <p>
+          接口说明用于建立整体认识。
+          涉及返回值、中断调用限制、状态清除和超时边界时，
+          请以对应版本的 HRTOS 源码及头文件为准。
+        </p>
+      </section>
+
+    </aside>
+
+  </div>
+
+  <footer class="footer">
+    <p>© 2017–2026 HRTOS · 嵌入式实时操作系统技术文档</p>
+  </footer>
 
 </main>
 

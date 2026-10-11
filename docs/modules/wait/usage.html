@@ -1,659 +1,1125 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>等待机制使用（Wait Usage） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS等待机制使用说明，包括delay、semaphore、mutex、message、event等接口与WAIT模型关系。" />
+<title>等待机制使用指南（Wait Usage） | HRTOS Documentation</title>
+<meta name="description" content="HRTOS 等待机制应用层使用指南，介绍延时等待、同步与通信等待、超时结果处理、任务恢复以及应用层使用注意事项。" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
-:root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+:root {
+  --wu-bg: #08111f;
+  --wu-panel: #101d30;
+  --wu-text: #e6edf7;
+  --wu-muted: #9aabc1;
+  --wu-accent: #63d5e8;
+  --wu-accent-soft: rgba(99, 213, 232, .10);
+  --wu-border: rgba(160, 183, 211, .16);
+  --wu-code: #091322;
+  --wu-radius: 16px;
+  --wu-max: 1160px;
 }
 
-*{box-sizing:border-box}
-
-body{
- margin:0;
- background:var(--bg);
- color:var(--text);
- font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
- line-height:1.75;
+* {
+  box-sizing: border-box;
 }
 
-a{
- color:inherit;
- text-decoration:none;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
 }
 
-.page{
- width:min(1180px,calc(100% - 40px));
- margin:0 auto;
- padding:96px 0 56px;
- display:grid;
- gap:34px;
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(41, 103, 150, .18), transparent 35%),
+    radial-gradient(ellipse at 95% 28%, rgba(26, 132, 145, .08), transparent 30%),
+    var(--wu-bg);
+  color: var(--wu-text);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
 }
 
-.breadcrumb{
- font-size:.92rem;
- color:var(--muted);
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.hero{
- display:grid;
- gap:10px;
+a:hover {
+  color: var(--wu-accent);
 }
 
-.hero-label{
- display:inline-block;
- padding:8px 14px;
- border-radius:999px;
- border:1px solid rgba(56,189,248,.24);
- color:#bae6fd;
- font-size:.9rem;
- justify-self:start;
+.page {
+  width: min(var(--wu-max), calc(100% - 40px));
+  margin: 0 auto;
+  padding: 104px 0 64px;
 }
 
-.hero h1{
- margin:0;
- font-size:clamp(2.2rem,5vw,3.6rem);
- line-height:1.1;
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 32px;
+  color: var(--wu-muted);
+  font-size: .86rem;
 }
 
-.hero p{
- margin:0;
- color:var(--muted);
+.breadcrumb .separator {
+  color: #50627a;
 }
 
-.layout{
- display:grid;
- grid-template-columns:1fr 280px;
- gap:26px;
+.breadcrumb [aria-current="page"] {
+  color: var(--wu-accent);
 }
 
-.section{
- display:grid;
- gap:12px;
- padding:22px;
- border:1px solid var(--border);
- border-radius:var(--radius);
- background:rgba(30,41,59,.55);
- box-shadow:var(--shadow);
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 58px);
+  margin-bottom: 34px;
+  border: 1px solid var(--wu-border);
+  border-radius: 24px;
+  background: linear-gradient(125deg, #17304b, #0d1b2d 68%);
 }
 
-.section h2{
- margin:0;
- font-size:1.25rem;
- border-left:3px solid var(--accent);
- padding-left:10px;
+.hero::after {
+  content: "";
+  position: absolute;
+  top: -120px;
+  right: -95px;
+  width: 280px;
+  height: 280px;
+  border: 1px solid rgba(99, 213, 232, .18);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 30px rgba(99, 213, 232, .025),
+    0 0 0 65px rgba(99, 213, 232, .02);
+  pointer-events: none;
 }
 
-.section p{
- margin:0;
- color:var(--muted);
- font-size:.95rem;
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
 }
 
-.code{
- background:#020617;
- border:1px solid rgba(56,189,248,.12);
- border-radius:8px;
- padding:14px;
- font-family:Consolas,monospace;
- font-size:.9rem;
- color:#7dd3fc;
- white-space:pre-wrap;
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 22px;
+  color: var(--wu-accent);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
 }
 
-.note{
- padding:12px 14px;
- border-left:3px solid var(--accent);
- background:rgba(15,23,42,.6);
- color:var(--muted);
- border-radius:6px;
- font-size:.92rem;
+.eyebrow::before {
+  content: "";
+  width: 24px;
+  height: 2px;
+  background: var(--wu-accent);
 }
 
-.sidebar{
- display:grid;
- gap:14px;
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.2;
+  letter-spacing: -.035em;
 }
 
-.box{
- padding:16px;
- border:1px solid var(--border);
- border-radius:var(--radius);
- background:rgba(30,41,59,.5);
+.hero h1 span {
+  display: block;
+  margin-top: 10px;
+  color: var(--wu-accent);
+  font-size: .49em;
+  font-weight: 500;
+  letter-spacing: .015em;
 }
 
-.box h3{
- margin:0 0 10px;
- font-size:.95rem;
+.hero-description {
+  max-width: 680px;
+  margin: 24px 0 0;
+  color: #b4c4d8;
+  font-size: 1rem;
 }
 
-.box a{
- display:block;
- color:#7dd3fc;
- font-size:.9rem;
- margin-bottom:6px;
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 27px;
 }
 
-.footer{
- text-align:center;
- padding-top:18px;
- border-top:1px solid rgba(148,163,184,.14);
- color:var(--muted);
- font-size:.9rem;
+.hero-tag {
+  padding: 5px 11px;
+  border: 1px solid rgba(160, 183, 211, .2);
+  border-radius: 7px;
+  color: #c6d6e8;
+  background: rgba(5, 16, 29, .3);
+  font-size: .78rem;
 }
 
-@media(max-width:980px){
- .layout{grid-template-columns:1fr}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 248px;
+  gap: 28px;
+  align-items: start;
+}
+
+.content {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.section {
+  padding: clamp(22px, 3vw, 32px);
+  border: 1px solid var(--wu-border);
+  border-radius: var(--wu-radius);
+  background: linear-gradient(145deg, rgba(19, 34, 56, .96), rgba(13, 25, 42, .96));
+  scroll-margin-top: 100px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.section-number {
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(99, 213, 232, .25);
+  border-radius: 10px;
+  color: var(--wu-accent);
+  background: var(--wu-accent-soft);
+  font-family: Consolas, monospace;
+  font-size: .82rem;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.5;
+}
+
+.section-heading p {
+  margin: 4px 0 0;
+  color: var(--wu-muted);
+  font-size: .86rem;
+}
+
+.section p {
+  margin: 12px 0;
+  color: #bdcadb;
+  font-size: .94rem;
+}
+
+.section p:first-of-type {
+  margin-top: 0;
+}
+
+.section strong {
+  color: #e8f3ff;
+  font-weight: 600;
+}
+
+.inline-code {
+  padding: 2px 6px;
+  border: 1px solid rgba(160, 183, 211, .12);
+  border-radius: 5px;
+  color: #9ce6f0;
+  background: rgba(3, 12, 24, .58);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: .88em;
+}
+
+.callout {
+  margin-top: 18px;
+  padding: 15px 17px;
+  border: 1px solid rgba(99, 213, 232, .2);
+  border-left: 3px solid var(--wu-accent);
+  border-radius: 9px;
+  background: rgba(5, 18, 31, .48);
+}
+
+.callout-title {
+  margin-bottom: 5px;
+  color: var(--wu-accent);
+  font-size: .87rem;
+  font-weight: 700;
+}
+
+.callout p {
+  margin: 0;
+  font-size: .89rem;
+}
+
+.callout.warning {
+  border-color: rgba(244, 190, 103, .2);
+  border-left-color: #e8b969;
+}
+
+.callout.warning .callout-title {
+  color: #e8c582;
+}
+
+.code-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 20px 0 0;
+  color: #8fa7c1;
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.code-block {
+  overflow-x: auto;
+  margin: 9px 0 17px;
+  padding: 17px 19px;
+  border: 1px solid rgba(140, 170, 207, .15);
+  border-radius: 11px;
+  background: var(--wu-code);
+  color: #b9d5ee;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: .85rem;
+  line-height: 1.85;
+  white-space: pre;
+  tab-size: 4;
+}
+
+.use-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  margin-top: 18px;
+}
+
+.use-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--wu-border);
+  border-radius: 12px;
+  background: rgba(5, 16, 29, .36);
+}
+
+.use-card .card-label {
+  color: var(--wu-accent);
+  font-family: Consolas, monospace;
+  font-size: .76rem;
+}
+
+.use-card h3 {
+  margin: 0;
+  font-size: .98rem;
+}
+
+.use-card p {
+  margin: 0;
+  font-size: .86rem;
+}
+
+.use-card .card-foot {
+  margin-top: auto;
+  padding-top: 8px;
+  color: #8fa7c1;
+  font-size: .78rem;
+}
+
+.flow {
+  display: grid;
+  justify-items: center;
+  margin: 22px 0 8px;
+}
+
+.flow-node {
+  width: min(100%, 440px);
+  padding: 13px 16px;
+  border: 1px solid var(--wu-border);
+  border-radius: 10px;
+  background: rgba(6, 18, 32, .66);
+  text-align: center;
+}
+
+.flow-node strong {
+  display: block;
+  font-size: .91rem;
+}
+
+.flow-node span {
+  display: block;
+  margin-top: 2px;
+  color: var(--wu-muted);
+  font-size: .79rem;
+}
+
+.flow-node.primary {
+  border-color: rgba(99, 213, 232, .42);
+  background: rgba(34, 111, 133, .14);
+}
+
+.flow-node.result {
+  border-color: rgba(109, 202, 161, .32);
+  background: rgba(24, 105, 80, .13);
+}
+
+.flow-arrow {
+  display: grid;
+  height: 32px;
+  place-items: center;
+  color: #6f8da9;
+  font-size: 1.1rem;
+}
+
+.flow-branches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.flow-branch {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  padding: 14px 10px;
+  border: 1px solid var(--wu-border);
+  border-radius: 12px;
+  background: rgba(6, 18, 32, .35);
+}
+
+.branch-label {
+  margin-bottom: 8px;
+  color: var(--wu-muted);
+  font-size: .78rem;
+}
+
+.flow-branch .flow-node {
+  padding: 10px;
+}
+
+.flow-branch .flow-node strong {
+  font-size: .84rem;
+}
+
+.flow-branch .flow-node span {
+  font-size: .76rem;
+}
+
+.mini-arrow {
+  padding: 7px 0;
+  color: #6f8da9;
+}
+
+.steps {
+  display: grid;
+  gap: 0;
+  margin-top: 15px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 13px;
+  padding: 13px 0;
+}
+
+.step + .step {
+  border-top: 1px solid rgba(160, 183, 211, .09);
+}
+
+.step-index {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--wu-border);
+  border-radius: 9px;
+  color: var(--wu-accent);
+  font-family: Consolas, monospace;
+  font-size: .8rem;
+}
+
+.step h3 {
+  margin: 0 0 4px;
+  font-size: .92rem;
+}
+
+.step p {
+  margin: 0;
+  font-size: .86rem;
+}
+
+.check-list {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check-list li {
+  position: relative;
+  padding-left: 26px;
+  color: #bdcadb;
+  font-size: .9rem;
+}
+
+.check-list li::before {
+  content: "";
+  position: absolute;
+  top: .72em;
+  left: 3px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--wu-accent);
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+
+.sidebar {
+  position: sticky;
+  top: 92px;
+  display: grid;
+  gap: 16px;
+}
+
+.side-box {
+  padding: 19px;
+  border: 1px solid var(--wu-border);
+  border-radius: 14px;
+  background: rgba(15, 29, 47, .88);
+}
+
+.side-title {
+  margin: 0 0 13px;
+  color: #e3edf8;
+  font-size: .91rem;
+}
+
+.side-nav,
+.related-links {
+  display: grid;
+  gap: 4px;
+}
+
+.side-nav a {
+  display: block;
+  padding: 7px 10px;
+  border-radius: 7px;
+  color: var(--wu-muted);
+  font-size: .84rem;
+  transition: color .18s ease, background .18s ease;
+}
+
+.side-nav a:hover {
+  color: var(--wu-accent);
+  background: var(--wu-accent-soft);
+}
+
+.related-links {
+  gap: 10px;
+}
+
+.related-links a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #b9cbe0;
+  font-size: .84rem;
+}
+
+.related-links a::after {
+  content: "↗";
+  color: #6f9cb6;
+}
+
+.related-links a:hover {
+  color: var(--wu-accent);
+}
+
+.side-note {
+  margin: 0;
+  color: var(--wu-muted);
+  font-size: .82rem;
+  line-height: 1.75;
+}
+
+.footer {
+  margin-top: 42px;
+  padding-top: 22px;
+  border-top: 1px solid var(--wu-border);
+  color: #8093ab;
+  font-size: .82rem;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .page {
+    width: min(100% - 28px, var(--wu-max));
+    padding-top: 84px;
+  }
+
+  .breadcrumb {
+    gap: 6px;
+    margin-bottom: 22px;
+    font-size: .78rem;
+  }
+
+  .hero {
+    padding: 27px 22px;
+    border-radius: 17px;
+  }
+
+  .hero::after {
+    right: -190px;
+  }
+
+  .hero-description {
+    font-size: .92rem;
+  }
+
+  .section {
+    padding: 21px 18px;
+  }
+
+  .section-heading {
+    gap: 11px;
+  }
+
+  .section-number {
+    flex-basis: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .section-heading h2 {
+    font-size: 1.08rem;
+  }
+
+  .code-block {
+    padding: 14px;
+    font-size: .78rem;
+  }
+
+  .use-grid,
+  .flow-branches,
+  .sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .flow-node {
+    width: 100%;
+  }
+
+  .footer {
+    margin-top: 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  * {
+    transition: none !important;
+  }
 }
 </style>
-
 </head>
-
 
 <body data-header="docs">
 
+<script src="https://hrtos.com/header.js"></script>
 
 <main class="page">
 
-
-<nav class="breadcrumb">
-
-<a href="/docs/index.html">Docs</a> /
-
-<a href="/docs/modules/index.html">Modules</a> /
-
-<a href="/docs/modules/wait/index.html">Wait</a> /
-
-<span>Usage</span>
-
-</nav>
-
-
-
-<section class="hero">
-
-<span class="hero-label">HRTOS Wait</span>
-
-<h1>等待机制使用（Wait Usage）</h1>
-
-<p>
-HRTOS应用层通过任务同步与通信接口使用WAIT机制，
-无需直接操作内核等待结构。
-</p>
-
-</section>
-
-
-
-<div class="layout">
-
-
-<div class="content">
-
-
-<section class="section" id="overview">
-
-<h2>概述</h2>
-
-
-<p>
-HRTOS中的WAIT机制位于内核层，
-应用程序通常通过delay、semaphore、mutex、message以及event接口间接使用。
-</p>
-
-
-<p>
-所有阻塞操作最终统一进入os_wait()，
-由内核完成任务状态切换和调度处理。
-</p>
-
-
-<div class="note">
-应用层关注等待条件，内核负责等待状态管理。
-</div>
-
-
-</section>
-
-
-
-<section class="section" id="delay">
-
-<h2>时间等待（Delay）</h2>
-
-
-<p>
-任务需要主动等待一定时间时，可以使用延时接口。
-</p>
-
-
-<div class="code">
-
-os_delay(tick);
-
-
-执行流程：
-
-os_delay()
-
-    ↓
-
-WAIT_DELAY
-
-    ↓
-
-等待tick递减
-
-    ↓
-
-READY
-
-
-</div>
-
-
-<p>
-延时等待不会关联资源对象，只依赖系统Tick。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="sem">
-
-<h2>信号量等待（Semaphore）</h2>
-
-
-<div class="code">
-
-os_sem_wait(sid);
-
-
-内部流程：
-
-Semaphore
-
-    ↓
-
-资源不可用
-
-    ↓
-
-WAIT_SEM
-
-    ↓
-
-os_wait()
-
-    ↓
-
-任务阻塞
-
-
-</div>
-
-
-<p>
-当其他任务调用post释放信号量后，
-等待任务被唤醒。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="mutex">
-
-<h2>互斥锁等待（Mutex）</h2>
-
-
-<div class="code">
-
-os_mutex_lock(mid);
-
-
-流程：
-
-获取Mutex
-
-    ↓
-
-成功
-
-继续执行
-
-
-失败
-
-    ↓
-
-WAIT_MUTEX
-
-    ↓
-
-等待锁释放
-
-
-</div>
-
-
-<p>
-HRTOS支持Mutex优先级继承，
-避免高优先级任务长期等待。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="message">
-
-<h2>消息等待（Message Queue）</h2>
-
-
-<div class="code">
-
-os_msgq_send()
-
-os_msgq_recv()
-
-
-
-发送等待：
-
-WAIT_MSG_SEND
-
-
-接收等待：
-
-WAIT_MSG_RECV
-
-</div>
-
-
-<p>
-消息队列满或空时，
-任务通过WAIT机制进入阻塞状态。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="event">
-
-<h2>事件与邮箱等待</h2>
-
-
-<div class="code">
-
-事件：
-
-os_event_wait(id,tick)
-
-
-邮箱：
-
-os_mailbox_receive(mid)
-
-
-对应等待类型：
-
-WAIT_EVENT
-
-WAIT_MAILBOX
-
-</div>
-
-
-<p>
-事件和邮箱同样使用统一资源等待模型。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="flow">
-
-<h2>典型使用流程</h2>
-
-
-<div class="code">
-
-任务运行
-
-
-    ↓
-
-
-调用同步API
-
-
-    ↓
-
-
-条件满足？
-
-    ↓          ↓
-
-
-是          否
-
-
-继续执行   os_wait()
-
-
-             ↓
-
-
-            WAIT
-
-
-             ↓
-
-
-        wake_task()
-
-
-             ↓
-
-
-            READY
-
-
-</div>
-
-
-</section>
-
-
-
-<section class="section" id="api">
-
-<h2>核心接口</h2>
-
-
-<div class="code">
-
-/* WAIT核心 */
-
-u8 os_wait(
-    u8 type,
-    u8 obj,
-    u16 tick
-);
-
-
-/* 唤醒 */
-
-void wake_task(
-    u8 tid,
-    u8 flag
-);
-
-</div>
-
-
-<p>
-通常情况下，应用程序无需直接调用上述接口。
-</p>
-
-
-<div class="note">
-os_wait主要用于内核模块实现，应用层推荐使用高级同步API。
-</div>
-
-
-</section>
-
-
-
-<section class="section" id="example">
-
-<h2>简单示例</h2>
-
-
-<div class="code">
-
-void task_example(void)
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/docs/index.html">Docs</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/index.html">Modules</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/wait/index.html">Wait</a>
+    <span class="separator">/</span>
+    <span aria-current="page">Usage</span>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">HRTOS · APPLICATION GUIDE</div>
+      <h1>
+        等待机制使用指南
+        <span>Wait Usage</span>
+      </h1>
+      <p class="hero-description">
+        让任务在需要的时候等待，在条件满足后继续执行。
+        从应用层理解延时、同步与通信等待的使用边界，
+        并掌握超时处理和任务恢复时需要注意的问题。
+      </p>
+      <div class="hero-tags">
+        <span class="hero-tag">Application Layer</span>
+        <span class="hero-tag">Task Synchronization</span>
+        <span class="hero-tag">Timeout Handling</span>
+        <span class="hero-tag">8051 RTOS</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <div class="content">
+
+      <section class="section" id="overview">
+        <div class="section-heading">
+          <div class="section-number">01</div>
+          <div>
+            <h2>理解等待机制</h2>
+            <p>应用层描述需求，内核管理任务状态</p>
+          </div>
+        </div>
+
+        <p>
+          实时任务并不总是需要持续运行。当任务等待某个时间点、
+          同步条件或通信数据时，合理的等待机制可以减少无效轮询，
+          让任务在适当的时机重新参与调度。
+        </p>
+
+        <p>
+          HRTOS 的等待子系统提供内核级等待状态管理。
+          应用程序应优先使用项目实际提供的延时、同步与通信接口，
+          而不是自行修改任务状态、等待计数或资源等待位图。
+        </p>
+
+        <div class="callout">
+          <div class="callout-title">使用原则</div>
+          <p>
+            <strong>应用层关注等待条件与返回结果，内核负责等待上下文和任务状态管理。</strong>
+            高级接口是否使用统一的 <span class="inline-code">os_wait()</span>
+            路径，应以各模块的实际实现为准。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="types">
+        <div class="section-heading">
+          <div class="section-number">02</div>
+          <div>
+            <h2>常见等待场景</h2>
+            <p>先区分等待的目标，再选择对应接口</p>
+          </div>
+        </div>
+
+        <div class="use-grid">
+          <article class="use-card">
+            <span class="card-label">TIME</span>
+            <h3>延时等待</h3>
+            <p>
+              任务需要延后执行、周期性工作或等待一段时间后再次检查条件时使用。
+            </p>
+            <div class="card-foot">重点：时间单位、零值语义与实际延时路径</div>
+          </article>
+
+          <article class="use-card">
+            <span class="card-label">SYNCHRONIZATION</span>
+            <h3>同步等待</h3>
+            <p>
+              任务需要等待某项同步条件或共享资源状态发生变化时，
+              使用项目实际提供的同步接口。
+            </p>
+            <div class="card-foot">重点：获取条件、等待结果与资源释放规则</div>
+          </article>
+
+          <article class="use-card">
+            <span class="card-label">MESSAGING</span>
+            <h3>消息等待</h3>
+            <p>
+              任务需要发送或接收任务间消息时，遵循消息模块规定的队列和阻塞语义。
+            </p>
+            <div class="card-foot">重点：队列容量、发送接收结果与超时策略</div>
+          </article>
+
+          <article class="use-card">
+            <span class="card-label">EVENT</span>
+            <h3>事件等待</h3>
+            <p>
+              任务需要等待特定事件或通知时，使用事件模块提供的接口与结果定义。
+            </p>
+            <div class="card-foot">重点：事件条件、触发时机与等待结束原因</div>
+          </article>
+        </div>
+
+        <div class="callout warning">
+          <div class="callout-title">接口名称以实际头文件为准</div>
+          <p>
+            本页不将信号量、互斥锁、消息队列、事件和邮箱的接口名或参数顺序
+            作为未经核实的固定 API。编写应用程序前，请先查阅当前 HRTOS 版本
+            对应的头文件与 API 文档。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="delay">
+        <div class="section-heading">
+          <div class="section-number">03</div>
+          <div>
+            <h2>延时等待</h2>
+            <p>等待时间不是忙循环次数</p>
+          </div>
+        </div>
+
+        <p>
+          延时适用于周期性任务、分阶段处理以及暂时不需要继续执行的场景。
+          使用前，应确认延时接口的参数单位、时间精度和边界条件，
+          并确保所使用的接口确实适用于当前任务类型。
+        </p>
+
+        <div class="code-label">
+          <span>Usage Pattern</span>
+          <span>Pseudocode</span>
+        </div>
+        <pre class="code-block">任务循环
+    │
+    ├─ 执行业务处理
+    │
+    ├─ 调用项目提供的延时接口
+    │
+    └─ 延时结束后继续执行</pre>
+
+        <p>
+          对于普通任务，已提供的内核实现表明，
+          <span class="inline-code">WAIT_DELAY</span>
+          会走独立的延时分支，并记录普通任务的等待上下文。
+          高速任务的延时则有专门处理路径，因此不能假设所有任务类型
+          都使用完全相同的等待存储方式。
+        </p>
+
+        <div class="callout">
+          <div class="callout-title">周期任务的注意事项</div>
+          <p>
+            如果任务要求稳定周期，应进一步评估任务执行时间、延时语义、
+            Tick 分辨率与调度抖动。简单地在任务末尾增加固定延时，
+            不一定能保证严格的固定周期。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="sync">
+        <div class="section-heading">
+          <div class="section-number">04</div>
+          <div>
+            <h2>同步等待</h2>
+            <p>等待条件与等待结果必须一起考虑</p>
+          </div>
+        </div>
+
+        <p>
+          当任务需要等待同步条件时，应用程序应使用对应同步模块的公开接口。
+          不应直接修改内核等待标志，也不应将内部等待类型宏当成应用层 API 使用。
+        </p>
+
+        <div class="code-label">
+          <span>Conceptual Flow</span>
+          <span>Not API Code</span>
+        </div>
+        <pre class="code-block">尝试执行同步操作
+        │
+        ├─ 条件满足
+        │    └─ 按接口约定继续处理
+        │
+        └─ 需要等待
+             └─ 按接口约定阻塞或返回
+                    │
+                    └─ 等待结束后检查结果</pre>
+
+        <p>
+          信号量与互斥锁虽然都可能涉及等待，
+          但它们表达的语义不同：信号量通常用于同步或资源计数，
+          互斥锁用于保护需要互斥访问的共享资源。
+          不能仅因为两者可能进入 WAIT 状态，就把它们当成可互换的接口。
+        </p>
+
+        <div class="callout warning">
+          <div class="callout-title">不要推断未确认的内核特性</div>
+          <p>
+            优先级继承、递归加锁、超时锁定、ISR 中的可调用限制等，
+            都应依据实际实现与接口说明确认，不能仅从“支持互斥锁”这一点推导出来。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="message">
+        <div class="section-heading">
+          <div class="section-number">05</div>
+          <div>
+            <h2>消息与事件等待</h2>
+            <p>使用模块提供的发送、接收与通知接口</p>
+          </div>
+        </div>
+
+        <p>
+          消息与事件通常用于任务间解耦：一个任务产生数据或通知，
+          另一个任务在需要时等待并处理。应用程序应依据对应模块的契约，
+          处理发送失败、接收结果、超时和事件条件等情况。
+        </p>
+
+        <div class="use-grid">
+          <article class="use-card">
+            <span class="card-label">MESSAGE SEND</span>
+            <h3>发送消息</h3>
+            <p>
+              确认目标队列、消息格式、队列容量以及队列不可接收新消息时的处理规则。
+            </p>
+          </article>
+
+          <article class="use-card">
+            <span class="card-label">MESSAGE RECEIVE</span>
+            <h3>接收消息</h3>
+            <p>
+              确认队列为空时接口如何处理，以及返回值如何区分收到消息与未收到消息。
+            </p>
+          </article>
+
+          <article class="use-card">
+            <span class="card-label">EVENT</span>
+            <h3>事件通知</h3>
+            <p>
+              确认事件条件、事件清除规则、重复触发行为与等待结束的语义。
+            </p>
+          </article>
+
+          <article class="use-card">
+            <span class="card-label">MAILBOX</span>
+            <h3>邮箱通信</h3>
+            <p>
+              如当前版本提供邮箱接口，应根据对应 API 文档确认数据传递与阻塞规则。
+            </p>
+          </article>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title">不要忽略返回值</div>
+          <p>
+            等待结束只说明阻塞阶段结束，不一定意味着消息已经成功发送、
+            数据已经成功接收，或者业务条件一定成立。应按照具体 API 的返回语义
+            决定下一步处理。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="timeout">
+        <div class="section-heading">
+          <div class="section-number">06</div>
+          <div>
+            <h2>超时与返回结果</h2>
+            <p>等待结束后，明确判断为什么结束</p>
+          </div>
+        </div>
+
+        <p>
+          对具有超时能力的接口，应区分正常完成、等待超时以及接口定义的其他结果。
+          不同模块的结果类型可能不同，必须以该接口的文档和宏定义为准。
+        </p>
+
+        <div class="flow" aria-label="等待结果处理">
+          <div class="flow-node primary">
+            <strong>调用等待类 API</strong>
+            <span>按接口约定传入参数</span>
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-node">
+            <strong>等待结束</strong>
+            <span>可能由条件满足、超时或其他定义的结果结束</span>
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-node result">
+            <strong>检查接口返回结果</strong>
+            <span>只在确认结果后继续对应的业务操作</span>
+          </div>
+        </div>
+
+        <ul class="check-list">
+          <li>确认超时参数使用的时间单位及其边界语义。</li>
+          <li>确认超时后资源是否仍可能被其他任务获取。</li>
+          <li>确认接口返回值是否需要进一步读取结果数据。</li>
+          <li>避免将“任务恢复执行”误判为“等待条件已经满足”。</li>
+        </ul>
+
+        <p>
+          关于内核的 <span class="inline-code">wait_tick</span>、
+          <span class="inline-code">wait_flag</span> 与
+          <span class="inline-code">wake_task()</span> 的具体关系，
+          请参阅等待超时与状态模型文档；应用层不应自行模拟这套内部状态管理。
+        </p>
+      </section>
+
+      <section class="section" id="example">
+        <div class="section-heading">
+          <div class="section-number">07</div>
+          <div>
+            <h2>应用层设计示例</h2>
+            <p>用明确的业务结构表达等待逻辑</p>
+          </div>
+        </div>
+
+        <p>
+          以下是与具体 HRTOS API 无关的伪代码，用于展示任务的业务组织方式。
+          实际项目中应将占位步骤替换为当前版本真实存在的接口，
+          并按照接口返回值补全错误处理。
+        </p>
+
+        <div class="code-label">
+          <span>Application Structure</span>
+          <span>Pseudocode</span>
+        </div>
+        <pre class="code-block">void application_task(void)
 {
-
-    while(1)
+    for (;;)
     {
+        /* 1. 执行本轮业务准备 */
 
-        //等待事件
+        /* 2. 使用项目实际提供的等待接口 */
 
-        os_event_wait(0,100);
+        /* 3. 根据接口返回值判断结果 */
 
+        /* 4. 仅在条件满足时处理对应业务数据 */
 
-        //处理任务
-
-
+        /* 5. 进入下一轮任务处理 */
     }
+}</pre>
 
-}
+        <div class="callout">
+          <div class="callout-title">为什么这里使用伪代码？</div>
+          <p>
+            当前页面未提供同步、消息和事件模块的实际头文件。
+            与其写入可能不符合 HRTOS 当前版本的函数签名，
+            不如先明确使用结构，避免示例被直接复制后产生编译错误或语义误用。
+          </p>
+        </div>
+      </section>
 
+      <section class="section" id="rules">
+        <div class="section-heading">
+          <div class="section-number">08</div>
+          <div>
+            <h2>应用层使用准则</h2>
+            <p>减少误用，并保持接口与内核边界清晰</p>
+          </div>
+        </div>
 
-</div>
+        <ul class="check-list">
+          <li>优先使用公开的应用层 API，不直接修改内核等待结构。</li>
+          <li>每次等待都应有明确目的：等待时间、同步条件、消息或事件。</li>
+          <li>使用超时功能时，明确规定超时后的业务处理策略。</li>
+          <li>根据接口契约检查返回值，不把唤醒等同于操作成功。</li>
+          <li>确认哪些接口可以在中断服务程序中调用，哪些只能在任务上下文使用。</li>
+          <li>结合任务优先级、执行时间与等待关系，检查潜在的死锁和长期阻塞。</li>
+          <li>以当前 HRTOS 版本的头文件和 API 文档为最终依据。</li>
+        </ul>
+      </section>
 
+      <section class="section" id="summary">
+        <div class="section-heading">
+          <div class="section-number">09</div>
+          <div>
+            <h2>总结</h2>
+            <p>应用层使用简单，底层机制保持一致性</p>
+          </div>
+        </div>
 
-<p>
-任务等待结束后自动恢复执行，
-无需应用程序轮询检查状态。
-</p>
+        <p>
+          等待机制的价值不只是让任务暂停执行，而是为任务之间的时间安排、
+          同步关系和通信行为提供清晰的控制方式。
+          应用程序应通过公开接口表达等待需求，
+          并在等待结束后依据返回结果决定下一步操作。
+        </p>
 
+        <p>
+          对于内核实现，应进一步阅读等待上下文、超时处理、任务状态模型和调度流程；
+          对于应用开发，则应重点关注 API 契约、错误处理、超时语义和任务间依赖关系。
+          两个层次各自清晰，才能使系统更容易验证与维护。
+        </p>
+      </section>
 
-</section>
+    </div>
 
+    <aside class="sidebar">
 
+      <div class="side-box">
+        <h2 class="side-title">本页目录</h2>
+        <nav class="side-nav" aria-label="Page contents">
+          <a href="#overview">01 · 理解等待机制</a>
+          <a href="#types">02 · 常见等待场景</a>
+          <a href="#delay">03 · 延时等待</a>
+          <a href="#sync">04 · 同步等待</a>
+          <a href="#message">05 · 消息与事件</a>
+          <a href="#timeout">06 · 超时与结果</a>
+          <a href="#example">07 · 应用示例</a>
+          <a href="#rules">08 · 使用准则</a>
+          <a href="#summary">09 · 总结</a>
+        </nav>
+      </div>
 
-<section class="section" id="feature">
+      <div class="side-box">
+        <h2 class="side-title">相关文档</h2>
+        <nav class="related-links" aria-label="Related documentation">
+          <a href="/docs/modules/wait/index.html">Wait 模块</a>
+          <a href="/docs/modules/wait/mechanism.html">等待机制</a>
+          <a href="/docs/modules/wait/state-model.html">等待状态模型</a>
+          <a href="/docs/modules/wait/timeout.html">等待超时</a>
+          <a href="/docs/modules/ipc/index.html">IPC 模块</a>
+          <a href="/docs/modules/time/index.html">Time 模块</a>
+          <a href="/docs/modules/scheduler/index.html">调度器</a>
+        </nav>
+      </div>
 
-<h2>使用特点</h2>
+      <div class="side-box">
+        <h2 class="side-title">文档定位</h2>
+        <p class="side-note">
+          本页介绍应用层的等待使用原则。
+          精确的函数签名、参数单位、返回值和中断调用限制，
+          请以当前 HRTOS 版本的头文件及对应 API 说明为准。
+        </p>
+      </div>
 
+    </aside>
 
-<ul style="margin:0;padding-left:18px;color:var(--muted);">
+  </div>
 
-<li>统一阻塞接口</li>
-
-<li>支持超时控制</li>
-
-<li>支持任务与ISR唤醒</li>
-
-<li>减少应用层轮询代码</li>
-
-<li>适合实时任务设计</li>
-
-</ul>
-
-
-</section>
-
-
-
-</div>
-
-
-
-<aside class="sidebar">
-
-
-<div class="box">
-
-<h3>目录</h3>
-
-<a href="#overview">概述</a>
-
-<a href="#delay">延时等待</a>
-
-<a href="#sem">信号量</a>
-
-<a href="#mutex">互斥锁</a>
-
-<a href="#message">消息队列</a>
-
-<a href="#event">事件邮箱</a>
-
-<a href="#api">接口</a>
-
-</div>
-
-
-
-<div class="box">
-
-<h3>相关模块</h3>
-
-<a href="/docs/modules/wait/mechanism.html">Wait机制</a>
-
-<a href="/docs/modules/wait/state-model.html">状态模型</a>
-
-<a href="/docs/modules/ipc/index.html">IPC</a>
-
-<a href="/docs/modules/time/index.html">Time</a>
-
-</div>
-
-
-</aside>
-
-
-</div>
-
-
-<footer class="footer">
-
-© 2017–2026 HRTOS. Embedded RTOS documentation.
-
-</footer>
-
+  <footer class="footer">
+    © 2017–2026 HRTOS. Embedded Real-Time Documentation.
+  </footer>
 
 </main>
 
-
-<script src="https://hrtos.com/header.js"></script>
-
 </body>
-
 </html>

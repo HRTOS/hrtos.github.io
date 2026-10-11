@@ -1,387 +1,1111 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>任务隔离与内存池安全（Task Isolation & Memory Pool Safety） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS在8051无MPU/MMU环境下，通过任务隔离与内存池安全机制实现软件级系统保护，包括任务边界控制与内存分配一致性管理。" />
+<title>任务隔离与内存池安全 | HRTOS 模块文档</title>
+<meta name="description" content="HRTOS 任务隔离与内存资源安全设计：了解 8051 无 MPU/MMU 环境下的任务上下文、共享数据访问、资源分配约束与软件级故障控制边界。" />
+<meta name="theme-color" content="#080f1d" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
-:root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.16);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+:root {
+  --mp-bg: #080f1d;
+  --mp-panel: rgba(16, 28, 47, .84);
+  --mp-text: #e7eefb;
+  --mp-muted: #9aabc4;
+  --mp-accent: #55d5ff;
+  --mp-accent-soft: #a5eaff;
+  --mp-border: rgba(148, 174, 208, .16);
+  --mp-radius: 18px;
+  --mp-shadow: 0 22px 60px rgba(0, 0, 0, .22);
+  color-scheme: dark;
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+* {
+  box-sizing: border-box;
 }
 
-.page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-  display:grid;
-  gap:36px;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
 }
 
-.breadcrumb{
-  color:var(--muted);
-  font-size:.92rem;
+body {
+  margin: 0;
+  color: var(--mp-text);
+  background:
+    radial-gradient(ellipse at 12% 8%, rgba(14, 116, 144, .13), transparent 34%),
+    radial-gradient(ellipse at 92% 25%, rgba(59, 130, 246, .10), transparent 30%),
+    var(--mp-bg);
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
 }
 
-.breadcrumb a{color:#7dd3fc;}
-
-.hero h1{
-  margin:0 0 12px;
-  font-size:clamp(2.2rem,5vw,3.4rem);
+a {
+  color: inherit;
 }
 
-.hero p{
-  margin:0;
-  color:var(--muted);
-  max-width:900px;
+.page {
+  width: min(1160px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 92px 0 64px;
 }
 
-.tag{
-  display:inline-block;
-  margin-top:14px;
-  padding:6px 12px;
-  border:1px solid var(--border);
-  border-radius:999px;
-  color:#bae6fd;
-  font-size:.85rem;
+/* Breadcrumb */
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 27px;
+  color: #7f93af;
+  font-size: .86rem;
 }
 
-/* layout */
-.layout{
-  display:grid;
-  grid-template-columns:1fr 260px;
-  gap:28px;
-  align-items:stretch;
+.breadcrumb a {
+  color: #a9c8e9;
+  text-decoration: none;
+  transition: color .2s ease;
 }
 
-.content{
-  display:grid;
-  gap:22px;
+.breadcrumb a:hover {
+  color: var(--mp-accent);
 }
 
-/* section */
-.section{
-  padding:22px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.55);
-  box-shadow:var(--shadow);
+.breadcrumb .separator {
+  color: #4d607b;
 }
 
-.section h2{
-  margin:0 0 12px;
-  font-size:1.25rem;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
+.breadcrumb .current {
+  color: #dbe7f7;
 }
 
-.section p{
-  margin:0 0 10px;
-  color:var(--muted);
+/* Hero */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 54px);
+  margin-bottom: 25px;
+  border: 1px solid rgba(111, 190, 232, .24);
+  border-radius: 26px;
+  background:
+    radial-gradient(ellipse at 87% 13%, rgba(56, 189, 248, .15), transparent 36%),
+    linear-gradient(125deg, rgba(17, 36, 59, .98), rgba(9, 19, 35, .97) 68%);
+  box-shadow: var(--mp-shadow);
 }
 
-.code{
-  margin-top:12px;
-  background:#020617;
-  border:1px solid rgba(56,189,248,.15);
-  padding:14px;
-  border-radius:8px;
-  font-family:Consolas,monospace;
-  font-size:.9rem;
-  color:#7dd3fc;
-  white-space:pre-wrap;
+.hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(85, 213, 255, .8), transparent);
 }
 
-.block{
-  margin-top:16px;
-  padding:14px;
-  border-left:3px solid #38bdf8;
-  background:rgba(15,23,42,.6);
-  border-radius:8px;
-  color:var(--muted);
+.hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 310px;
+  height: 310px;
+  right: -125px;
+  bottom: -190px;
+  border: 1px solid rgba(85, 213, 255, .13);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 32px rgba(85, 213, 255, .025),
+    0 0 0 64px rgba(85, 213, 255, .02);
+  pointer-events: none;
 }
 
-/* sidebar */
-.sidebar{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  height:100%;
+.hero-topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
 }
 
-.box{
-  flex:1;
-  padding:16px;
-  border:1px solid var(--border);
-  border-radius:10px;
-  background:rgba(30,41,59,.5);
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 11px;
+  border: 1px solid rgba(85, 213, 255, .28);
+  border-radius: 999px;
+  color: var(--mp-accent-soft);
+  background: rgba(8, 30, 49, .65);
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
 }
 
-.box h3{
-  margin:0 0 10px;
-  font-size:0.95rem;
+.hero-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mp-accent);
+  box-shadow: 0 0 12px rgba(85, 213, 255, .8);
 }
 
-.box a{
-  display:block;
-  margin-bottom:8px;
-  color:#7dd3fc;
-  font-size:0.9rem;
+.hero-index {
+  color: #7f95b2;
+  font-size: .79rem;
+  letter-spacing: .12em;
 }
 
-.box a:hover{color:var(--accent);}
-
-.footer{
-  text-align:center;
-  color:#8ea3be;
-  font-size:.9rem;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding-top:18px;
+.hero h1 {
+  max-width: 850px;
+  margin: 0 0 19px;
+  color: #f3f8ff;
+  font-size: clamp(2rem, 5vw, 3.55rem);
+  font-weight: 750;
+  letter-spacing: -.045em;
+  line-height: 1.18;
 }
 
-@media(max-width:1000px){
-  .layout{grid-template-columns:1fr;}
+.hero h1 span {
+  color: var(--mp-accent);
+}
+
+.hero-description {
+  max-width: 850px;
+  margin: 0;
+  color: #a8bad2;
+  font-size: clamp(.98rem, 1.5vw, 1.08rem);
+  line-height: 1.95;
+}
+
+.hero-description strong {
+  color: #e0edfb;
+  font-weight: 600;
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 25px;
+}
+
+.hero-tag {
+  padding: 5px 10px;
+  border: 1px solid rgba(148, 174, 208, .17);
+  border-radius: 8px;
+  color: #b6c8de;
+  background: rgba(5, 15, 29, .38);
+  font-size: .79rem;
+}
+
+/* Back link */
+
+.return-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 38px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #b5c9e3;
+  font-size: .88rem;
+  text-decoration: none;
+  transition: color .2s ease, transform .2s ease;
+}
+
+.back-link:hover {
+  color: var(--mp-accent);
+  transform: translateX(-3px);
+}
+
+.return-note {
+  color: #7187a4;
+  font-size: .8rem;
+}
+
+/* Layout */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 25px;
+  align-items: start;
+}
+
+.content {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.section {
+  min-width: 0;
+  padding: clamp(21px, 3vw, 30px);
+  border: 1px solid var(--mp-border);
+  border-radius: var(--mp-radius);
+  background: linear-gradient(145deg, rgba(17, 31, 51, .91), rgba(10, 21, 37, .94));
+  box-shadow: 0 14px 38px rgba(0, 0, 0, .12);
+  scroll-margin-top: 100px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 21px;
+}
+
+.section-number {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(85, 213, 255, .23);
+  border-radius: 12px;
+  color: var(--mp-accent);
+  background: linear-gradient(145deg, rgba(21, 74, 100, .4), rgba(11, 27, 46, .8));
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.section-heading h2 {
+  margin: 0 0 5px;
+  color: #edf5ff;
+  font-size: clamp(1.2rem, 2.4vw, 1.48rem);
+  letter-spacing: -.025em;
+  line-height: 1.45;
+}
+
+.section-heading p {
+  margin: 0;
+  color: #91a5bf;
+  font-size: .86rem;
+}
+
+.section p {
+  margin: 0 0 13px;
+  color: var(--mp-muted);
+  font-size: .92rem;
+}
+
+.section p:last-child {
+  margin-bottom: 0;
+}
+
+/* Model diagram */
+
+.model-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 23px;
+}
+
+.model-card {
+  min-width: 0;
+  padding: 19px;
+  border: 1px solid rgba(148, 174, 208, .15);
+  border-radius: 14px;
+  background: rgba(5, 15, 29, .4);
+}
+
+.model-card.primary {
+  border-color: rgba(85, 213, 255, .26);
+  background: linear-gradient(145deg, rgba(16, 57, 77, .3), rgba(5, 15, 29, .48));
+}
+
+.model-index {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--mp-accent);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.model-card h3 {
+  margin: 0 0 8px;
+  color: #e3eefc;
+  font-size: 1rem;
+}
+
+.model-card p {
+  margin: 0;
+  color: #91a5bf;
+  font-size: .84rem;
+}
+
+.model-list {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 15px 0 0;
+  list-style: none;
+}
+
+.model-list li {
+  position: relative;
+  padding-left: 16px;
+  color: #a9bbd2;
+  font-size: .82rem;
+}
+
+.model-list li::before {
+  content: "";
+  position: absolute;
+  top: .72em;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--mp-accent);
+}
+
+/* Code / notes */
+
+.code-panel {
+  overflow-x: auto;
+  margin-top: 17px;
+  padding: 19px 20px;
+  border: 1px solid rgba(85, 213, 255, .16);
+  border-radius: 12px;
+  background: #060d19;
+}
+
+.code-label {
+  display: block;
+  margin-bottom: 11px;
+  color: #7e9ab9;
+  font-size: .72rem;
+  font-weight: 750;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.code-panel pre {
+  margin: 0;
+  color: #b9e9ff;
+  font-family: Consolas, "Cascadia Code", monospace;
+  font-size: .83rem;
+  line-height: 1.9;
+  white-space: pre;
+}
+
+.note {
+  display: flex;
+  gap: 13px;
+  margin-top: 19px;
+  padding: 16px 17px;
+  border: 1px solid rgba(85, 213, 255, .16);
+  border-left: 3px solid var(--mp-accent);
+  border-radius: 10px;
+  background: rgba(13, 43, 61, .32);
+}
+
+.note-symbol {
+  flex: 0 0 auto;
+  color: var(--mp-accent);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.note p {
+  margin: 0;
+  color: #a9bfd6;
+  font-size: .86rem;
+}
+
+.note strong {
+  color: #e1effc;
+}
+
+/* Process flow */
+
+.process {
+  display: grid;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.process-step {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  padding: 13px 15px;
+  border: 1px solid rgba(148, 174, 208, .14);
+  border-radius: 11px;
+  background: rgba(5, 15, 29, .4);
+}
+
+.process-step .step {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--mp-accent-soft);
+  background: rgba(56, 189, 248, .12);
+  font-size: .77rem;
+  font-weight: 800;
+}
+
+.process-step strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #dce9f9;
+  font-size: .88rem;
+}
+
+.process-step span:last-child {
+  display: block;
+  color: #8fa4bf;
+  font-size: .81rem;
+}
+
+.process-arrow {
+  margin: -7px 0 -7px 27px;
+  color: #52718e;
+  font-size: .9rem;
+  line-height: 1.2;
+}
+
+/* Capability table */
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 19px;
+  border: 1px solid rgba(148, 174, 208, .15);
+  border-radius: 12px;
+}
+
+.capability-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .84rem;
+}
+
+.capability-table th,
+.capability-table td {
+  padding: 13px 15px;
+  border-bottom: 1px solid rgba(148, 174, 208, .12);
+  text-align: left;
+  vertical-align: top;
+}
+
+.capability-table th {
+  color: #c9d9ed;
+  background: rgba(5, 15, 29, .6);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.capability-table td {
+  color: #9bafc8;
+}
+
+.capability-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.capability-table td:first-child {
+  color: #d8e7f8;
+  font-weight: 600;
+}
+
+/* Sidebar */
+
+.sidebar {
+  position: sticky;
+  top: 90px;
+  display: grid;
+  gap: 13px;
+  min-width: 0;
+}
+
+.side-box {
+  padding: 18px;
+  border: 1px solid var(--mp-border);
+  border-radius: 15px;
+  background: rgba(13, 25, 42, .83);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .1);
+}
+
+.side-box h3 {
+  margin: 0 0 13px;
+  color: #e1ecfb;
+  font-size: .91rem;
+}
+
+.side-links {
+  display: grid;
+  gap: 4px;
+}
+
+.side-links a {
+  display: block;
+  padding: 7px 9px;
+  border-radius: 8px;
+  color: #93a8c3;
+  font-size: .82rem;
+  text-decoration: none;
+  transition: color .2s ease, background .2s ease;
+}
+
+.side-links a:hover {
+  color: var(--mp-accent-soft);
+  background: rgba(56, 189, 248, .08);
+}
+
+.side-divider {
+  height: 1px;
+  margin: 14px 0;
+  background: rgba(148, 174, 208, .12);
+}
+
+.side-note {
+  margin: 0;
+  color: #8197b2;
+  font-size: .79rem;
+  line-height: 1.75;
+}
+
+/* Footer */
+
+.footer {
+  margin-top: 48px;
+  padding-top: 25px;
+  border-top: 1px solid rgba(148, 174, 208, .14);
+  color: #7489a5;
+  font-size: .82rem;
+  text-align: center;
+}
+
+.footer p {
+  margin: 0;
+}
+
+.footer .footer-sub {
+  margin-top: 5px;
+  color: #536a86;
+  font-size: .76rem;
+}
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sidebar .side-box:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .page {
+    width: min(100% - 28px, 1160px);
+    padding-top: 82px;
+    padding-bottom: 40px;
+  }
+
+  .hero {
+    padding: 27px 22px;
+    border-radius: 20px;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.85rem, 8.5vw, 2.6rem);
+  }
+
+  .return-row {
+    margin-bottom: 28px;
+  }
+
+  .return-note {
+    display: none;
+  }
+
+  .section {
+    padding: 21px 18px;
+  }
+
+  .model-grid,
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar .side-box:first-child {
+    grid-column: auto;
+  }
+
+  .section-heading {
+    gap: 11px;
+  }
+
+  .section-number {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .code-panel {
+    padding: 15px;
+  }
+
+  .capability-table th,
+  .capability-table td {
+    padding: 11px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 </style>
 </head>
 
-<body>
-
+<body data-header="docs">
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/memory/index.html">Memory</a> /
-    <span>Safety Model</span>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/index.html">系统模块</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/memory/index.html">内存管理</a>
+    <span class="separator">/</span>
+    <span class="current" aria-current="page">任务隔离与内存池安全</span>
   </nav>
 
-  <section class="hero">
-    <h1>任务隔离与内存池安全</h1>
-    <p>
-      在8051无MPU/MMU架构下，HRTOS通过任务隔离与内存池安全机制，
-      在软件层构建系统边界，实现任务级隔离与内存级一致性控制。
+  <header class="hero">
+    <div class="hero-topline">
+      <span class="hero-label">HRTOS · Memory Safety</span>
+      <span class="hero-index">MEMORY / PROTECTION</span>
+    </div>
+
+    <h1>任务隔离与<br><span>内存资源安全</span></h1>
+
+    <p class="hero-description">
+      在没有 MPU/MMU 的传统 8051 平台上，软件结构可以帮助组织任务上下文、
+      约束资源访问路径，并降低部分错误的影响范围。
+      本页梳理<strong>任务执行边界、共享数据访问、内存资源管理与保护能力的适用范围</strong>，
+      并区分架构原则与需要通过具体实现验证的安全保证。
     </p>
-    <span class="tag">Soft Isolation Model</span>
-    <span class="tag">Memory Pool Safety</span>
-  </section>
+
+    <div class="hero-tags">
+      <span class="hero-tag">软件级约束</span>
+      <span class="hero-tag">任务上下文</span>
+      <span class="hero-tag">资源一致性</span>
+      <span class="hero-tag">故障边界</span>
+      <span class="hero-tag">实现可验证性</span>
+    </div>
+  </header>
+
+  <div class="return-row">
+    <a class="back-link" href="/docs/modules/memory/index.html">
+      <span aria-hidden="true">←</span>
+      返回内存管理
+    </a>
+    <span class="return-note">理解软件保护的能力与边界</span>
+  </div>
 
   <div class="layout">
 
     <div class="content">
 
-      <!-- 概述 -->
       <section class="section" id="overview">
-        <h2>概述</h2>
-
-        <p>
-          在8051等资源受限平台中，没有硬件级内存保护能力。
-          系统安全必须依赖软件结构设计实现。
-        </p>
-
-        <p>
-          HRTOS采用双层安全模型：
-          任务隔离负责控制执行边界，
-          内存池安全负责控制资源一致性。
-        </p>
-
-        <div class="code">
-第一层：任务隔离
-- 独立任务上下文
-- 禁止跨任务直接访问数据
-- 强制通过系统通信路径
-
-第二层：内存池安全
-- 固定块内存模型
-- block一致性校验
-- 防止非法释放与破坏传播
-        </div>
-
-        <div class="block">
-系统安全的核心不是阻止错误发生，
-而是限制错误影响范围。
-        </div>
-      </section>
-
-      <!-- 工作原理 -->
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-
-        <p>
-          安全模型基于“结构约束 + 资源边界”的软件设计思想。
-        </p>
-
-        <div class="code">
-安全机制结构：
-
-① 任务隔离层
-- 执行上下文独立
-- 状态不共享
-- 通信路径统一
-
-② 内存池安全层
-- 固定大小分配
-- header一致性检测
-- 防止重复释放/越界破坏
+        <div class="section-heading">
+          <span class="section-number">01</span>
+          <div>
+            <h2>安全模型概述</h2>
+            <p>先区分执行上下文管理、资源管理和真正的访问保护。</p>
+          </div>
         </div>
 
         <p>
-          系统不依赖运行时强制保护，
-          而是通过结构设计避免非法路径存在。
+          传统 8051 通常没有用于通用地址空间隔离的 MPU/MMU。
+          因此，RTOS 的任务切换和资源管理机制不能自动等同于硬件内存保护。
+          如果任务能够直接访问某段 RAM，或者能够通过指针写入其他对象，
+          是否可以阻止这类访问，取决于系统是否实现了相应的检查与限制。
         </p>
 
-        <div class="block">
-Soft Safety Architecture：
-通过“不可达设计”替代“强制拦截”。
+        <p>
+          从软件架构角度，可以将相关问题分为两个方向：一是管理任务的执行上下文和协作路径；
+          二是管理内存资源的分配、归属与生命周期。
+          两者可以相互配合，但需要分别验证其实际保护能力。
+        </p>
+
+        <div class="model-grid">
+          <article class="model-card primary">
+            <span class="model-index">LAYER 01</span>
+            <h3>任务上下文与访问约束</h3>
+            <p>关注任务如何执行、共享数据如何访问，以及系统是否提供了明确的协作规则。</p>
+            <ul class="model-list">
+              <li>任务上下文的保存与恢复</li>
+              <li>共享状态的访问约定</li>
+              <li>任务间通信和同步路径</li>
+            </ul>
+          </article>
+
+          <article class="model-card">
+            <span class="model-index">LAYER 02</span>
+            <h3>内存资源与生命周期</h3>
+            <p>关注资源如何分配、释放和追踪，以及异常状态能否被检测。</p>
+            <ul class="model-list">
+              <li>资源池及其容量边界</li>
+              <li>分配与释放状态管理</li>
+              <li>错误检测与故障处理策略</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="note">
+          <span class="note-symbol" aria-hidden="true">i</span>
+          <p>
+            <strong>关键区别：</strong>
+            独立任务上下文表示调度时能够保存和恢复各任务所需的执行状态；
+            它本身并不意味着任务拥有彼此无法访问的独立地址空间。
+          </p>
         </div>
       </section>
 
-      <!-- 任务隔离 -->
       <section class="section" id="isolation">
-        <h2>任务隔离机制</h2>
-
-        <p>
-          每个任务在系统中拥有独立执行上下文，
-          其状态与数据生命周期完全封闭。
-        </p>
-
-        <div class="code">
-隔离维度：
-
-- 执行上下文隔离
-- 数据访问路径隔离
-- 状态生命周期隔离
+        <div class="section-heading">
+          <span class="section-number">02</span>
+          <div>
+            <h2>任务隔离：上下文不等于地址空间</h2>
+            <p>通过执行状态管理与明确的共享数据规则组织并发任务。</p>
+          </div>
         </div>
 
         <p>
-          任务之间不允许直接引用彼此内部数据结构，
-          所有交互必须通过系统级通信结构完成。
+          RTOS 通常为任务维护各自的执行状态，例如任务栈指针、调度状态和优先级等。
+          调度器根据系统规则切换执行任务，使多个任务能够共享处理器时间。
+          这些机制构成任务管理的基础，但不能单独阻止一个任务通过合法可用的 C 指针
+          访问其他任务的数据。
         </p>
 
-        <div class="block">
-任务不是互联的执行单元，
-而是通过系统中介连接的独立节点。
+        <div class="code-panel">
+          <span class="code-label">Conceptual Model · 示意</span>
+          <pre>任务 A ──┐
+         ├── 调度器：选择下一个执行任务
+任务 B ──┤
+         └── 共享 RAM 仍受处理器寻址能力约束
+
+任务切换：管理执行状态
+数据访问：取决于软件规则与实际检查机制</pre>
+        </div>
+
+        <p>
+          对共享数据，可以使用消息传递、队列、互斥或其他同步方式来明确读写责任，
+          降低竞争条件和无序访问的风险。采用这些机制不意味着所有跨任务直接访问
+          都会被系统强制拦截；除非实现中确实存在对应检查，否则应将其视为编程约定。
+        </p>
+
+        <div class="note">
+          <span class="note-symbol" aria-hidden="true">!</span>
+          <p>
+            <strong>文档边界：</strong>
+            任务上下文独立、通信路径规范和强制访问隔离是不同层次的能力。
+            描述 HRTOS 的具体保证时，应以任务管理、IPC API 和访问检查代码为依据。
+          </p>
         </div>
       </section>
 
-      <!-- 内存池 -->
       <section class="section" id="pool">
-        <h2>内存池安全机制</h2>
-
-        <p>
-          内存池用于控制动态内存行为边界，
-          避免碎片扩散与非法访问导致系统不稳定。
-        </p>
-
-        <div class="code">
-安全策略：
-
-- 固定大小内存块模型
-- block header一致性维护
-- 分配/释放路径统一
-- 状态合法性检测
+        <div class="section-heading">
+          <span class="section-number">03</span>
+          <div>
+            <h2>内存池与资源安全</h2>
+            <p>资源管理可以规范分配行为，但不应将所有错误检测能力视为默认存在。</p>
+          </div>
         </div>
 
         <p>
-          每个内存块携带基础元信息，
-          用于检测生命周期中的异常行为。
+          内存池通常通过预先规划的区域、分配单元或资源描述信息管理可用容量。
+          与通用动态堆相比，明确的资源边界有利于分析容量上限和分配条件。
+          不过，位图式连续空间分配、固定对象池和带元数据的动态内存池属于不同模型，
+          应按具体实现分别描述。
         </p>
 
-        <div class="block">
-内存池的核心目标不是提升灵活性，
-而是保证长期运行稳定性。
+        <div class="code-panel">
+          <span class="code-label">Resource Lifecycle · 概念流程</span>
+          <pre>请求资源
+   │
+   ▼
+检查请求与可用状态
+   │
+   ▼
+执行分配并更新管理状态
+   │
+   ▼
+使用资源
+   │
+   ▼
+按接口约定释放或归还资源
+   │
+   ▼
+更新状态，供后续请求使用</pre>
         </div>
 
         <p>
-          任何非法写入或重复释放行为，
-          都会破坏块一致性并在检测阶段被识别。
+          如果实现包含资源归属记录、块状态标记、边界检查或重复释放检查，
+          这些机制可以在各自覆盖的条件下发现部分错误。
+          但不能仅凭“使用内存池”就推断存在 block header、一致性校验，
+          或者所有越界写入和重复释放都一定能够被识别。
         </p>
+
+        <div class="note">
+          <span class="note-symbol" aria-hidden="true">i</span>
+          <p>
+            <strong>需要区分的两件事：</strong>
+            资源分配器维护自身状态，与应用程序是否越界写入其他内存，是不同的问题。
+            后者需要相应的边界保护或检测机制，不能仅由分配器的存在来保证。
+          </p>
+        </div>
       </section>
 
-      <!-- 运行流程 -->
       <section class="section" id="flow">
-        <h2>运行流程</h2>
-
-        <div class="code">
-1. 系统初始化任务与内存池结构
-2. 任务创建并绑定独立上下文
-3. 调度器切换任务执行权
-4. 内存分配统一进入内存池路径
-5. 系统持续维护一致性检测
+        <div class="section-heading">
+          <span class="section-number">04</span>
+          <div>
+            <h2>运行期间的资源管理路径</h2>
+            <p>用统一的资源使用规则降低状态不一致的风险。</p>
+          </div>
         </div>
 
         <p>
-          所有任务运行在独立上下文中，
-          系统通过调度实现执行切换，而非改变结构边界。
+          对任务、同步对象或内存池等资源，推荐明确初始化、使用、释放和异常处理的路径。
+          下面是通用的分析框架，用于检查资源生命周期是否完整，并非对 HRTOS 内部调用顺序的逐行描述。
         </p>
+
+        <div class="process">
+          <div class="process-step">
+            <span class="step">01</span>
+            <div>
+              <strong>初始化与容量规划</strong>
+              <span>确定资源数量、内存区域和可用容量。</span>
+            </div>
+          </div>
+          <div class="process-arrow" aria-hidden="true">↓</div>
+          <div class="process-step">
+            <span class="step">02</span>
+            <div>
+              <strong>通过受支持的接口创建或申请资源</strong>
+              <span>检查参数、资源状态及申请失败的处理方式。</span>
+            </div>
+          </div>
+          <div class="process-arrow" aria-hidden="true">↓</div>
+          <div class="process-step">
+            <span class="step">03</span>
+            <div>
+              <strong>按约定访问和同步</strong>
+              <span>明确共享数据的读写责任，避免未同步的竞争访问。</span>
+            </div>
+          </div>
+          <div class="process-arrow" aria-hidden="true">↓</div>
+          <div class="process-step">
+            <span class="step">04</span>
+            <div>
+              <strong>释放资源并检查异常路径</strong>
+              <span>确认释放规则、失败返回值和异常状态的处理策略。</span>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <!-- 扩展 -->
-      <section class="section" id="extension">
-        <h2>设计原则</h2>
-
-        <div class="code">
-- Static First（静态优先）
-- Path Controlled（路径受控）
-- State Encapsulated（状态封闭）
-- Fault Contained（错误局部化）
+      <section class="section" id="capabilities">
+        <div class="section-heading">
+          <span class="section-number">05</span>
+          <div>
+            <h2>保护能力与验证边界</h2>
+            <p>从机制名称转向可验证的实现证据。</p>
+          </div>
         </div>
 
         <p>
-          该模型适用于长期运行嵌入式系统，
-          在无硬件保护条件下提供稳定性保障。
+          评估一个软件级安全机制时，最重要的不是名称中是否包含“安全”或“隔离”，
+          而是明确它覆盖哪些错误、在什么条件下生效，以及失败后系统如何响应。
         </p>
 
-        <div class="block">
-HRTOS安全模型本质：
-用结构约束替代硬件保护。
+        <div class="table-wrap">
+          <table class="capability-table">
+            <thead>
+              <tr>
+                <th>关注项</th>
+                <th>能够说明什么</th>
+                <th>仍需验证什么</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>任务上下文</td>
+                <td>任务切换所需执行状态的管理方式</td>
+                <td>是否存在强制的数据访问隔离</td>
+              </tr>
+              <tr>
+                <td>通信与同步</td>
+                <td>任务协作和共享状态协调的路径</td>
+                <td>是否能够阻止所有绕过接口的访问</td>
+              </tr>
+              <tr>
+                <td>资源池管理</td>
+                <td>资源容量、分配与回收规则</td>
+                <td>是否实现越界、重复释放或状态损坏检查</td>
+              </tr>
+              <tr>
+                <td>栈边界检测</td>
+                <td>具体实现所覆盖的栈异常场景</td>
+                <td>检测范围、触发条件及误检和漏检情况</td>
+              </tr>
+              <tr>
+                <td>异常处理</td>
+                <td>检测到错误后采用的处理策略</td>
+                <td>能否可靠恢复，以及是否影响其他任务</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <span class="note-symbol" aria-hidden="true">✓</span>
+          <p>
+            <strong>建议的验证方法：</strong>
+            结合源码调用路径、边界条件测试、错误返回值检查和压力测试，
+            为每项保护能力建立明确的证据，而不是仅根据架构描述推断安全结论。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="principles">
+        <div class="section-heading">
+          <span class="section-number">06</span>
+          <div>
+            <h2>设计原则</h2>
+            <p>让资源使用规则清晰，让系统能力可以检查和复现。</p>
+          </div>
+        </div>
+
+        <div class="model-grid">
+          <article class="model-card">
+            <span class="model-index">PRINCIPLE 01</span>
+            <h3>优先明确资源边界</h3>
+            <p>
+              尽可能提前规划任务数量、对象池容量和栈空间需求，
+              并明确申请失败时的处理路径。
+            </p>
+          </article>
+
+          <article class="model-card">
+            <span class="model-index">PRINCIPLE 02</span>
+            <h3>统一资源操作路径</h3>
+            <p>
+              通过受支持的接口管理资源生命周期，
+              减少不同调用路径对状态维护规则的理解偏差。
+            </p>
+          </article>
+
+          <article class="model-card">
+            <span class="model-index">PRINCIPLE 03</span>
+            <h3>明确共享数据责任</h3>
+            <p>
+              对跨任务共享状态定义读写规则和同步要求，
+              并检查并发访问及中断交互场景。
+            </p>
+          </article>
+
+          <article class="model-card">
+            <span class="model-index">PRINCIPLE 04</span>
+            <h3>以证据描述安全能力</h3>
+            <p>
+              区分设计目标、已实现的检查和经过验证的行为，
+              不把局部保护扩展为系统整体安全保证。
+            </p>
+          </article>
+        </div>
+
+        <div class="note">
+          <span class="note-symbol" aria-hidden="true">→</span>
+          <p>
+            <strong>核心思路：</strong>
+            通过清晰的资源边界、规范的访问路径和可验证的检查机制，
+            降低错误发生的概率，并在机制覆盖的范围内限制错误影响。
+            软件结构能够改善系统的可控性，但不能替代不存在的硬件内存保护能力。
+          </p>
         </div>
       </section>
 
     </div>
 
-    <!-- sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="页面导航">
 
-      <div class="box">
-        <h3>模块导航</h3>
-        <a href="/docs/modules/memory/allocation.html">内存分配</a>
-        <a href="/docs/modules/memory/fragmentation.html">内存碎片</a>
-        <a href="/docs/modules/memory/index.html">Memory</a>
+      <div class="side-box">
+        <h3>本页目录</h3>
+        <nav class="side-links" aria-label="章节导航">
+          <a href="#overview">01 · 安全模型概述</a>
+          <a href="#isolation">02 · 任务隔离</a>
+          <a href="#pool">03 · 内存池与资源安全</a>
+          <a href="#flow">04 · 资源管理路径</a>
+          <a href="#capabilities">05 · 保护能力与验证</a>
+          <a href="#principles">06 · 设计原则</a>
+        </nav>
       </div>
 
-      <div class="box">
-        <h3>安全模型</h3>
-        <a href="#overview">概述</a>
-        <a href="#isolation">任务隔离</a>
-        <a href="#pool">内存池安全</a>
+      <div class="side-box">
+        <h3>内存管理</h3>
+        <nav class="side-links" aria-label="内存管理子模块">
+          <a href="/docs/modules/memory/index.html">内存管理总览</a>
+          <a href="/docs/modules/memory/allocation.html">内存分配</a>
+          <a href="/docs/modules/memory/fragmentation.html">内存碎片</a>
+          <a href="/docs/modules/memory/stack-management.html">栈管理</a>
+        </nav>
       </div>
 
-      <div class="box">
-        <h3>系统层级</h3>
-        <a href="/docs/modules/task/index.html">Task Layer</a>
-        <a href="/docs/modules/ipc/index.html">IPC Layer</a>
+      <div class="side-box">
+        <h3>相关系统模块</h3>
+        <nav class="side-links" aria-label="相关系统模块">
+          <a href="/docs/modules/task/index.html">任务管理</a>
+          <a href="/docs/modules/ipc/index.html">进程间通信（IPC）</a>
+        </nav>
+        <div class="side-divider"></div>
+        <p class="side-note">
+          任务管理关注执行与调度，IPC 关注任务间协作。
+          与本页结合阅读，可以更完整地理解任务上下文和共享资源的管理方式。
+        </p>
       </div>
 
     </aside>
@@ -389,7 +1113,8 @@ HRTOS安全模型本质：
   </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS. Embedded RTOS Architecture Documentation.
+    <p>© 2017–2026 HRTOS · 任务隔离与内存资源安全</p>
+    <p class="footer-sub">嵌入式系统架构文档 · 以实现为依据，以验证为准绳</p>
   </footer>
 
 </main>

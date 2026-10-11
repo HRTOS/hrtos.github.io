@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -5,501 +6,1241 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>任务生命周期（Task Lifecycle） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS任务生命周期机制说明，包括任务创建、运行、挂起、删除请求以及空闲任务资源回收机制。" />
-
-<link rel="stylesheet" href="https://hrtos.com/global.css">
+<meta name="description" content="HRTOS 任务生命周期技术文档，介绍任务创建、运行控制、挂起与恢复、删除请求、空闲任务资源回收及任务状态查询。" />
+<meta name="theme-color" content="#0a1020" />
+<link rel="canonical" href="https://hrtos.com/docs/modules/task/lifecycle.html" />
+<link rel="stylesheet" href="https://hrtos.com/global.css" />
 
 <style>
-:root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+:root {
+  color-scheme: dark;
+  --life-bg: #0a1020;
+  --life-panel: #111b2e;
+  --life-panel-deep: #0b1426;
+  --life-border: rgba(148, 163, 184, 0.17);
+  --life-border-hover: rgba(56, 189, 248, 0.42);
+  --life-text: #e6edf8;
+  --life-muted: #9aabc3;
+  --life-accent: #38bdf8;
+  --life-accent-soft: #bae6fd;
+  --life-teal: #5eead4;
+  --life-radius: 15px;
+  --life-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
 }
 
-*{box-sizing:border-box}
-
-body{
-margin:0;
-background:var(--bg);
-color:var(--text);
-font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-line-height:1.75;
+* {
+  box-sizing: border-box;
 }
 
-.page{
-width:min(1180px,calc(100% - 40px));
-margin:0 auto;
-padding:96px 0 56px;
-display:grid;
-gap:34px;
+html {
+  min-height: 100%;
+  background: var(--life-bg);
+  scroll-behavior: smooth;
 }
 
-.breadcrumb{
-font-size:.92rem;
-color:var(--muted);
+body {
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(
+      ellipse at 12% 0%,
+      rgba(14, 116, 144, 0.16),
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 88% 12%,
+      rgba(37, 99, 235, 0.10),
+      transparent 36%
+    ),
+    var(--life-bg);
+  color: var(--life-text);
+  font-family:
+    "Segoe UI",
+    "SF Pro Display",
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+  line-height: 1.8;
 }
 
-.breadcrumb a{
-color:#7dd3fc;
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.hero{
-display:grid;
-gap:10px;
+a:focus-visible {
+  outline: 2px solid var(--life-accent);
+  outline-offset: 4px;
+  border-radius: 5px;
 }
 
-.hero-label{
-display:inline-block;
-padding:8px 14px;
-border-radius:999px;
-border:1px solid rgba(56,189,248,.24);
-color:#bae6fd;
-font-size:.9rem;
+.page {
+  position: relative;
+  z-index: 1;
+  width: min(var(--max-width, 1180px), calc(100% - 40px));
+  margin: 0 auto;
+  padding: 42px 0 56px;
 }
 
-.hero h1{
-margin:0;
-font-size:clamp(2.2rem,5vw,3.6rem);
+/* Breadcrumb */
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 30px;
+  color: var(--life-muted);
+  font-size: 0.85rem;
 }
 
-.hero p{
-margin:0;
-color:var(--muted);
+.breadcrumb a {
+  color: #a5bad4;
+  transition: color 0.2s ease;
 }
 
-.layout{
-display:grid;
-grid-template-columns:1fr 280px;
-gap:26px;
+.breadcrumb a:hover {
+  color: var(--life-accent);
 }
 
-.section{
-display:grid;
-gap:12px;
-padding:22px;
-border:1px solid var(--border);
-border-radius:var(--radius);
-background:rgba(30,41,59,.55);
-box-shadow:var(--shadow);
+.breadcrumb .separator {
+  color: #53657e;
 }
 
-.section h2{
-margin:0;
-border-left:3px solid var(--accent);
-padding-left:10px;
-font-size:1.25rem;
+.breadcrumb [aria-current="page"] {
+  color: var(--life-accent-soft);
 }
 
-.section p{
-margin:0;
-color:var(--muted);
+/* Hero */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 4.8vw, 48px);
+  margin-bottom: 38px;
+  border: 1px solid var(--life-border);
+  border-radius: 21px;
+  background:
+    radial-gradient(
+      ellipse at 90% 0%,
+      rgba(56, 189, 248, 0.12),
+      transparent 42%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(17, 27, 46, 0.97),
+      rgba(11, 20, 38, 0.98)
+    );
+  box-shadow: var(--life-shadow);
 }
 
-.code{
-background:#020617;
-border:1px solid rgba(56,189,248,.12);
-border-radius:8px;
-padding:14px;
-font-family:Consolas,monospace;
-font-size:.9rem;
-color:#7dd3fc;
-white-space:pre-wrap;
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100px;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--life-accent),
+    var(--life-teal),
+    transparent
+  );
 }
 
-.note{
-padding:12px 14px;
-border-left:3px solid var(--accent);
-background:rgba(15,23,42,.6);
-color:var(--muted);
-border-radius:6px;
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 850px;
 }
 
-.sidebar{
-display:grid;
-gap:14px;
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 17px;
+  color: var(--life-accent-soft);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-.box{
-padding:16px;
-border:1px solid var(--border);
-border-radius:var(--radius);
-background:rgba(30,41,59,.5);
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background: var(--life-accent);
 }
 
-.box h3{
-margin:0 0 10px;
-font-size:.95rem;
+.hero h1 {
+  margin: 0;
+  color: #f1f6ff;
+  font-size: clamp(2rem, 4.8vw, 3.35rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
 }
 
-.box a{
-display:block;
-font-size:.9rem;
-color:#7dd3fc;
-margin-bottom:6px;
+.hero h1 span {
+  display: block;
+  margin-top: 9px;
+  color: #8fa7c5;
+  font-size: 0.46em;
+  font-weight: 500;
+  letter-spacing: 0.015em;
 }
 
-.footer{
-text-align:center;
-padding-top:18px;
-border-top:1px solid rgba(148,163,184,.14);
-color:var(--muted);
-font-size:.9rem;
+.hero-description {
+  max-width: 760px;
+  margin: 22px 0 0;
+  color: #aebfd5;
+  font-size: 0.96rem;
+  line-height: 1.95;
 }
 
-@media(max-width:980px){
-.layout{
-grid-template-columns:1fr;
+.hero-description strong {
+  color: #e4effb;
+  font-weight: 600;
 }
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 24px;
+}
+
+.meta-tag {
+  padding: 6px 11px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 7px;
+  background: rgba(2, 6, 23, 0.27);
+  color: #b8c9df;
+  font-size: 0.77rem;
+}
+
+/* Main layout */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 245px;
+  align-items: start;
+  gap: 25px;
+}
+
+.content {
+  display: grid;
+  min-width: 0;
+  gap: 18px;
+}
+
+.section {
+  min-width: 0;
+  padding: clamp(21px, 3vw, 28px);
+  border: 1px solid var(--life-border);
+  border-radius: var(--life-radius);
+  background: linear-gradient(
+    150deg,
+    rgba(17, 27, 46, 0.94),
+    rgba(11, 20, 38, 0.96)
+  );
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.11);
+  scroll-margin-top: 28px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 17px;
+}
+
+.section-index {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 31px;
+  height: 31px;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.07);
+  color: var(--life-accent-soft);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.74rem;
+}
+
+.section h2 {
+  margin: 0;
+  color: #eaf2fc;
+  font-size: 1.2rem;
+  font-weight: 680;
+  letter-spacing: -0.015em;
+  line-height: 1.45;
+}
+
+.section p {
+  margin: 0 0 14px;
+  color: #a4b4ca;
+  font-size: 0.91rem;
+  line-height: 1.95;
+}
+
+.section p:last-child {
+  margin-bottom: 0;
+}
+
+.section strong {
+  color: #dbe9f9;
+  font-weight: 600;
+}
+
+.section code,
+.inline-code {
+  padding: 2px 6px;
+  border: 1px solid rgba(56, 189, 248, 0.12);
+  border-radius: 5px;
+  background: rgba(2, 6, 23, 0.5);
+  color: #9de4fa;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+}
+
+/* Lifecycle diagram */
+
+.flow {
+  display: grid;
+  gap: 0;
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.13);
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.3);
+}
+
+.flow-label {
+  margin-bottom: 15px;
+  color: #6f86a3;
+  font-size: 0.71rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.flow-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.flow-node {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 105px;
+  padding: 10px 13px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 8px;
+  background: rgba(17, 34, 55, 0.88);
+  color: #d5e9fc;
+  font-size: 0.83rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.flow-node.primary {
+  border-color: rgba(94, 234, 212, 0.25);
+  background: rgba(13, 54, 57, 0.32);
+  color: #a7f3e5;
+}
+
+.flow-node.terminal {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: rgba(30, 41, 59, 0.6);
+  color: #c1ccdc;
+}
+
+.flow-arrow {
+  color: #5c86ad;
+  font-size: 1.05rem;
+}
+
+.flow-branches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.flow-branch {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid rgba(148, 163, 184, 0.13);
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.branch-label {
+  display: block;
+  margin-bottom: 9px;
+  color: #7e94b0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.branch-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: #b7c7db;
+  font-size: 0.82rem;
+}
+
+.branch-flow strong {
+  color: #cce9ff;
+  font-weight: 600;
+}
+
+.branch-flow .arrow {
+  color: #5c86ad;
+}
+
+/* Notes */
+
+.note {
+  margin-top: 17px;
+  padding: 13px 15px;
+  border: 1px solid rgba(56, 189, 248, 0.13);
+  border-left: 3px solid var(--life-accent);
+  border-radius: 8px;
+  background: rgba(8, 29, 48, 0.58);
+  color: #a9bed4;
+  font-size: 0.86rem;
+  line-height: 1.9;
+}
+
+.note strong {
+  color: #c8edff;
+}
+
+/* Code panels */
+
+.code-panel {
+  margin: 16px 0;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 10px;
+  background: #020617;
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(15, 23, 42, 0.72);
+  color: #8399b5;
+  font-size: 0.73rem;
+}
+
+.code-header span:last-child {
+  color: #57738f;
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.code-panel pre {
+  margin: 0;
+  padding: 17px;
+  overflow-x: auto;
+  color: #a8dcf7;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.83rem;
+  line-height: 1.85;
+  tab-size: 4;
+  white-space: pre;
+}
+
+.code-panel code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* Process steps */
+
+.steps {
+  display: grid;
+  gap: 0;
+  margin-top: 16px;
+}
+
+.step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 13px;
+  padding-bottom: 22px;
+}
+
+.step:last-child {
+  padding-bottom: 0;
+}
+
+.step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 33px;
+  bottom: 0;
+  left: 16px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    rgba(56, 189, 248, 0.35),
+    rgba(56, 189, 248, 0.05)
+  );
+}
+
+.step-number {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 33px;
+  height: 33px;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 9px;
+  background: #102039;
+  color: #9de4fa;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.step h3 {
+  margin: 2px 0 5px;
+  color: #dce9f8;
+  font-size: 0.96rem;
+  font-weight: 650;
+}
+
+.step p {
+  margin: 0;
+  color: #9eafc6;
+  font-size: 0.86rem;
+}
+
+/* API list */
+
+.api-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 15px;
+}
+
+.api-item {
+  display: grid;
+  grid-template-columns: minmax(155px, 0.85fr) minmax(0, 1.5fr);
+  gap: 14px;
+  align-items: start;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.11);
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.23);
+}
+
+.api-item code {
+  color: #9de4fa;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.api-item span {
+  color: #9eafc6;
+  font-size: 0.84rem;
+  line-height: 1.75;
+}
+
+/* Bullet list */
+
+.feature-list {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feature-list li {
+  position: relative;
+  padding-left: 21px;
+  color: #a4b4ca;
+  font-size: 0.89rem;
+  line-height: 1.85;
+}
+
+.feature-list li::before {
+  content: "";
+  position: absolute;
+  top: 0.78em;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--life-teal);
+  box-shadow: 0 0 9px rgba(94, 234, 212, 0.22);
+}
+
+/* Sidebar */
+
+.sidebar {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 15px;
+  min-width: 0;
+}
+
+.sidebar-box {
+  padding: 19px 18px;
+  border: 1px solid var(--life-border);
+  border-radius: 12px;
+  background: rgba(14, 24, 42, 0.88);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 14px;
+  color: #e1ebf8;
+  font-size: 0.91rem;
+  font-weight: 680;
+}
+
+.sidebar-title::before {
+  content: "";
+  width: 3px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--life-accent);
+}
+
+.toc {
+  display: grid;
+  gap: 3px;
+}
+
+.toc a,
+.related-link {
+  display: block;
+  padding: 7px 9px;
+  border-radius: 6px;
+  color: #9dafc7;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+}
+
+.toc a:hover,
+.related-link:hover {
+  background: rgba(56, 189, 248, 0.07);
+  color: #c3eaff;
+}
+
+.related-links {
+  display: grid;
+  gap: 3px;
+}
+
+.sidebar-note {
+  padding: 15px 16px;
+  border: 1px solid rgba(94, 234, 212, 0.13);
+  border-radius: 11px;
+  background: rgba(8, 39, 42, 0.32);
+}
+
+.sidebar-note h3 {
+  margin: 0 0 7px;
+  color: #a7f3e5;
+  font-size: 0.86rem;
+}
+
+.sidebar-note p {
+  margin: 0;
+  color: #9ab9bc;
+  font-size: 0.8rem;
+  line-height: 1.85;
+}
+
+/* Footer */
+
+.footer {
+  margin-top: 42px;
+  padding-top: 23px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: #8ea3be;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Responsive */
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .sidebar-note {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    width: calc(100% - 28px);
+    padding-top: 28px;
+  }
+
+  .breadcrumb {
+    gap: 7px;
+    margin-bottom: 23px;
+    font-size: 0.78rem;
+  }
+
+  .hero {
+    padding: 27px 21px;
+    margin-bottom: 25px;
+    border-radius: 16px;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero-meta {
+    gap: 7px;
+  }
+
+  .meta-tag {
+    font-size: 0.72rem;
+  }
+
+  .layout {
+    gap: 19px;
+  }
+
+  .section {
+    padding: 20px 17px;
+    border-radius: 12px;
+  }
+
+  .flow {
+    padding: 15px 11px;
+  }
+
+  .flow-main {
+    flex-direction: column;
+  }
+
+  .flow-node {
+    width: min(100%, 220px);
+  }
+
+  .flow-arrow {
+    transform: rotate(90deg);
+  }
+
+  .flow-branches {
+    grid-template-columns: 1fr;
+  }
+
+  .api-item {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-note {
+    grid-column: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 </style>
-
 </head>
-
 
 <body data-header="docs">
 
-
 <main class="page">
 
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/docs/index.html">Docs</a>
+    <span class="separator" aria-hidden="true">/</span>
+    <a href="/docs/modules/index.html">Modules</a>
+    <span class="separator" aria-hidden="true">/</span>
+    <a href="/docs/modules/task/index.html">Task</a>
+    <span class="separator" aria-hidden="true">/</span>
+    <span aria-current="page">Lifecycle</span>
+  </nav>
 
-<nav class="breadcrumb">
-<a href="/docs/index.html">Docs</a> /
-<a href="/docs/modules/index.html">Modules</a> /
-<a href="/docs/modules/task/index.html">Task</a> /
-<span>Lifecycle</span>
-</nav>
+  <header class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">HRTOS / Task Management</div>
 
+      <h1>
+        任务生命周期
+        <span>Task Lifecycle</span>
+      </h1>
 
+      <p class="hero-description">
+        任务生命周期描述任务从创建、参与调度、接受运行控制，
+        到退出与资源回收的管理过程。理解这一过程，
+        有助于区分<strong>任务状态、等待机制与实际资源释放</strong>，
+        并正确使用 HRTOS 的任务管理接口。
+      </p>
 
-<section class="hero">
+      <div class="hero-meta">
+        <span class="meta-tag">Task Management</span>
+        <span class="meta-tag">State Tracking</span>
+        <span class="meta-tag">Resource Cleanup</span>
+      </div>
+    </div>
+  </header>
 
-<span class="hero-label">HRTOS Task</span>
+  <div class="layout">
 
-<h1>任务生命周期（Task Lifecycle）</h1>
+    <div class="content">
 
-<p>
-任务生命周期描述任务从创建、运行、控制到删除回收的完整过程，
-是HRTOS任务管理的基础模型。
-</p>
+      <section class="section" id="overview">
+        <div class="section-heading">
+          <span class="section-index">01</span>
+          <h2>概述</h2>
+        </div>
 
-</section>
+        <p>
+          HRTOS 任务生命周期围绕任务控制信息、任务执行现场及调度状态展开。
+          任务创建后，系统需要保存其入口与运行所需的信息，
+          并在调度条件满足时安排任务执行。
+        </p>
 
+        <p>
+          任务管理与等待机制承担不同职责：Task 模块关注任务的管理与执行状态；
+          Wait 模块处理任务因时间、事件或资源条件而产生的等待行为。
+          两者需要协同工作，但不应简单地视为同一套状态定义。
+        </p>
 
+        <div class="note">
+          <strong>阅读要点：</strong>
+          任务被请求删除、任务停止执行，以及任务占用的资源完成回收，
+          是三个相关但不一定同时发生的事件。
+        </div>
+      </section>
 
-<div class="layout">
+      <section class="section" id="model">
+        <div class="section-heading">
+          <span class="section-index">02</span>
+          <h2>生命周期模型</h2>
+        </div>
 
+        <p>
+          下图用于表达任务管理中的主要阶段，以及运行控制和删除回收两条路径。
+          它是概念流程图，不代表所有任务状态都只能沿单一路径转换。
+        </p>
 
-<div class="content">
+        <div class="flow">
+          <div class="flow-label">Task Lifecycle · Conceptual Flow</div>
 
+          <div class="flow-main" aria-label="任务创建与执行的概念流程">
+            <div class="flow-node">创建请求</div>
+            <span class="flow-arrow" aria-hidden="true">→</span>
+            <div class="flow-node">创建成功</div>
+            <span class="flow-arrow" aria-hidden="true">→</span>
+            <div class="flow-node primary">具备运行条件</div>
+            <span class="flow-arrow" aria-hidden="true">→</span>
+            <div class="flow-node primary">运行中</div>
+          </div>
 
-<section class="section" id="overview">
+          <div class="flow-branches">
+            <div class="flow-branch">
+              <span class="branch-label">运行控制路径</span>
+              <div class="branch-flow">
+                <strong>运行中</strong>
+                <span class="arrow" aria-hidden="true">→</span>
+                <span>暂停 / 挂起</span>
+                <span class="arrow" aria-hidden="true">→</span>
+                <strong>恢复就绪</strong>
+              </div>
+            </div>
 
-<h2>概述</h2>
+            <div class="flow-branch">
+              <span class="branch-label">退出与回收路径</span>
+              <div class="branch-flow">
+                <strong>删除请求</strong>
+                <span class="arrow" aria-hidden="true">→</span>
+                <span>延迟清理</span>
+                <span class="arrow" aria-hidden="true">→</span>
+                <strong>资源回收</strong>
+              </div>
+            </div>
+          </div>
+        </div>
 
-<p>
-HRTOS任务生命周期围绕任务控制信息、任务栈以及调度状态展开。
-每个任务在系统中拥有独立的执行环境，并通过任务管理接口进行控制。
-</p>
+        <div class="note">
+          <strong>关于 WAIT：</strong>
+          WAIT 是等待机制中的概念，不应仅凭等待行为就认定任务进入独立的 Task 生命周期状态。
+          具体状态值及转换条件应以对应版本的状态定义和实现为准。
+        </div>
+      </section>
 
-<p>
-任务模块负责描述任务本身的存在状态，
-而等待机制（Wait）负责描述任务因资源、事件或时间条件产生的阻塞过程。
-</p>
+      <section class="section" id="create">
+        <div class="section-heading">
+          <span class="section-index">03</span>
+          <h2>任务创建</h2>
+        </div>
 
-</section>
+        <p>
+          任务通过 <code>os_task_create()</code> 请求创建。
+          按接口约定，创建过程可能涉及任务 ID 检查、参数校验、
+          优先级配置以及任务执行现场的初始化。
+          实际检查项与资源分配方式以当前版本的接口实现为准。
+        </p>
 
-
-
-<section class="section" id="model">
-
-<h2>生命周期模型</h2>
-
-<p>
-HRTOS任务主要经历以下生命周期阶段：
-</p>
-
-
-<div class="code">
-CREATE
-  ↓
-READY
-  ↓
-RUNNING
-  ↓
-SUSPEND
-  ↓
-READY
-
-
-RUNNING
-  ↓
-DELETE REQUEST
-  ↓
-IDLE CLEANUP
-  ↓
-DEAD
-</div>
-
-
-<div class="note">
-WAIT属于任务运行过程中的等待机制，由Wait模块统一管理，不作为Task生命周期状态。
-</div>
-
-
-</section>
-
-
-
-<section class="section" id="create">
-
-<h2>任务创建</h2>
-
-
-<p>
-任务通过 os_task_create() 注册到系统。
-创建过程中系统完成任务编号检查、优先级检查以及任务栈空间分配。
-</p>
-
-
-<div class="code">
-os_task_create(
+        <div class="code-panel">
+          <div class="code-header">
+            <span>Task Creation API</span>
+            <span>C</span>
+          </div>
+          <pre><code>os_task_create(
     addr,
     id,
     pr,
     sd
-)
-</div>
-
-
-<p>
-创建成功后，系统保存任务入口地址、任务栈信息以及调度属性，
-使任务具备被调度执行的条件。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="running">
-
-<h2>运行与控制</h2>
-
-
-<p>
-任务进入系统后，根据自身优先级参与运行。
-HRTOS支持普通任务与高速任务两类执行单元。
-</p>
-
-
-<div class="code">
-普通任务:
-ID 0 ~ OS_PROCESS_MAX-1
-
-高速任务:
-ID OS_PROCESS_MAX ~ OS_PROCESS_MAX+1
-</div>
-
-
-<p>
-任务运行过程中可以通过任务控制接口主动让出CPU、
-暂停执行或恢复运行。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="delete">
-
-<h2>任务删除机制</h2>
-
-
-<p>
-HRTOS采用删除请求与资源清理分离的方式。
-任务删除不会立即破坏当前执行环境，而是先标记删除请求。
-</p>
-
-
-<div class="code">
-os_task_delete(id)
-
-        ↓
-
-OS_TASK_EVENT[id]
-|
-|-- OS_EVENT_DELETE_REQ
-
-        ↓
-
-IDLE任务检测
-
-        ↓
-
-os_task_cleanup()
-
-        ↓
-
-资源释放
-</div>
-
-
-<p>
-该机制避免运行中的任务立即释放自身资源导致系统状态异常。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="state">
-
-<h2>任务状态查询</h2>
-
-
-<div class="code">
-os_task_get_state(id)
-
-
-返回:
-
-0  删除
-
-1  当前运行
-
-2  就绪
-
-3  挂起
-
-4  最近一次切出任务
-</div>
-
-
-<p>
-状态查询接口用于调试、Shell以及系统运行状态监控。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="api">
-
-<h2>任务生命周期接口</h2>
-
-
-<div class="code">
-os_task_suspend(id)
-
-os_task_resume(id)
-
-os_task_delete(id)
-
-os_task_exit()
-
-os_task_yield()
-
-os_task_self()
-</div>
-
-
-<p>
-这些接口提供任务暂停、恢复、退出以及主动调度控制能力。
-</p>
-
-
-</section>
-
-
-
-<section class="section">
-
-<h2>生命周期特点</h2>
-
-
-<ul style="margin:0;padding-left:18px;color:var(--muted);">
-
-<li>任务状态可查询、可追踪</li>
-
-<li>删除采用延迟清理机制，提高系统稳定性</li>
-
-<li>任务栈与上下文独立管理</li>
-
-<li>支持普通任务和高速任务两种执行模型</li>
-
-<li>等待机制与任务生命周期分离设计</li>
-
-</ul>
-
-
-<div class="note">
-生命周期设计目标：保证任务状态变化可控、资源释放安全、系统长期稳定运行。
-</div>
-
-
-</section>
-
-
-
-</div>
-
-
-
-<aside class="sidebar">
-
-
-<div class="box">
-
-<h3>目录</h3>
-
-<a href="#overview">概述</a>
-<a href="#model">生命周期模型</a>
-<a href="#create">任务创建</a>
-<a href="#running">运行控制</a>
-<a href="#delete">删除机制</a>
-<a href="#state">状态查询</a>
-<a href="#api">接口</a>
-
-</div>
-
-
-<div class="box">
-
-<h3>相关模块</h3>
-
-<a href="/docs/modules/task/index.html">Task</a>
-
-<a href="/docs/modules/wait/index.html">Wait</a>
-
-
-
-</div>
-
-
-</aside>
-
-
-</div>
-
-
-<footer class="footer">
-© 2017–2026 HRTOS. Embedded RTOS documentation.
-</footer>
-
+);</code></pre>
+        </div>
+
+        <p>
+          创建成功后，系统需要保留任务入口、执行现场及调度所需的信息，
+          使该任务能够在满足调度条件时运行。
+          调用方应检查创建结果，并确保传入参数符合 API 的定义。
+        </p>
+
+        <div class="note">
+          示例中的参数名用于说明接口形式。参数类型、返回值、栈配置方式和失败条件，
+          应以 HRTOS 当前版本的头文件及 API 文档为准。
+        </div>
+      </section>
+
+      <section class="section" id="running">
+        <div class="section-heading">
+          <span class="section-index">04</span>
+          <h2>运行与控制</h2>
+        </div>
+
+        <p>
+          创建完成并满足运行条件的任务可以参与调度。
+          调度器依据当前的任务状态、优先级规则和调度模式决定后续执行实体。
+          任务 ID 用于标识任务，不应与任务优先级混为一谈。
+        </p>
+
+        <div class="code-panel">
+          <div class="code-header">
+            <span>Task ID Ranges · Configuration Dependent</span>
+            <span>C</span>
+          </div>
+          <pre><code>普通任务：
+ID 0 ~ OS_PROCESS_MAX - 1
+
+高速任务：
+ID OS_PROCESS_MAX
+   ~ OS_PROCESS_MAX + 1</code></pre>
+        </div>
+
+        <p>
+          上述编号范围依赖相关配置。任务运行过程中，应用可以按照 API 约定
+          请求暂停、恢复或主动让出执行权。接口调用是否立即触发切换，
+          还取决于当前执行上下文与调度规则。
+        </p>
+
+        <div class="note">
+          高速任务与普通任务在执行现场管理上可能存在差异。
+          不应仅根据任务 ID 推断寄存器组、可用 API 或中断行为；
+          这些细节应参考任务优先级与上下文切换文档。
+        </div>
+      </section>
+
+      <section class="section" id="delete">
+        <div class="section-heading">
+          <span class="section-index">05</span>
+          <h2>任务删除与资源回收</h2>
+        </div>
+
+        <p>
+          HRTOS 的任务删除设计涉及删除请求、执行控制和资源清理。
+          对于采用延迟回收机制的实现，发出删除请求并不意味着
+          所有相关资源会在该调用返回前立即释放。
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <span class="step-number">01</span>
+            <div>
+              <h3>发出删除请求</h3>
+              <p>
+                通过 <code>os_task_delete(id)</code> 请求删除目标任务。
+                调用是否成功以及目标任务的允许范围，应检查实际 API 约定。
+              </p>
+            </div>
+          </div>
+
+          <div class="step">
+            <span class="step-number">02</span>
+            <div>
+              <h3>记录待处理状态</h3>
+              <p>
+                若当前实现使用删除请求标志或事件，系统会记录待处理请求，
+                使后续执行路径能够识别需要清理的任务。
+              </p>
+            </div>
+          </div>
+
+          <div class="step">
+            <span class="step-number">03</span>
+            <div>
+              <h3>进入安全清理路径</h3>
+              <p>
+                系统在符合实现约束的时机处理删除任务，
+                避免在仍依赖当前执行现场时过早释放相关资源。
+              </p>
+            </div>
+          </div>
+
+          <div class="step">
+            <span class="step-number">04</span>
+            <div>
+              <h3>完成资源回收</h3>
+              <p>
+                按照当前内核的清理逻辑释放或重置相应资源，
+                并更新任务管理信息。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-header">
+            <span>Conceptual Cleanup Flow</span>
+            <span>FLOW</span>
+          </div>
+          <pre><code>os_task_delete(id)
+        |
+        v
+记录删除请求
+        |
+        v
+由内核在安全时机处理
+        |
+        v
+任务清理路径
+        |
+        v
+资源回收与管理信息更新</code></pre>
+        </div>
+
+        <div class="note">
+          <strong>实现细节提示：</strong>
+          只有在当前版本源码确认使用相应符号后，才应将
+          <code>OS_TASK_EVENT</code>、<code>OS_EVENT_DELETE_REQ</code>
+          或 <code>os_task_cleanup()</code> 当作正式实现名称。
+          概念流程不能替代对实际内核代码的核对。
+        </div>
+      </section>
+
+      <section class="section" id="state">
+        <div class="section-heading">
+          <span class="section-index">06</span>
+          <h2>任务状态查询</h2>
+        </div>
+
+        <p>
+          任务状态查询接口可用于 Shell、调试程序和运行状态监控。
+          它帮助调用方了解任务当前或最近的执行情况，
+          但查询结果的具体语义取决于接口定义。
+        </p>
+
+        <div class="code-panel">
+          <div class="code-header">
+            <span>Task State Query</span>
+            <span>C</span>
+          </div>
+          <pre><code>os_task_get_state(id)</code></pre>
+        </div>
+
+        <p>
+          如果当前版本使用数字编码表示任务状态，
+          应以对应头文件或 API 文档中的枚举定义为准。
+          特别需要区分“当前运行任务”“就绪任务”“挂起任务”
+          与“最近一次切出的任务”等不同含义。
+        </p>
+
+        <div class="note">
+          不建议在没有核对当前版本状态定义的情况下，
+          将固定数字直接写入正式文档作为通用状态表。
+          如果这些数值来自特定版本，应明确标注适用版本与返回值语义。
+        </div>
+      </section>
+
+      <section class="section" id="api">
+        <div class="section-heading">
+          <span class="section-index">07</span>
+          <h2>任务生命周期相关接口</h2>
+        </div>
+
+        <p>
+          以下接口覆盖常见的任务控制操作。具体参数、返回值、
+          可调用上下文及调用限制应以当前版本的 API 定义为准。
+        </p>
+
+        <div class="api-list">
+          <div class="api-item">
+            <code>os_task_suspend(id)</code>
+            <span>请求暂停或挂起指定任务。</span>
+          </div>
+
+          <div class="api-item">
+            <code>os_task_resume(id)</code>
+            <span>请求恢复符合条件的任务。</span>
+          </div>
+
+          <div class="api-item">
+            <code>os_task_delete(id)</code>
+            <span>请求删除指定任务。</span>
+          </div>
+
+          <div class="api-item">
+            <code>os_task_exit()</code>
+            <span>请求当前任务退出；具体退出及回收语义以实现为准。</span>
+          </div>
+
+          <div class="api-item">
+            <code>os_task_yield()</code>
+            <span>主动让出执行机会；实际调度效果由调度策略决定。</span>
+          </div>
+
+          <div class="api-item">
+            <code>os_task_self()</code>
+            <span>获取当前任务标识，具体返回类型以 API 定义为准。</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="characteristics">
+        <div class="section-heading">
+          <span class="section-index">08</span>
+          <h2>设计要点</h2>
+        </div>
+
+        <ul class="feature-list">
+          <li>任务标识、任务状态与优先级承担不同职责，应分别理解。</li>
+          <li>任务控制接口需要遵循内核规定的调用上下文与状态约束。</li>
+          <li>任务执行现场与任务资源的生命周期相关，但并不等同于任务状态。</li>
+          <li>如果采用延迟删除与回收机制，应区分删除请求和实际回收完成。</li>
+          <li>等待机制与任务管理相互协作，但不应在文档中混淆两者的状态定义。</li>
+          <li>长时间运行稳定性依赖正确的状态转换、现场管理和资源回收。</li>
+        </ul>
+
+        <div class="note">
+          生命周期机制的核心目标，是使任务管理过程可理解、可追踪，
+          并让任务退出与资源回收遵循内核定义的安全条件。
+        </div>
+      </section>
+
+    </div>
+
+    <aside class="sidebar" aria-label="文档导航">
+
+      <nav class="sidebar-box" aria-label="页面目录">
+        <h2 class="sidebar-title">页面目录</h2>
+        <div class="toc">
+          <a href="#overview">01　概述</a>
+          <a href="#model">02　生命周期模型</a>
+          <a href="#create">03　任务创建</a>
+          <a href="#running">04　运行与控制</a>
+          <a href="#delete">05　删除与资源回收</a>
+          <a href="#state">06　状态查询</a>
+          <a href="#api">07　相关接口</a>
+          <a href="#characteristics">08　设计要点</a>
+        </div>
+      </nav>
+
+      <nav class="sidebar-box" aria-label="相关文档">
+        <h2 class="sidebar-title">相关文档</h2>
+        <div class="related-links">
+          <a class="related-link" href="/docs/modules/task/index.html">Task 模块总览 →</a>
+          <a class="related-link" href="/docs/modules/task/state-model.html">任务状态模型 →</a>
+          <a class="related-link" href="/docs/modules/task/priority.html">任务优先级 →</a>
+          <a class="related-link" href="/docs/modules/task/context-switch.html">上下文切换 →</a>
+          <a class="related-link" href="/docs/modules/wait/index.html">Wait 等待机制 →</a>
+          <a class="related-link" href="/docs/modules/scheduler/index.html">Scheduler 调度器 →</a>
+        </div>
+      </nav>
+
+      <div class="sidebar-note">
+        <h3>Implementation Note</h3>
+        <p>
+          概念模型用于帮助理解机制。
+          对状态编号、事件标志、清理函数和调用限制的描述，
+          应以对应 HRTOS 版本的源码与接口定义为准。
+        </p>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. Embedded RTOS documentation.
+  </footer>
 
 </main>
-
 
 <script src="https://hrtos.com/header.js"></script>
 
 </body>
-
 </html>

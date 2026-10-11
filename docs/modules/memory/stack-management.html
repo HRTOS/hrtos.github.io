@@ -1,245 +1,876 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>栈管理（Stack Management） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS栈管理机制，用于任务栈分配、运行时监测与安全保护。在8051无MPU环境下，通过软件检测与边界约束实现栈安全与任务隔离。" />
+<title>栈管理（Stack Management） | HRTOS 模块文档</title>
+<meta name="description" content="HRTOS 栈管理技术文档：了解 8051 SP 寄存器、任务栈布局、运行时边界检查、栈溢出处理与中断栈使用约束，区分软件检测与硬件内存保护的能力边界。" />
+<meta name="theme-color" content="#080f1d" />
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
 :root {
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.16);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+  --sm-bg: #080f1d;
+  --sm-panel: rgba(16, 28, 47, .84);
+  --sm-text: #e7eefb;
+  --sm-muted: #9aabc4;
+  --sm-accent: #55d5ff;
+  --sm-accent-soft: #a5eaff;
+  --sm-border: rgba(148, 174, 208, .16);
+  --sm-radius: 18px;
+  --sm-shadow: 0 22px 60px rgba(0, 0, 0, .22);
+  color-scheme: dark;
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+* {
+  box-sizing: border-box;
 }
 
-.page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-  display:grid;
-  gap:36px;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
 }
 
-.breadcrumb{
-  color:var(--muted);
-  font-size:.92rem;
+body {
+  margin: 0;
+  color: var(--sm-text);
+  background:
+    radial-gradient(ellipse at 12% 8%, rgba(14, 116, 144, .13), transparent 34%),
+    radial-gradient(ellipse at 92% 26%, rgba(59, 130, 246, .10), transparent 30%),
+    var(--sm-bg);
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
 }
 
-.breadcrumb a{color:#7dd3fc;}
-
-.hero h1{
-  margin:0 0 12px;
-  font-size:clamp(2.2rem,5vw,3.4rem);
+a {
+  color: inherit;
 }
 
-.hero p{
-  margin:0;
-  color:var(--muted);
-  max-width:900px;
+.page {
+  width: min(1160px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 92px 0 64px;
 }
 
-.tag{
-  display:inline-block;
-  margin-top:14px;
-  padding:6px 12px;
-  border:1px solid var(--border);
-  border-radius:999px;
-  color:#bae6fd;
-  font-size:.85rem;
+/* Breadcrumb */
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 27px;
+  color: #7f93af;
+  font-size: .86rem;
 }
 
-/* layout */
-.layout{
-  display:grid;
-  grid-template-columns: 1fr 260px;
-  gap:28px;
-  align-items:stretch;
+.breadcrumb a {
+  color: #a9c8e9;
+  text-decoration: none;
+  transition: color .2s ease;
 }
 
-.content{
-  display:grid;
-  gap:22px;
+.breadcrumb a:hover {
+  color: var(--sm-accent);
 }
 
-.section{
-  padding:22px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.55);
-  box-shadow:var(--shadow);
+.breadcrumb .separator {
+  color: #4d607b;
 }
 
-.section h2{
-  margin:0 0 12px;
-  font-size:1.25rem;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
+.breadcrumb .current {
+  color: #dbe7f7;
 }
 
-.section p{
-  margin:0 0 10px;
-  color:var(--muted);
+/* Hero */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 54px);
+  margin-bottom: 25px;
+  border: 1px solid rgba(111, 190, 232, .24);
+  border-radius: 26px;
+  background:
+    radial-gradient(ellipse at 87% 13%, rgba(56, 189, 248, .15), transparent 36%),
+    linear-gradient(125deg, rgba(17, 36, 59, .98), rgba(9, 19, 35, .97) 68%);
+  box-shadow: var(--sm-shadow);
 }
 
-.code{
-  margin-top:12px;
-  background:#020617;
-  border:1px solid rgba(56,189,248,.15);
-  padding:14px;
-  border-radius:8px;
-  font-family:Consolas,monospace;
-  font-size:.9rem;
-  color:#7dd3fc;
-  white-space:pre-wrap;
+.hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(85, 213, 255, .8), transparent);
 }
 
-.block{
-  margin-top:14px;
-  padding:14px;
-  border-left:3px solid #38bdf8;
-  background:rgba(15,23,42,.6);
-  border-radius:8px;
-  color:var(--muted);
+.hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 310px;
+  height: 310px;
+  right: -125px;
+  bottom: -190px;
+  border: 1px solid rgba(85, 213, 255, .13);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 32px rgba(85, 213, 255, .025),
+    0 0 0 64px rgba(85, 213, 255, .02);
+  pointer-events: none;
 }
 
-/* sidebar */
-.sidebar{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
+.hero-topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
 }
 
-.box{
-  flex:1;
-  padding:16px;
-  border:1px solid var(--border);
-  border-radius:10px;
-  background:rgba(30,41,59,.5);
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 11px;
+  border: 1px solid rgba(85, 213, 255, .28);
+  border-radius: 999px;
+  color: var(--sm-accent-soft);
+  background: rgba(8, 30, 49, .65);
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
 }
 
-.box h3{
-  margin:0 0 10px;
-  font-size:0.95rem;
+.hero-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sm-accent);
+  box-shadow: 0 0 12px rgba(85, 213, 255, .8);
 }
 
-.box a{
-  display:block;
-  margin-bottom:8px;
-  color:#7dd3fc;
-  font-size:0.9rem;
+.hero-index {
+  color: #7f95b2;
+  font-size: .79rem;
+  letter-spacing: .12em;
 }
 
-/* footer */
-.footer{
-  text-align:center;
-  color:#8ea3be;
-  font-size:.9rem;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding-top:18px;
+.hero h1 {
+  max-width: 850px;
+  margin: 0 0 19px;
+  color: #f3f8ff;
+  font-size: clamp(2rem, 5vw, 3.55rem);
+  font-weight: 750;
+  letter-spacing: -.045em;
+  line-height: 1.18;
 }
 
-@media(max-width:1000px){
-  .layout{grid-template-columns:1fr;}
+.hero h1 span {
+  color: var(--sm-accent);
+}
+
+.hero-description {
+  max-width: 850px;
+  margin: 0;
+  color: #a8bad2;
+  font-size: clamp(.98rem, 1.5vw, 1.08rem);
+  line-height: 1.95;
+}
+
+.hero-description strong {
+  color: #e0edfb;
+  font-weight: 600;
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 25px;
+}
+
+.hero-tag {
+  padding: 5px 10px;
+  border: 1px solid rgba(148, 174, 208, .17);
+  border-radius: 8px;
+  color: #b6c8de;
+  background: rgba(5, 15, 29, .38);
+  font-size: .79rem;
+}
+
+/* Return link */
+
+.return-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 38px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #b5c9e3;
+  font-size: .88rem;
+  text-decoration: none;
+  transition: color .2s ease, transform .2s ease;
+}
+
+.back-link:hover {
+  color: var(--sm-accent);
+  transform: translateX(-3px);
+}
+
+.return-note {
+  color: #7187a4;
+  font-size: .8rem;
+}
+
+/* Main layout */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 25px;
+  align-items: start;
+}
+
+.content {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.section {
+  min-width: 0;
+  padding: clamp(21px, 3vw, 30px);
+  border: 1px solid var(--sm-border);
+  border-radius: var(--sm-radius);
+  background: linear-gradient(145deg, rgba(17, 31, 51, .91), rgba(10, 21, 37, .94));
+  box-shadow: 0 14px 38px rgba(0, 0, 0, .12);
+  scroll-margin-top: 100px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 21px;
+}
+
+.section-number {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(85, 213, 255, .23);
+  border-radius: 12px;
+  color: var(--sm-accent);
+  background: linear-gradient(145deg, rgba(21, 74, 100, .4), rgba(11, 27, 46, .8));
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.section-heading h2 {
+  margin: 0 0 5px;
+  color: #edf5ff;
+  font-size: clamp(1.2rem, 2.4vw, 1.48rem);
+  letter-spacing: -.025em;
+  line-height: 1.45;
+}
+
+.section-heading p {
+  margin: 0;
+  color: #91a5bf;
+  font-size: .86rem;
+}
+
+.section p {
+  margin: 0 0 13px;
+  color: var(--sm-muted);
+  font-size: .92rem;
+}
+
+.section p:last-child {
+  margin-bottom: 0;
+}
+
+/* Stack model */
+
+.stack-visual {
+  margin-top: 22px;
+  padding: 21px;
+  border: 1px solid rgba(85, 213, 255, .16);
+  border-radius: 14px;
+  background: rgba(5, 15, 29, .48);
+}
+
+.stack-visual-title {
+  margin-bottom: 17px;
+  color: #cbdcf0;
+  font-size: .84rem;
+  font-weight: 700;
+}
+
+.stack-map {
+  display: grid;
+  gap: 7px;
+}
+
+.stack-region {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 174, 208, .15);
+  border-radius: 9px;
+  background: rgba(17, 31, 51, .78);
+}
+
+.stack-region strong {
+  color: #dce9f9;
+  font-size: .83rem;
+}
+
+.stack-region span {
+  color: #8fa5bf;
+  font-size: .77rem;
+  text-align: right;
+}
+
+.stack-region.reserved {
+  border-color: rgba(85, 213, 255, .25);
+  background: rgba(17, 65, 88, .28);
+}
+
+.stack-region.warning {
+  border-color: rgba(251, 191, 36, .24);
+  background: rgba(120, 75, 13, .13);
+}
+
+.stack-direction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 5px;
+  color: var(--sm-accent);
+  font-size: .78rem;
+}
+
+.stack-direction .line {
+  width: 48px;
+  height: 1px;
+  background: rgba(85, 213, 255, .4);
+}
+
+.stack-caption {
+  margin-top: 14px;
+  color: #8399b4;
+  font-size: .78rem;
+  line-height: 1.7;
+}
+
+/* Code panels */
+
+.code-panel {
+  overflow-x: auto;
+  margin-top: 17px;
+  padding: 19px 20px;
+  border: 1px solid rgba(85, 213, 255, .16);
+  border-radius: 12px;
+  background: #060d19;
+}
+
+.code-label {
+  display: block;
+  margin-bottom: 11px;
+  color: #7e9ab9;
+  font-size: .72rem;
+  font-weight: 750;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.code-panel pre {
+  margin: 0;
+  color: #b9e9ff;
+  font-family: Consolas, "Cascadia Code", monospace;
+  font-size: .83rem;
+  line-height: 1.9;
+  white-space: pre;
+}
+
+.note {
+  display: flex;
+  gap: 13px;
+  margin-top: 19px;
+  padding: 16px 17px;
+  border: 1px solid rgba(85, 213, 255, .16);
+  border-left: 3px solid var(--sm-accent);
+  border-radius: 10px;
+  background: rgba(13, 43, 61, .32);
+}
+
+.note-symbol {
+  flex: 0 0 auto;
+  color: var(--sm-accent);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.note p {
+  margin: 0;
+  color: #a9bfd6;
+  font-size: .86rem;
+}
+
+.note strong {
+  color: #e1effc;
+}
+
+/* Risk grid */
+
+.risk-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  margin-top: 20px;
+}
+
+.risk-card {
+  padding: 18px;
+  border: 1px solid rgba(148, 174, 208, .14);
+  border-radius: 13px;
+  background: rgba(5, 15, 29, .4);
+}
+
+.risk-card h3 {
+  margin: 0 0 7px;
+  color: #e0ecfa;
+  font-size: .93rem;
+}
+
+.risk-card p {
+  margin: 0;
+  color: #91a5bf;
+  font-size: .83rem;
+}
+
+/* Flow */
+
+.process {
+  display: grid;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.process-step {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  padding: 13px 15px;
+  border: 1px solid rgba(148, 174, 208, .14);
+  border-radius: 11px;
+  background: rgba(5, 15, 29, .4);
+}
+
+.process-step .step {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--sm-accent-soft);
+  background: rgba(56, 189, 248, .12);
+  font-size: .77rem;
+  font-weight: 800;
+}
+
+.process-step strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #dce9f9;
+  font-size: .88rem;
+}
+
+.process-step span:last-child {
+  display: block;
+  color: #8fa4bf;
+  font-size: .81rem;
+}
+
+.process-arrow {
+  margin: -7px 0 -7px 27px;
+  color: #52718e;
+  font-size: .9rem;
+  line-height: 1.2;
+}
+
+/* Sidebar */
+
+.sidebar {
+  position: sticky;
+  top: 90px;
+  display: grid;
+  gap: 13px;
+  min-width: 0;
+}
+
+.side-box {
+  padding: 18px;
+  border: 1px solid var(--sm-border);
+  border-radius: 15px;
+  background: rgba(13, 25, 42, .83);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .1);
+}
+
+.side-box h3 {
+  margin: 0 0 13px;
+  color: #e1ecfb;
+  font-size: .91rem;
+}
+
+.side-links {
+  display: grid;
+  gap: 4px;
+}
+
+.side-links a {
+  display: block;
+  padding: 7px 9px;
+  border-radius: 8px;
+  color: #93a8c3;
+  font-size: .82rem;
+  text-decoration: none;
+  transition: color .2s ease, background .2s ease;
+}
+
+.side-links a:hover {
+  color: var(--sm-accent-soft);
+  background: rgba(56, 189, 248, .08);
+}
+
+.side-divider {
+  height: 1px;
+  margin: 14px 0;
+  background: rgba(148, 174, 208, .12);
+}
+
+.side-note {
+  margin: 0;
+  color: #8197b2;
+  font-size: .79rem;
+  line-height: 1.75;
+}
+
+/* Footer */
+
+.footer {
+  margin-top: 48px;
+  padding-top: 25px;
+  border-top: 1px solid rgba(148, 174, 208, .14);
+  color: #7489a5;
+  font-size: .82rem;
+  text-align: center;
+}
+
+.footer p {
+  margin: 0;
+}
+
+.footer .footer-sub {
+  margin-top: 5px;
+  color: #536a86;
+  font-size: .76rem;
+}
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sidebar .side-box:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .page {
+    width: min(100% - 28px, 1160px);
+    padding-top: 82px;
+    padding-bottom: 40px;
+  }
+
+  .hero {
+    padding: 27px 22px;
+    border-radius: 20px;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.85rem, 8.5vw, 2.6rem);
+  }
+
+  .return-row {
+    margin-bottom: 28px;
+  }
+
+  .return-note {
+    display: none;
+  }
+
+  .section {
+    padding: 21px 18px;
+  }
+
+  .sidebar,
+  .risk-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar .side-box:first-child {
+    grid-column: auto;
+  }
+
+  .section-heading {
+    gap: 11px;
+  }
+
+  .section-number {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .code-panel {
+    padding: 15px;
+  }
+
+  .stack-visual {
+    padding: 15px;
+  }
+
+  .stack-region {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .stack-region span {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 </style>
 </head>
 
-<body>
-
+<body data-header="docs">
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/memory/index.html">Memory</a> /
-    <span>Stack Management</span>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/index.html">系统模块</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/memory/index.html">内存管理</a>
+    <span class="separator">/</span>
+    <span class="current" aria-current="page">栈管理</span>
   </nav>
 
-  <section class="hero">
-    <h1>栈管理（Stack Management）</h1>
-    <p>
-      HRTOS在8051等无硬件内存保护的架构中，栈安全不依赖MPU/MMU，
-      而是通过边界约束、运行时检测与内核进入点校验共同实现。
+  <header class="hero">
+    <div class="hero-topline">
+      <span class="hero-label">HRTOS · Stack Management</span>
+      <span class="hero-index">MEMORY / STACK</span>
+    </div>
+
+    <h1>栈管理<br><span>Stack Management</span></h1>
+
+    <p class="hero-description">
+      栈空间承载函数调用、局部数据和部分执行现场，其使用边界直接关系到系统可靠性。
+      本页从 <strong>8051 SP 寄存器、任务栈布局、运行时边界检查与异常处理</strong> 出发，
+      说明软件检测能够覆盖哪些风险，以及它无法替代哪些硬件保护能力。
     </p>
-    <span class="tag">Task Isolation · Stack Safety · Memory Pool Guard</span>
-  </section>
+
+    <div class="hero-tags">
+      <span class="hero-tag">SP 寄存器</span>
+      <span class="hero-tag">任务栈</span>
+      <span class="hero-tag">中断现场</span>
+      <span class="hero-tag">边界检查</span>
+      <span class="hero-tag">溢出处理</span>
+    </div>
+  </header>
+
+  <div class="return-row">
+    <a class="back-link" href="/docs/modules/memory/index.html">
+      <span aria-hidden="true">←</span>
+      返回内存管理
+    </a>
+    <span class="return-note">从栈布局到运行时风险控制</span>
+  </div>
 
   <div class="layout">
 
     <div class="content">
 
       <section class="section" id="overview">
-        <h2>① 概述：无硬件保护下的栈模型</h2>
+        <div class="section-heading">
+          <span class="section-number">01</span>
+          <div>
+            <h2>栈模型与 8051 的约束</h2>
+            <p>栈不仅是任务资源，也会受到调用深度与中断执行的共同影响。</p>
+          </div>
+        </div>
+
         <p>
-          栈用于保存函数调用、任务上下文与中断现场，在8051架构中，
-          SP寄存器完全由软件控制，没有任何硬件边界保护。
-        </p>
-        <p>
-          因此栈安全依赖三层机制：任务栈边界注册、内核进入检测、
-          以及运行时溢出回调机制。
+          在经典 8051 架构中，SP（Stack Pointer）用于指示当前栈顶位置。
+          典型 PUSH 操作会先递增 SP，再将数据写入新栈顶位置；
+          因此，分析栈使用情况时，必须结合具体指令行为、内存区域和初始 SP 值。
         </p>
 
-        <div class="block">
-          核心思想：<br>
-          不依赖硬件隔离，而依赖“规则 + 检测 + 约束”
+        <p>
+          HRTOS 的任务栈、内核使用栈和中断执行期间的栈需求，应根据实际内存布局分别分析。
+          如果多个执行路径共享某段栈空间，或中断期间仍会继续压栈，就必须把这些路径的叠加使用量纳入预算。
+        </p>
+
+        <div class="stack-visual">
+          <div class="stack-visual-title">栈空间示意图 · 逻辑布局，不代表实际地址比例</div>
+          <div class="stack-map">
+            <div class="stack-region reserved">
+              <strong>已规划的栈空间</strong>
+              <span>由系统配置与内存布局决定</span>
+            </div>
+            <div class="stack-direction">
+              <span class="line"></span>
+              <span>栈顶随压栈操作变化</span>
+              <span class="line"></span>
+            </div>
+            <div class="stack-region">
+              <strong>当前使用区域</strong>
+              <span>函数调用、现场保存等</span>
+            </div>
+            <div class="stack-region warning">
+              <strong>边界风险区域</strong>
+              <span>具体位置须按真实边界定义判断</span>
+            </div>
+          </div>
+          <div class="stack-caption">
+            注意：示意图不代表所有栈都采用相同的地址方向或边界定义。
+            应以目标芯片、HRTOS 的栈分配实现和实际检查代码为准。
+          </div>
+        </div>
+
+        <div class="note">
+          <span class="note-symbol" aria-hidden="true">i</span>
+          <p>
+            <strong>关键概念：</strong>
+            栈容量规划、栈使用量监测和栈越界拦截是三种不同能力。
+            即使系统能检查某个时刻的 SP，也不代表它能够发现所有已经发生的越界写入。
+          </p>
         </div>
       </section>
 
       <section class="section" id="mechanism">
-        <h2>② 工作机制：进入内核时的SP检测</h2>
-
-        <p>
-          每次进入内核调度或关键系统路径时，
-          系统会检查当前SP是否仍在任务注册的栈范围内。
-        </p>
-
-        <div class="code">
-检测逻辑：
-- SP >= stack_base
-- SP <= stack_limit
-- 否则触发 overflow handler
+        <div class="section-heading">
+          <span class="section-number">02</span>
+          <div>
+            <h2>SP 边界检测</h2>
+            <p>检查条件必须与栈边界的定义和实际栈增长方式一致。</p>
+          </div>
         </div>
 
         <p>
-          该机制属于“运行时边界校验”，属于轻量级安全模型，
-          不影响实时性。
+          软件可以在任务切换、进入内核或其他指定检查点读取 SP，
+          并将其与该执行路径对应的有效栈范围进行比较。
+          但检查是否存在、在哪些路径执行，以及比较的是哪个栈区间，
+          都必须由实际实现确认。
         </p>
 
-        <div class="block">
-          设计目标：<br>
-          在无MPU环境中，最大程度降低“静默栈破坏”
+        
+<div class="code-panel">
+  <span class="code-label">Stack Boundary Check · 检查原理</span>
+  <pre><code>读取当前 SP
+确定需要检查的栈区域
+依据该区域的边界定义执行检查
+
+若检测到栈异常：
+    调用 HRTOS 栈溢出处理路径</code></pre>
+</div>
+
+<p>
+  经典 8051 的栈通常随压栈操作向高地址方向增长，
+  但边界比较条件必须与实际栈区间、初始 SP、检查时机和具体实现一致。
+  HRTOS 的具体检查逻辑应以其真实实现为准，不宜用未经核实的变量名和比较式代替。
+</p>
+
+
+        <div class="note">
+          <span class="note-symbol" aria-hidden="true">!</span>
+          <p>
+            <strong>实时性说明：</strong>
+            边界检查可能带来额外指令开销。
+            其时间成本应通过目标编译器生成的汇编或实测确认，
+            不宜在没有测量的情况下断言“完全不影响实时性”。
+          </p>
         </div>
       </section>
 
-      <section class="section" id="overflow">
-        <h2>③ 栈溢出处理机制（Slab Overflow Hook）</h2>
+      
+<section class="section" id="overflow">
+  <div class="section-heading">
+    <span class="section-number">03</span>
+    <div>
+      <h2>栈溢出与异常处理</h2>
+      <p>通过溢出处理入口与可注册回调，建立异常发生后的处理路径。</p>
+    </div>
+  </div>
 
-        <p>
-          当检测到SP越界或内存池栈破坏时，
-          系统不会直接崩溃，而是触发统一溢出入口。
-        </p>
+  <p>
+    HRTOS 提供 <code>os_slab_overflow()</code> 栈溢出处理函数、
+    <code>os_slab_overflow_register()</code> 回调注册接口，以及
+    <code>g_slab_overflow_hook</code> 回调函数指针。
+    应用可以通过注册回调接入自定义处理逻辑，使异常处理与具体应用需求相结合。
+  </p>
 
-        <div class="code">
-void (*g_slab_overflow_hook)(void);
+  <div class="code-panel">
+    <span class="code-label">HRTOS API · 栈溢出处理</span>
+    <pre><code>void (*g_slab_overflow_hook)(void);
 
 void os_slab_overflow(void)
 {
@@ -249,96 +880,281 @@ void os_slab_overflow(void)
     }
     else
     {
-        while (1);   // 默认安全停机
+        while (1);
     }
 }
+
+void os_slab_overflow_register(void (*hook)(void));</code></pre>
+  </div>
+
+  <p>
+    当回调已经注册时，<code>os_slab_overflow()</code>
+    会调用 <code>g_slab_overflow_hook</code> 指向的处理函数；
+    未注册回调时，上述实现进入循环停机路径。
+    <code>os_slab_overflow_register()</code> 用于注册处理回调。
+  </p>
+
+  <div class="risk-grid">
+    <article class="risk-card">
+      <h3>自定义故障处理</h3>
+      <p>
+        可以结合应用需求设计故障记录、状态标记或其他处理动作，
+        并评估这些操作在异常发生时是否仍然安全。
+      </p>
+    </article>
+    <article class="risk-card">
+      <h3>未注册回调时的行为</h3>
+      <p>
+        当前展示的实现采用循环停机路径。
+        这可以避免在该路径中继续执行普通业务流程，
+        但不等同于自动复位或硬件级故障隔离。
+      </p>
+    </article>
+  </div>
+
+  <div class="note">
+    <span class="note-symbol" aria-hidden="true">!</span>
+    <p>
+      <strong>异常处理注意事项：</strong>
+      栈溢出可能已经破坏当前执行环境。
+      回调逻辑应尽量精简，避免依赖可能受损的栈、复杂函数调用或未经保护的共享状态。
+      具体回调执行上下文与可调用范围，应结合 HRTOS 的实际调用路径设计。
+    </p>
+  </div>
+</section>
+
+
+      <section class="section" id="budget">
+        <div class="section-heading">
+          <span class="section-number">04</span>
+          <div>
+            <h2>栈容量预算与高水位</h2>
+            <p>把任务调用、中断使用和系统保留空间放在同一张资源账本中分析。</p>
+          </div>
         </div>
 
         <p>
-          用户可以注册自己的处理函数，用于日志记录、复位或降级处理。
+          栈需求不仅来自任务代码本身。函数调用层数、局部变量、编译器生成的临时数据、
+          中断现场保存以及嵌套执行路径，都可能影响峰值使用量。
+          对 8051 这类资源受限平台，容量预算应结合实际编译结果和执行路径进行。
         </p>
 
-        <div class="code">
-void os_slab_overflow_register(void (*hook)(void));
+        <div class="code-panel">
+          <span class="code-label">Stack Budget · 分析框架</span>
+          <pre>栈需求分析应覆盖：
+
+1. 任务调用路径的最大使用量
+2. 内核调用与上下文切换的额外使用量
+3. 中断入口、现场保存及嵌套中断
+4. 编译器生成代码带来的栈使用
+5. 必要的余量与异常处理路径</pre>
         </div>
 
-        <div class="block">
-          该机制的本质：<br>
-          “让系统失控点变为可控入口”
+        <p>
+          高水位（High-Water Mark）通常通过预填充标记并在运行后检查残留区域，
+          或通过其他监测方法估算历史最大栈使用量。
+          这种方法能否用于某个 HRTOS 栈区，取决于该区域是否可安全初始化和扫描，
+          以及监测代码是否覆盖全部相关执行路径。
+        </p>
+
+        <div class="note">
+          <span class="note-symbol" aria-hidden="true">✓</span>
+          <p>
+            <strong>实践建议：</strong>
+            结合静态汇编分析、典型负载测试和压力测试评估栈使用量。
+            单次运行未触发溢出，并不能证明所有输入和中断组合下都不会发生栈越界。
+          </p>
         </div>
       </section>
 
-      <section class="section" id="pool">
-        <h2>④ 内存池栈安全模型</h2>
-
-        <p>
-          栈空间来自统一内存池分配，每个任务分配独立区间，
-          并记录边界用于运行时校验。
-        </p>
-
-        <div class="code">
-Stack Block：
-- base address
-- size
-- SP high watermark
-- owner task id
+      <section class="section" id="interrupts">
+        <div class="section-heading">
+          <span class="section-number">05</span>
+          <div>
+            <h2>中断与多层执行路径</h2>
+            <p>栈分析必须覆盖任务执行期间发生的异步路径。</p>
+          </div>
         </div>
 
         <p>
-          当任务释放或异常退出时，内存池负责回收并清理状态，
-          防止“悬挂栈区域”继续被访问。
+          在 8051 系统中，中断响应可能触发额外的现场保存和函数调用。
+          如果高优先级中断能够打断较低优先级中断，或者中断处理程序调用了内核 API，
+          就需要按实际控制流分析这些路径的叠加使用量。
         </p>
 
-        <div class="block">
-          风险控制点：<br>
-          - 栈越界写入<br>
-          - 释放后访问<br>
-          - 中断嵌套过深
+        <div class="process">
+          <div class="process-step">
+            <span class="step">01</span>
+            <div>
+              <strong>任务正常执行</strong>
+              <span>评估函数调用、局部数据及任务本身的栈需求。</span>
+            </div>
+          </div>
+          <div class="process-arrow" aria-hidden="true">↓</div>
+          <div class="process-step">
+            <span class="step">02</span>
+            <div>
+              <strong>中断入口与现场保存</strong>
+              <span>根据实际汇编和编译结果核算额外压栈量。</span>
+            </div>
+          </div>
+          <div class="process-arrow" aria-hidden="true">↓</div>
+          <div class="process-step">
+            <span class="step">03</span>
+            <div>
+              <strong>中断内调用与嵌套</strong>
+              <span>检查是否存在嵌套、内核调用或其他额外执行层。</span>
+            </div>
+          </div>
+          <div class="process-arrow" aria-hidden="true">↓</div>
+          <div class="process-step">
+            <span class="step">04</span>
+            <div>
+              <strong>恢复现场并返回</strong>
+              <span>核对所有返回路径是否正确恢复执行状态。</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          <span class="note-symbol" aria-hidden="true">!</span>
+          <p>
+            <strong>不要混用栈区：</strong>
+            任务栈、内核栈和中断栈是否独立、是否共享，以及各自的实际容量，
+            应以当前 HRTOS 版本的内存布局和汇编实现为准。
+          </p>
         </div>
       </section>
 
       <section class="section" id="isolation">
-        <h2>⑤ 任务隔离安全模型</h2>
-
-        <p>
-          在没有硬件保护的系统中，“任务隔离”依赖逻辑边界约束。
-        </p>
-
-        <p>
-          每个任务只能访问：
-          自身栈区域 + 显式共享资源 + 内核入口控制路径。
-        </p>
-
-        <div class="code">
-隔离规则：
-- 禁止跨任务栈访问
-- 禁止非法SP回退
-- 禁止越界共享访问
+        <div class="section-heading">
+          <span class="section-number">06</span>
+          <div>
+            <h2>栈安全与任务隔离的边界</h2>
+            <p>边界检查可以发现部分异常，但不能自动建立硬件级访问隔离。</p>
+          </div>
         </div>
 
-        <div class="block">
-          安全本质：<br>
-          用规则替代硬件，用检测替代隔离单元
+        <p>
+          对任务栈进行独立分配和边界检查，有助于组织资源并发现部分栈使用异常。
+          但在没有 MPU/MMU 的系统中，如果任务代码可以直接读写某段 RAM，
+          仅仅维护栈边界信息并不会自动禁止这类访问。
+        </p>
+
+        <div class="risk-grid">
+          <article class="risk-card">
+            <h3>栈边界检查</h3>
+            <p>在实际执行检查的路径上识别满足检测条件的异常 SP 状态。</p>
+          </article>
+          <article class="risk-card">
+            <h3>内存访问隔离</h3>
+            <p>需要额外的访问控制、受限接口或其他明确机制，不能由 SP 检查单独实现。</p>
+          </article>
+          <article class="risk-card">
+            <h3>越界写入检测</h3>
+            <p>SP 合法并不代表此前没有发生非法写入；还需确认是否存在相应检测机制。</p>
+          </article>
+          <article class="risk-card">
+            <h3>栈使用量监测</h3>
+            <p>高水位记录反映已观测到的使用情况，不等于对未来峰值的形式化保证。</p>
+          </article>
         </div>
+
+        <div class="note">
+          <span class="note-symbol" aria-hidden="true">i</span>
+          <p>
+            <strong>准确的安全表述：</strong>
+            软件级栈管理可以通过资源规划、边界检查和错误处理提升可诊断性与可靠性；
+            其覆盖范围取决于实现，不能等同于硬件内存保护或绝对的任务隔离。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="verification">
+        <div class="section-heading">
+          <span class="section-number">07</span>
+          <div>
+            <h2>实现核对与验证清单</h2>
+            <p>把文档中的每项能力映射到实际代码和可复现测试。</p>
+          </div>
+        </div>
+
+        <div class="process">
+          <div class="process-step">
+            <span class="step">A</span>
+            <div>
+              <strong>核对栈区域定义</strong>
+              <span>确认任务栈、系统栈、中断栈的起止位置和容量。</span>
+            </div>
+          </div>
+          <div class="process-step">
+            <span class="step">B</span>
+            <div>
+              <strong>核对 SP 检查代码</strong>
+              <span>确认比较方向、边界包含规则、检查时机及异常分支。</span>
+            </div>
+          </div>
+          <div class="process-step">
+            <span class="step">C</span>
+            <div>
+              <strong>验证栈溢出处理路径</strong>
+              <span>验证 os_slab_overflow() 的调用条件、回调注册与执行行为，
+      并确认未注册回调时的处理路径。</span>
+            </div>
+          </div>
+          <div class="process-step">
+            <span class="step">D</span>
+            <div>
+              <strong>验证边界与嵌套场景</strong>
+              <span>测试临界栈深度、任务切换、中断嵌套和异常返回路径。</span>
+            </div>
+          </div>
+        </div>
+
+        <p style="margin-top:19px;">
+          完成核对后，可以将确实存在的机制、对应配置和测试结论写入正式文档，
+          并明确区分静态分析结果、压力测试结果与理论保证。
+        </p>
       </section>
 
     </div>
 
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="页面导航">
 
-      <div class="box">
-        <h3>目录</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">SP检测</a>
-        <a href="#overflow">溢出处理</a>
-        <a href="#pool">内存池</a>
-        <a href="#isolation">任务隔离</a>
+      <div class="side-box">
+        <h3>本页目录</h3>
+        <nav class="side-links" aria-label="章节导航">
+          <a href="#overview">01 · 栈模型</a>
+          <a href="#mechanism">02 · SP 边界检测</a>
+          <a href="#overflow">03 · 溢出处理</a>
+          <a href="#budget">04 · 栈容量预算</a>
+          <a href="#interrupts">05 · 中断与嵌套</a>
+          <a href="#isolation">06 · 隔离边界</a>
+          <a href="#verification">07 · 实现核对</a>
+        </nav>
       </div>
 
-      <div class="box">
-        <h3>相关模块</h3>
-        <a href="/docs/modules/memory/allocation.html">内存分配</a>
-        <a href="/docs/modules/memory/fragmentation.html">内存碎片</a>
+      <div class="side-box">
+        <h3>内存管理</h3>
+        <nav class="side-links" aria-label="内存管理子模块">
+          <a href="/docs/modules/memory/index.html">内存管理总览</a>
+          <a href="/docs/modules/memory/allocation.html">内存分配</a>
+          <a href="/docs/modules/memory/fragmentation.html">内存碎片</a>
+          <a href="/docs/modules/memory/memory-protection.html">任务隔离与内存安全</a>
+        </nav>
+      </div>
+
+      <div class="side-box">
+        <h3>阅读提示</h3>
+        <p class="side-note">
+          本页中的示意图与伪代码用于说明通用分析方法。
+          涉及具体 SP 比较条件、错误 Hook 和实际栈布局的内容，
+          应以当前 HRTOS 源码、配置和目标芯片为准。
+        </p>
+        <div class="side-divider"></div>
+        <p class="side-note">
+          建议同时阅读内存分配和内存碎片文档，建立完整的资源规划视角。
+        </p>
       </div>
 
     </aside>
@@ -346,7 +1162,8 @@ Stack Block：
   </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS Stack Safety Model (8051)
+    <p>© 2017–2026 HRTOS · 栈管理技术文档</p>
+    <p class="footer-sub">8051 实时系统 · 栈容量规划、边界检测与故障分析</p>
   </footer>
 
 </main>

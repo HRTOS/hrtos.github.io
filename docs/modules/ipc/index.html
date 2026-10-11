@@ -1,171 +1,415 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>IPC通信机制 | HRTOS Module Documentation</title>
-<meta name="description" content="HRTOS IPC通信机制模块，包含事件、信号量、互斥锁、邮箱与消息队列，用于任务同步与数据通信。" />
+  <title>任务间通信 IPC | HRTOS 文档中心</title>
+  <meta name="description" content="HRTOS 任务间通信（IPC）模块总览：了解事件、信号量、互斥锁、邮箱和消息队列的作用、区别与选型方法。" />
+  <meta name="keywords" content="HRTOS, 8051, RTOS, IPC, 任务间通信, 事件, 信号量, 互斥锁, 邮箱, 消息队列" />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://hrtos.com/docs/modules/ipc/index.html" />
 
-<link rel="stylesheet" href="https://hrtos.com/global.css">
+  <link rel="stylesheet" href="https://hrtos.com/global.css">
 
-<style>
-:root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
-}
+  <style>
+    :root {
+      --ipc-bg: #0f172a;
+      --ipc-panel: rgba(30, 41, 59, .72);
+      --ipc-panel-soft: rgba(15, 23, 42, .58);
+      --ipc-text: #e2e8f0;
+      --ipc-muted: #94a3b8;
+      --ipc-accent: #38bdf8;
+      --ipc-accent-light: #7dd3fc;
+      --ipc-border: rgba(148, 163, 184, .18);
+      --ipc-shadow: 0 16px 38px rgba(2, 6, 23, .22);
+      --ipc-radius: 14px;
+      color-scheme: dark;
+    }
 
-*{box-sizing:border-box}
+    * {
+      box-sizing: border-box;
+    }
 
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","Microsoft YaHei",sans-serif;
-  line-height:1.7;
-}
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
 
-.page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-}
+    body {
+      margin: 0;
+      background: var(--ipc-bg);
+      color: var(--ipc-text);
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.75;
+    }
 
-.breadcrumb{
-  color:var(--muted);
-  font-size:.92rem;
-  margin-bottom:26px;
-}
+    a {
+      color: var(--ipc-accent-light);
+    }
 
-.breadcrumb a{color:#7dd3fc;}
+    a:focus-visible {
+      outline: 2px solid var(--ipc-accent);
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
 
-.hero{
-  margin-bottom:46px;
-}
+    .page {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 96px 0 64px;
+    }
 
-.hero h1{
-  margin:0 0 14px;
-  font-size:clamp(2.2rem,5vw,3.6rem);
-}
+    .breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 28px;
+      color: var(--ipc-muted);
+      font-size: .9rem;
+    }
 
-.hero p{
-  margin:0;
-  color:var(--muted);
-  max-width:820px;
-}
+    .breadcrumb a {
+      text-decoration: none;
+    }
 
-.meta{
-  margin-top:16px;
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
+    .breadcrumb a:hover {
+      text-decoration: underline;
+    }
 
-.tag{
-  padding:6px 12px;
-  border:1px solid var(--border);
-  border-radius:999px;
-  font-size:.84rem;
-  color:#bae6fd;
-  background:rgba(15,23,42,.5);
-}
+    .breadcrumb .separator {
+      color: #64748b;
+    }
 
-/* ===== IPC 分层卡片（核心优化） ===== */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 38px;
+      padding: clamp(26px, 5vw, 48px);
+      border: 1px solid var(--ipc-border);
+      border-radius: 20px;
+      background:
+        radial-gradient(ellipse at top right, rgba(56, 189, 248, .13), transparent 48%),
+        linear-gradient(135deg, rgba(30, 41, 59, .94), rgba(15, 23, 42, .92));
+      box-shadow: var(--ipc-shadow);
+    }
 
-.layer{
-  margin:42px 0;
-}
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      color: var(--ipc-accent-light);
+      font-size: .82rem;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
 
-.layer h2{
-  margin:0 0 14px;
-  font-size:1.35rem;
-}
+    .eyebrow::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ipc-accent);
+      content: "";
+    }
 
-.layer-desc{
-  margin:0 0 18px;
-  color:var(--muted);
-}
+    .hero h1 {
+      margin: 0 0 18px;
+      font-size: clamp(2rem, 5vw, 3.35rem);
+      line-height: 1.2;
+      letter-spacing: -.035em;
+    }
 
-.grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:18px;
-}
+    .hero .lead {
+      max-width: 850px;
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 1.04rem;
+    }
 
-.card{
-  display:grid;
-  gap:10px;
-  padding:20px 18px;
-  background:rgba(30,41,59,.72);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  transition:.2s ease;
-  text-decoration:none; /* ⭐只加这一行：去掉卡片内文字下划线 */
-}
+    .hero .lead strong {
+      color: #f1f5f9;
+    }
 
-.card:hover{
-  transform:translateY(-5px);
-  border-color:rgba(56,189,248,.4);
-}
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 24px;
+    }
 
-.card h3{
-  margin:0;
-  font-size:1.05rem;
-}
+    .tag {
+      padding: 5px 11px;
+      border: 1px solid rgba(125, 211, 252, .22);
+      border-radius: 999px;
+      background: rgba(15, 23, 42, .52);
+      color: #bae6fd;
+      font-size: .82rem;
+    }
 
-.card p{
-  margin:0;
-  color:var(--muted);
-  font-size:.93rem;
-}
+    .section {
+      margin-top: 46px;
+    }
 
-.card span{
-  margin-top:auto;
-  color:#7dd3fc;
-  font-size:.9rem;
-}
+    .section-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
 
-/* ===== 学习路径 ===== */
+    .section-heading h2 {
+      margin: 0;
+      font-size: clamp(1.35rem, 3vw, 1.75rem);
+      line-height: 1.35;
+    }
 
-.path{
-  margin-top:22px;
-  padding:14px 16px;
-  border-left:3px solid var(--accent);
-  background:rgba(15,23,42,.55);
-  color:var(--muted);
-  border-radius:8px;
-}
+    .section-heading .section-index {
+      color: var(--ipc-accent-light);
+      font-size: .82rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
 
-.path a{
-  color:#7dd3fc;
-}
+    .section-desc {
+      max-width: 850px;
+      margin: 0 0 20px;
+      color: var(--ipc-muted);
+    }
 
-/* ===== API 区 ===== */
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
 
-.api{
-  margin-top:48px;
-  padding:22px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.55);
-}
+    .module-card {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      gap: 11px;
+      padding: 22px;
+      border: 1px solid var(--ipc-border);
+      border-radius: var(--ipc-radius);
+      background: var(--ipc-panel);
+      box-shadow: var(--ipc-shadow);
+      color: inherit;
+      text-decoration: none;
+      transition: border-color .18s ease, transform .18s ease, background .18s ease;
+    }
 
-.api h2{
-  margin:0 0 10px;
-}
+    .module-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(56, 189, 248, .48);
+      background: rgba(30, 41, 59, .92);
+    }
 
-.api p{
-  margin:0;
-  color:var(--muted);
-}
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
 
+    .card-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(56, 189, 248, .28);
+      border-radius: 10px;
+      background: rgba(56, 189, 248, .09);
+      color: var(--ipc-accent-light);
+      font-size: .85rem;
+      font-weight: 700;
+    }
+
+    .card-type {
+      color: var(--ipc-muted);
+      font-size: .77rem;
+    }
+
+    .module-card h3 {
+      margin: 0;
+      color: #f1f5f9;
+      font-size: 1.12rem;
+      line-height: 1.4;
+    }
+
+    .module-card h3 small {
+      display: block;
+      margin-top: 3px;
+      color: var(--ipc-accent-light);
+      font-size: .82rem;
+      font-weight: 500;
+    }
+
+    .module-card p {
+      margin: 0;
+      color: #aebdd0;
+      font-size: .92rem;
+    }
+
+    .card-use {
+      margin-top: 3px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(148, 163, 184, .12);
+      color: #cbd5e1;
+      font-size: .85rem;
+    }
+
+    .card-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 5px;
+      color: var(--ipc-accent-light);
+      font-size: .9rem;
+      font-weight: 600;
+    }
+
+    .card-link .arrow {
+      transition: transform .18s ease;
+    }
+
+    .module-card:hover .arrow {
+      transform: translateX(4px);
+    }
+
+    .choice-layout {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .choice-card {
+      padding: 22px;
+      border: 1px solid var(--ipc-border);
+      border-radius: var(--ipc-radius);
+      background: var(--ipc-panel-soft);
+    }
+
+    .choice-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.02rem;
+    }
+
+    .choice-card p {
+      margin: 0;
+      color: var(--ipc-muted);
+      font-size: .92rem;
+    }
+
+    .choice-card a {
+      text-decoration: none;
+    }
+
+    .choice-card a:hover {
+      text-decoration: underline;
+    }
+
+    .note {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-left: 3px solid var(--ipc-accent);
+      border-radius: 0 10px 10px 0;
+      background: rgba(56, 189, 248, .06);
+      color: #cbd5e1;
+      font-size: .91rem;
+    }
+
+    .learning-path {
+      padding: clamp(22px, 4vw, 30px);
+      border: 1px solid var(--ipc-border);
+      border-radius: var(--ipc-radius);
+      background:
+        linear-gradient(120deg, rgba(56, 189, 248, .08), transparent 65%),
+        var(--ipc-panel-soft);
+    }
+
+    .learning-path h2 {
+      margin: 0 0 10px;
+      font-size: 1.4rem;
+    }
+
+    .learning-path > p {
+      margin: 0;
+      color: var(--ipc-muted);
+    }
+
+    .path-steps {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .path-step {
+      position: relative;
+      padding: 14px 12px;
+      border: 1px solid var(--ipc-border);
+      border-radius: 10px;
+      background: rgba(30, 41, 59, .7);
+      text-align: center;
+    }
+
+    .path-step .step-no {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ipc-accent-light);
+      font-size: .75rem;
+      font-weight: 700;
+    }
+
+    .path-step a {
+      color: #e2e8f0;
+      font-size: .9rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .path-step a:hover {
+      color: var(--ipc-accent-light);
+    }
+
+    .path-step p {
+      margin: 6px 0 0;
+      color: var(--ipc-muted);
+      font-size: .79rem;
+      line-height: 1.5;
+    }
+
+    .related-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .related-links a {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid var(--ipc-border);
+      border-radius: 9px;
+      background: rgba(30, 41, 59, .55);
+      font-size: .87rem;
+      text-decoration: none;
+    }
+
+    .related-links a:hover {
+      border-color: rgba(56, 189, 248, .42);
+    }
+
+    
 .footer{
   margin-top:60px;
   text-align:center;
@@ -175,110 +419,284 @@ body{
   padding-top:20px;
 }
 
-@media(max-width:1000px){
-  .grid{grid-template-columns:1fr;}
-}
-</style>
+
+    @media (max-width: 900px) {
+      .module-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .path-steps {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 600px) {
+      .page {
+        width: min(100% - 28px, 1180px);
+        padding-top: 82px;
+      }
+
+      .hero {
+        padding: 25px 20px;
+        border-radius: 15px;
+      }
+
+      .module-grid,
+      .choice-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .path-steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .module-card {
+        padding: 19px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
 </head>
 
-<body>
-
+<body data-header="docs">
 <main class="page">
 
-<nav class="breadcrumb">
-  <a href="/docs/index.html">Docs</a> /
-  <a href="/docs/modules/index.html">Modules</a> /
-  <span>IPC</span>
-</nav>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="separator" aria-hidden="true">/</span>
+    <a href="/docs/modules/index.html">核心模块</a>
+    <span class="separator" aria-hidden="true">/</span>
+    <span aria-current="page">任务间通信 IPC</span>
+  </nav>
 
-<section class="hero">
-  <h1>IPC通信机制</h1>
+  <header class="hero">
+    <div class="eyebrow">HRTOS / CORE MODULES</div>
+    <h1>任务间通信 IPC</h1>
+    <p class="lead">
+      在实时操作系统中，任务不仅需要独立运行，还需要协调执行、共享资源和交换数据。
+      <strong>IPC（Inter-Process Communication，任务间通信）</strong>
+      提供了这些协作场景所需的基础机制。HRTOS IPC 文档围绕事件、信号量、互斥锁、邮箱和消息队列展开，帮助你根据实际问题选择合适的通信方式。
+    </p>
+    <div class="hero-tags" aria-label="模块主题">
+      <span class="tag">任务同步</span>
+      <span class="tag">资源协调</span>
+      <span class="tag">数据传递</span>
+      <span class="tag">并发控制</span>
+    </div>
+  </header>
 
-  <p>
-    IPC（Inter-Process Communication）是HRTOS任务间通信与同步的核心模块，
-    用于解决并发任务之间的状态同步、资源竞争与数据传递问题。
-  </p>
+  <section class="section" aria-labelledby="sync-heading">
+    <div class="section-heading">
+      <h2 id="sync-heading">01 · 状态同步</h2>
+      <span class="section-index">STATE SYNCHRONIZATION</span>
+    </div>
+    <p class="section-desc">
+      当一个任务需要等待某个条件成立，或者另一个执行单元通知状态发生变化时，可以从事件机制入手。
+      选择前应确认事件的触发、清除、等待和唤醒语义。
+    </p>
 
-  <div class="meta">
-    <span class="tag">Kernel IPC</span>
-    <span class="tag">Task Sync</span>
-    <span class="tag">Resource Control</span>
-    <span class="tag">Data Transfer</span>
-  </div>
-</section>
+    <div class="module-grid">
+      <a class="module-card" href="event.html">
+        <div class="card-top">
+          <span class="card-number">01</span>
+          <span class="card-type">状态通知</span>
+        </div>
+        <h3>事件机制 <small>Event</small></h3>
+        <p>用于表达事件发生或条件变化，帮助任务围绕状态通知进行协作。</p>
+        <div class="card-use">适用方向：事件通知、条件等待、任务同步。</div>
+        <div class="card-link">
+          <span>阅读事件机制</span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </div>
+      </a>
+    </div>
+  </section>
 
-<!-- ===== 层级1：状态同步 ===== -->
-<section class="layer">
-  <h2>① 状态同步层</h2>
-  <p class="layer-desc">
-    用于“条件触发型通信”，特点是轻量、无数据或少数据。
-  </p>
+  <section class="section" aria-labelledby="resource-heading">
+    <div class="section-heading">
+      <h2 id="resource-heading">02 · 资源控制与同步</h2>
+      <span class="section-index">RESOURCE CONTROL</span>
+    </div>
+    <p class="section-desc">
+      多个任务可能需要协调资源使用，或在满足特定条件之前暂停执行。
+      信号量和互斥锁虽然都与同步有关，但设计目的并不相同。
+    </p>
 
-  <div class="grid">
-    <a class="card" href="event.html">
-      <h3>Event（事件）</h3>
-      <p>基于位标志的任务同步机制。</p>
-      <span>进入 →</span>
-    </a>
-  </div>
-</section>
+    <div class="module-grid">
+      <a class="module-card" href="semaphore.html">
+        <div class="card-top">
+          <span class="card-number">02</span>
+          <span class="card-type">计数与同步</span>
+        </div>
+        <h3>信号量 <small>Semaphore</small></h3>
+        <p>围绕计数状态组织任务同步，可用于表达可用资源数量或任务间的同步条件。</p>
+        <div class="card-use">选型提示：需要计数语义或同步通知时优先评估。</div>
+        <div class="card-link">
+          <span>阅读信号量机制</span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </div>
+      </a>
 
-<!-- ===== 层级2：资源控制 ===== -->
-<section class="layer">
-  <h2>② 资源控制层</h2>
-  <p class="layer-desc">
-    用于控制共享资源访问，核心解决“并发竞争问题”。
-  </p>
+      <a class="module-card" href="mutex.html">
+        <div class="card-top">
+          <span class="card-number">03</span>
+          <span class="card-type">互斥访问</span>
+        </div>
+        <h3>互斥锁 <small>Mutex</small></h3>
+        <p>用于协调共享资源的互斥访问，减少多个任务同时操作同一资源造成的冲突。</p>
+        <div class="card-use">选型提示：重点关注锁的所有权、持有与释放规则。</div>
+        <div class="card-link">
+          <span>阅读互斥锁机制</span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </div>
+      </a>
+    </div>
 
-  <div class="grid">
-    <a class="card" href="semaphore.html">
-      <h3>Semaphore（信号量）</h3>
-      <p>基于计数的资源管理与任务同步。</p>
-      <span>进入 →</span>
-    </a>
+    <div class="note">
+      <strong>注意：</strong>
+      信号量不能简单等同于互斥锁。涉及共享资源保护时，应根据 HRTOS 对应接口的实际语义判断；
+      不要仅凭名称推断是否支持优先级继承、递归获取或特定的超时行为。
+    </div>
+  </section>
 
-    <a class="card" href="mutex.html">
-      <h3>Mutex（互斥锁）</h3>
-      <p>带所有权与优先级继承的临界区保护。</p>
-      <span>进入 →</span>
-    </a>
-  </div>
-</section>
+  <section class="section" aria-labelledby="data-heading">
+    <div class="section-heading">
+      <h2 id="data-heading">03 · 任务间数据通信</h2>
+      <span class="section-index">DATA COMMUNICATION</span>
+    </div>
+    <p class="section-desc">
+      当任务之间需要传递数据时，应重点考虑消息容量、数据覆盖策略、排队能力以及发送端和接收端的处理速度。
+    </p>
 
-<!-- ===== 层级3：数据通信 ===== -->
-<section class="layer">
-  <h2>③ 数据通信层</h2>
-  <p class="layer-desc">
-    用于任务间数据传递，支持单值与队列模型。
-  </p>
+    <div class="module-grid">
+      <a class="module-card" href="mailbox.html">
+        <div class="card-top">
+          <span class="card-number">04</span>
+          <span class="card-type">消息槽</span>
+        </div>
+        <h3>邮箱 <small>Mailbox</small></h3>
+        <p>用于以邮箱模型组织任务间的数据交接。具体容量、覆盖行为及读取规则应以接口文档为准。</p>
+        <div class="card-use">选型提示：先确认消息槽的存储和更新语义。</div>
+        <div class="card-link">
+          <span>阅读邮箱机制</span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </div>
+      </a>
 
-  <div class="grid">
-    <a class="card" href="mailbox.html">
-      <h3>Mailbox（邮箱）</h3>
-      <p>单值消息槽模型（覆盖式通信）。</p>
-      <span>进入 →</span>
-    </a>
+      <a class="module-card" href="message-queue.html">
+        <div class="card-top">
+          <span class="card-number">05</span>
+          <span class="card-type">排队传递</span>
+        </div>
+        <h3>消息队列 <small>Message Queue</small></h3>
+        <p>用于按照队列模型传递消息。应结合队列容量、先进先出规则以及队列满时的处理方式进行设计。</p>
+        <div class="card-use">选型提示：需要关注消息顺序和积压处理时重点评估。</div>
+        <div class="card-link">
+          <span>阅读消息队列</span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </div>
+      </a>
+    </div>
+  </section>
 
-    <a class="card" href="message-queue.html">
-      <h3>Message Queue（消息队列）</h3>
-      <p>结构化数据的FIFO通信机制。</p>
-      <span>进入 →</span>
-    </a>
-  </div>
-</section>
+  <section class="section" aria-labelledby="selection-heading">
+    <div class="section-heading">
+      <h2 id="selection-heading">04 · 如何选择 IPC 机制</h2>
+      <span class="section-index">DESIGN GUIDE</span>
+    </div>
+    <p class="section-desc">
+      先明确要解决的问题，再选择机制。不要因为多个接口都能让任务等待或唤醒，就把它们视为可以随意替换的工具。
+    </p>
 
+    <div class="choice-layout">
+      <article class="choice-card">
+        <h3>需要通知某个状态发生变化</h3>
+        <p>从 <a href="event.html">事件机制</a> 入手，重点确认事件如何产生、等待、清除，以及多个任务参与时的具体行为。</p>
+      </article>
 
+      <article class="choice-card">
+        <h3>需要表达计数或同步条件</h3>
+        <p>评估 <a href="semaphore.html">信号量</a>，重点检查计数规则、获取与释放操作，以及等待和超时语义。</p>
+      </article>
 
-<!-- ===== 学习路径 ===== -->
-<section class="api">
-  <h2>推荐学习路径</h2>
-  <p>
-    Event → Semaphore → Mutex → Mailbox → Message Queue
-  </p>
-  <p>
-    查看 IPC 模块完整接口定义、调用方式与内核行为说明。
-  </p>
-</section>
+      <article class="choice-card">
+        <h3>需要保护共享资源</h3>
+        <p>评估 <a href="mutex.html">互斥锁</a>，重点检查锁的所有权、释放责任和任务优先级相关行为。</p>
+      </article>
+
+      <article class="choice-card">
+        <h3>需要在任务之间传递数据</h3>
+        <p>根据数据模型选择 <a href="mailbox.html">邮箱</a> 或 <a href="message-queue.html">消息队列</a>，并明确容量、覆盖、排队和队列满时的处理策略。</p>
+      </article>
+    </div>
+
+    <div class="note">
+      以上是通用的设计选型思路，不替代 HRTOS 接口规范。具体的阻塞行为、调度影响、中断上下文限制、返回值和边界条件，应以相应 API 文档及实际实现为准。
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="learning-heading">
+    <div class="learning-path">
+      <h2 id="learning-heading">推荐学习路径</h2>
+      <p>先理解同步与资源协调，再学习数据传递。阅读每个专题时，建议同时核对接口定义、调用约束和边界条件。</p>
+
+      <div class="path-steps">
+        <div class="path-step">
+          <span class="step-no">STEP 01</span>
+          <a href="event.html">事件机制</a>
+          <p>理解状态通知</p>
+        </div>
+        <div class="path-step">
+          <span class="step-no">STEP 02</span>
+          <a href="semaphore.html">信号量</a>
+          <p>理解计数同步</p>
+        </div>
+        <div class="path-step">
+          <span class="step-no">STEP 03</span>
+          <a href="mutex.html">互斥锁</a>
+          <p>理解资源保护</p>
+        </div>
+        <div class="path-step">
+          <span class="step-no">STEP 04</span>
+          <a href="mailbox.html">邮箱</a>
+          <p>理解消息交接</p>
+        </div>
+        <div class="path-step">
+          <span class="step-no">STEP 05</span>
+          <a href="message-queue.html">消息队列</a>
+          <p>理解消息排队</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="related-heading">
+    <div class="section-heading">
+      <h2 id="related-heading">相关文档</h2>
+    </div>
+    <p class="section-desc">进一步了解 HRTOS 的任务管理、调度与内存管理机制。</p>
+
+    <div class="related-links">
+      <a href="/docs/modules/index.html">核心模块总览</a>
+      <a href="/docs/modules/task/index.html">任务管理</a>
+      <a href="/docs/modules/scheduler/index.html">任务调度</a>
+      <a href="/docs/modules/memory/index.html">内存管理</a>
+      <a href="/docs/index.html">返回文档中心</a>
+    </div>
+  </section>
 
 <footer class="footer">
   © 2017–2026 HRTOS IPC Module

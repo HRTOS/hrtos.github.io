@@ -1,336 +1,1073 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>内存碎片（Fragmentation） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS基于bitmap的内存分配机制与碎片分析，包括连续块分配策略、栈空间增长模型与外部碎片产生原因。" />
-
-<link rel="stylesheet" href="https://hrtos.com/global.css">
+<title>内存碎片与连续块分配 | HRTOS 技术文档</title>
+<meta name="description" content="HRTOS 内存碎片分析：Bitmap 位图分配、连续空闲块搜索、任务栈空间分配、碎片形成条件与内存规划策略。" />
+<meta name="keywords" content="HRTOS, 8051, 内存碎片, Bitmap, 连续块分配, 栈分配, RTOS Memory Fragmentation" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/modules/memory/fragmentation.html" />
+<link rel="stylesheet" href="https://hrtos.com/global.css" />
 
 <style>
 :root {
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.16);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+  --mf-bg: #0a1020;
+  --mf-panel: #111b2e;
+  --mf-deep: #0b1426;
+  --mf-text: #e6edf8;
+  --mf-muted: #9aabc3;
+  --mf-accent: #38bdf8;
+  --mf-teal: #5eead4;
+  --mf-border: rgba(148,163,184,.17);
+  --mf-radius: 16px;
+  --mf-shadow: 0 20px 48px rgba(0,0,0,.2);
+  color-scheme: dark;
 }
 
-*{box-sizing:border-box}
+* { box-sizing: border-box; }
 
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(14,116,144,.16), transparent 34rem),
+    radial-gradient(ellipse at 95% 20%, rgba(37,99,235,.12), transparent 32rem),
+    var(--mf-bg);
+  color: var(--mf-text);
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
 }
 
-.page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-  display:grid;
-  gap:36px;
+a { color: #7dd3fc; text-decoration: none; }
+a:hover { color: #bae6fd; }
+
+.page {
+  width: min(1240px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 32px 0 54px;
 }
 
-.breadcrumb{
-  color:var(--muted);
-  font-size:.92rem;
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  color: var(--mf-muted);
+  font-size: .88rem;
 }
 
-.breadcrumb a{color:#7dd3fc;}
+.breadcrumb .sep { color: #53647d; }
 
-.hero h1{
-  margin:0 0 12px;
-  font-size:clamp(2.2rem,5vw,3.4rem);
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 22px;
+  padding: 8px 13px;
+  border: 1px solid var(--mf-border);
+  border-radius: 10px;
+  background: rgba(15,23,42,.64);
+  color: #bae6fd;
+  font-size: .9rem;
+  transition: border-color .2s, background .2s, transform .2s;
 }
 
-.hero p{
-  margin:0;
-  color:var(--muted);
-  max-width:900px;
+.back-link:hover {
+  border-color: rgba(56,189,248,.5);
+  background: rgba(14,116,144,.14);
+  transform: translateX(-2px);
 }
 
-.tag{
-  display:inline-block;
-  margin-top:14px;
-  padding:6px 12px;
-  border:1px solid var(--border);
-  border-radius:999px;
-  color:#bae6fd;
-  font-size:.85rem;
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px,5vw,54px);
+  border: 1px solid rgba(125,211,252,.2);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 88% 22%, rgba(56,189,248,.17), transparent 17rem),
+    linear-gradient(135deg, rgba(17,32,55,.98), rgba(9,19,36,.97));
+  box-shadow: var(--mf-shadow);
 }
 
-/* layout */
-.layout{
-  display:grid;
-  grid-template-columns: 1fr 260px;
-  gap:28px;
-  align-items:stretch;
+.hero::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg,#38bdf8,#5eead4,transparent 85%);
+  content: "";
 }
 
-/* content */
-.content{
-  display:grid;
-  gap:22px;
+.hero::after {
+  position: absolute;
+  top: 36px;
+  right: 7%;
+  width: 180px;
+  height: 180px;
+  border: 1px solid rgba(125,211,252,.13);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 22px rgba(125,211,252,.025),
+    0 0 0 46px rgba(125,211,252,.02);
+  pointer-events: none;
+  content: "";
 }
 
-/* section */
-.section{
-  padding:22px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.55);
-  box-shadow:var(--shadow);
+.eyebrow {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 12px;
+  color: var(--mf-teal);
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .16em;
 }
 
-.section h2{
-  margin:0 0 12px;
-  font-size:1.25rem;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
+.hero h1 {
+  position: relative;
+  z-index: 1;
+  max-width: 820px;
+  margin: 0 0 15px;
+  font-size: clamp(2rem,4.6vw,3.4rem);
+  line-height: 1.2;
+  letter-spacing: -.035em;
 }
 
-.section p{
-  margin:0 0 10px;
-  color:var(--muted);
+.hero p {
+  position: relative;
+  z-index: 1;
+  max-width: 790px;
+  margin: 0;
+  color: #b5c5db;
+  font-size: 1.02rem;
 }
 
-.code{
-  margin-top:12px;
-  background:#020617;
-  border:1px solid rgba(56,189,248,.15);
-  padding:14px;
-  border-radius:8px;
-  font-family:Consolas,monospace;
-  font-size:.9rem;
-  color:#7dd3fc;
-  white-space:pre-wrap;
+.hero-tags {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 24px;
 }
 
-.block{
-  margin-top:16px;
-  padding:14px;
-  border-left:3px solid #38bdf8;
-  background:rgba(15,23,42,.6);
-  border-radius:8px;
-  color:var(--muted);
+.tag {
+  padding: 5px 11px;
+  border: 1px solid rgba(125,211,252,.2);
+  border-radius: 999px;
+  background: rgba(8,47,73,.28);
+  color: #bae6fd;
+  font-size: .8rem;
 }
 
-/* sidebar */
-.sidebar{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  height:100%;
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 14px;
+  margin: 20px 0 36px;
 }
 
-.box{
-  flex:1;
-  padding:16px;
-  border:1px solid var(--border);
-  border-radius:10px;
-  background:rgba(30,41,59,.5);
+.metric {
+  padding: 19px;
+  border: 1px solid var(--mf-border);
+  border-radius: 14px;
+  background: linear-gradient(145deg,rgba(17,27,46,.92),rgba(11,20,38,.88));
 }
 
-.box h3{
-  margin:0 0 10px;
-  font-size:0.95rem;
+.metric-label {
+  color: var(--mf-muted);
+  font-size: .84rem;
 }
 
-.box a{
-  display:block;
-  margin-bottom:8px;
-  color:#7dd3fc;
-  font-size:0.9rem;
+.metric-value {
+  display: block;
+  margin: 5px 0 3px;
+  color: var(--mf-text);
+  font-size: clamp(1.35rem,2.8vw,1.9rem);
+  font-weight: 750;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
 }
 
-.box a:hover{color:var(--accent);}
-
-.footer{
-  text-align:center;
-  color:#8ea3be;
-  font-size:.9rem;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding-top:18px;
+.metric-note {
+  color: #7f93ad;
+  font-size: .79rem;
 }
 
-@media(max-width:1000px){
-  .layout{grid-template-columns:1fr;}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 245px;
+  align-items: start;
+  gap: 28px;
+}
+
+.content {
+  display: grid;
+  min-width: 0;
+  gap: 26px;
+}
+
+.section {
+  min-width: 0;
+  padding: clamp(20px,3vw,30px);
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  background: linear-gradient(150deg,rgba(17,27,46,.92),rgba(12,21,38,.91));
+  box-shadow: 0 12px 32px rgba(0,0,0,.13);
+  scroll-margin-top: 24px;
+}
+
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 19px;
+}
+
+.section-no {
+  flex: 0 0 43px;
+  display: grid;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border: 1px solid rgba(56,189,248,.24);
+  border-radius: 12px;
+  background: rgba(14,116,144,.15);
+  color: var(--mf-accent);
+  font-size: .83rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.section h2 {
+  margin: 0;
+  font-size: clamp(1.2rem,2.3vw,1.5rem);
+  line-height: 1.45;
+}
+
+.section-intro {
+  margin: 5px 0 0;
+  color: var(--mf-muted);
+  font-size: .9rem;
+}
+
+.section p { color: #b3c2d7; }
+.section p:last-child { margin-bottom: 0; }
+
+.section h3 {
+  margin: 24px 0 10px;
+  font-size: 1rem;
+}
+
+.inline-code {
+  padding: 2px 5px;
+  border: 1px solid rgba(148,163,184,.14);
+  border-radius: 5px;
+  background: rgba(2,6,23,.55);
+  color: #bae6fd;
+  font-family: Consolas,monospace;
+  font-size: .88em;
+  overflow-wrap: anywhere;
+}
+
+.code-wrap {
+  overflow: hidden;
+  margin-top: 15px;
+  border: 1px solid rgba(56,189,248,.15);
+  border-radius: 12px;
+  background: var(--mf-deep);
+}
+
+.code-label {
+  padding: 8px 13px;
+  border-bottom: 1px solid rgba(148,163,184,.12);
+  color: #8298b5;
+  font-size: .76rem;
+  letter-spacing: .04em;
+}
+
+pre {
+  overflow-x: auto;
+  margin: 0;
+  padding: 17px;
+  color: #b7e5ff;
+  font-family: Consolas,"Courier New",monospace;
+  font-size: .84rem;
+  line-height: 1.8;
+  tab-size: 4;
+}
+
+.note {
+  margin-top: 17px;
+  padding: 13px 15px;
+  border-left: 3px solid var(--mf-accent);
+  border-radius: 0 9px 9px 0;
+  background: rgba(14,116,144,.09);
+  color: #b5c5db;
+  font-size: .88rem;
+}
+
+.note strong { color: #d6f2ff; }
+
+.note.warning {
+  border-left-color: #fbbf24;
+  background: rgba(146,64,14,.12);
+}
+
+.note.warning strong { color: #fde68a; }
+
+.note.success {
+  border-left-color: var(--mf-teal);
+  background: rgba(13,148,136,.09);
+}
+
+.allocation-flow {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 9px;
+  margin: 20px 0;
+}
+
+.flow-step {
+  position: relative;
+  min-width: 0;
+  padding: 15px 12px;
+  border: 1px solid rgba(148,163,184,.15);
+  border-radius: 11px;
+  background: rgba(4,12,25,.36);
+}
+
+.flow-step .step-index {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--mf-accent);
+  font-family: Consolas,monospace;
+  font-size: .77rem;
+}
+
+.flow-step strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: .88rem;
+}
+
+.flow-step p {
+  margin: 0;
+  color: var(--mf-muted);
+  font-size: .79rem;
+  line-height: 1.6;
+}
+
+.bitmap {
+  display: grid;
+  grid-template-columns: repeat(16,minmax(0,1fr));
+  gap: 5px;
+  margin: 18px 0 10px;
+}
+
+.bit {
+  display: grid;
+  min-width: 0;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgba(148,163,184,.15);
+  border-radius: 5px;
+  background: rgba(51,65,85,.55);
+  color: #9aabc3;
+  font-family: Consolas,monospace;
+  font-size: .76rem;
+}
+
+.bit.used {
+  border-color: rgba(56,189,248,.35);
+  background: rgba(14,116,144,.4);
+  color: #bae6fd;
+}
+
+.bit.free {
+  border-color: rgba(94,234,212,.3);
+  background: rgba(13,148,136,.2);
+  color: #99f6e4;
+}
+
+.bit-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  color: var(--mf-muted);
+  font-size: .8rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: rgba(14,116,144,.7);
+}
+
+.legend-swatch.free { background: rgba(13,148,136,.65); }
+
+.fragment-demo {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.demo-row {
+  display: grid;
+  grid-template-columns: 94px minmax(0,1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.demo-label {
+  color: #b6c6dc;
+  font-size: .82rem;
+}
+
+.units {
+  display: grid;
+  grid-template-columns: repeat(16,minmax(0,1fr));
+  gap: 4px;
+}
+
+.unit {
+  min-width: 0;
+  height: 23px;
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 4px;
+  background: rgba(51,65,85,.55);
+}
+
+.unit.allocated {
+  border-color: rgba(56,189,248,.35);
+  background: linear-gradient(180deg,rgba(14,116,144,.72),rgba(8,145,178,.43));
+}
+
+.unit.hole {
+  border-color: rgba(251,191,36,.38);
+  background: rgba(180,83,9,.3);
+}
+
+.unit.available {
+  border-color: rgba(94,234,212,.25);
+  background: rgba(13,148,136,.2);
+}
+
+.demo-caption {
+  margin-top: 9px;
+  color: var(--mf-muted);
+  font-size: .8rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 16px;
+  border: 1px solid var(--mf-border);
+  border-radius: 11px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .86rem;
+}
+
+th, td {
+  padding: 11px 13px;
+  border-bottom: 1px solid rgba(148,163,184,.12);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: rgba(15,23,42,.85);
+  color: #c4d3e7;
+  font-size: .8rem;
+  font-weight: 650;
+}
+
+td { color: #b4c3d8; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover td { background: rgba(56,189,248,.035); }
+
+.sidebar {
+  position: sticky;
+  top: 22px;
+  display: grid;
+  gap: 15px;
+}
+
+.side-box {
+  padding: 17px;
+  border: 1px solid var(--mf-border);
+  border-radius: 13px;
+  background: rgba(15,25,43,.88);
+}
+
+.side-box h3 {
+  margin: 0 0 12px;
+  font-size: .92rem;
+}
+
+.side-nav { display: grid; gap: 4px; }
+
+.side-nav a {
+  padding: 6px 8px;
+  border-radius: 7px;
+  color: var(--mf-muted);
+  font-size: .84rem;
+  transition: color .2s,background .2s;
+}
+
+.side-nav a:hover {
+  background: rgba(56,189,248,.08);
+  color: #bae6fd;
+}
+
+.side-links a {
+  display: block;
+  margin-top: 8px;
+  font-size: .87rem;
+}
+
+.side-box p {
+  margin: 0;
+  color: var(--mf-muted);
+  font-size: .83rem;
+}
+
+.footer {
+  margin-top: 42px;
+  padding-top: 20px;
+  border-top: 1px solid var(--mf-border);
+  color: #7f93ad;
+  text-align: center;
+  font-size: .84rem;
+}
+
+@media (max-width:1000px) {
+  .layout { grid-template-columns: minmax(0,1fr); }
+  .sidebar {
+    position: static;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:680px) {
+  .page { width: min(100% - 24px,1240px); padding-top: 20px; }
+  .hero { padding: 27px 22px; border-radius: 17px; }
+  .hero::after { right: -100px; opacity: .5; }
+  .metrics { grid-template-columns: 1fr; gap: 9px; margin-bottom: 25px; }
+  .metric { padding: 14px 17px; }
+  .metric-value { font-size: 1.5rem; }
+  .section { padding: 20px 16px; }
+  .allocation-flow { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .sidebar { grid-template-columns: 1fr; }
+  .demo-row { grid-template-columns: 1fr; gap: 6px; }
+  .bitmap { gap: 3px; }
+  .bit { font-size: .65rem; }
+  th,td { padding: 9px 10px; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  html { scroll-behavior: auto; }
+  *,*::before,*::after { transition: none !important; }
 }
 </style>
 </head>
 
-<body>
-
+<body data-header="docs">
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/memory/index.html">Memory</a> /
-    <span>Fragmentation</span>
+  <nav class="breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="sep">/</span>
+    <a href="/docs/modules/index.html">系统模块</a>
+    <span class="sep">/</span>
+    <a href="/docs/modules/memory/index.html">内存管理</a>
+    <span class="sep">/</span>
+    <span aria-current="page">内存碎片</span>
   </nav>
 
-  <section class="hero">
-    <h1>内存碎片（Fragmentation）</h1>
+  <a class="back-link" href="/docs/modules/memory/index.html">
+    <span aria-hidden="true">←</span>
+    返回内存管理模块
+  </a>
+
+  <header class="hero">
+    <div class="eyebrow">HRTOS / MEMORY MANAGEMENT</div>
+    <h1>内存碎片与连续块分配</h1>
     <p>
-      HRTOS采用基于Bitmap的连续块分配机制，通过固定粒度扫描与连续区间申请实现内存管理。
-      碎片问题主要来源于连续空间切割与栈增长不均衡。
+      在资源受限的 8051 平台上，分配器不仅要判断总空间是否充足，
+      还需要找到满足任务栈深度要求的连续空闲区域。
+      理解位图、分配粒度与任务生命周期之间的关系，是评估内存可用性的关键。
     </p>
-    <span class="tag">Bitmap Allocation Model</span>
+    <div class="hero-tags">
+      <span class="tag">Bitmap 位图</span>
+      <span class="tag">连续块搜索</span>
+      <span class="tag">任务栈分配</span>
+      <span class="tag">8051 内核</span>
+    </div>
+  </header>
+
+  <section class="metrics" aria-label="内存管理关键概念">
+    <div class="metric">
+      <div class="metric-label">分配粒度</div>
+      <span class="metric-value">2 Bytes</span>
+      <div class="metric-note">按当前页面所述的分配模型</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">分配依据</div>
+      <span class="metric-value">连续空闲位</span>
+      <div class="metric-note">满足请求所需的连续块数量</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">重点检查</div>
+      <span class="metric-value">最大连续块</span>
+      <div class="metric-note">总空闲量不等于最大可分配量</div>
+    </div>
   </section>
 
   <div class="layout">
-
-    <!-- CONTENT -->
     <div class="content">
 
       <section class="section" id="overview">
-        <h2>① 分配模型概述</h2>
-        <p>
-          HRTOS内存管理以OS_MEMORY位图为核心，每一位表示一个最小分配单元。
-          分配过程本质是“连续bit段查找”。
-        </p>
-
-        <div class="code">
-单位粒度：2 bytes
-映射区域：OS_USER_RAM_INIT → OS_USER_RAM_EXIT
-
-OS_MEMORY[x] bit = 1 → 已占用
-OS_MEMORY[x] bit = 0 → 空闲
+        <div class="section-head">
+          <div class="section-no">01</div>
+          <div>
+            <h2>分配模型概述</h2>
+            <p class="section-intro">位图描述分配单元状态，连续扫描用于定位候选空间。</p>
+          </div>
         </div>
 
-        <div class="block">
-          该模型天然避免指针碎片，但仍可能产生“连续区不足”的外部碎片问题。
+        <p>
+          根据当前提供的实现说明，HRTOS 使用
+          <code class="inline-code">OS_MEMORY</code>
+          作为内存映射位图，并以连续空闲块搜索的方式为任务栈寻找空间。
+          每一位对应一个最小分配单元，位图状态反映该单元是否已经占用。
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-label">当前描述的分配模型</div>
+          <pre><code>分配粒度：2 bytes
+映射区域：OS_USER_RAM_INIT → OS_USER_RAM_EXIT
+
+OS_MEMORY[x] bit = 1  // 已占用
+OS_MEMORY[x] bit = 0  // 空闲</code></pre>
+        </div>
+
+        <div class="bitmap" role="img" aria-label="位图状态示意：已占用与空闲的分配单元混合排列">
+          <span class="bit used">1</span>
+          <span class="bit used">1</span>
+          <span class="bit free">0</span>
+          <span class="bit free">0</span>
+          <span class="bit used">1</span>
+          <span class="bit free">0</span>
+          <span class="bit used">1</span>
+          <span class="bit used">1</span>
+          <span class="bit free">0</span>
+          <span class="bit free">0</span>
+          <span class="bit free">0</span>
+          <span class="bit used">1</span>
+          <span class="bit used">1</span>
+          <span class="bit free">0</span>
+          <span class="bit used">1</span>
+          <span class="bit free">0</span>
+        </div>
+
+        <div class="bit-legend">
+          <span class="legend-item"><span class="legend-swatch"></span>已占用单元</span>
+          <span class="legend-item"><span class="legend-swatch free"></span>空闲单元</span>
+        </div>
+
+        <div class="note">
+          <strong>关键区别：</strong>
+          位图可以直接记录每个分配单元的状态，但能否成功分配仍取决于搜索规则、
+          请求的连续块数量以及当前空闲区域的分布。
         </div>
       </section>
 
       <section class="section" id="alloc">
-        <h2>② 连续块分配过程（来自 os_task_create）</h2>
-
-        <p>任务创建时，通过扫描bitmap寻找连续空闲块：</p>
-
-        <div class="code">
-for(i=0; i<total_blocks; i++){
-    if(bitmap[i] == 0) k++;
-    else k = 0;
-
-    if(k >= sd){
-        allocate();
-    }
-}
-        </div>
-
-        <div class="block">
-          sd = stack深度（实际 +1）<br>
-          k = 连续空闲块计数<br>
-          找到连续区域后一次性标记占用
+        <div class="section-head">
+          <div class="section-no">02</div>
+          <div>
+            <h2>连续块搜索与任务创建</h2>
+            <p class="section-intro">关注连续空闲单元，而不是只累计全部空闲空间。</p>
+          </div>
         </div>
 
         <p>
-          该机制决定：内存不是“随机碎片”，而是“连续段碎片（contiguous fragmentation）”。
+          按你提供的 <code class="inline-code">os_task_create</code>
+          逻辑描述，分配器扫描位图：遇到空闲位就累计连续长度；
+          遇到已占用位则清零。连续长度达到任务所需块数后，便可以确定候选区域。
         </p>
+
+        <div class="code-wrap">
+          <div class="code-label">连续空闲块搜索 · 示意伪代码</div>
+          <pre><code>k = 0;
+
+for (i = 0; i < total_blocks; i++) {
+    if (bitmap[i] == 0) {
+        k++;
+    } else {
+        k = 0;
+    }
+
+    if (k >= required_blocks) {
+        /* 已找到满足连续长度的候选区域 */
+        /* 实际分配、标记与循环退出行为以源码为准 */
+    }
+}</code></pre>
+        </div>
+
+        <div class="allocation-flow">
+          <div class="flow-step">
+            <span class="step-index">STEP 01</span>
+            <strong>读取位图</strong>
+            <p>检查当前分配单元的状态。</p>
+          </div>
+          <div class="flow-step">
+            <span class="step-index">STEP 02</span>
+            <strong>累计连续长度</strong>
+            <p>空闲则递增，占用则重置计数。</p>
+          </div>
+          <div class="flow-step">
+            <span class="step-index">STEP 03</span>
+            <strong>比较请求大小</strong>
+            <p>检查连续块数量是否达到要求。</p>
+          </div>
+          <div class="flow-step">
+            <span class="step-index">STEP 04</span>
+            <strong>处理分配结果</strong>
+            <p>按实际实现记录地址并更新位图。</p>
+          </div>
+        </div>
+
+        <div class="note">
+          <strong>变量语义：</strong>
+          <code class="inline-code">k</code> 表示当前连续空闲单元计数；
+          <code class="inline-code">required_blocks</code> 对应所需连续块数量。
+          你给出的 <code class="inline-code">sd</code> 被描述为栈深度加一后的需求值，
+          但最终块数换算和边界条件仍应以真实分配代码为准。
+        </div>
       </section>
 
       <section class="section" id="stack">
-        <h2>③ 栈空间增长与碎片来源</h2>
-
-        <div class="code">
-i = OS_USER_RAM_INIT + (index * 2) + 1
-SP = i
-OS_INSIDE_STACK_USE_MAXIMUM = i + sd * 2
+        <div class="section-head">
+          <div class="section-no">03</div>
+          <div>
+            <h2>栈空间映射与增长模型</h2>
+            <p class="section-intro">分配位置由起始地址、索引与分配单元粒度共同决定。</p>
+          </div>
         </div>
 
-        <div class="block">
-          栈空间按任务创建顺序连续分配，不回收重排。
-          长期运行后会形成“尾部空洞”。
+        <div class="code-wrap">
+          <div class="code-label">当前提供的地址计算表达式</div>
+          <pre><code>i = OS_USER_RAM_INIT + (index * 2) + 1;
+SP = i;
+
+OS_INSIDE_STACK_USE_MAXIMUM = i + sd * 2;</code></pre>
         </div>
 
         <p>
-          这类碎片属于外部碎片，但特点是：
-          <br>
-          - 不来自malloc/free<br>
-          - 来自任务生命周期分布不均<br>
-          - 不可自动压缩
+          这组表达式体现了按两字节粒度计算位置的思路。
+          <code class="inline-code">index</code> 决定分配单元在映射区中的偏移，
+          <code class="inline-code">SP</code> 由计算出的地址设置，
+          而 <code class="inline-code">OS_INSIDE_STACK_USE_MAXIMUM</code>
+          则根据栈需求计算另一个边界值。
+        </p>
+
+        <div class="note warning">
+          <strong>地址含义需要与实现核对：</strong>
+          仅凭这三行表达式，无法确定变量记录的是栈顶、栈底还是边界哨兵地址，
+          也无法确认实际分配区间的首尾是否包含在内。
+          因此这里保留表达式的原始语义，不直接推导未经确认的可用栈字节数。
+        </div>
+
+        <h3>为什么任务生命周期可能影响空间分布？</h3>
+        <p>
+          如果任务栈从一个连续区域中分配，任务创建与删除会改变位图中的占用分布。
+          当不同生命周期的任务交错创建和删除时，可能形成多个分离的空闲区间。
+          是否能再次利用这些区间，取决于删除时是否清除相应位图标记，以及后续搜索能否找到足够长的连续区域。
         </p>
       </section>
 
       <section class="section" id="fragment">
-        <h2>④ 碎片形成机制</h2>
-
-        <p>HRTOS中的碎片主要来源：</p>
-
-        <div class="code">
-1. bitmap连续段被切割
-2. task创建/删除不对称
-3. stack区域单向增长
-4. 高速任务与普通任务混合分配
+        <div class="section-head">
+          <div class="section-no">04</div>
+          <div>
+            <h2>连续空间碎片如何形成</h2>
+            <p class="section-intro">空闲空间可能仍然存在，但无法满足当前连续分配请求。</p>
+          </div>
         </div>
 
-        <div class="block">
-          特点：碎片不可“随机恢复”，只能通过重启或重建内存池消除。
+        <div class="fragment-demo">
+          <div>
+            <div class="demo-row">
+              <div class="demo-label">连续空闲</div>
+              <div class="units" aria-label="连续空闲空间示意">
+                <span class="unit allocated"></span><span class="unit allocated"></span>
+                <span class="unit allocated"></span><span class="unit allocated"></span>
+                <span class="unit available"></span><span class="unit available"></span>
+                <span class="unit available"></span><span class="unit available"></span>
+                <span class="unit available"></span><span class="unit available"></span>
+                <span class="unit available"></span><span class="unit available"></span>
+                <span class="unit allocated"></span><span class="unit allocated"></span>
+                <span class="unit allocated"></span><span class="unit allocated"></span>
+              </div>
+            </div>
+            <div class="demo-caption">存在一段较长的连续空闲区，较大的连续分配请求更容易满足。</div>
+          </div>
+
+          <div>
+            <div class="demo-row">
+              <div class="demo-label">空闲区分散</div>
+              <div class="units" aria-label="空闲空间被占用区间分隔的示意">
+                <span class="unit allocated"></span><span class="unit available"></span>
+                <span class="unit allocated"></span><span class="unit allocated"></span>
+                <span class="unit available"></span><span class="unit allocated"></span>
+                <span class="unit available"></span><span class="unit allocated"></span>
+                <span class="unit allocated"></span><span class="unit available"></span>
+                <span class="unit allocated"></span><span class="unit available"></span>
+                <span class="unit allocated"></span><span class="unit available"></span>
+                <span class="unit allocated"></span><span class="unit available"></span>
+              </div>
+            </div>
+            <div class="demo-caption">即使空闲单元总数不少，最长连续空闲区也可能很短。</div>
+          </div>
+        </div>
+
+        <h3>需要区分的三个指标</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>指标</th>
+                <th>含义</th>
+                <th>回答的问题</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>总空闲空间</td>
+                <td>所有空闲分配单元的总量</td>
+                <td>系统一共还剩多少空间？</td>
+              </tr>
+              <tr>
+                <td>最长连续空闲区</td>
+                <td>最大的一段连续空闲单元</td>
+                <td>单次最多能申请多大的连续区域？</td>
+              </tr>
+              <tr>
+                <td>当前请求大小</td>
+                <td>此次任务创建需要的连续空间</td>
+                <td>当前是否存在足够大的空闲区？</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <strong>判断原则：</strong>
+          当总空闲空间大于请求所需空间，但最长连续空闲区仍小于请求大小时，
+          连续块分配可能失败。这是分析外部碎片时最有用的判据之一。
+        </div>
+      </section>
+
+      <section class="section" id="causes">
+        <div class="section-head">
+          <div class="section-no">05</div>
+          <div>
+            <h2>碎片来源与实现边界</h2>
+            <p class="section-intro">需要结合分配、删除与复用路径判断，而不是仅根据位图推断。</p>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>可能因素</th>
+                <th>对空间分布的影响</th>
+                <th>需要检查的实现</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>不同大小的栈请求</td>
+                <td>空闲区间长度可能不匹配后续请求。</td>
+                <td>栈深度换算与连续块搜索条件。</td>
+              </tr>
+              <tr>
+                <td>任务创建与删除交错</td>
+                <td>可能在仍有占用区域时形成分散空闲区。</td>
+                <td>删除路径是否释放对应位图单元。</td>
+              </tr>
+              <tr>
+                <td>任务生命周期不同</td>
+                <td>部分区域可能长期占用，其他区域反复申请和释放。</td>
+                <td>任务复用、删除和再次创建的完整流程。</td>
+              </tr>
+              <tr>
+                <td>高速任务与普通任务共用映射区</td>
+                <td>若确实共用同一分配区域，可能影响连续区间分布。</td>
+                <td>两类任务是否共享同一分配器与位图。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note warning">
+          <strong>不要预先认定无法恢复：</strong>
+          如果任务删除时正确释放了位图，原空闲区域就可能被后续分配复用。
+          若系统没有内存压缩或搬移机制，分散的空闲区通常不会自动合并成一个更大的连续区；
+          但这不代表只能重启系统。最终行为取决于 HRTOS 的实际释放和重分配逻辑。
         </div>
       </section>
 
       <section class="section" id="opt">
-        <h2>⑤ 优化策略</h2>
-
-        <div class="code">
-策略1：固定任务上限（OS_PROCESS_MAX）
-策略2：预分配栈深度（sd上限控制）
-策略3：高速任务独立区
-策略4：启动阶段集中创建任务
+        <div class="section-head">
+          <div class="section-no">06</div>
+          <div>
+            <h2>面向 8051 的内存规划策略</h2>
+            <p class="section-intro">优先让资源需求可预估，再评估运行期间动态分配的必要性。</p>
+          </div>
         </div>
 
-        <div class="block">
-          HRTOS核心思想：用“确定性分配”替代“动态整理”。
+        <div class="allocation-flow">
+          <div class="flow-step">
+            <span class="step-index">01 / CAPACITY</span>
+            <strong>控制任务数量</strong>
+            <p>依据任务上限与系统可用内存核算总需求。</p>
+          </div>
+          <div class="flow-step">
+            <span class="step-index">02 / STACK</span>
+            <strong>规划栈深度</strong>
+            <p>为每个任务选择合理的栈需求，避免无依据地扩大分配。</p>
+          </div>
+          <div class="flow-step">
+            <span class="step-index">03 / LIFETIME</span>
+            <strong>集中创建长期任务</strong>
+            <p>对生命周期固定的任务，可优先考虑启动阶段创建。</p>
+          </div>
+          <div class="flow-step">
+            <span class="step-index">04 / VERIFY</span>
+            <strong>检查分配与释放</strong>
+            <p>验证位图标记、释放范围和再次分配的行为。</p>
+          </div>
+        </div>
+
+        <h3>建议重点验证的项目</h3>
+        <ul>
+          <li>申请失败时，位图和栈地址是否保持一致。</li>
+          <li>任务删除后，对应分配单元是否被正确释放。</li>
+          <li>连续空闲块的搜索起点、终止条件和边界是否正确。</li>
+          <li>不同栈深度请求能否复用已释放区域。</li>
+          <li>重复创建与删除任务后，内存映射是否出现残留占用。</li>
+        </ul>
+
+        <div class="note success">
+          <strong>工程目标：</strong>
+          不只是让任务创建成功，还要让分配边界、失败处理与释放行为都可以检查和验证。
+          对资源受限的实时系统而言，可预测的内存行为与单纯追求更高的利用率同样重要。
         </div>
       </section>
 
-      <section class="section">
-        <h2>⑥ 关键结论</h2>
+      <section class="section" id="conclusion">
+        <div class="section-head">
+          <div class="section-no">07</div>
+          <div>
+            <h2>关键结论</h2>
+            <p class="section-intro">从位图状态进一步理解连续分配的可用性。</p>
+          </div>
+        </div>
 
-        <div class="block">
-          Bitmap模型不会产生传统malloc碎片<br>
-          但会产生“连续空间碎片”<br>
-          系统稳定性取决于任务创建顺序设计<br>
-          长期运行必须依赖静态规划
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>结论</th>
+                <th>准确含义</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>位图记录分配状态</td>
+                <td>通过各分配单元的标记，描述当前占用与空闲情况。</td>
+              </tr>
+              <tr>
+                <td>连续搜索影响分配结果</td>
+                <td>请求是否成功不仅取决于总空闲量，还取决于连续区间长度。</td>
+              </tr>
+              <tr>
+                <td>碎片不等于空间全部丢失</td>
+                <td>分散空闲区域仍可能被较小的后续请求复用。</td>
+              </tr>
+              <tr>
+                <td>释放机制决定可复用性</td>
+                <td>需要检查任务删除时的位图更新和后续分配行为。</td>
+              </tr>
+              <tr>
+                <td>静态规划降低运行期不确定性</td>
+                <td>合理的任务数量、栈深度与生命周期规划，有助于减少意外分配失败。</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
     </div>
 
-    <!-- SIDEBAR -->
     <aside class="sidebar">
-
-      <div class="box">
-        <h3>碎片导航</h3>
-        <a href="#overview">分配模型</a>
-        <a href="#alloc">任务分配</a>
-        <a href="#stack">栈机制</a>
-        <a href="#fragment">碎片来源</a>
-        <a href="#opt">优化策略</a>
+      <div class="side-box">
+        <h3>本页导航</h3>
+        <nav class="side-nav" aria-label="内存碎片章节">
+          <a href="#overview">分配模型</a>
+          <a href="#alloc">连续块搜索</a>
+          <a href="#stack">栈空间映射</a>
+          <a href="#fragment">碎片形成机制</a>
+          <a href="#causes">碎片来源</a>
+          <a href="#opt">规划与优化</a>
+          <a href="#conclusion">关键结论</a>
+        </nav>
       </div>
 
-      <div class="box">
-        <h3>相关模块</h3>
-        <a href="/docs/modules/memory/allocation.html">内存分配</a>
-        <a href="/docs/modules/task/index.html">任务系统</a>
+      <div class="side-box">
+        <h3>相关文档</h3>
+        <div class="side-links">
+          <a href="/docs/modules/memory/index.html">内存管理模块总览 →</a>
+          <a href="/docs/modules/memory/allocation.html">内核内存映射 →</a>
+          <a href="/docs/modules/task/index.html">任务系统 →</a>
+          <a href="/docs/modules/ipc/index.html">IPC 通信机制 →</a>
+        </div>
       </div>
 
+      <div class="side-box">
+        <h3>阅读提示</h3>
+        <p>
+          位图分配流程和地址公式根据当前提供的实现说明整理。
+          对于释放、复用、边界处理及最大连续空间，应结合对应版本的实际源码验证。
+        </p>
+      </div>
     </aside>
-
   </div>
 
   <footer class="footer">
-    © 2017–2026 HRTOS Kernel Memory Architecture
+    © 2017–2026 HRTOS · Kernel Memory Management
   </footer>
 
 </main>

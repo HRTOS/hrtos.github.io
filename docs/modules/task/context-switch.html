@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -5,354 +6,1776 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>上下文切换（Context Switch） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS上下文切换机制说明，包括任务栈管理、任务上下文保存、高速任务专用寄存器组以及标准任务切换机制。" />
-
-<link rel="stylesheet" href="https://hrtos.com/global.css">
+<meta name="description" content="HRTOS 8051 上下文切换技术文档：任务现场管理、栈指针、标准任务与高速任务上下文、中断返回、内存布局及切换时序分析。" />
+<meta name="keywords" content="HRTOS, 8051 RTOS, Context Switch, 上下文切换, 任务栈, 高速任务, 寄存器组, 中断现场, 实时系统" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/modules/task/context-switch.html" />
+<link rel="stylesheet" href="https://hrtos.com/global.css" />
 
 <style>
-:root{
-  --bg:#0f172a;
-  --surface:rgba(15,23,42,.72);
-  --border:rgba(148,163,184,.18);
-  --accent:#38bdf8;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --radius:10px;
-  color-scheme:dark;
+/* =========================================================
+   HRTOS Documentation — Context Switch
+   Visual system aligned with the new documentation pages
+   ========================================================= */
+
+:root {
+  --cs-bg: #0a1020;
+  --cs-panel: #111b2e;
+  --cs-panel-deep: #0b1426;
+  --cs-text: #e6edf8;
+  --cs-muted: #9aabc3;
+  --cs-accent: #38bdf8;
+  --cs-teal: #5eead4;
+  --cs-purple: #c4b5fd;
+  --cs-green: #6ee7b7;
+  --cs-border: rgba(148, 163, 184, .17);
+  --cs-radius: 16px;
+  --cs-shadow: 0 18px 48px rgba(0, 0, 0, .19);
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+.cs-page {
+  width: min(var(--max-width, 1180px), calc(100% - 40px));
+  margin: 0 auto;
+  padding: 104px 0 56px;
+  color: var(--cs-text);
+  font-size: 15px;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
 }
 
-.page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
+.cs-page *,
+.cs-page *::before,
+.cs-page *::after {
+  box-sizing: border-box;
 }
 
-.breadcrumb{
-  font-size:.92rem;
-  color:var(--muted);
-  margin-bottom:28px;
+.cs-page h1,
+.cs-page h2,
+.cs-page h3,
+.cs-page h4,
+.cs-page p,
+.cs-page ul,
+.cs-page ol {
+  margin-top: 0;
 }
 
-.breadcrumb a{color:#7dd3fc}
-
-.hero h1{
-  margin:0 0 12px;
-  font-size:clamp(2.2rem,5vw,3.6rem);
+.cs-page h1,
+.cs-page h2,
+.cs-page h3,
+.cs-page h4 {
+  color: #f1f5f9;
+  line-height: 1.4;
 }
 
-.hero p{
-  color:var(--muted);
-  max-width:780px
+.cs-page p {
+  margin-bottom: 16px;
 }
 
-.layout{
-  display:grid;
-  grid-template-columns:1fr 280px;
-  gap:28px;
-  margin-top:40px;
+.cs-page ul,
+.cs-page ol {
+  padding-left: 23px;
+  margin-bottom: 20px;
 }
 
-.section{
-  background:rgba(30,41,59,.6);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:22px;
-  margin-bottom:18px;
+.cs-page li {
+  margin: 8px 0;
 }
 
-.section h2{
-  margin:0 0 10px;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
+.cs-page li::marker {
+  color: var(--cs-accent);
 }
 
-.code{
-  background:#020617;
-  border:1px solid rgba(56,189,248,.18);
-  padding:14px;
-  border-radius:8px;
-  overflow:auto;
-  font-family:Consolas,monospace;
-  font-size:.9rem;
-  color:#7dd3fc;
-  white-space:pre-wrap;
+.cs-page strong {
+  color: #f1f5f9;
+  font-weight: 750;
 }
 
-.sidebar .box{
-  background:rgba(30,41,59,.55);
-  border:1px solid var(--border);
-  padding:16px;
-  border-radius:10px;
-  margin-bottom:14px;
+.cs-page a {
+  color: var(--cs-accent);
+  text-decoration: none;
+  transition: color .18s ease, border-color .18s ease,
+              background .18s ease;
 }
 
-.sidebar a{
-  display:block;
-  color:#7dd3fc;
-  font-size:.92rem;
-  margin:6px 0;
+.cs-page a:hover {
+  color: #bae6fd;
 }
 
-.sidebar{
-  display:grid;
-  gap:14px;
+.cs-page code,
+.cs-page pre {
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
 }
 
-.footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:var(--muted);
-  font-size:.9rem;
+/* Breadcrumb */
+
+.cs-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 25px;
+  color: var(--cs-muted);
+  font-size: .83rem;
 }
 
-.box{
-  padding:16px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.5);
+.cs-breadcrumb a {
+  color: #b7c5d9;
 }
 
-.box a{
-  display:block;
-  color:#7dd3fc;
-  font-size:.9rem;
-  margin-bottom:6px;
+.cs-breadcrumb .cs-separator {
+  color: #52627a;
+}
+
+.cs-breadcrumb [aria-current="page"] {
+  color: #dce8f7;
+}
+
+/* Hero */
+
+.cs-hero {
+  position: relative;
+  isolation: isolate;
+  margin-bottom: 26px;
+  padding: clamp(28px, 5vw, 52px);
+  overflow: hidden;
+  border: 1px solid rgba(56, 189, 248, .22);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(14, 165, 233, .18), transparent 53%),
+    radial-gradient(ellipse at 100% 100%, rgba(94, 234, 212, .07), transparent 42%),
+    linear-gradient(145deg, #111c31, #0b1325 72%);
+  box-shadow: var(--cs-shadow);
+}
+
+.cs-hero::before {
+  position: absolute;
+  z-index: -1;
+  top: -105px;
+  right: -70px;
+  width: 310px;
+  height: 310px;
+  border: 1px solid rgba(56, 189, 248, .12);
+  border-radius: 50%;
+  content: "";
+  box-shadow:
+    0 0 0 28px rgba(56, 189, 248, .025),
+    0 0 0 58px rgba(56, 189, 248, .02);
+  pointer-events: none;
+}
+
+.cs-eyebrow {
+  margin-bottom: 13px;
+  color: var(--cs-teal);
+  font-size: .73rem;
+  font-weight: 850;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+}
+
+.cs-hero h1 {
+  max-width: 850px;
+  margin-bottom: 20px;
+  font-size: clamp(2.3rem, 5.3vw, 4rem);
+  font-weight: 850;
+  line-height: 1.12;
+  letter-spacing: -.045em;
+}
+
+.cs-hero h1 span {
+  display: block;
+  margin-top: 12px;
+  color: #7dd3fc;
+  font-size: .43em;
+  font-weight: 650;
+  letter-spacing: .025em;
+}
+
+.cs-lead {
+  max-width: 820px;
+  margin-bottom: 23px;
+  color: #c5d3e6;
+  font-size: 1.04rem;
+  line-height: 1.95;
+}
+
+.cs-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 23px 0 25px;
+}
+
+.cs-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 29px;
+  padding: 4px 10px;
+  border: 1px solid rgba(56, 189, 248, .23);
+  border-radius: 6px;
+  background: rgba(14, 116, 144, .12);
+  color: #b9e8fb;
+  font-size: .7rem;
+  font-weight: 750;
+  letter-spacing: .045em;
+}
+
+.cs-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid rgba(148, 163, 184, .23);
+  border-radius: 8px;
+  background: rgba(2, 6, 23, .3);
+  color: #c8d8eb;
+  font-size: .86rem;
+  font-weight: 650;
+}
+
+.cs-back:hover {
+  border-color: rgba(56, 189, 248, .45);
+  background: rgba(56, 189, 248, .08);
+}
+
+/* Quick overview */
+
+.cs-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+  margin-bottom: 28px;
+}
+
+.cs-stat {
+  min-width: 0;
+  padding: 19px 20px;
+  border: 1px solid var(--cs-border);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(17, 27, 46, .96), rgba(11, 20, 38, .94));
+}
+
+.cs-stat-label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--cs-muted);
+  font-size: .76rem;
+  font-weight: 650;
+}
+
+.cs-stat strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #eaf6ff;
+  font-size: 1.45rem;
+  font-weight: 850;
+  line-height: 1.35;
+  letter-spacing: -.025em;
+}
+
+.cs-stat p {
+  margin-bottom: 0;
+  color: var(--cs-muted);
+  font-size: .8rem;
+  line-height: 1.65;
+}
+
+/* Layout */
+
+.cs-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 258px;
+  align-items: start;
+  gap: 24px;
+}
+
+.cs-main {
+  min-width: 0;
+}
+
+.cs-sidebar {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+}
+
+/* Sections */
+
+.cs-section {
+  min-width: 0;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius);
+  background:
+    linear-gradient(155deg, rgba(17, 27, 46, .97), rgba(12, 21, 39, .97));
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .12);
+  scroll-margin-top: 90px;
+}
+
+.cs-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 23px 25px 19px;
+  border-bottom: 1px solid rgba(148, 163, 184, .13);
+  background: rgba(2, 6, 23, .16);
+}
+
+.cs-number {
+  display: inline-flex;
+  flex: 0 0 39px;
+  width: 39px;
+  height: 39px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(56, 189, 248, .3);
+  border-radius: 9px;
+  background: rgba(56, 189, 248, .09);
+  color: #7dd3fc;
+  font-size: .79rem;
+  font-weight: 850;
+}
+
+.cs-section-head > div {
+  min-width: 0;
+}
+
+.cs-section-head h2 {
+  margin: 1px 0 5px;
+  font-size: 1.28rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.cs-section-subtitle {
+  margin-bottom: 0;
+  color: var(--cs-muted);
+  font-size: .82rem;
+}
+
+.cs-section-body {
+  padding: 24px 25px 26px;
+}
+
+.cs-section-body > :last-child {
+  margin-bottom: 0;
+}
+
+.cs-section-body h3 {
+  margin: 28px 0 12px;
+  font-size: 1.06rem;
+  font-weight: 800;
+}
+
+.cs-section-body h4 {
+  margin: 20px 0 10px;
+  font-size: .98rem;
+  font-weight: 750;
+}
+
+.cs-section-body p {
+  color: #cbd7e7;
+}
+
+/* Intro panel */
+
+.cs-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(245px, .85fr);
+  gap: 0;
+  margin-bottom: 27px;
+  overflow: hidden;
+  border: 1px solid rgba(56, 189, 248, .23);
+  border-radius: 15px;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(14, 165, 233, .1), transparent 58%),
+    #0d1729;
+}
+
+.cs-overview-main {
+  padding: 25px 27px;
+}
+
+.cs-kicker {
+  margin-bottom: 8px;
+  color: var(--cs-teal);
+  font-size: .68rem;
+  font-weight: 850;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cs-overview-main h2 {
+  margin-bottom: 12px;
+  font-size: clamp(1.35rem, 2.7vw, 1.8rem);
+  font-weight: 850;
+  letter-spacing: -.025em;
+}
+
+.cs-overview-main p:last-child {
+  margin-bottom: 0;
+}
+
+.cs-overview-side {
+  padding: 24px;
+  border-left: 1px solid var(--cs-border);
+  background: rgba(2, 6, 23, .22);
+}
+
+.cs-responsibility {
+  display: grid;
+  gap: 9px;
+}
+
+.cs-responsibility > div {
+  padding: 11px 13px;
+  border: 1px solid rgba(148, 163, 184, .15);
+  border-radius: 8px;
+  background: rgba(17, 27, 46, .72);
+}
+
+.cs-responsibility strong,
+.cs-responsibility span {
+  display: block;
+}
+
+.cs-responsibility strong {
+  margin-bottom: 2px;
+  font-size: .9rem;
+}
+
+.cs-responsibility span {
+  color: var(--cs-muted);
+  font-size: .79rem;
+}
+
+/* Notes */
+
+.cs-note {
+  margin: 21px 0;
+  padding: 16px 18px;
+  border: 1px solid rgba(56, 189, 248, .21);
+  border-left: 3px solid var(--cs-accent);
+  border-radius: 9px;
+  background: rgba(56, 189, 248, .055);
+}
+
+.cs-note > strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #b9e8fb;
+  font-size: .91rem;
+}
+
+.cs-note p {
+  margin-bottom: 0;
+  font-size: .91rem;
+}
+
+.cs-note.purple {
+  border-color: rgba(167, 139, 250, .23);
+  border-left-color: #a78bfa;
+  background: rgba(139, 92, 246, .055);
+}
+
+.cs-note.purple > strong {
+  color: #d7ccff;
+}
+
+.cs-note.green {
+  border-color: rgba(52, 211, 153, .22);
+  border-left-color: #34d399;
+  background: rgba(16, 185, 129, .05);
+}
+
+.cs-note.green > strong {
+  color: #a7f3d0;
+}
+
+/* Architecture cards */
+
+.cs-architecture {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  margin: 21px 0;
+}
+
+.cs-architecture-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid rgba(56, 189, 248, .22);
+  border-radius: 11px;
+  background:
+    linear-gradient(145deg, rgba(14, 116, 144, .1), transparent 75%),
+    rgba(8, 17, 33, .55);
+}
+
+.cs-architecture-card.fast {
+  border-color: rgba(167, 139, 250, .24);
+  background:
+    linear-gradient(145deg, rgba(124, 58, 237, .11), transparent 75%),
+    rgba(8, 17, 33, .55);
+}
+
+.cs-architecture-label {
+  margin-bottom: 8px;
+  color: #7dd3fc !important;
+  font-size: .68rem;
+  font-weight: 850;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.cs-architecture-card.fast .cs-architecture-label {
+  color: var(--cs-purple) !important;
+}
+
+.cs-architecture-card h3 {
+  margin: 0 0 13px;
+  font-size: 1.13rem;
+}
+
+.cs-architecture-card code {
+  display: block;
+  margin: 8px 0;
+  padding: 9px 11px;
+  border: 1px solid rgba(148, 163, 184, .13);
+  border-radius: 7px;
+  background: rgba(2, 6, 23, .62);
+  color: #9edfff;
+  font-size: .8rem;
+  overflow-wrap: anywhere;
+}
+
+.cs-architecture-card.fast code {
+  color: #d2c6ff;
+}
+
+.cs-architecture-card p:last-child {
+  margin: 14px 0 0;
+  color: var(--cs-muted);
+  font-size: .85rem;
+}
+
+/* Tables */
+
+.cs-table-wrap {
+  max-width: 100%;
+  margin: 19px 0;
+  overflow-x: auto;
+  border: 1px solid var(--cs-border);
+  border-radius: 9px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cs-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(2, 6, 23, .22);
+  font-size: .86rem;
+  line-height: 1.75;
+}
+
+.cs-table th,
+.cs-table td {
+  padding: 11px 13px;
+  border-bottom: 1px solid rgba(148, 163, 184, .13);
+  text-align: left;
+  vertical-align: top;
+}
+
+.cs-table th {
+  background: #172238;
+  color: #f1f5f9;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.cs-table td {
+  color: #cbd7e7;
+}
+
+.cs-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.cs-table tbody tr:hover {
+  background: rgba(56, 189, 248, .035);
+}
+
+.cs-table code {
+  color: #9edfff;
+  font-size: .88em;
+  overflow-wrap: anywhere;
+}
+
+/* Inline code */
+
+.cs-section-body p code,
+.cs-section-body li code {
+  padding: 2px 6px;
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 5px;
+  background: #080f1e;
+  color: #8edcff;
+  font-size: .87em;
+  overflow-wrap: anywhere;
+}
+
+/* Code blocks */
+
+.cs-code-wrap {
+  margin: 19px 0;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 10px;
+  background: #060c19;
+}
+
+.cs-code-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, .13);
+  background: #0d1729;
+  color: #9aabc3;
+  font-size: .72rem;
+  font-weight: 750;
+  letter-spacing: .045em;
+}
+
+.cs-code-label span:last-child {
+  color: #5eead4;
+  font-size: .67rem;
+  letter-spacing: .08em;
+}
+
+.cs-code {
+  max-width: 100%;
+  margin: 0;
+  padding: 17px 19px;
+  overflow-x: auto;
+  color: #c3e8ff;
+  font-size: .82rem;
+  line-height: 1.85;
+  tab-size: 4;
+  white-space: pre;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cs-code code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+/* Flow */
+
+.cs-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.cs-flow-step {
+  padding: 13px 16px;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 9px;
+  background: rgba(6, 14, 28, .6);
+  text-align: center;
+}
+
+.cs-flow-step strong,
+.cs-flow-step span {
+  display: block;
+}
+
+.cs-flow-step strong {
+  margin-bottom: 3px;
+  font-size: .92rem;
+}
+
+.cs-flow-step span {
+  color: var(--cs-muted);
+  font-size: .81rem;
+}
+
+.cs-flow-arrow {
+  color: var(--cs-accent);
+  font-size: 1.1rem;
+  font-weight: 850;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.cs-flow-branches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.cs-flow-caption {
+  margin-top: 10px;
+  color: var(--cs-muted) !important;
+  font-size: .79rem;
+}
+
+/* Checklist */
+
+.cs-checklist {
+  padding-left: 0 !important;
+  list-style: none;
+}
+
+.cs-checklist li {
+  position: relative;
+  margin: 9px 0;
+  padding: 10px 13px 10px 37px;
+  border: 1px solid rgba(148, 163, 184, .13);
+  border-radius: 8px;
+  background: rgba(6, 14, 28, .43);
+}
+
+.cs-checklist li::before {
+  position: absolute;
+  top: 10px;
+  left: 13px;
+  color: var(--cs-green);
+  content: "✓";
+  font-weight: 850;
+}
+
+/* Summary */
+
+.cs-summary {
+  margin: 25px 0 28px;
+  padding: 23px 25px;
+  border: 1px solid rgba(56, 189, 248, .22);
+  border-radius: 13px;
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, .09), transparent 70%),
+    #0d1729;
+}
+
+.cs-summary h2 {
+  margin-bottom: 13px;
+  font-size: 1.22rem;
+  font-weight: 850;
+}
+
+.cs-summary ul {
+  margin-bottom: 0;
+}
+
+.cs-summary li {
+  margin: 8px 0;
+  color: #cbd7e7;
+}
+
+/* Sidebar */
+
+.cs-sidebox {
+  margin-bottom: 14px;
+  padding: 17px;
+  border: 1px solid var(--cs-border);
+  border-radius: 12px;
+  background: linear-gradient(150deg, rgba(17, 27, 46, .96), rgba(10, 18, 34, .96));
+}
+
+.cs-sidebox h2 {
+  margin-bottom: 12px;
+  font-size: .96rem;
+  font-weight: 850;
+}
+
+.cs-toc,
+.cs-related {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cs-toc a {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  color: #c6d4e6;
+  font-size: .81rem;
+  line-height: 1.65;
+}
+
+.cs-toc a span {
+  flex: 0 0 19px;
+  color: #7dd3fc;
+  font-size: .68rem;
+  font-weight: 850;
+}
+
+.cs-toc a:hover,
+.cs-related a:hover {
+  background: rgba(56, 189, 248, .07);
+  color: #c5edff;
+}
+
+.cs-related a {
+  display: block;
+  padding: 7px 8px;
+  border-radius: 6px;
+  color: #c6d4e6;
+  font-size: .81rem;
+  line-height: 1.65;
+}
+
+.cs-side-note {
+  margin-bottom: 0;
+  color: var(--cs-muted);
+  font-size: .81rem;
+  line-height: 1.85;
+}
+
+.cs-side-label {
+  display: inline-flex;
+  margin-bottom: 10px;
+  padding: 3px 7px;
+  border: 1px solid rgba(94, 234, 212, .18);
+  border-radius: 5px;
+  background: rgba(94, 234, 212, .05);
+  color: #8cebdc;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+/* Footer */
+
+.cs-page > .footer {
+  margin-top: 30px;
+  padding-top: 19px;
+  border-top: 1px solid var(--cs-border);
+  color: var(--cs-muted);
+  font-size: .8rem;
+  line-height: 1.8;
+}
+
+/* Tablet */
+
+@media (max-width: 1000px) {
+  .cs-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cs-sidebar {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 13px;
+  }
+
+  .cs-sidebox {
+    margin-bottom: 0;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 620px) {
+  .cs-page {
+    width: calc(100% - 28px);
+    padding: 84px 0 36px;
+    font-size: 14px;
+  }
+
+  .cs-breadcrumb {
+    gap: 6px;
+    font-size: .75rem;
+    margin-bottom: 18px;
+  }
+
+  .cs-hero {
+    padding: 25px 20px;
+    border-radius: 15px;
+  }
+
+  .cs-hero::before {
+    top: -130px;
+    right: -175px;
+  }
+
+  .cs-hero h1 {
+    font-size: 2.3rem;
+  }
+
+  .cs-lead {
+    font-size: .96rem;
+  }
+
+  .cs-stats {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .cs-stat {
+    padding: 15px 17px;
+  }
+
+  .cs-stat strong {
+    font-size: 1.25rem;
+  }
+
+  .cs-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cs-overview-main,
+  .cs-overview-side {
+    padding: 20px;
+  }
+
+  .cs-overview-side {
+    border-top: 1px solid var(--cs-border);
+    border-left: 0;
+  }
+
+  .cs-section-head {
+    gap: 11px;
+    padding: 18px 16px;
+  }
+
+  .cs-number {
+    flex-basis: 34px;
+    width: 34px;
+    height: 34px;
+    font-size: .72rem;
+  }
+
+  .cs-section-head h2 {
+    font-size: 1.13rem;
+  }
+
+  .cs-section-subtitle {
+    font-size: .77rem;
+  }
+
+  .cs-section-body {
+    padding: 19px 16px 21px;
+  }
+
+  .cs-architecture {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cs-flow-branches {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cs-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cs-code {
+    padding: 13px;
+    font-size: .76rem;
+  }
+
+  .cs-table {
+    min-width: 540px;
+    font-size: .81rem;
+  }
+
+  .cs-table th,
+  .cs-table td {
+    padding: 9px 10px;
+  }
+
+  .cs-summary {
+    padding: 20px 17px;
+  }
+}
+
+html {
+  min-height: 100%;
+  background: #0a1020;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(
+      ellipse at 12% 0%,
+      rgba(14, 116, 144, 0.16),
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 88% 12%,
+      rgba(37, 99, 235, 0.10),
+      transparent 36%
+    ),
+    #0a1020;
+  color: #e6edf8;
+}
+
+.ctx-page {
+  position: relative;
+  z-index: 1;
+  color: #e6edf8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-page *,
+  .cs-page *::before,
+  .cs-page *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
 }
 </style>
-
 </head>
 
-<body>
-
-<main class="page">
-
-<nav class="breadcrumb">
-<a href="/docs/index.html">Docs</a> /
-<a href="/docs/modules/index.html">Modules</a> /
-<a href="/docs/modules/task/index.html">Task</a> /
-<span>Context Switch</span>
-</nav>
-
-
-<section class="hero">
-
-<h1>上下文切换（Context Switch）</h1>
-
-<p>
-上下文切换是HRTOS实现多任务运行的基础机制。
-系统通过保存当前任务执行现场，并恢复目标任务执行现场，
-使多个任务能够在单CPU环境下交替运行。
-</p>
-
-</section>
-
-
-<div class="layout">
-
-<div>
-
-
-<section class="section">
-
-<h2>一、任务上下文概念</h2>
-
-<p>
-每个任务在运行过程中都会产生独立的执行状态，包括程序执行位置、
-堆栈位置以及处理器运行环境。
-上下文切换的作用就是保存这些状态，使任务能够在之后恢复执行。
-</p>
-
-<p>
-HRTOS针对不同类型任务采用不同的上下文管理方式：
-</p>
-
-<div class="code">
-标准任务:
-OS_TASK_CONTEXT[OS_PROCESS_MAX][OS_JINCHENG_SHENDU]
-
-高速任务:
-OS_FAST_CONTEXT[OS_FAST_TASK_MAX][OS_KUAI_SHENDU]
-</div>
-
-</section>
-
-
-
-<section class="section">
-
-<h2>二、标准任务上下文保存</h2>
-
-<p>
-普通任务使用独立任务栈保存运行现场。
-任务创建时，系统会为任务分配栈空间，并记录对应的栈指针。
-</p>
-
-<div class="code">
-OS_JINCHENG_SP[OS_PROCESS_MAX]
-
-标准任务栈指针记录
-</div>
-
-<p>
-任务切换过程中，当前任务的执行现场被保存，
-恢复任务时通过保存的栈信息继续执行。
-</p>
-
-</section>
-
-
-
-<section class="section">
-
-<h2>三、高速任务上下文机制</h2>
-
-<p>
-HRTOS提供高速任务机制，用于需要快速响应的执行场景。
-高速任务拥有独立工作寄存器组，可以减少部分上下文搬运开销。
-</p>
-
-
-<div class="code">
-OS_KUAI_SP[OS_FAST_TASK_MAX]
-
-高速任务栈指针
-
-
-OS_FAST_CONTEXT[OS_FAST_TASK_MAX][...]
-
-高速任务上下文区域
-</div>
-
-
-<p>
-由于高速任务使用专用寄存器组，
-切换过程中无需像普通任务一样保存和恢复全部R0-R7寄存器，
-从而降低切换开销。
-</p>
-
-
-</section>
-
-
-
-<section class="section">
-
-<h2>四、上下文切换过程</h2>
-
-
-<div class="code">
-当前任务运行
-
-        ↓
-
-保存当前执行现场
-
-        ↓
-
-更新任务运行状态
-
-        ↓
-
-选择目标任务
-
-        ↓
-
-恢复目标任务上下文
-
-        ↓
-
-继续执行目标任务
-</div>
-
-
-<p>
-上下文切换由系统运行状态变化触发，例如任务主动让出CPU、
-任务状态变化或系统调度过程。
-</p>
-
-
-</section>
-
-
-
-<section class="section">
-
-<h2>五、任务上下文设计特点</h2>
-
-<ul>
-
-<li>标准任务与高速任务采用不同上下文结构</li>
-
-<li>任务拥有独立执行栈，保证任务运行隔离</li>
-
-<li>高速任务利用专用寄存器组降低切换成本</li>
-
-<li>上下文管理与任务生命周期紧密结合</li>
-
-<li>中断上下文机制由Interrupt模块独立管理</li>
-
-</ul>
-
-
-</section>
-
-
-</div>
-
-
-
-<aside class="sidebar">
-
-
-<div class="box">
-
-<h3>目录</h3>
-
-<a href="#overview">上下文概念</a>
-<a href="#standard">标准任务</a>
-<a href="#fast">高速任务</a>
-<a href="#flow">切换流程</a>
-
-</div>
-
-
-
-<div class="box">
-
-<h3>相关模块</h3>
-
-<a href="/docs/modules/task/index.html">Task</a>
-
-<a href="/docs/modules/wait/index.html">Wait</a>
-
-
-</div>
-
-
-</aside>
-
-
-</div>
-
-
-<footer class="footer">
-© 2017–2026 HRTOS. Context Switch Documentation.
-</footer>
-
+<body data-header="docs">
+
+<main class="cs-page">
+
+  <nav class="cs-breadcrumb" aria-label="面包屑导航">
+    <a href="/docs/index.html">文档中心</a>
+    <span class="cs-separator" aria-hidden="true">/</span>
+    <a href="/docs/modules/index.html">系统模块</a>
+    <span class="cs-separator" aria-hidden="true">/</span>
+    <a href="/docs/modules/task/index.html">任务管理</a>
+    <span class="cs-separator" aria-hidden="true">/</span>
+    <span aria-current="page">上下文切换</span>
+  </nav>
+
+  <header class="cs-hero">
+    <p class="cs-eyebrow">HRTOS / KERNEL ARCHITECTURE</p>
+
+    <h1>
+      上下文切换
+      <span>Context Switch</span>
+    </h1>
+
+    <p class="cs-lead">
+      调度器决定下一个运行的任务，上下文切换则负责完成处理器执行现场的交接。
+      在资源受限的 8051 平台上，任务栈、寄存器组、内核状态与中断返回路径共同构成
+      上下文管理的实现基础，也直接影响切换的正确性与实际执行开销。
+    </p>
+
+    <div class="cs-tags">
+      <span class="cs-tag">8051 ARCHITECTURE</span>
+      <span class="cs-tag">TASK CONTEXT</span>
+      <span class="cs-tag">STACK MANAGEMENT</span>
+      <span class="cs-tag">INTERRUPT RETURN</span>
+    </div>
+
+    <a class="cs-back" href="/docs/modules/task/index.html">
+      <span aria-hidden="true">←</span>
+      返回任务管理模块
+    </a>
+  </header>
+
+  <section class="cs-stats" aria-label="上下文管理要点">
+    <div class="cs-stat">
+      <span class="cs-stat-label">标准任务</span>
+      <strong>16 个槽位</strong>
+      <p>任务 ID 范围为 0–15，对应标准任务管理结构。</p>
+    </div>
+    <div class="cs-stat">
+      <span class="cs-stat-label">高速任务</span>
+      <strong>2 个槽位</strong>
+      <p>任务 ID 为 16、17，采用独立的高速任务管理路径。</p>
+    </div>
+    <div class="cs-stat">
+      <span class="cs-stat-label">核心职责</span>
+      <strong>保存 · 恢复</strong>
+      <p>维护任务执行连续性，而不只是修改当前任务编号。</p>
+    </div>
+  </section>
+
+  <section class="cs-overview" aria-label="上下文切换核心概念">
+    <div class="cs-overview-main">
+      <p class="cs-kicker">Core Concept</p>
+      <h2>保存当前现场，恢复目标现场</h2>
+      <p>
+        任务切换必须维护执行位置、栈状态以及恢复执行所需的处理器状态。
+        哪些状态需要显式保存、哪些由硬件或其他内核路径处理，取决于具体的切换入口、
+        寄存器组策略和 HRTOS 内核实现。
+      </p>
+    </div>
+
+    <div class="cs-overview-side">
+      <p class="cs-kicker">Three Responsibilities</p>
+      <div class="cs-responsibility">
+        <div>
+          <strong>调度器</strong>
+          <span>确定接下来运行的任务</span>
+        </div>
+        <div>
+          <strong>上下文管理</strong>
+          <span>维护任务切出与恢复所需的状态</span>
+        </div>
+        <div>
+          <strong>中断机制</strong>
+          <span>遵循中断入口、现场保护与返回规则</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="cs-layout">
+
+    <div class="cs-main">
+
+      <section class="cs-section" id="responsibility">
+        <div class="cs-section-head">
+          <span class="cs-number">01</span>
+          <div>
+            <h2>上下文切换的职责</h2>
+            <p class="cs-section-subtitle">从调度决策到处理器执行</p>
+          </div>
+        </div>
+
+        <div class="cs-section-body">
+          <p>
+            一个任务不仅包含程序代码，还具有运行过程中的执行位置、栈状态和处理器现场。
+            当任务暂时离开处理器时，内核必须按照既定规则保留或维护后续恢复所需的信息。
+            当该任务再次运行时，处理器才能沿着正确的执行路径继续工作。
+          </p>
+
+          <p>
+            调度与上下文切换是两个相互关联但职责不同的环节。
+            调度器依据任务状态和调度策略确定运行对象；上下文切换则负责完成执行现场的交接。
+            调度决策正确，并不自动意味着现场保存与恢复也一定正确。
+          </p>
+
+          <div class="cs-note">
+            <strong>核心区别</strong>
+            <p>
+              调度解决“谁接下来运行”，上下文管理解决“目标任务如何正确继续执行”。
+              分析实时响应时，还需要进一步考虑触发事件、内核临界区、中断影响和具体执行路径。
+            </p>
+          </div>
+
+          <h3>任务上下文涉及的状态</h3>
+
+          <div class="cs-table-wrap">
+            <table class="cs-table">
+              <thead>
+                <tr>
+                  <th>状态类别</th>
+                  <th>主要作用</th>
+                  <th>实现注意点</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>执行位置</td>
+                  <td>确定任务恢复后的执行位置。</td>
+                  <td>返回地址及其处理方式与具体控制流有关。</td>
+                </tr>
+                <tr>
+                  <td>栈状态</td>
+                  <td>维持函数调用、返回过程和栈数据。</td>
+                  <td>必须遵循 8051 堆栈规则与编译器约定。</td>
+                </tr>
+                <tr>
+                  <td>处理器现场</td>
+                  <td>保存后续执行所需的处理器状态。</td>
+                  <td>保存范围取决于切换路径和寄存器组策略。</td>
+                </tr>
+                <tr>
+                  <td>任务记录</td>
+                  <td>关联任务身份、状态及上下文管理信息。</td>
+                  <td>内核记录不一定与处理器现场存放在同一区域。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="cs-section" id="architecture">
+        <div class="cs-section-head">
+          <span class="cs-number">02</span>
+          <div>
+            <h2>HRTOS 上下文管理结构</h2>
+            <p class="cs-section-subtitle">标准任务、高速任务与栈指针记录</p>
+          </div>
+        </div>
+
+        <div class="cs-section-body">
+          <p>
+            HRTOS 将标准任务与高速任务的相关管理信息分开组织。
+            阅读内核结构时，需要区分栈指针记录、上下文管理区域和任务状态记录：
+            它们彼此关联，但承担的职责并不相同。
+          </p>
+
+          <div class="cs-architecture">
+            <div class="cs-architecture-card">
+              <p class="cs-architecture-label">Standard Tasks</p>
+              <h3>标准任务</h3>
+              <code>OS_JINCHENG_SP</code>
+              <code>OS_TASK_CONTEXT</code>
+              <p>
+                标准任务的栈指针记录与上下文管理区域。
+                当前布局分别为 16 字节和 208 字节。
+              </p>
+            </div>
+
+            <div class="cs-architecture-card fast">
+              <p class="cs-architecture-label">Fast Tasks</p>
+              <h3>高速任务</h3>
+              <code>OS_KUAI_SP</code>
+              <code>OS_FAST_CONTEXT</code>
+              <p>
+                高速任务的栈指针记录与上下文管理区域。
+                当前布局分别为 2 字节和 10 字节。
+              </p>
+            </div>
+          </div>
+
+          <h3>相关结构的职责</h3>
+
+          <div class="cs-table-wrap">
+            <table class="cs-table">
+              <thead>
+                <tr>
+                  <th>结构标识符</th>
+                  <th>当前布局</th>
+                  <th>用途</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>OS_JINCHENG_SP</code></td>
+                  <td>16 字节</td>
+                  <td>标准任务栈指针记录。</td>
+                </tr>
+                <tr>
+                  <td><code>OS_KUAI_SP</code></td>
+                  <td>2 字节</td>
+                  <td>高速任务栈指针记录。</td>
+                </tr>
+                <tr>
+                  <td><code>OS_TASK_CONTEXT</code></td>
+                  <td>208 字节</td>
+                  <td>标准任务上下文管理区域。</td>
+                </tr>
+                <tr>
+                  <td><code>OS_FAST_CONTEXT</code></td>
+                  <td>10 字节</td>
+                  <td>高速任务上下文管理区域。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="cs-note purple">
+            <strong>如何理解这些尺寸</strong>
+            <p>
+              上述数字对应当前 HRTOS 4.0 内存布局中的区域占用。
+              它们描述的是结构区域大小，不应直接理解为每次切换的实际搬运字节数。
+              保存字段、具体顺序和执行路径仍应以对应版本的内核定义及汇编产物为准。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="cs-section" id="memory-layout">
+        <div class="cs-section-head">
+          <span class="cs-number">03</span>
+          <div>
+            <h2>上下文相关内存布局</h2>
+            <p class="cs-section-subtitle">HRTOS 4.0 · XDATA 区域</p>
+          </div>
+        </div>
+
+        <div class="cs-section-body">
+          <p>
+            在当前 HRTOS 4.0 的布局中，上下文管理相关对象位于 XDATA 区域。
+            通过对象地址、占用长度和相邻区域，可以核对链接后的内存分配是否符合预期。
+          </p>
+
+          <div class="cs-table-wrap">
+            <table class="cs-table">
+              <thead>
+                <tr>
+                  <th>对象</th>
+                  <th>起始地址</th>
+                  <th>占用</th>
+                  <th>地址范围</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>OS_PROCESS_OK</code></td>
+                  <td><code>0x0200</code></td>
+                  <td>16 B</td>
+                  <td><code>0x0200–0x020F</code></td>
+                </tr>
+                <tr>
+                  <td><code>OS_JINCHENG_SP</code></td>
+                  <td><code>0x0210</code></td>
+                  <td>16 B</td>
+                  <td><code>0x0210–0x021F</code></td>
+                </tr>
+                <tr>
+                  <td><code>OS_KUAI_SP</code></td>
+                  <td><code>0x0220</code></td>
+                  <td>2 B</td>
+                  <td><code>0x0220–0x0221</code></td>
+                </tr>
+                <tr>
+                  <td><code>OS_FAST_CONTEXT</code></td>
+                  <td><code>0x0222</code></td>
+                  <td>10 B</td>
+                  <td><code>0x0222–0x022B</code></td>
+                </tr>
+                <tr>
+                  <td><code>OS_TASK_CONTEXT</code></td>
+                  <td><code>0x022C</code></td>
+                  <td>208 B</td>
+                  <td><code>0x022C–0x02FB</code></td>
+                </tr>
+                <tr>
+                  <td><code>OS_MEMORY</code></td>
+                  <td><code>0x02FC</code></td>
+                  <td>4 B</td>
+                  <td><code>0x02FC–0x02FF</code></td>
+                </tr>
+                <tr>
+                  <td><code>OS_JINCHENG_JILU_SP</code></td>
+                  <td><code>0x0300</code></td>
+                  <td>16 B</td>
+                  <td><code>0x0300–0x030F</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="cs-code-wrap">
+            <div class="cs-code-label">
+              <span>ADDRESS MAP</span>
+              <span>XDATA</span>
+            </div>
+            <pre class="cs-code"><code>0x0200  OS_PROCESS_OK       16 B
+0x0210  OS_JINCHENG_SP      16 B
+0x0220  OS_KUAI_SP           2 B
+0x0222  OS_FAST_CONTEXT     10 B
+0x022C  OS_TASK_CONTEXT    208 B
+0x02FC  OS_MEMORY            4 B
+0x0300  OS_JINCHENG_JILU_SP 16 B</code></pre>
+          </div>
+
+          <div class="cs-note green">
+            <strong>工程核对建议</strong>
+            <p>
+              地址表用于解释当前已确认的布局。若更换编译配置、内核版本或相关宏定义，
+              应重新检查链接映射文件，不能将文档中的地址视为所有构建配置下都不变的 ABI。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="cs-section" id="standard">
+        <div class="cs-section-head">
+          <span class="cs-number">04</span>
+          <div>
+            <h2>标准任务的上下文管理</h2>
+            <p class="cs-section-subtitle">维持任务执行连续性</p>
+          </div>
+        </div>
+
+        <div class="cs-section-body">
+          <p>
+            标准任务需要维护各自独立的执行过程。任务被切出时，内核需要保留恢复该任务所需的状态；
+            当任务再次成为运行对象时，则沿对应恢复路径重新建立执行环境。
+          </p>
+
+          <div class="cs-code-wrap">
+            <div class="cs-code-label">
+              <span>STANDARD TASK CONTEXT</span>
+              <span>CONCEPTUAL VIEW</span>
+            </div>
+            <pre class="cs-code"><code>OS_JINCHENG_SP
+    └── 标准任务栈指针记录
+
+OS_TASK_CONTEXT
+    └── 标准任务上下文管理区域
+
+任务切出
+    └── 维护后续恢复所需的状态
+
+任务恢复
+    └── 恢复目标任务的执行环境</code></pre>
+          </div>
+
+          <h3>从运行到恢复</h3>
+
+          <ol>
+            <li><strong>任务运行：</strong>处理器执行当前任务指令，栈和相关状态持续变化。</li>
+            <li><strong>进入内核路径：</strong>系统根据对应事件和调度规则进入内核处理流程。</li>
+            <li><strong>维护当前现场：</strong>按照具体实现保存或记录后续恢复所需的状态。</li>
+            <li><strong>确定目标任务：</strong>内核根据调度结果确定下一个运行对象。</li>
+            <li><strong>恢复目标现场：</strong>按照目标任务的上下文管理规则恢复执行所需状态。</li>
+            <li><strong>继续执行：</strong>处理器转入目标任务对应的执行路径。</li>
+          </ol>
+
+          <div class="cs-note">
+            <strong>8051 平台的实现边界</strong>
+            <p>
+              8051 的堆栈操作、返回地址、工作寄存器组和编译器调用约定，
+              与通用 32 位或 64 位处理器并不相同。
+              不能仅凭通用 RTOS 的上下文模型推断 HRTOS 的精确保存顺序和栈帧大小。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="cs-section" id="fast">
+        <div class="cs-section-head">
+          <span class="cs-number">05</span>
+          <div>
+            <h2>高速任务与寄存器组</h2>
+            <p class="cs-section-subtitle">利用 8051 硬件资源优化关键路径</p>
+          </div>
+        </div>
+
+        <div class="cs-section-body">
+          <p>
+            8051 的工作寄存器组为内核设计提供了可利用的硬件资源。
+            在适当的寄存器组分配和现场管理策略下，可以减少某些执行路径中不必要的寄存器保存与恢复操作。
+          </p>
+
+          <div class="cs-code-wrap">
+            <div class="cs-code-label">
+              <span>FAST TASK CONTEXT</span>
+              <span>CONCEPTUAL VIEW</span>
+            </div>
+            <pre class="cs-code"><code>OS_KUAI_SP
+    └── 高速任务栈指针记录
+
+OS_FAST_CONTEXT
+    └── 高速任务上下文管理区域
+
+寄存器组策略
+    └── 配合切换路径管理处理器现场</code></pre>
+          </div>
+
+          <h3>寄存器组优化的价值与边界</h3>
+
+          <ul>
+            <li><strong>减少部分现场搬运：</strong>合理利用硬件寄存器组，可能减少特定路径上的保存与恢复指令。</li>
+            <li><strong>控制切换开销：</strong>缩短关键路径，有助于降低对应场景的执行成本。</li>
+            <li><strong>维护完整状态：</strong>执行位置、栈状态及其他必要现场仍需得到正确管理。</li>
+            <li><strong>遵守资源约定：</strong>任务、中断和其他执行路径必须遵循一致的寄存器组使用规则。</li>
+          </ul>
+
+          <div class="cs-note purple">
+            <strong>硬件优化不等于零开销切换</strong>
+            <p>
+              专用寄存器组只能优化适用的部分路径，不能单独证明任务切换没有额外开销。
+              实际收益需要结合汇编指令、寄存器组使用方式和目标 MCU 的时序测量来评估。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="cs-section" id="flow">
+        <div class="cs-section-head">
+          <span class="cs-number">06</span>
+          <div>
+            <h2>上下文切换的执行关系</h2>
+            <p class="cs-section-subtitle">理解关键环节，而不是假定固定汇编顺序</p>
+          </div>
+        </div>
+
+        <div class="cs-section-body">
+          <p>
+            从职责上看，一次任务切换涉及当前现场管理、目标任务确定以及目标现场恢复。
+            以下示意用于解释这些环节的关系，不代表所有 HRTOS 切换路径都严格采用相同顺序。
+          </p>
+
+          <div class="cs-flow" aria-label="上下文切换概念流程">
+            <div class="cs-flow-step">
+              <strong>当前任务运行</strong>
+              <span>处理器执行当前任务</span>
+            </div>
+            <div class="cs-flow-arrow" aria-hidden="true">↓</div>
+            <div class="cs-flow-step">
+              <strong>进入内核处理路径</strong>
+              <span>由相应的系统事件或调度流程触发</span>
+            </div>
+            <div class="cs-flow-arrow" aria-hidden="true">↓</div>
+            <div class="cs-flow-step">
+              <strong>维护当前任务现场</strong>
+              <span>保存或记录恢复所需的状态</span>
+            </div>
+            <div class="cs-flow-arrow" aria-hidden="true">↓</div>
+            <div class="cs-flow-step">
+              <strong>确定目标任务</strong>
+              <span>按照当前调度规则选择运行对象</span>
+            </div>
+            <div class="cs-flow-arrow" aria-hidden="true">↓</div>
+            <div class="cs-flow-branches">
+              <div class="cs-flow-step">
+                <strong>恢复目标任务现场</strong>
+                <span>恢复目标任务的执行环境</span>
+              </div>
+              <div class="cs-flow-step">
+                <strong>转入目标执行路径</strong>
+                <span>继续执行相应任务代码</span>
+              </div>
+            </div>
+          </div>
+
+          <p class="cs-flow-caption">
+            概念流程示意。实际入口、保存顺序、调度位置和返回方式应以 HRTOS 对应版本的实现为准。
+          </p>
+
+          <h3>切换触发与调度结果不是同一概念</h3>
+
+          <p>
+            任务主动让出处理器、任务状态变化以及系统调度过程，都可能与执行对象改变有关。
+            但某个事件是否立即导致任务切换，取决于 HRTOS 的调度模式、当前运行状态和具体处理路径。
+          </p>
+
+          <p>
+            分析时应分别确认：什么事件触发内核处理、调度器如何确定目标任务、内核通过什么路径完成现场交接。
+            这样更容易区分调度行为问题与上下文管理问题。
+          </p>
+        </div>
+      </section>
+
+      <section class="cs-section" id="interrupt">
+        <div class="cs-section-head">
+          <span class="cs-number">07</span>
+          <div>
+            <h2>任务上下文与中断现场</h2>
+            <p class="cs-section-subtitle">共享处理器资源，但具有不同的执行约束</p>
+          </div>
+        </div>
+
+        <div class="cs-section-body">
+          <p>
+            任务与中断共享处理器资源，但二者的进入方式、执行目标和返回要求并不相同。
+            在 8051 上，中断现场保护还受到硬件堆栈、寄存器组和嵌套中断规则的约束。
+            因此，任务上下文管理必须与中断机制协同设计。
+          </p>
+
+          <div class="cs-table-wrap">
+            <table class="cs-table">
+              <thead>
+                <tr>
+                  <th>机制</th>
+                  <th>主要职责</th>
+                  <th>分析重点</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Task Context</td>
+                  <td>管理任务切出和恢复所需的执行状态。</td>
+                  <td>任务栈、现场保存和恢复路径。</td>
+                </tr>
+                <tr>
+                  <td>Interrupt Context</td>
+                  <td>满足中断执行及中断返回的现场要求。</td>
+                  <td>中断入口、寄存器保护和返回规则。</td>
+                </tr>
+                <tr>
+                  <td>Scheduler</td>
+                  <td>依据调度规则确定任务执行对象。</td>
+                  <td>调度条件、运行状态及切换时机。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>中断退出路径</h3>
+
+          <p>
+            HRTOS 的中断入口与退出由内核对应路径管理。对于通过跳转进入的特定中断处理路径，
+            不能直接套用普通 C 函数调用和返回的假设。
+          </p>
+
+          <div class="cs-code-wrap">
+            <div class="cs-code-label">
+              <span>INTERRUPT EXIT</span>
+              <span>KERNEL API</span>
+            </div>
+            <pre class="cs-code"><code>os_interrupt_exit()
+
+用于 HRTOS 对应中断处理路径的退出管理。
+具体调用位置、现场要求及后续返回行为，
+必须遵循当前内核版本的中断接口约定。</code></pre>
+          </div>
+
+          <div class="cs-note green">
+            <strong>对实时分析的意义</strong>
+            <p>
+              只有明确区分任务切换路径与中断处理路径，才能合理分析任务切换耗时、
+              中断响应时间、嵌套中断开销，以及中断对关键代码执行时间的影响。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="cs-section" id="performance">
+        <div class="cs-section-head">
+          <span class="cs-number">08</span>
+          <div>
+            <h2>切换开销与时序验证</h2>
+            <p class="cs-section-subtitle">从内核实现走向可复核的工程数据</p>
+          </div>
+        </div>
+
+        <div class="cs-section-body">
+          <p>
+            上下文切换开销不仅取决于保存和恢复现场所需的指令。
+            内核入口、任务状态维护、调度处理以及返回目标任务的路径，
+            都可能影响最终的执行时间。
+          </p>
+
+          <h3>影响切换成本的因素</h3>
+
+          <ul>
+            <li><strong>现场范围：</strong>具体路径需要保存和恢复多少状态。</li>
+            <li><strong>栈操作：</strong>栈指针与堆栈内容的维护方式。</li>
+            <li><strong>寄存器组策略：</strong>硬件资源能否减少必要的现场搬运。</li>
+            <li><strong>调度处理：</strong>任务选择和运行状态更新带来的额外指令。</li>
+            <li><strong>中断影响：</strong>测量窗口内是否发生中断及嵌套处理。</li>
+            <li><strong>编译产物：</strong>编译器生成代码、手写汇编和具体分支路径。</li>
+          </ul>
+
+          <h3>建议的验证方法</h3>
+
+          <ol>
+            <li>明确目标 MCU、时钟频率、编译器版本和编译配置。</li>
+            <li>确定测量边界，区分纯现场交接、完整任务切换和包含中断的场景。</li>
+            <li>检查生成的汇编代码，识别关键路径、分支和指令周期。</li>
+            <li>使用 GPIO、逻辑分析仪或示波器测量目标芯片上的实际执行时间。</li>
+            <li>分别记录不同切换路径的结果，不以单次平均值替代最坏路径分析。</li>
+          </ol>
+
+          <div class="cs-note">
+            <strong>实测时间不等于最坏执行时间上限</strong>
+            <p>
+              一条路径的实测时间不能直接代表所有切换场景的统一上限。
+              如果要给出最坏执行时间结论，还需要明确分析范围、覆盖条件、路径边界和中断干扰假设，
+              并对关键路径进行可复核的指令级分析。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="cs-section" id="verification">
+        <div class="cs-section-head">
+          <span class="cs-number">09</span>
+          <div>
+            <h2>内核分析与故障排查</h2>
+            <p class="cs-section-subtitle">从结构定义到执行结果逐层验证</p>
+          </div>
+        </div>
+
+        <div class="cs-section-body">
+          <p>
+            当任务恢复异常、栈状态错误或切换时序与预期不一致时，
+            可以从以下方向逐步缩小问题范围。
+          </p>
+
+          <ul class="cs-checklist">
+            <li>确认当前任务与目标任务是否符合预期。</li>
+            <li>检查任务栈指针的保存与恢复是否一致。</li>
+            <li>核对现场保存范围与恢复路径。</li>
+            <li>检查寄存器组分配和使用约定。</li>
+            <li>区分普通任务路径与中断路径。</li>
+            <li>检查嵌套中断和中断退出路径的约束。</li>
+            <li>核对编译生成的汇编指令和链接映射文件。</li>
+            <li>记录测量条件，保证测试结果能够复现。</li>
+          </ul>
+
+          <p>
+            以上清单用于组织排查工作，并不意味着每次故障都由这些问题共同导致。
+            应结合实际故障现象、内核实现和测量证据逐项验证。
+          </p>
+        </div>
+      </section>
+
+      <section class="cs-summary" aria-label="本页总结">
+        <h2>本页要点</h2>
+        <ul>
+          <li>调度器决定运行对象，上下文切换负责执行现场交接。</li>
+          <li>标准任务与高速任务使用不同的上下文管理区域。</li>
+          <li>栈指针记录、上下文区域和任务状态记录是相关但不同的内核资源。</li>
+          <li>当前 4.0 布局中，标准任务上下文区域为 208 字节，高速任务上下文区域为 10 字节。</li>
+          <li>任务现场与中断现场必须遵循各自的保护和返回规则。</li>
+          <li>切换开销及实时性结论应由实际内核路径、汇编分析和目标芯片测量支持。</li>
+        </ul>
+      </section>
+
+    </div>
+
+    <aside class="cs-sidebar">
+
+      <section class="cs-sidebox">
+        <h2>本页导航</h2>
+        <nav class="cs-toc" aria-label="本页目录">
+          <a href="#responsibility"><span>01</span> 切换职责</a>
+          <a href="#architecture"><span>02</span> 管理结构</a>
+          <a href="#memory-layout"><span>03</span> 内存布局</a>
+          <a href="#standard"><span>04</span> 标准任务</a>
+          <a href="#fast"><span>05</span> 高速任务</a>
+          <a href="#flow"><span>06</span> 执行关系</a>
+          <a href="#interrupt"><span>07</span> 中断现场</a>
+          <a href="#performance"><span>08</span> 时序验证</a>
+          <a href="#verification"><span>09</span> 故障排查</a>
+        </nav>
+      </section>
+
+      <section class="cs-sidebox">
+        <h2>相关文档</h2>
+        <nav class="cs-related" aria-label="相关文档">
+          <a href="/docs/modules/task/index.html">任务管理 — Task</a>
+          <a href="/docs/modules/scheduler/index.html">调度器 — Scheduler</a>
+          <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a>
+          <a href="/docs/modules/scheduler/real-time-scheduling.html">实时调度</a>
+          <a href="/docs/modules/scheduler/round-robin.html">时间片轮转</a>
+          <a href="/docs/modules/interrupt/index.html">中断管理 — Interrupt</a>
+          <a href="/docs/system/scheduling-flow.html">系统调度流程</a>
+          <a href="/docs/modules/memory/allocation.html">内存分配与管理</a>
+        </nav>
+      </section>
+
+      <section class="cs-sidebox">
+        <span class="cs-side-label">IMPLEMENTATION NOTE</span>
+        <h2>如何验证实现</h2>
+        <p class="cs-side-note">
+          本页说明上下文管理的职责、结构和分析方法。
+          精确的现场保存顺序、结构定义及指令周期，应结合对应版本的内核源码、
+          汇编产物、链接映射文件和测试报告确认。
+        </p>
+      </section>
+
+    </aside>
+
+  </div>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS · Context Switch Documentation
+  </footer>
 
 </main>
-
 
 <script src="https://hrtos.com/header.js"></script>
 

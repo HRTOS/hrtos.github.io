@@ -1,202 +1,732 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>Time Module | HRTOS Module Documentation</title>
-<meta name="description" content="HRTOS时间管理模块：Tick驱动内核时间体系，包括Delay、Timer与调度节拍机制。" />
+<title>Time Module | HRTOS Documentation</title>
+<meta name="description" content="HRTOS 时间管理模块文档：了解系统 Tick、任务延时、调度节拍与定时器之间的关系，以及内核时间推进机制。" />
+<meta name="theme-color" content="#0a1020" />
 
-<link rel="stylesheet" href="https://hrtos.com/global.css">
+<link rel="stylesheet" href="https://hrtos.com/global.css" />
 
 <style>
-:root{
-  --bg:#0f172a;
-  --surface:rgba(15,23,42,.72);
-  --surface-hover:rgba(30,41,59,.92);
-  --border:rgba(148,163,184,.18);
-  --border-strong:rgba(56,189,248,.38);
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+:root {
+  --time-bg: #0a1020;
+  --time-panel: #111b2e;
+  --time-panel-soft: #0e192b;
+  --time-code: #070d19;
+  --time-border: rgba(148, 163, 184, .16);
+  --time-border-hover: rgba(56, 189, 248, .42);
+  --time-text: #e6edf8;
+  --time-muted: #9aabc3;
+  --time-cyan: #38bdf8;
+  --time-teal: #5eead4;
+  --time-radius: 16px;
+  --time-width: 1160px;
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.7;
-  overflow-x:hidden;
+* {
+  box-sizing: border-box;
 }
 
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background-image:
-    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
-  background-size:28px 28px;
-  opacity:.14;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
 }
 
-a{
-  color:inherit;
-  text-decoration:none;
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(14, 116, 144, .14), transparent 36rem),
+    radial-gradient(ellipse at 95% 22%, rgba(37, 99, 235, .10), transparent 32rem),
+    var(--time-bg);
+  color: var(--time-text);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.75;
 }
 
-.page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-  position:relative;
-  z-index:1;
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-/* hero */
-.hero{
-  margin-bottom:56px;
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
 }
 
-.hero-label{
-  display:inline-block;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.24);
-  color:#bae6fd;
-  font-size:.9rem;
-  margin-bottom:18px;
+.page {
+  position: relative;
+  z-index: 1;
+  width: min(var(--time-width), calc(100% - 40px));
+  margin: 0 auto;
+  padding: 108px 0 60px;
 }
 
-.hero h1{
-  margin:0 0 16px;
-  font-size:clamp(2.3rem,5vw,4rem);
-  line-height:1.08;
-  font-weight:700;
+/* Hero */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 58px);
+  margin-bottom: 30px;
+  border: 1px solid rgba(56, 189, 248, .20);
+  border-radius: 24px;
+  background:
+    linear-gradient(120deg, rgba(15, 38, 64, .96), rgba(12, 22, 40, .96) 62%, rgba(13, 34, 49, .94));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .20);
 }
 
-.hero p{
-  margin:0;
-  max-width:760px;
-  color:var(--muted);
-  font-size:1rem;
+.hero::after {
+  content: "";
+  position: absolute;
+  top: -100px;
+  right: -70px;
+  width: 320px;
+  height: 320px;
+  border: 1px solid rgba(56, 189, 248, .13);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 32px rgba(56, 189, 248, .025),
+    0 0 0 68px rgba(56, 189, 248, .02);
+  pointer-events: none;
 }
 
-.meta{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:18px;
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 820px;
 }
 
-.tag{
-  padding:6px 12px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  background:rgba(15,23,42,.45);
-  color:#bae6fd;
-  font-size:.84rem;
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 20px;
+  color: #a5e7ff;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
 }
 
-/* layout */
-.section{
-  margin-bottom:56px;
+.eyebrow::before {
+  content: "";
+  width: 24px;
+  height: 2px;
+  background: var(--time-cyan);
+  border-radius: 2px;
 }
 
-.section h2{
-  margin:0 0 12px;
-  font-size:1.5rem;
-  line-height:1.3;
+.hero h1 {
+  margin: 0;
+  color: #f3f8ff;
+  font-size: clamp(2.2rem, 5.5vw, 4rem);
+  font-weight: 750;
+  letter-spacing: -.045em;
+  line-height: 1.12;
 }
 
-.section p{
-  margin:0 0 22px;
-  color:var(--muted);
+.hero h1 span {
+  display: block;
+  margin-top: 10px;
+  color: var(--time-cyan);
+  font-size: .46em;
+  font-weight: 600;
+  letter-spacing: .015em;
 }
 
-/* grid */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:20px;
+.hero-description {
+  max-width: 720px;
+  margin: 24px 0 0;
+  color: #b4c4d9;
+  font-size: 1rem;
 }
 
-/* card */
-.card{
-  display:grid;
-  gap:12px;
-  padding:24px 22px;
-  min-height:180px;
-  background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.92));
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  transition:.22s ease;
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 26px;
 }
 
-.card:hover{
-  transform:translateY(-6px);
-  border-color:var(--border-strong);
-  background:rgba(30,64,175,.18);
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 11px;
+  border: 1px solid rgba(148, 163, 184, .20);
+  border-radius: 7px;
+  background: rgba(3, 10, 22, .30);
+  color: #d2e6f8;
+  font-size: .8rem;
+  font-weight: 550;
 }
 
-.card h3{
-  margin:0;
-  font-size:1.12rem;
-  color:#f8fafc;
+/* Page sections */
+
+.section {
+  margin-top: 54px;
 }
 
-.card p{
-  margin:0;
-  font-size:.95rem;
-  color:var(--muted);
-  line-height:1.6;
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  margin-bottom: 22px;
 }
 
-.card span{
-  margin-top:auto;
-  color:#7dd3fc;
-  font-size:.92rem;
-  font-weight:600;
+.section-index {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgba(56, 189, 248, .26);
+  border-radius: 11px;
+  background: rgba(56, 189, 248, .07);
+  color: var(--time-cyan);
+  font-size: .82rem;
+  font-weight: 750;
 }
 
-/* code block */
-.code{
-  background:#020617;
-  border:1px solid rgba(56,189,248,.2);
-  padding:14px;
-  border-radius:8px;
-  font-family:Consolas,monospace;
-  font-size:0.9rem;
-  color:#7dd3fc;
-  white-space:pre-wrap;
-  word-break:break-word;
+.section-heading h2 {
+  margin: 0;
+  color: #f0f6ff;
+  font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.4;
 }
 
-/* footer */
-.footer{
-  padding-top:24px;
-  border-top:1px solid rgba(148,163,184,.14);
-  text-align:center;
-  font-size:.9rem;
-  color:#8ea3be;
+.section-heading p {
+  margin: 5px 0 0;
+  color: var(--time-muted);
+  font-size: .92rem;
 }
 
-@media(max-width:900px){
-  .grid{grid-template-columns:1fr;}
+.section-intro {
+  max-width: 850px;
+  margin: -5px 0 22px;
+  color: var(--time-muted);
+  font-size: .96rem;
 }
 
-@media(max-width:640px){
-  .page{
-    width:min(100% - 24px,1180px);
-    padding-top:84px;
+/* Architecture overview */
+
+.architecture {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+  gap: 18px;
+}
+
+.architecture-main,
+.architecture-side {
+  min-width: 0;
+  padding: 25px;
+  border: 1px solid var(--time-border);
+  border-radius: var(--time-radius);
+  background: linear-gradient(155deg, rgba(17, 27, 46, .97), rgba(12, 21, 37, .97));
+}
+
+.panel-kicker {
+  margin-bottom: 8px;
+  color: var(--time-cyan);
+  font-size: .74rem;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.panel-title {
+  margin: 0 0 8px;
+  color: #edf5ff;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.panel-description {
+  margin: 0 0 22px;
+  color: var(--time-muted);
+  font-size: .9rem;
+}
+
+.arch-flow {
+  display: grid;
+  gap: 0;
+}
+
+.flow-node {
+  position: relative;
+  padding: 13px 15px;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 10px;
+  background: rgba(5, 13, 27, .52);
+}
+
+.flow-node.primary {
+  border-color: rgba(56, 189, 248, .34);
+  background: linear-gradient(110deg, rgba(8, 71, 105, .30), rgba(8, 30, 52, .56));
+}
+
+.flow-node strong {
+  display: block;
+  color: #e6f5ff;
+  font-size: .94rem;
+  font-weight: 650;
+}
+
+.flow-node small {
+  display: block;
+  margin-top: 3px;
+  color: var(--time-muted);
+  font-size: .81rem;
+  line-height: 1.6;
+}
+
+.flow-arrow {
+  display: grid;
+  height: 26px;
+  place-items: center;
+  color: #5f8dab;
+  font-size: 1rem;
+}
+
+.module-list {
+  display: grid;
+  gap: 11px;
+}
+
+.module-item {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid rgba(148, 163, 184, .13);
+  border-radius: 10px;
+  background: rgba(4, 12, 25, .34);
+}
+
+.module-symbol {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgba(94, 234, 212, .20);
+  border-radius: 10px;
+  background: rgba(45, 212, 191, .07);
+  color: var(--time-teal);
+  font-size: .77rem;
+  font-weight: 750;
+}
+
+.module-item h3 {
+  margin: 0;
+  color: #e8f1fc;
+  font-size: .93rem;
+  font-weight: 650;
+}
+
+.module-item p {
+  margin: 3px 0 0;
+  color: var(--time-muted);
+  font-size: .83rem;
+  line-height: 1.65;
+}
+
+/* Execution pipeline */
+
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pipeline-step {
+  position: relative;
+  min-width: 0;
+  padding: 17px 14px;
+  border: 1px solid var(--time-border);
+  border-radius: 12px;
+  background: linear-gradient(155deg, rgba(17, 27, 46, .94), rgba(11, 20, 35, .96));
+}
+
+.pipeline-number {
+  display: block;
+  margin-bottom: 11px;
+  color: var(--time-cyan);
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.pipeline-step h3 {
+  margin: 0 0 7px;
+  color: #edf5ff;
+  font-size: .92rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.pipeline-step p {
+  margin: 0;
+  color: var(--time-muted);
+  font-size: .81rem;
+  line-height: 1.65;
+}
+
+.pipeline-note {
+  margin-top: 14px;
+  padding: 13px 16px;
+  border-left: 3px solid rgba(56, 189, 248, .65);
+  border-radius: 0 8px 8px 0;
+  background: rgba(56, 189, 248, .055);
+  color: #b5c8dc;
+  font-size: .87rem;
+}
+
+/* Code panel */
+
+.code-panel {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 13px;
+  background: var(--time-code);
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 17px;
+  border-bottom: 1px solid rgba(148, 163, 184, .12);
+  background: rgba(17, 27, 46, .66);
+}
+
+.code-header strong {
+  color: #dce9f8;
+  font-size: .85rem;
+  font-weight: 650;
+}
+
+.code-header span {
+  color: #7186a1;
+  font-family: Consolas, monospace;
+  font-size: .75rem;
+}
+
+.code-body {
+  overflow-x: auto;
+  padding: 20px;
+  color: #a7dfff;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: .85rem;
+  line-height: 1.95;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.code-comment {
+  color: #7892ad;
+}
+
+/* Module cards */
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.module-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 208px;
+  padding: 23px;
+  overflow: hidden;
+  border: 1px solid var(--time-border);
+  border-radius: var(--time-radius);
+  background: linear-gradient(145deg, rgba(18, 30, 51, .98), rgba(12, 21, 37, .98));
+  transition: border-color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.module-card::after {
+  content: "";
+  position: absolute;
+  right: -32px;
+  bottom: -52px;
+  width: 130px;
+  height: 130px;
+  border: 1px solid rgba(56, 189, 248, .10);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.module-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--time-border-hover);
+  background: linear-gradient(145deg, rgba(19, 39, 63, .98), rgba(12, 25, 43, .98));
+}
+
+.module-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.module-card-code {
+  color: var(--time-cyan);
+  font-family: Consolas, monospace;
+  font-size: .77rem;
+  font-weight: 750;
+  letter-spacing: .06em;
+}
+
+.module-card-arrow {
+  color: #7da6c4;
+  font-size: 1.1rem;
+  transition: transform .2s ease;
+}
+
+.module-card:hover .module-card-arrow {
+  transform: translateX(4px);
+}
+
+.module-card h3 {
+  margin: 0;
+  color: #eff6ff;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.module-card h3 span {
+  margin-left: 5px;
+  color: #a6bad1;
+  font-size: .87rem;
+  font-weight: 500;
+}
+
+.module-card p {
+  margin: 10px 0 20px;
+  color: var(--time-muted);
+  font-size: .9rem;
+  line-height: 1.75;
+}
+
+.module-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 13px;
+  border-top: 1px solid rgba(148, 163, 184, .12);
+}
+
+.module-card-footer span:first-child {
+  color: #8ea7c2;
+  font-size: .78rem;
+}
+
+.module-card-footer span:last-child {
+  color: #8bdcff;
+  font-size: .83rem;
+  font-weight: 650;
+}
+
+/* Related links */
+
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.related-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 19px 21px;
+  border: 1px solid var(--time-border);
+  border-radius: 12px;
+  background: rgba(17, 27, 46, .68);
+  transition: border-color .2s ease, background .2s ease;
+}
+
+.related-link:hover {
+  border-color: var(--time-border-hover);
+  background: rgba(17, 38, 59, .86);
+}
+
+.related-link strong {
+  display: block;
+  color: #e5effc;
+  font-size: .95rem;
+  font-weight: 650;
+}
+
+.related-link small {
+  display: block;
+  margin-top: 4px;
+  color: var(--time-muted);
+  font-size: .82rem;
+  line-height: 1.6;
+}
+
+.related-arrow {
+  flex: 0 0 auto;
+  color: var(--time-cyan);
+  font-size: 1.05rem;
+}
+
+/* Closing note */
+
+.closing {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 54px;
+  padding: 22px 24px;
+  border: 1px solid rgba(94, 234, 212, .18);
+  border-radius: 13px;
+  background: linear-gradient(110deg, rgba(13, 60, 61, .19), rgba(13, 26, 42, .45));
+}
+
+.closing-mark {
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid rgba(94, 234, 212, .25);
+  border-radius: 9px;
+  color: var(--time-teal);
+  font-size: .9rem;
+  font-weight: 800;
+}
+
+.closing h2 {
+  margin: 0 0 5px;
+  color: #e8faf8;
+  font-size: .97rem;
+  font-weight: 700;
+}
+
+.closing p {
+  margin: 0;
+  color: #a8c2cf;
+  font-size: .88rem;
+}
+
+/* Footer: preserve existing page footer */
+
+.footer {
+  padding-top: 24px;
+  border-top: 1px solid rgba(148, 163, 184, .14);
+  margin-top: 56px;
+  text-align: center;
+  font-size: .9rem;
+  color: #8ea3be;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  .architecture {
+    grid-template-columns: 1fr;
+  }
+
+  .pipeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pipeline-step:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    width: calc(100% - 24px);
+    padding-top: 86px;
+    padding-bottom: 36px;
+  }
+
+  .hero {
+    padding: 28px 22px;
+    border-radius: 18px;
+  }
+
+  .hero::after {
+    right: -190px;
+  }
+
+  .hero-description {
+    font-size: .94rem;
+  }
+
+  .section {
+    margin-top: 42px;
+  }
+
+  .section-heading {
+    gap: 11px;
+  }
+
+  .section-index {
+    flex-basis: 33px;
+    width: 33px;
+    height: 33px;
+  }
+
+  .architecture-main,
+  .architecture-side {
+    padding: 18px;
+  }
+
+  .pipeline {
+    grid-template-columns: 1fr;
+  }
+
+  .pipeline-step:last-child {
+    grid-column: auto;
+  }
+
+  .module-grid,
+  .related-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .module-card {
+    min-height: 190px;
+    padding: 20px;
+  }
+
+  .code-body {
+    padding: 16px;
+    font-size: .78rem;
+  }
+
+  .closing {
+    padding: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
   }
 }
 </style>
@@ -207,133 +737,315 @@ a{
 <main class="page">
 
   <!-- HERO -->
-  <section class="hero">
-    <span class="hero-label">HRTOS Module</span>
+  <header class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">HRTOS / KERNEL MODULES</div>
 
-    <h1>Time 时间模块</h1>
+      <h1>
+        Time Module
+        <span>内核时间管理</span>
+      </h1>
 
-    <p>
-      Time模块是HRTOS内核时间驱动核心，基于Tick ISR推进WAIT系统、调度触发与定时机制，
-      是Delay / Timer / Scheduler Tick的统一时间底座。
+      <p class="hero-description">
+        时间模块围绕系统 Tick 建立内核时间基准，为任务延时、超时处理与定时功能提供时间驱动基础。
+        从系统节拍到任务状态变化，各个子模块共同构成 HRTOS 的时间管理体系。
+      </p>
+
+      <div class="hero-tags">
+        <span class="tag">System Tick</span>
+        <span class="tag">Task Delay</span>
+        <span class="tag">Timer</span>
+        <span class="tag">Scheduler Tick</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- SECTION 01 -->
+  <section class="section" id="architecture">
+    <div class="section-heading">
+      <span class="section-index">01</span>
+      <div>
+        <h2>时间体系结构</h2>
+        <p>一个时间基准，多种内核功能。</p>
+      </div>
+    </div>
+
+    <p class="section-intro">
+      Time 模块不是单一的延时 API，而是由系统节拍及相关时间处理机制组成的功能体系。
+      各子模块职责不同，但在时间推进和任务执行管理中相互关联。
     </p>
 
-    <div class="meta">
-      <span class="tag">Tick Driven</span>
-      <span class="tag">WAIT Core</span>
-      <span class="tag">Kernel Time</span>
+    <div class="architecture">
+      <div class="architecture-main">
+        <div class="panel-kicker">TIME ARCHITECTURE</div>
+        <h3 class="panel-title">从系统节拍到内核功能</h3>
+        <p class="panel-description">
+          系统 Tick 提供时间推进基础，其他机制在此基础上完成各自的工作。
+        </p>
+
+        <div class="arch-flow">
+          <div class="flow-node primary">
+            <strong>Tick System · 系统节拍</strong>
+            <small>提供内核时间推进的基础。</small>
+          </div>
+
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+
+          <div class="flow-node">
+            <strong>时间状态更新与超时检查</strong>
+            <small>处理与系统节拍相关的时间状态。</small>
+          </div>
+
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+
+          <div class="flow-node">
+            <strong>任务状态与定时功能</strong>
+            <small>根据各机制的条件，处理任务唤醒或定时事件。</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="architecture-side">
+        <div class="panel-kicker">MODULE RESPONSIBILITIES</div>
+        <h3 class="panel-title">四个核心子模块</h3>
+        <p class="panel-description">
+          理解时间模块时，建议先区分各部分的职责。
+        </p>
+
+        <div class="module-list">
+          <div class="module-item">
+            <div class="module-symbol">TICK</div>
+            <div>
+              <h3>系统节拍</h3>
+              <p>建立系统时间基准，推进内核时间计数。</p>
+            </div>
+          </div>
+
+          <div class="module-item">
+            <div class="module-symbol">WAIT</div>
+            <div>
+              <h3>任务延时</h3>
+              <p>管理任务等待时间及相应的任务状态变化。</p>
+            </div>
+          </div>
+
+          <div class="module-item">
+            <div class="module-symbol">TMR</div>
+            <div>
+              <h3>定时器</h3>
+              <p>提供基于时间的定时处理能力，具体行为以定时器接口定义为准。</p>
+            </div>
+          </div>
+
+          <div class="module-item">
+            <div class="module-symbol">SCH</div>
+            <div>
+              <h3>调度节拍</h3>
+              <p>关联系统节拍与调度处理，具体触发条件由内核机制决定。</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- STRUCTURE -->
-  <section class="section">
-    <h2>时间体系结构</h2>
-
-    <div class="code">
-Time System（时间系统）
-├─ Tick System（系统节拍）
-├─ Delay（任务延时 / wait_tick--）
-├─ Timer（定时器 / callback trigger）
-└─ Scheduler Tick（调度节拍 / READY switch）
+  <!-- SECTION 02 -->
+  <section class="section" id="execution">
+    <div class="section-heading">
+      <span class="section-index">02</span>
+      <div>
+        <h2>内核时间处理流程</h2>
+        <p>关注时间推进、超时处理与任务调度之间的区别。</p>
+      </div>
     </div>
 
-    <p>
-      Time模块不只是时间接口，而是驱动整个内核调度的执行源。
-      所有任务阻塞与唤醒都依赖Tick推进。
-    </p>
-  </section>
+    <div class="pipeline">
+      <article class="pipeline-step">
+        <span class="pipeline-number">STEP 01</span>
+        <h3>Tick 中断</h3>
+        <p>系统节拍到来，执行相应的内核时间处理。</p>
+      </article>
 
+      <article class="pipeline-step">
+        <span class="pipeline-number">STEP 02</span>
+        <h3>更新时间状态</h3>
+        <p>推进系统时间计数，并处理相关时间状态。</p>
+      </article>
 
-  <!-- EXECUTION MODEL -->
-  <section class="section">
-    <h2>内核执行模型</h2>
+      <article class="pipeline-step">
+        <span class="pipeline-number">STEP 03</span>
+        <h3>检查等待条件</h3>
+        <p>处理等待任务的计时与超时条件。</p>
+      </article>
 
-    <div class="code">
-Tick ISR（系统节拍中断）
-  → 系统Tick计数 +1
-  → 所有WAIT任务 wait_tick--
-  → 超时检测（timeout check）
-  → WAIT状态任务恢复为READY
-  → 触发TF0调度中断（scheduler switch）
+      <article class="pipeline-step">
+        <span class="pipeline-number">STEP 04</span>
+        <h3>更新任务状态</h3>
+        <p>满足唤醒条件时，按内核规则更新任务状态。</p>
+      </article>
+
+      <article class="pipeline-step">
+        <span class="pipeline-number">STEP 05</span>
+        <h3>关联调度处理</h3>
+        <p>根据内核调度机制与触发条件，处理后续任务执行。</p>
+      </article>
     </div>
 
-    <p>
-      Delay与Timer统一由Tick ISR驱动：
-      wait_tick递减 → 超时唤醒 → READY队列更新 → 调度触发。
-    </p>
-  </section>
-
-  <!-- RELATION -->
-  <section class="section">
-    <h2>模块关系</h2>
-
-    <div class="code">
-Time System（时间系统）(OS_TICK_COUNT++)
-  → Tick ISR（系统节拍中断）
-  → OS_TASK[].wait_tick--（任务延时递减）
-  → timeout detect（超时检测）
-  → WAIT → READY（状态切换）
-  → OS_PROCESS_OK set（就绪标志置位）
-  → TF0 = 1（调度触发 / scheduler trigger）
-  → context switch（上下文切换）
+    <div class="pipeline-note">
+      <strong>阅读提示：</strong>
+      上述流程用于说明时间处理的逻辑关系，不代表每次 Tick 都必然发生任务切换。
+      时间更新、任务唤醒与实际上下文切换属于不同层次的处理。
     </div>
   </section>
 
+  <!-- SECTION 03 -->
+  <section class="section" id="relationship">
+    <div class="section-heading">
+      <span class="section-index">03</span>
+      <div>
+        <h2>关键机制之间的关系</h2>
+        <p>从系统时间到任务执行，分清各层的职责边界。</p>
+      </div>
+    </div>
 
-  
-  <!-- CORE MODULES -->
-  <section class="section">
-    <h2>核心子模块</h2>
+    <div class="code-panel">
+      <div class="code-header">
+        <strong>Time Subsystem · Conceptual Flow</strong>
+        <span>LOGIC OVERVIEW</span>
+      </div>
+      <div class="code-body"><span class="code-comment">// 系统时间推进</span>
+Tick ISR
+  └─ 更新系统 Tick / 时间计数
 
-    <div class="grid">
+<span class="code-comment">// 与时间相关的内核处理</span>
+  ├─ 处理任务等待计时
+  ├─ 检查超时与唤醒条件
+  └─ 更新符合条件的任务状态
 
-      <a class="card" href="tick-system.html">
-        <h3>系统节拍（Tick System）</h3>
-        <p>系统时间基准，驱动OS_TICK_COUNT与全局时间推进。</p>
-        <span>进入 →</span>
+<span class="code-comment">// 调度与任务执行</span>
+  └─ 根据调度条件进入相应调度处理
+
+<span class="code-comment">// 其他时间功能</span>
+  ├─ Delay：任务级等待
+  ├─ Timer：定时功能
+  └─ Scheduler Tick：调度相关时间机制</div>
+    </div>
+  </section>
+
+  <!-- SECTION 04 -->
+  <section class="section" id="modules">
+    <div class="section-heading">
+      <span class="section-index">04</span>
+      <div>
+        <h2>核心子模块</h2>
+        <p>进入具体文档，了解各机制的实现与使用方式。</p>
+      </div>
+    </div>
+
+    <div class="module-grid">
+
+      <a class="module-card" href="tick-system.html">
+        <div class="module-card-top">
+          <span class="module-card-code">TIME / 01</span>
+          <span class="module-card-arrow" aria-hidden="true">↗</span>
+        </div>
+        <h3>系统节拍 <span>Tick System</span></h3>
+        <p>
+          了解系统 Tick 的作用、时间基准及其在内核时间管理中的位置。
+        </p>
+        <div class="module-card-footer">
+          <span>System Time Base</span>
+          <span>查看文档 →</span>
+        </div>
       </a>
 
-      <a class="card" href="scheduler-tick.html">
-        <h3>调度节拍（Scheduler Tick）</h3>
-        <p>触发任务状态切换（WAIT → READY）的调度时机。</p>
-        <span>进入 →</span>
+      <a class="module-card" href="scheduler-tick.html">
+        <div class="module-card-top">
+          <span class="module-card-code">TIME / 02</span>
+          <span class="module-card-arrow" aria-hidden="true">↗</span>
+        </div>
+        <h3>调度节拍 <span>Scheduler Tick</span></h3>
+        <p>
+          了解系统节拍与调度处理的关联，以及调度时机在内核中的作用。
+        </p>
+        <div class="module-card-footer">
+          <span>Scheduling Timing</span>
+          <span>查看文档 →</span>
+        </div>
       </a>
 
-      <a class="card" href="delay.html">
-        <h3>任务延时（Delay）</h3>
-        <p>基于wait_tick递减的任务阻塞机制（WAIT_DELAY）。</p>
-        <span>进入 →</span>
+      <a class="module-card" href="delay.html">
+        <div class="module-card-top">
+          <span class="module-card-code">TIME / 03</span>
+          <span class="module-card-arrow" aria-hidden="true">↗</span>
+        </div>
+        <h3>任务延时 <span>Delay</span></h3>
+        <p>
+          了解任务级延时的等待机制，以及它与忙等待延时的区别。
+        </p>
+        <div class="module-card-footer">
+          <span>Task Waiting</span>
+          <span>查看文档 →</span>
+        </div>
       </a>
 
-      <a class="card" href="timer.html">
-        <h3>定时器（Timer）</h3>
-        <p>Tick驱动的周期/单次回调触发机制。</p>
-        <span>进入 →</span>
+      <a class="module-card" href="timer.html">
+        <div class="module-card-top">
+          <span class="module-card-code">TIME / 04</span>
+          <span class="module-card-arrow" aria-hidden="true">↗</span>
+        </div>
+        <h3>定时器 <span>Timer</span></h3>
+        <p>
+          查看 HRTOS 定时器的接口、配置方法与具体触发行为。
+        </p>
+        <div class="module-card-footer">
+          <span>Timed Operations</span>
+          <span>查看文档 →</span>
+        </div>
       </a>
 
     </div>
   </section>
 
+  <!-- SECTION 05 -->
+  <section class="section" id="related">
+    <div class="section-heading">
+      <span class="section-index">05</span>
+      <div>
+        <h2>相关模块</h2>
+        <p>继续了解时间管理与其他内核功能的联系。</p>
+      </div>
+    </div>
 
-  <!-- RELATED -->
-  <section class="section">
-    <h2>相关模块</h2>
-
-    <div class="grid">
-
-      <a class="card" href="/docs/modules/scheduler/index.html">
-        <h3>Scheduler</h3>
-        <p>基于优先级与时间片的任务调度系统。</p>
-        <span>查看 →</span>
+    <div class="related-grid">
+      <a class="related-link" href="/docs/modules/scheduler/index.html">
+        <span>
+          <strong>Scheduler · 任务调度</strong>
+          <small>了解任务就绪、优先级与调度机制。</small>
+        </span>
+        <span class="related-arrow" aria-hidden="true">→</span>
       </a>
 
-      <a class="card" href="/docs/modules/ipc/event.html">
-        <h3>Event System</h3>
-        <p>事件驱动与时间触发结合的通信机制。</p>
-        <span>查看 →</span>
+      <a class="related-link" href="/docs/modules/ipc/event.html">
+        <span>
+          <strong>Event System · 事件系统</strong>
+          <small>了解事件通知及其与任务执行的关系。</small>
+        </span>
+        <span class="related-arrow" aria-hidden="true">→</span>
       </a>
-
     </div>
   </section>
+
+  <aside class="closing">
+    <div class="closing-mark" aria-hidden="true">T</div>
+    <div>
+      <h2>理解时间机制，是理解任务行为的基础。</h2>
+      <p>
+        建议按“系统节拍 → 任务延时 → 调度节拍 → 定时器”的顺序阅读，
+        再结合 Scheduler 模块理解任务状态与实际执行过程。
+      </p>
+    </div>
+  </aside>
 
   <footer class="footer">
     © 2017–2026 HRTOS. Time subsystem for real-time kernel.

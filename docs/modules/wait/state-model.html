@@ -1,561 +1,1110 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>等待状态模型（Wait State Model） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS等待状态模型说明，包括任务WAIT状态、等待类型、状态转换以及统一等待机制。" />
+<title>Wait State Model | HRTOS Kernel Documentation</title>
+<meta name="description" content="HRTOS 4.0 等待状态模型：任务 WAIT 状态、等待上下文、资源等待位图、唤醒结果及任务就绪资格管理。">
+<meta name="keywords" content="HRTOS,8051 RTOS,Wait State Model,任务状态,等待机制,任务阻塞,任务唤醒,资源等待位图">
 
 <link rel="stylesheet" href="https://hrtos.com/global.css">
 
 <style>
-:root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+:root {
+  color-scheme: dark;
+  --state-bg: #07111f;
+  --state-panel: #0c1929;
+  --state-panel-soft: #101f32;
+  --state-border: rgba(148, 172, 202, .17);
+  --state-text: #e7eef8;
+  --state-muted: #9eafc5;
+  --state-cyan: #65d9ef;
+  --state-green: #7ce0bd;
+  --state-amber: #f2c879;
+  --state-purple: #b7a4ff;
+  --state-code: #06101c;
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+* {
+  box-sizing: border-box;
 }
 
-a{color:inherit;text-decoration:none}
-
-.page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-  display:grid;
-  gap:36px;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
 }
 
-.breadcrumb{
-  font-size:.92rem;
-  color:var(--muted);
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(32, 100, 153, .17), transparent 35rem),
+    radial-gradient(ellipse at 90% 18%, rgba(22, 135, 127, .09), transparent 30rem),
+    var(--state-bg);
+  color: var(--state-text);
+  line-height: 1.75;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
-.hero{
-  display:grid;
-  gap:10px;
+a {
+  color: var(--state-cyan);
+  text-decoration: none;
 }
 
-.hero-label{
-  display:inline-block;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.24);
-  color:#bae6fd;
-  font-size:.9rem;
-  margin-bottom:18px;
-  justify-self:start;
+a:hover {
+  color: #a4edfa;
 }
 
-.hero h1{
-  margin:0;
-  font-size:clamp(2.2rem,5vw,3.6rem);
-  line-height:1.1;
+.page-shell {
+  width: min(1440px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 26px 0 72px;
 }
 
-.hero p{
-  margin:0;
-  max-width:820px;
-  color:var(--muted);
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 25px;
+  color: var(--state-muted);
+  font-size: .84rem;
 }
 
-.section{
-  display:grid;
-  gap:12px;
+.breadcrumbs .separator {
+  color: #52657d;
 }
 
-.section h2{
-  margin:0;
-  font-size:1.35rem;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
+.breadcrumbs [aria-current="page"] {
+  color: var(--state-text);
 }
 
-.section p{
-  margin:0;
-  color:var(--muted);
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 54px);
+  border: 1px solid var(--state-border);
+  border-radius: 24px;
+  background: linear-gradient(120deg, rgba(14, 39, 62, .97), rgba(9, 24, 40, .97) 65%);
+  box-shadow: 0 24px 65px rgba(0, 0, 0, .18);
 }
 
-.code{
-  background:#020617;
-  border:1px solid rgba(56,189,248,.14);
-  border-radius:8px;
-  padding:14px;
-  font-family:Consolas,monospace;
-  font-size:.92rem;
-  color:#7dd3fc;
-  white-space:pre-wrap;
+.hero::after {
+  position: absolute;
+  top: -100px;
+  right: -60px;
+  width: 330px;
+  height: 330px;
+  border: 1px solid rgba(101, 217, 239, .14);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 36px rgba(101, 217, 239, .025),
+    0 0 0 74px rgba(101, 217, 239, .02);
+  content: "";
+  pointer-events: none;
 }
 
-.layout{
-  display:grid;
-  grid-template-columns:1fr 280px;
-  gap:26px;
+.eyebrow {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 15px;
+  color: var(--state-cyan);
+  font-size: .76rem;
+  font-weight: 750;
+  letter-spacing: .14em;
+  text-transform: uppercase;
 }
 
-.sidebar{
-  display:grid;
-  gap:14px;
+.eyebrow::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--state-cyan);
+  box-shadow: 0 0 14px rgba(101, 217, 239, .7);
+  content: "";
 }
 
-.box{
-  padding:16px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.5);
+.hero h1 {
+  position: relative;
+  z-index: 1;
+  max-width: 850px;
+  margin: 0;
+  color: #f3f8ff;
+  font-size: clamp(2rem, 5vw, 3.35rem);
+  font-weight: 760;
+  letter-spacing: -.045em;
+  line-height: 1.16;
 }
 
-.box a{
-  display:block;
-  color:#7dd3fc;
-  font-size:.9rem;
-  margin-bottom:6px;
+.hero h1 span {
+  display: block;
+  margin-top: 10px;
+  color: var(--state-cyan);
+  font-size: .47em;
+  font-weight: 600;
+  letter-spacing: .01em;
 }
 
-.footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:var(--muted);
-  font-size:.9rem;
+.hero-description {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  margin: 24px 0 0;
+  color: #b9c9dc;
+  font-size: 1.02rem;
 }
 
-@media(max-width:900px){
-  .layout{grid-template-columns:1fr;}
+.hero-tags {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 26px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border: 1px solid rgba(143, 177, 211, .2);
+  border-radius: 999px;
+  background: rgba(5, 15, 27, .42);
+  color: #d1e1f2;
+  font-size: .78rem;
+}
+
+.content-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 248px;
+  align-items: start;
+  gap: 26px;
+  margin-top: 28px;
+}
+
+.article {
+  min-width: 0;
+}
+
+.doc-section {
+  margin-bottom: 22px;
+  padding: clamp(22px, 3.4vw, 34px);
+  border: 1px solid var(--state-border);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(13, 27, 44, .97), rgba(9, 21, 35, .97));
+  scroll-margin-top: 88px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.section-number {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgba(101, 217, 239, .25);
+  border-radius: 11px;
+  background: rgba(101, 217, 239, .08);
+  color: var(--state-cyan);
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: #eff6ff;
+  font-size: clamp(1.25rem, 2.4vw, 1.65rem);
+  letter-spacing: -.025em;
+  line-height: 1.35;
+}
+
+.section-heading p {
+  margin: 5px 0 0;
+  color: var(--state-muted);
+  font-size: .9rem;
+}
+
+.doc-section p {
+  color: #c2d0e0;
+}
+
+.doc-section h3 {
+  margin: 24px 0 10px;
+  color: #eaf3ff;
+  font-size: 1.05rem;
+}
+
+.doc-section ul {
+  padding-left: 23px;
+  color: #c2d0e0;
+}
+
+.doc-section li {
+  margin: 7px 0;
+  padding-left: 3px;
+}
+
+.lead {
+  margin-top: 0;
+  color: #d9e6f5 !important;
+  font-size: 1.02rem;
+}
+
+.code-wrap {
+  overflow: hidden;
+  margin: 18px 0;
+  border: 1px solid rgba(136, 166, 199, .19);
+  border-radius: 13px;
+  background: var(--state-code);
+}
+
+.code-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(136, 166, 199, .14);
+  background: rgba(23, 43, 64, .65);
+  color: #b8cce1;
+  font-size: .77rem;
+}
+
+.code-label span:last-child {
+  color: #7f96af;
+}
+
+pre {
+  overflow-x: auto;
+  margin: 0;
+  padding: 19px;
+  color: #d5e6f8;
+  font: .86rem/1.75 Consolas, "SFMono-Regular", Menlo, monospace;
+  tab-size: 4;
+}
+
+code {
+  font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+}
+
+p code,
+li code,
+td code {
+  padding: 2px 5px;
+  border: 1px solid rgba(136, 166, 199, .13);
+  border-radius: 5px;
+  background: rgba(3, 12, 22, .65);
+  color: #9ce7f2;
+  font-size: .88em;
+  overflow-wrap: anywhere;
+}
+
+.callout {
+  margin: 20px 0;
+  padding: 15px 17px;
+  border: 1px solid rgba(101, 217, 239, .19);
+  border-left: 3px solid var(--state-cyan);
+  border-radius: 10px;
+  background: rgba(31, 104, 132, .09);
+  color: #c7dbea;
+}
+
+.callout strong {
+  color: #e8f8ff;
+}
+
+.callout.warning {
+  border-color: rgba(242, 200, 121, .2);
+  border-left-color: var(--state-amber);
+  background: rgba(141, 100, 24, .08);
+}
+
+.callout.warning strong {
+  color: #ffe0a3;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin: 18px 0;
+  border: 1px solid var(--state-border);
+  border-radius: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+
+th,
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(136, 166, 199, .12);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: rgba(30, 52, 75, .62);
+  color: #e2efff;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+td {
+  color: #bdccdd;
+}
+
+tr:last-child td {
+  border-bottom: 0;
+}
+
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  margin: 18px 0;
+}
+
+.state-card {
+  padding: 17px;
+  border: 1px solid var(--state-border);
+  border-radius: 13px;
+  background: rgba(16, 33, 52, .68);
+}
+
+.state-card h3 {
+  margin: 0 0 7px;
+  font-size: 1rem;
+}
+
+.state-card p {
+  margin: 0;
+  color: var(--state-muted);
+  font-size: .9rem;
+}
+
+.state-card.ready h3 {
+  color: var(--state-green);
+}
+
+.state-card.wait h3 {
+  color: var(--state-amber);
+}
+
+.state-card.run h3 {
+  color: var(--state-cyan);
+}
+
+.state-card.dead h3 {
+  color: var(--state-purple);
+}
+
+.transition {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  margin: 24px 0;
+}
+
+.transition-node {
+  width: min(100%, 390px);
+  padding: 13px 18px;
+  border: 1px solid var(--state-border);
+  border-radius: 12px;
+  background: rgba(16, 33, 52, .8);
+  text-align: center;
+}
+
+.transition-node strong {
+  display: block;
+  color: #e7f2ff;
+  font-size: 1rem;
+}
+
+.transition-node span {
+  display: block;
+  margin-top: 3px;
+  color: var(--state-muted);
+  font-size: .83rem;
+}
+
+.transition-node.running {
+  border-color: rgba(101, 217, 239, .34);
+}
+
+.transition-node.waiting {
+  border-color: rgba(242, 200, 121, .34);
+}
+
+.transition-node.ready {
+  border-color: rgba(124, 224, 189, .34);
+}
+
+.transition-arrow {
+  color: #7790aa;
+  text-align: center;
+  font-size: .86rem;
+}
+
+.sidebar {
+  position: sticky;
+  top: 24px;
+  padding: 18px;
+  border: 1px solid var(--state-border);
+  border-radius: 16px;
+  background: rgba(10, 24, 39, .94);
+}
+
+.sidebar-title {
+  margin-bottom: 13px;
+  color: #eef6ff;
+  font-size: .9rem;
+  font-weight: 750;
+}
+
+.sidebar nav {
+  display: grid;
+  gap: 4px;
+}
+
+.sidebar nav a {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #a8bad0;
+  font-size: .84rem;
+  transition: background .18s ease, color .18s ease;
+}
+
+.sidebar nav a:hover {
+  background: rgba(101, 217, 239, .08);
+  color: #e4faff;
+}
+
+.sidebar-divider {
+  height: 1px;
+  margin: 15px 0;
+  background: var(--state-border);
+}
+
+.related-label {
+  margin-bottom: 8px;
+  color: #8298b2;
+  font-size: .75rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.related-links {
+  display: grid;
+  gap: 9px;
+  font-size: .84rem;
+}
+
+.page-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+  padding: 19px 4px 0;
+  border-top: 1px solid var(--state-border);
+  color: #8296ad;
+  font-size: .8rem;
+}
+
+.page-end a {
+  color: #a9c7e1;
+}
+
+@media (max-width: 980px) {
+  .content-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: static;
+    order: -1;
+  }
+
+  .sidebar nav,
+  .related-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .page-shell {
+    width: min(100% - 24px, 1440px);
+    padding-top: 18px;
+  }
+
+  .hero {
+    padding: 26px 21px;
+    border-radius: 18px;
+  }
+
+  .hero::after {
+    right: -210px;
+  }
+
+  .doc-section {
+    padding: 21px 17px;
+    border-radius: 14px;
+  }
+
+  .state-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar nav,
+  .related-links {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  pre {
+    padding: 14px;
+    font-size: .8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: .01ms !important;
+  }
 }
 </style>
-
 </head>
 
 <body data-header="docs">
-
-<main class="page">
-
-
-<nav class="breadcrumb">
-<a href="/docs/index.html">Docs</a> /
-<a href="/docs/modules/index.html">Modules</a> /
-<a href="/docs/modules/wait/index.html">Wait</a> /
-<span>State Model</span>
-</nav>
-
-
-<section class="hero">
-
-<span class="hero-label">HRTOS Wait</span>
-
-<h1>等待状态模型（Wait State Model）</h1>
-
-<p>
-等待状态模型描述HRTOS任务进入阻塞、等待以及恢复运行的状态管理机制。
-通过WAIT状态与统一等待类型，实现时间、资源和通信事件的统一处理。
-</p>
-
-</section>
-
-
-
-<div class="layout">
-
-<div class="content">
-
-
-<section class="section" id="overview">
-
-<h2>概述</h2>
-
-<p>
-在HRTOS中，任务状态由OS_TCB.state维护，
-WAIT状态表示任务当前无法继续执行，需要等待某个条件满足。
-</p>
-
-<p>
-WAIT不是独立任务类型，而是任务生命周期中的一种运行状态。
-具体等待原因通过wait_type字段进一步描述。
-</p>
-
-</section>
-
-
-
-<section class="section" id="model">
-
-<h2>状态定义（OS_TCB.state）</h2>
-
-
-<div class="code">
-
-#define READY       0   // 就绪态
-
-#define WAIT        1   // 等待态
-
-#define RUNNING     2   // 运行态
-
-#define SUSPEND     3   // 挂起态
-
-#define DEAD        4   // 删除态
-
-
-这些状态直接存储于：
-
-OS_TASK[id].state
-
-
-</div>
-
-
-<p>
-HRTOS采用较少的任务状态，
-复杂阻塞逻辑通过WAIT类型扩展，而不是增加大量任务状态。
-</p>
-
-</section>
-
-
-
-<section class="section" id="wait-type">
-
-<h2>等待类型模型（wait_type）</h2>
-
-
-<div class="code">
-
-WAIT_NONE
-
-无等待状态
-
-
-WAIT_DELAY
-
-时间延迟等待
-
-
-WAIT_SEM
-
-信号量等待
-
-
-WAIT_MUTEX
-
-互斥锁等待
-
-
-WAIT_MSG_SEND
-
-消息队列发送等待
-
-
-WAIT_MSG_RECV
-
-消息队列接收等待
-
-
-WAIT_EVENT
-
-事件等待
-
-
-WAIT_MAILBOX
-
-邮箱等待
-
-</div>
-
-
-<p>
-wait_type描述任务为什么进入WAIT状态，
-同一个任务同时只允许存在一种等待来源。
-</p>
-
-</section>
-
-
-
-<section class="section" id="transition">
-
-<h2>状态转换模型</h2>
-
-
-<div class="code">
-
-RUNNING
-
-    |
-
-    | os_wait()
-
-    ↓
-
-
-WAIT
-
-    |
-
-    | wake_task()
-
-    ↓
-
-
-READY
-
-    |
-
-    | scheduler select
-
-    ↓
-
-
-RUNNING
-
-
-
-超时：
-
-WAIT → READY
-
-
-信号：
-
-WAIT → READY
-
-</div>
-
-
-<p>
-所有状态转换均由调度器、Tick中断以及资源释放事件共同驱动。
-</p>
-
-</section>
-
-
-
-<section class="section" id="mechanism">
-
-<h2>等待状态管理机制</h2>
-
-
-<div class="code">
-
-进入等待：
-
-OS_TASK[tid].wait_type = type
-
-OS_TASK[tid].wait_obj  = obj
-
-OS_TASK[tid].wait_tick = tick
-
-OS_TASK[tid].state = WAIT
-
-
-
-恢复运行：
-
-wait_type = WAIT_NONE
-
-wait_obj  = OS_INVALID_ID
-
-wait_tick = 0
-
-state = READY
-
-</div>
-
-
-<p>
-任务等待上下文直接存储于TCB，
-避免额外等待控制结构，提高8051环境下的资源利用率。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="resource">
-
-<h2>资源等待关系</h2>
-
-
-<div class="code">
-
-OS_RESOURCE
-
-
-wait_mask
-
-
-bit0  -> task0
-
-bit1  -> task1
-
-...
-
-bit15 -> task15
-
-
-</div>
-
-
-<p>
-资源对象通过等待位图记录阻塞任务。
-当资源满足条件时，内核调用wake_task解除等待状态。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="flow">
-
-<h2>运行流程</h2>
-
-
-<div class="code">
-
-任务创建
-
-   ↓
-
-READY
-
-   ↓
-
-RUNNING
-
-   ↓
-
-等待资源
-
-   ↓
-
-WAIT
-
-   ↓
-
-资源满足 / 超时
-
-   ↓
-
-READY
-
-   ↓
-
-RUNNING
-
-</div>
-
-
-<p>
-HRTOS通过轻量状态模型结合统一WAIT机制，
-实现完整任务阻塞和恢复流程。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="extension">
-
-<h2>设计特点</h2>
-
-
-<ul>
-
-<li>任务状态保持简单，降低调度复杂度</li>
-
-<li>等待类型独立扩展，不增加状态数量</li>
-
-<li>TCB直接保存等待上下文</li>
-
-<li>资源等待统一使用位图管理</li>
-
-<li>支持任务与ISR共同触发唤醒</li>
-
-</ul>
-
-
-<p>
-HRTOS采用“状态最小化 + WAIT扩展”的设计思想，
-使内核能够在8051有限资源环境下保持结构清晰和可维护性。
-</p>
-
-
-</section>
-
-
-</div>
-
-
-
-<aside class="sidebar">
-
-
-<div class="box">
-
-<h3>目录</h3>
-
-<a href="#overview">概述</a>
-
-<a href="#model">状态定义</a>
-
-<a href="#wait-type">等待类型</a>
-
-<a href="#transition">状态转换</a>
-
-<a href="#mechanism">管理机制</a>
-
-</div>
-
-
-<div class="box">
-
-<h3>相关模块</h3>
-
-<a href="/docs/modules/wait/mechanism.html">等待机制</a>
-
-<a href="/docs/modules/task/index.html">任务管理</a>
-
-<a href="/docs/modules/scheduler/index.html">调度器</a>
-
-<a href="/docs/modules/ipc/index.html">IPC</a>
-
-</div>
-
-
-</aside>
-
-
-</div>
-
-
-<footer class="footer">
-
-© 2017–2026 HRTOS. Embedded RTOS documentation.
-
-</footer>
-
-
-</main>
-
-
 <script src="https://hrtos.com/header.js"></script>
+
+<main class="page-shell">
+
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="/docs/index.html">Docs</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/index.html">Modules</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/wait/index.html">Wait</a>
+    <span class="separator">/</span>
+    <span aria-current="page">State Model</span>
+  </nav>
+
+  <header class="hero">
+    <div class="eyebrow">Kernel Internals · HRTOS 4.0</div>
+    <h1>
+      Wait State Model
+      <span>等待状态与任务调度资格</span>
+    </h1>
+    <p class="hero-description">
+      从任务状态、等待上下文与资源等待关系三个层面理解 HRTOS 的等待模型。
+      WAIT 描述任务当前的状态，wait_type 描述等待原因，
+      而调度资格由相应的任务管理字段共同维护。
+    </p>
+    <div class="hero-tags">
+      <span class="tag">Task State</span>
+      <span class="tag">WAIT</span>
+      <span class="tag">wait_type</span>
+      <span class="tag">wait_mask</span>
+      <span class="tag">READY Recovery</span>
+    </div>
+  </header>
+
+  <div class="content-layout">
+
+    <article class="article">
+
+      <section class="doc-section" id="overview">
+        <div class="section-heading">
+          <div class="section-number">01</div>
+          <div>
+            <h2>模型概述</h2>
+            <p>区分任务状态、等待原因和调度资格</p>
+          </div>
+        </div>
+
+        <p class="lead">
+          HRTOS 的等待机制并不是单独增加一种任务类型，
+          而是在任务记录中保存等待上下文，并通过任务状态与调度标志的配合，
+          表示任务暂时不能参与正常调度的情况。
+        </p>
+
+        <div class="state-grid">
+          <div class="state-card wait">
+            <h3>任务状态 · state</h3>
+            <p>
+              表示任务当前所处的状态。所提供的等待实现明确将普通等待任务设置为
+              <code>WAIT</code>，唤醒后设置为 <code>READY</code>。
+            </p>
+          </div>
+          <div class="state-card run">
+            <h3>等待原因 · wait_type</h3>
+            <p>
+              记录等待类型。普通任务进入等待时写入传入的
+              <code>type</code>，唤醒清理时恢复为 <code>WAIT_NONE</code>。
+            </p>
+          </div>
+          <div class="state-card ready">
+            <h3>调度资格 · OS_PROCESS_OK</h3>
+            <p>
+              等待时清除任务对应标志的最低位，唤醒时重新设置该位。
+              它与 <code>state</code> 是不同的管理信息。
+            </p>
+          </div>
+          <div class="state-card dead">
+            <h3>等待结果 · wait_flag</h3>
+            <p>
+              保存唤醒时传入的结果标志。任务恢复执行后，
+              等待调用可通过该字段返回结果。
+            </p>
+          </div>
+        </div>
+
+        <div class="callout">
+          <strong>阅读原则：</strong>
+          状态模型说明任务如何被标记和恢复，并不单独决定调度器何时切换任务。
+          实际切换时机还需要结合调度器和中断处理代码理解。
+        </div>
+      </section>
+
+      <section class="doc-section" id="state">
+        <div class="section-heading">
+          <div class="section-number">02</div>
+          <div>
+            <h2>任务状态</h2>
+            <p>等待机制实际使用的状态转换</p>
+          </div>
+        </div>
+
+        <p>
+          在当前提供的 <code>wait.c</code> 与 <code>wake_task.c</code> 中，
+          可以直接确认普通任务等待过程使用了 <code>WAIT</code> 和
+          <code>READY</code> 两个状态。完整状态集合及其数值定义，
+          应以 HRTOS 4.0 的实际头文件为准。
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>状态标识</th>
+                <th>等待机制中的行为</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>WAIT</code></td>
+                <td>普通任务进入等待时写入 <code>OS_TASK[tid].state</code>。</td>
+              </tr>
+              <tr>
+                <td><code>READY</code></td>
+                <td>有效唤醒完成时，目标任务被设置为 READY。</td>
+              </tr>
+              <tr>
+                <td><code>DEAD</code></td>
+                <td><code>wake_task()</code> 检测到该状态时，不继续执行后续唤醒处理。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout warning">
+          <strong>关于完整状态表：</strong>
+          原页面列出的 <code>RUNNING</code>、<code>SUSPEND</code>
+          及状态数值没有出现在这两份等待函数的定义中。
+          在核对实际状态宏之前，不应将它们的数值和完整转换规则写成已由这两份源码证实的事实。
+        </div>
+      </section>
+
+      <section class="doc-section" id="wait-context">
+        <div class="section-heading">
+          <div class="section-number">03</div>
+          <div>
+            <h2>等待上下文模型</h2>
+            <p>一次普通任务等待需要记录的信息</p>
+          </div>
+        </div>
+
+        <p>
+          源码通过 <code>OS_TASK[tid]</code> 访问任务记录，
+          并使用以下字段维护普通任务的等待上下文。
+          这里沿用真实代码中的字段名称，不额外假定结构体类型名称。
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            <span>等待上下文写入</span>
+            <span>wait.c</span>
+          </div>
+          <pre><code>OS_TASK[tid].wait_type = type;
+OS_TASK[tid].wait_obj  = obj;
+OS_TASK[tid].wait_tick = tick;
+OS_TASK[tid].wait_flag = 0;</code></pre>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>字段</th>
+                <th>含义</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>wait_type</code></td>
+                <td>等待类型；<code>WAIT_NONE</code> 表示当前没有登记中的普通任务等待上下文。</td>
+              </tr>
+              <tr>
+                <td><code>wait_obj</code></td>
+                <td>等待对象编号；唤醒清理后设为 <code>OS_INVALID_ID</code>。</td>
+              </tr>
+              <tr>
+                <td><code>wait_tick</code></td>
+                <td>等待时间参数，以系统 Tick 为单位；唤醒清理时设为 0。</td>
+              </tr>
+              <tr>
+                <td><code>wait_flag</code></td>
+                <td>等待结果字段；进入等待时初始化为 0，唤醒时写入传入的 <code>flag</code>。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          这组字段让等待原因和等待结果与任务记录关联起来。
+          不同等待类型可以共享这套上下文，但各类型的资源检查、超时判断和唤醒触发条件，
+          仍需结合对应的资源管理代码分析。
+        </p>
+      </section>
+
+      <section class="doc-section" id="transition">
+        <div class="section-heading">
+          <div class="section-number">04</div>
+          <div>
+            <h2>状态转换</h2>
+            <p>从进入等待到重新获得调度资格</p>
+          </div>
+        </div>
+
+        <div class="transition" aria-label="Wait state transition">
+          <div class="transition-node running">
+            <strong>RUNNING</strong>
+            <span>当前任务正在执行时发起等待请求</span>
+          </div>
+          <div class="transition-arrow">
+            ↓ os_wait() 设置等待信息
+          </div>
+          <div class="transition-node waiting">
+            <strong>WAIT</strong>
+            <span>任务状态更新，调度资格标志最低位被清除</span>
+          </div>
+          <div class="transition-arrow">
+            ↓ 等待条件满足或等待超时后，由相应路径发起唤醒
+          </div>
+          <div class="transition-node ready">
+            <strong>READY</strong>
+            <span>wake_task() 恢复状态与调度资格</span>
+          </div>
+          <div class="transition-arrow">
+            ↓ 后续调度选择
+          </div>
+          <div class="transition-node running">
+            <strong>RUNNING</strong>
+            <span>任务再次获得 CPU 后继续执行</span>
+          </div>
+        </div>
+
+        <p>
+          上图是普通任务等待的概念路径。实际代码中，
+          <code>os_wait()</code> 通过设置 <code>OS_SCHED_REASON</code>
+          和 <code>TF0</code> 请求后续调度处理；
+          <code>wake_task()</code> 同样更新调度请求并触发 T0 中断。
+          这些操作本身不代表函数直接完成了上下文切换。
+        </p>
+
+        <div class="callout warning">
+          <strong>状态转换边界：</strong>
+          图中的 RUNNING 起点表示调用等待接口时的典型使用情形。
+          具体任务状态宏的定义、调度器内部的状态更新，以及超时与资源唤醒的调用链，
+          应以对应实现为准。
+        </div>
+      </section>
+
+      <section class="doc-section" id="resource">
+        <div class="section-heading">
+          <div class="section-number">05</div>
+          <div>
+            <h2>资源等待关系</h2>
+            <p>wait_mask 与 wait_cnt</p>
+          </div>
+        </div>
+
+        <p>
+          普通任务等待非延时资源时，如果对象编号有效，
+          <code>os_wait()</code> 会将任务 ID 对应的位写入资源等待位图，
+          并递增等待计数。
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            <span>登记资源等待</span>
+            <span>wait.c</span>
+          </div>
+          <pre><code>if(type != WAIT_DELAY && obj != OS_INVALID_ID)
+{
+    OS_RES[obj].wait_mask |= ((u16)1 &lt;&lt; tid);
+    OS_RES[obj].wait_cnt++;
+}</code></pre>
+        </div>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            <span>清理资源等待</span>
+            <span>wake_task.c</span>
+          </div>
+          <pre><code>if(obj != OS_INVALID_ID)
+{
+    OS_RES[obj].wait_mask &amp;= ~((u16)1 &lt;&lt; tid);
+
+    if(OS_RES[obj].wait_cnt)
+    {
+        OS_RES[obj].wait_cnt--;
+    }
+}</code></pre>
+        </div>
+
+        <ul>
+          <li><code>wait_mask</code> 使用位操作记录对应任务的等待关系。</li>
+          <li><code>wait_cnt</code> 在等待登记时递增，在唤醒清理时于非零条件下递减。</li>
+          <li><code>WAIT_DELAY</code> 不通过普通资源登记代码加入等待位图。</li>
+          <li>资源位图只记录等待关系；具体资源何时可用，以及哪个任务应被唤醒，需要结合资源操作代码判断。</li>
+        </ul>
+
+        <div class="callout">
+          <strong>维护要求：</strong>
+          等待位图、等待计数和任务的等待上下文必须保持一致。
+          分析重复唤醒、任务删除或异常退出时，应检查所有修改这些字段的调用路径。
+        </div>
+      </section>
+
+      <section class="doc-section" id="wake">
+        <div class="section-heading">
+          <div class="section-number">06</div>
+          <div>
+            <h2>唤醒后的状态恢复</h2>
+            <p>wake_task() 如何结束普通任务等待</p>
+          </div>
+        </div>
+
+        <p>
+          对通过普通任务等待上下文管理的任务，
+          <code>wake_task()</code> 会写入唤醒结果、清理等待字段，
+          并恢复任务的 READY 状态与调度资格。
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            <span>等待上下文清理与状态恢复</span>
+            <span>wake_task.c</span>
+          </div>
+          <pre><code>OS_TASK[tid].wait_flag = flag;
+
+OS_TASK[tid].wait_type = WAIT_NONE;
+OS_TASK[tid].wait_obj  = OS_INVALID_ID;
+OS_TASK[tid].wait_tick = 0;
+
+OS_TASK[tid].state = READY;
+OS_PROCESS_OK[tid] |= 1;
+
+OS_SCHED_REASON = 1;</code></pre>
+        </div>
+
+        <p>
+          任务状态恢复和调度资格恢复是两个不同的操作。
+          设置 READY 表明任务已离开等待状态；
+          恢复 <code>OS_PROCESS_OK[tid]</code> 的最低位，
+          则使该任务重新具备相应的调度资格。
+        </p>
+
+        <div class="callout warning">
+          <strong>特殊情况：</strong>
+          实际的 <code>wake_task()</code> 在清理资源等待关系后，
+          会检查 <code>OS_PROCESS_OK[tid] == 0</code> 和
+          <code>state == DEAD</code>。若命中这些条件，就直接返回，
+          不执行后续的结果写入与 READY 恢复。
+        </div>
+      </section>
+
+      <section class="doc-section" id="fast-task">
+        <div class="section-heading">
+          <div class="section-number">07</div>
+          <div>
+            <h2>高速任务的特殊路径</h2>
+            <p>延时处理不等同于普通任务阻塞</p>
+          </div>
+        </div>
+
+        <p>
+          当等待类型为 <code>WAIT_DELAY</code> 时，
+          <code>os_wait()</code> 会先检查当前任务编号。
+          对两个高速任务，源码使用独立的 <code>OS_WAIT_DI2[]</code>
+          计数器保存延时参数，而不是建立普通任务的等待上下文。
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-label">
+            <span>高速任务计数器</span>
+            <span>wait.c</span>
+          </div>
+          <pre><code>OS_WAIT_DI2[0] = tick;  /* 高速任务 A */
+OS_WAIT_DI2[1] = tick;  /* 高速任务 B */</code></pre>
+        </div>
+
+        <p>
+          该分支还会更新相应的高速任务标志、设置调度请求并触发 T0 中断，
+          随后直接返回 <code>WAIT_TIMEOUT</code>。
+          因此，不能将这一分支描述成普通任务从 WAIT 状态被唤醒后返回结果的完整流程。
+        </p>
+
+        <div class="callout">
+          <strong>实现范围：</strong>
+          高速任务延时计数的递减、计时完成后的恢复条件和后续调度行为，
+          需要结合 T0 中断及高速任务调度代码进一步说明。
+        </div>
+      </section>
+
+      <section class="doc-section" id="design">
+        <div class="section-heading">
+          <div class="section-number">08</div>
+          <div>
+            <h2>设计要点</h2>
+            <p>等待模型的结构性特点</p>
+          </div>
+        </div>
+
+        <h3>状态与等待原因分离</h3>
+        <p>
+          <code>state</code> 记录任务状态，<code>wait_type</code>
+          记录等待原因。多个等待类型可以共享 WAIT 状态，
+          不必仅因等待原因不同就增加独立的任务状态。
+        </p>
+
+        <h3>等待信息保存在任务记录中</h3>
+        <p>
+          普通任务等待字段通过 <code>OS_TASK[tid]</code> 访问，
+          使等待上下文与对应任务直接关联。
+        </p>
+
+        <h3>资源等待使用位图登记</h3>
+        <p>
+          <code>wait_mask</code> 和 <code>wait_cnt</code>
+          用于维护资源对象与等待任务之间的关系，具体唤醒策略由相关调用路径决定。
+        </p>
+
+        <h3>唤醒与实际运行分离</h3>
+        <p>
+          <code>wake_task()</code> 恢复任务的 READY 状态并请求调度；
+          任务重新获得 CPU 的时机由后续调度过程决定。
+        </p>
+
+        <h3>高速任务使用独立延时处理</h3>
+        <p>
+          高速任务的延时分支使用专用计数器，与普通任务等待上下文分开。
+          描述和审计时，应将两条路径明确区分。
+        </p>
+      </section>
+
+      <section class="doc-section" id="related">
+        <div class="section-heading">
+          <div class="section-number">09</div>
+          <div>
+            <h2>相关文档</h2>
+            <p>从状态模型继续深入等待机制与调度器</p>
+          </div>
+        </div>
+
+        <div class="state-grid">
+          <div class="state-card run">
+            <h3><a href="/docs/modules/wait/mechanism.html">Wait Mechanism</a></h3>
+            <p>了解 os_wait()、wake_task() 和等待上下文的实现细节。</p>
+          </div>
+          <div class="state-card ready">
+            <h3><a href="/docs/modules/wait/timeout.html">Wait Timeout</a></h3>
+            <p>继续追踪等待 Tick 与超时处理逻辑。</p>
+          </div>
+          <div class="state-card run">
+            <h3><a href="/docs/modules/task/index.html">Task Module</a></h3>
+            <p>了解任务记录、任务状态和任务管理。</p>
+          </div>
+          <div class="state-card run">
+            <h3><a href="/docs/modules/scheduler/index.html">Scheduler</a></h3>
+            <p>理解调度请求、就绪资格与任务选择。</p>
+          </div>
+          <div class="state-card run">
+            <h3><a href="/docs/modules/ipc/index.html">IPC Module</a></h3>
+            <p>了解任务间通信与资源等待的相关路径。</p>
+          </div>
+          <div class="state-card run">
+            <h3><a href="/docs/modules/time/index.html">Time Module</a></h3>
+            <p>追踪系统 Tick、中断和延时处理。</p>
+          </div>
+        </div>
+      </section>
+
+      <footer class="page-end">
+        <span>© 2017–2026 HRTOS. Embedded Real-Time Documentation.</span>
+        <a href="/docs/modules/wait/index.html">Back to Wait Module →</a>
+      </footer>
+
+    </article>
+
+    <aside class="sidebar" aria-label="Page navigation">
+      <div class="sidebar-title">On this page</div>
+      <nav>
+        <a href="#overview">模型概述</a>
+        <a href="#state">任务状态</a>
+        <a href="#wait-context">等待上下文</a>
+        <a href="#transition">状态转换</a>
+        <a href="#resource">资源等待关系</a>
+        <a href="#wake">唤醒与状态恢复</a>
+        <a href="#fast-task">高速任务路径</a>
+        <a href="#design">设计要点</a>
+        <a href="#related">相关文档</a>
+      </nav>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="related-label">Related modules</div>
+      <div class="related-links">
+        <a href="/docs/modules/wait/index.html">Wait Module ↗</a>
+        <a href="/docs/modules/task/index.html">Task Management ↗</a>
+        <a href="/docs/modules/scheduler/index.html">Scheduler ↗</a>
+        <a href="/docs/modules/ipc/index.html">IPC ↗</a>
+      </div>
+    </aside>
+
+  </div>
+</main>
 
 </body>
 </html>

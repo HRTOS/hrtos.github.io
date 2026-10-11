@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -5,524 +6,1085 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>任务状态模型（Task State Model） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS任务状态模型说明，包括任务运行状态、就绪状态、挂起状态以及任务删除状态管理机制。" />
-
-<link rel="stylesheet" href="https://hrtos.com/global.css">
+<meta name="description" content="HRTOS 任务状态模型技术文档，介绍任务运行资格、状态判定、生命周期转换，以及任务状态与等待机制之间的关系。" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://hrtos.com/docs/modules/task/state-model.html" />
+<link rel="stylesheet" href="https://hrtos.com/global.css" />
 
 <style>
-:root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+:root {
+  --state-bg: #0a1020;
+  --state-panel: #111b2e;
+  --state-panel-soft: #0d1729;
+  --state-code: #020617;
+  --state-text: #e6edf8;
+  --state-muted: #9aabc3;
+  --state-border: rgba(148, 163, 184, .17);
+  --state-cyan: #38bdf8;
+  --state-teal: #5eead4;
+  --state-violet: #a5b4fc;
+  --state-radius: 16px;
+  --state-shadow: 0 18px 48px rgba(0, 0, 0, .22);
+  color-scheme: dark;
 }
 
-*{box-sizing:border-box}
-
-body{
-margin:0;
-background:var(--bg);
-color:var(--text);
-font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-line-height:1.75;
+* {
+  box-sizing: border-box;
 }
 
-.page{
-width:min(1180px,calc(100% - 40px));
-margin:0 auto;
-padding:96px 0 56px;
-display:grid;
-gap:36px;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
 }
 
-.breadcrumb{
-font-size:.92rem;
-color:var(--muted);
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(56, 189, 248, .09), transparent 32rem),
+    radial-gradient(ellipse at 90% 20%, rgba(94, 234, 212, .045), transparent 28rem),
+    var(--state-bg);
+  color: var(--state-text);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
 }
 
-.breadcrumb a{
-color:#7dd3fc;
+a {
+  color: var(--state-cyan);
+  text-decoration: none;
 }
 
-.hero{
-display:grid;
-gap:10px;
+a:hover {
+  color: #bae6fd;
 }
 
-.hero-label{
-display:inline-block;
-padding:8px 14px;
-border-radius:999px;
-border:1px solid rgba(56,189,248,.24);
-color:#bae6fd;
-font-size:.9rem;
-margin-bottom:18px;
-justify-self:start;
+.page {
+  width: min(1200px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 104px 0 64px;
 }
 
-.hero h1{
-margin:0;
-font-size:clamp(2.2rem,5vw,3.6rem);
-line-height:1.1;
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 28px;
+  color: var(--state-muted);
+  font-size: .88rem;
 }
 
-.hero p{
-margin:0;
-max-width:820px;
-color:var(--muted);
+.breadcrumb .separator {
+  color: #52627a;
 }
 
-.layout{
-display:grid;
-grid-template-columns:1fr 280px;
-gap:26px;
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 52px);
+  border: 1px solid rgba(56, 189, 248, .2);
+  border-radius: 24px;
+  background:
+    linear-gradient(125deg, rgba(17, 27, 46, .98), rgba(10, 24, 43, .95)),
+    var(--state-panel);
+  box-shadow: var(--state-shadow);
 }
 
-.section{
-display:grid;
-gap:12px;
+.hero::after {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  right: -100px;
+  top: -130px;
+  border-radius: 50%;
+  border: 1px solid rgba(56, 189, 248, .14);
+  box-shadow:
+    0 0 0 28px rgba(56, 189, 248, .025),
+    0 0 0 58px rgba(56, 189, 248, .02);
+  pointer-events: none;
 }
 
-.section h2{
-margin:0;
-font-size:1.35rem;
-border-left:3px solid var(--accent);
-padding-left:10px;
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 5px 11px;
+  border: 1px solid rgba(56, 189, 248, .24);
+  border-radius: 999px;
+  background: rgba(56, 189, 248, .07);
+  color: #a5e4ff;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
-.section p{
-margin:0;
-color:var(--muted);
+.hero-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--state-teal);
+  box-shadow: 0 0 12px rgba(94, 234, 212, .65);
 }
 
-.code{
-background:#020617;
-border:1px solid rgba(56,189,248,.14);
-border-radius:8px;
-padding:14px;
-font-family:Consolas,monospace;
-font-size:.92rem;
-color:#7dd3fc;
-white-space:pre-wrap;
+.hero h1 {
+  position: relative;
+  z-index: 1;
+  max-width: 850px;
+  margin: 0;
+  font-size: clamp(2rem, 4.7vw, 3.4rem);
+  line-height: 1.2;
+  letter-spacing: -.035em;
 }
 
-.note{
-padding:12px 14px;
-border-left:3px solid var(--accent);
-background:rgba(15,23,42,.6);
-color:var(--muted);
-border-radius:6px;
-font-size:.92rem;
+.hero h1 span {
+  display: block;
+  margin-top: 9px;
+  color: #8fa7c7;
+  font-size: .46em;
+  font-weight: 500;
+  letter-spacing: .015em;
 }
 
-.sidebar{
-display:grid;
-gap:14px;
+.hero p {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  margin: 22px 0 0;
+  color: var(--state-muted);
+  font-size: 1.02rem;
 }
 
-.box{
-padding:16px;
-border:1px solid var(--border);
-border-radius:var(--radius);
-background:rgba(30,41,59,.5);
+.hero-meta {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 26px;
 }
 
-.box a{
-display:block;
-color:#7dd3fc;
-font-size:.9rem;
-margin-bottom:6px;
+.meta-chip {
+  padding: 5px 10px;
+  border: 1px solid var(--state-border);
+  border-radius: 7px;
+  background: rgba(2, 6, 23, .28);
+  color: #bac9de;
+  font-size: .79rem;
 }
 
-.footer{
-text-align:center;
-padding-top:18px;
-border-top:1px solid rgba(148,163,184,.14);
-color:var(--muted);
-font-size:.9rem;
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 246px;
+  gap: 26px;
+  align-items: start;
+  margin-top: 28px;
 }
 
-@media(max-width:900px){
-.layout{grid-template-columns:1fr;}
+.content {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
 }
 
+.section {
+  min-width: 0;
+  padding: clamp(22px, 3vw, 32px);
+  border: 1px solid var(--state-border);
+  border-radius: var(--state-radius);
+  background: linear-gradient(145deg, rgba(17, 27, 46, .96), rgba(13, 23, 41, .96));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .12);
+  scroll-margin-top: 100px;
+}
+
+.section-heading {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.section-number {
+  display: grid;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid rgba(56, 189, 248, .23);
+  border-radius: 10px;
+  background: rgba(56, 189, 248, .08);
+  color: var(--state-cyan);
+  font-size: .83rem;
+  font-weight: 800;
+}
+
+.section h2 {
+  margin: 0;
+  font-size: 1.28rem;
+  line-height: 1.45;
+  letter-spacing: -.015em;
+}
+
+.section-intro {
+  margin: 5px 0 0;
+  color: var(--state-muted);
+  font-size: .91rem;
+}
+
+.section p {
+  margin: 12px 0;
+  color: #bdc9db;
+}
+
+.section p:last-child {
+  margin-bottom: 0;
+}
+
+.section strong {
+  color: #e6edf8;
+  font-weight: 650;
+}
+
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.state-card {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--state-border);
+  border-radius: 12px;
+  background: rgba(2, 6, 23, .23);
+}
+
+.state-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.state-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.state-tag {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, .1);
+  color: #9ddfff;
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.state-card p {
+  margin: 0;
+  color: var(--state-muted);
+  font-size: .88rem;
+}
+
+.state-card.ready .state-tag {
+  background: rgba(94, 234, 212, .1);
+  color: var(--state-teal);
+}
+
+.state-card.suspended .state-tag {
+  background: rgba(165, 180, 252, .1);
+  color: var(--state-violet);
+}
+
+.state-card.deleted .state-tag {
+  background: rgba(251, 146, 60, .1);
+  color: #fdba74;
+}
+
+.flow {
+  display: grid;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.flow-node {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 16px;
+  border: 1px solid var(--state-border);
+  border-radius: 11px;
+  background: rgba(2, 6, 23, .28);
+}
+
+.flow-node .flow-index {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(56, 189, 248, .1);
+  color: var(--state-cyan);
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.flow-node strong {
+  display: block;
+  font-size: .93rem;
+}
+
+.flow-node small {
+  display: block;
+  margin-top: 1px;
+  color: var(--state-muted);
+  font-size: .82rem;
+}
+
+.flow-arrow {
+  padding-left: 24px;
+  color: #5c7798;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.flow-branch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.flow-branch .flow-node {
+  align-items: flex-start;
+}
+
+.flow-branch .flow-index {
+  margin-top: 2px;
+}
+
+.table-wrap {
+  width: 100%;
+  margin-top: 18px;
+  overflow-x: auto;
+  border: 1px solid var(--state-border);
+  border-radius: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .89rem;
+}
+
+th, td {
+  padding: 13px 15px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--state-border);
+}
+
+th {
+  background: rgba(56, 189, 248, .07);
+  color: #c4eaff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+td {
+  color: #bdc9db;
+}
+
+tr:last-child td {
+  border-bottom: 0;
+}
+
+code, .inline-code {
+  font-family: Consolas, "SFMono-Regular", monospace;
+}
+
+.inline-code {
+  padding: 2px 6px;
+  border: 1px solid rgba(148, 163, 184, .13);
+  border-radius: 5px;
+  background: rgba(2, 6, 23, .5);
+  color: #a5e4ff;
+  font-size: .87em;
+  overflow-wrap: anywhere;
+}
+
+.code-panel {
+  margin-top: 16px;
+  padding: 18px;
+  overflow-x: auto;
+  border: 1px solid rgba(56, 189, 248, .14);
+  border-radius: 12px;
+  background: var(--state-code);
+}
+
+.code-title {
+  margin-bottom: 10px;
+  color: #8296b5;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.code-panel pre {
+  margin: 0;
+  color: #b8e7ff;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: .86rem;
+  line-height: 1.9;
+  white-space: pre;
+}
+
+.callout {
+  margin-top: 18px;
+  padding: 15px 17px;
+  border: 1px solid rgba(56, 189, 248, .16);
+  border-left: 3px solid var(--state-cyan);
+  border-radius: 9px;
+  background: rgba(56, 189, 248, .045);
+  color: #bdc9db;
+  font-size: .9rem;
+}
+
+.callout strong {
+  color: #c4eaff;
+}
+
+.callout.warning {
+  border-color: rgba(251, 191, 36, .18);
+  border-left-color: #fbbf24;
+  background: rgba(251, 191, 36, .035);
+}
+
+.callout.warning strong {
+  color: #fde68a;
+}
+
+.bullet-list {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bullet-list li {
+  position: relative;
+  padding-left: 23px;
+  color: #bdc9db;
+}
+
+.bullet-list li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: .78em;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--state-teal);
+  transform: translateY(-50%);
+}
+
+.sidebar {
+  position: sticky;
+  top: 92px;
+  display: grid;
+  gap: 15px;
+}
+
+.side-box {
+  padding: 18px;
+  border: 1px solid var(--state-border);
+  border-radius: 14px;
+  background: rgba(17, 27, 46, .9);
+}
+
+.side-box h2 {
+  margin: 0 0 13px;
+  color: #e6edf8;
+  font-size: .96rem;
+}
+
+.side-nav {
+  display: grid;
+  gap: 3px;
+}
+
+.side-nav a {
+  padding: 7px 9px;
+  border-radius: 7px;
+  color: var(--state-muted);
+  font-size: .85rem;
+  transition: background .18s ease, color .18s ease;
+}
+
+.side-nav a:hover {
+  background: rgba(56, 189, 248, .08);
+  color: #c4eaff;
+}
+
+.side-links {
+  display: grid;
+  gap: 10px;
+}
+
+.side-links a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #a9c4e4;
+  font-size: .86rem;
+}
+
+.side-links a::after {
+  content: "↗";
+  color: #647e9e;
+}
+
+.side-description {
+  margin: 0;
+  color: var(--state-muted);
+  font-size: .84rem;
+}
+
+.footer {
+  margin-top: 38px;
+  padding-top: 22px;
+  border-top: 1px solid var(--state-border);
+  color: #788aa5;
+  text-align: center;
+  font-size: .82rem;
+}
+
+@media (max-width: 920px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .page {
+    width: min(100% - 24px, 1200px);
+    padding-top: 88px;
+  }
+
+  .hero {
+    padding: 26px 21px;
+    border-radius: 18px;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.85rem, 8vw, 2.5rem);
+  }
+
+  .layout {
+    gap: 16px;
+    margin-top: 18px;
+  }
+
+  .content {
+    gap: 14px;
+  }
+
+  .section {
+    padding: 21px 17px;
+    border-radius: 13px;
+  }
+
+  .state-grid,
+  .flow-branch,
+  .sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .table-wrap {
+    margin-left: 0;
+  }
+
+  th, td {
+    padding: 11px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    transition-duration: .01ms !important;
+  }
+}
 </style>
-
 </head>
 
-
 <body data-header="docs">
-
-
 <main class="page">
 
-
-<nav class="breadcrumb">
-<a href="/docs/index.html">Docs</a> /
-<a href="/docs/modules/index.html">Modules</a> /
-<a href="/docs/modules/task/index.html">Task</a> /
-<span>State Model</span>
-</nav>
-
-
-
-<section class="hero">
-
-<span class="hero-label">HRTOS Task</span>
-
-<h1>任务状态模型（Task State Model）</h1>
-
-<p>
-任务状态模型用于描述任务当前执行状态以及任务管理状态，
-是HRTOS任务控制、调试和系统监控的重要基础。
-</p>
-
-</section>
-
-
-
-<div class="layout">
-
-
-<div class="content">
-
-
-<section class="section" id="overview">
-
-<h2>概述</h2>
-
-<p>
-HRTOS任务状态由任务控制信息以及运行环境共同决定。
-系统通过任务控制标志、当前任务编号以及任务事件信息判断任务状态。
-</p>
-
-<p>
-任务状态模型关注任务本身是否能够参与运行，
-而任务等待原因由Wait模块单独管理。
-</p>
-
-</section>
-
-
-
-<section class="section" id="model">
-
-<h2>状态定义</h2>
-
-
-<div class="code">
-os_task_get_state()
-
-
-返回值:
-
-0
-任务不存在 / 已删除
-
-
-1
-当前运行任务
-
-
-2
-就绪任务
-
-
-3
-挂起任务
-
-
-4
-最近一次被切出的任务
-</div>
-
-
-<div class="note">
-HRTOS采用简化状态表示，不额外增加大量中间状态。
-</div>
-
-
-</section>
-
-
-
-<section class="section" id="mechanism">
-
-<h2>状态判定机制</h2>
-
-
-<p>
-任务状态查询由多个核心控制信息共同决定。
-</p>
-
-
-<div class="code">
-OS_PROCESS_OK
-
-任务是否注册以及启动状态
-
-
-OS_CURRENT_TASK
-
-当前运行任务编号
-
-
-OS_PREV_TASK
-
-最近一次运行任务编号
-
-
-OS_KUAI_PROCESS_A/B
-
-高速任务运行标志
-</div>
-
-
-<p>
-普通任务与高速任务采用不同状态判断方式，
-但统一通过任务接口向外提供查询能力。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="transition">
-
-<h2>状态转换模型</h2>
-
-
-<div class="code">
-CREATE
-
- ↓
-
-READY
-
- ↓
-
-RUNNING
-
- ↓
-
-SUSPEND
-
- ↓
-
-READY
-
-
-RUNNING
-
- ↓
-
-DELETE REQUEST
-
- ↓
-
-IDLE CLEANUP
-
- ↓
-
-DEAD
-</div>
-
-
-<p>
-任务状态转换由任务控制接口、系统运行状态以及资源管理机制共同影响。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="wait">
-
-<h2>与等待机制的关系</h2>
-
-
-<p>
-任务在等待资源、消息、事件或者时间条件时，
-会暂时失去运行资格。
-</p>
-
-
-<div class="code">
-WAIT模块负责:
-
-delay
-
-semaphore
-
-mutex
-
-message
-
-event
-
-mailbox
-</div>
-
-
-<div class="note">
-WAIT描述“为什么暂停”，Task状态描述“任务当前处于什么管理状态”。
-</div>
-
-
-</section>
-
-
-
-<section class="section" id="interface">
-
-<h2>关键接口</h2>
-
-
-<div class="code">
-os_task_get_state(id)
-
-os_task_suspend(id)
-
-os_task_resume(id)
-
-os_task_delete(id)
-
-os_task_exit()
-</div>
-
-
-<p>
-这些接口用于任务状态控制以及运行状态查询。
-</p>
-
-
-</section>
-
-
-
-<section class="section" id="flow">
-
-<h2>运行流程</h2>
-
-
-<div class="code">
-任务创建
-
- ↓
-
-注册任务信息
-
- ↓
-
-进入就绪状态
-
- ↓
-
-获得CPU执行
-
- ↓
-
-运行 / 挂起 / 删除
-
- ↓
-
-资源清理
-</div>
-
-
-</section>
-
-
-
-<section class="section" id="extension">
-
-<h2>设计特点</h2>
-
-
-<ul style="margin:0;padding-left:18px;color:var(--muted);">
-
-<li>状态模型简单，降低任务管理开销</li>
-
-<li>任务状态与等待机制分离</li>
-
-<li>支持普通任务和高速任务统一管理</li>
-
-<li>状态信息可通过API查询</li>
-
-<li>删除采用延迟清理方式保证稳定性</li>
-
-</ul>
-
-
-<div class="note">
-HRTOS通过简洁状态模型保证任务行为可预测，复杂同步行为由Wait模块扩展完成。
-</div>
-
-
-</section>
-
-
-
-</div>
-
-
-
-<aside class="sidebar">
-
-
-<div class="box">
-
-<h3>目录</h3>
-
-<a href="#overview">概述</a>
-<a href="#model">状态定义</a>
-<a href="#mechanism">判定机制</a>
-<a href="#transition">状态转换</a>
-<a href="#wait">等待关系</a>
-<a href="#interface">接口</a>
-
-</div>
-
-
-<div class="box">
-
-<h3>相关模块</h3>
-
-<a href="/docs/modules/task/lifecycle.html">
-任务生命周期
-</a>
-
-<a href="/docs/modules/wait/index.html">
-Wait
-</a>
-
-
-
-</div>
-
-
-</aside>
-
-
-</div>
-
-
-<footer class="footer">
-© 2017–2026 HRTOS. Embedded RTOS documentation.
-</footer>
-
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/docs/index.html">Docs</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/index.html">Modules</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/task/index.html">Task</a>
+    <span class="separator">/</span>
+    <span aria-current="page">State Model</span>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-label">Task Management · HRTOS</div>
+    <h1>
+      任务状态模型
+      <span>Task State Model</span>
+    </h1>
+    <p>
+      从任务是否具备运行资格、当前是否占用 CPU，到挂起恢复与退出清理，
+      理解 HRTOS 的任务状态判定，以及状态模型与任务生命周期、等待机制之间的边界。
+    </p>
+    <div class="hero-meta">
+      <span class="meta-chip">Task Control</span>
+      <span class="meta-chip">State Transition</span>
+      <span class="meta-chip">Scheduling Context</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="content">
+
+      <section class="section" id="overview">
+        <div class="section-heading">
+          <div class="section-number">01</div>
+          <div>
+            <h2>状态模型概述</h2>
+            <p class="section-intro">状态描述任务当前所处的位置，不等于任务全部生命周期信息。</p>
+          </div>
+        </div>
+
+        <p>
+          任务状态模型用于描述任务当前是否能够参与调度、是否正在执行，
+          以及是否暂时不能运行。内核根据任务控制信息和当前执行上下文，
+          决定任务在系统中的运行位置。
+        </p>
+        <p>
+          阅读状态模型时，需要区分三个相关但不同的概念：
+          <strong>任务生命周期</strong>描述任务从创建到退出的过程；
+          <strong>任务状态</strong>描述任务当前的管理与执行位置；
+          <strong>等待机制</strong>描述任务因时间、事件或资源条件而等待的原因。
+        </p>
+
+        <div class="state-grid">
+          <article class="state-card ready">
+            <div class="state-card-top">
+              <h3>就绪状态</h3>
+              <span class="state-tag">READY</span>
+            </div>
+            <p>任务具备参与调度的条件，但不代表此刻正在占用 CPU。</p>
+          </article>
+
+          <article class="state-card">
+            <div class="state-card-top">
+              <h3>运行状态</h3>
+              <span class="state-tag">RUNNING</span>
+            </div>
+            <p>任务当前获得处理器执行。具体运行者由调度器与执行上下文决定。</p>
+          </article>
+
+          <article class="state-card suspended">
+            <div class="state-card-top">
+              <h3>挂起状态</h3>
+              <span class="state-tag">SUSPENDED</span>
+            </div>
+            <p>任务暂时不能按正常调度路径运行，需要满足相应恢复条件。</p>
+          </article>
+
+          <article class="state-card deleted">
+            <div class="state-card-top">
+              <h3>退出与清理</h3>
+              <span class="state-tag">CLEANUP</span>
+            </div>
+            <p>任务退出或删除后，内核可能还需要完成相关管理信息与资源清理。</p>
+          </article>
+        </div>
+
+        <div class="callout">
+          <strong>阅读提示：</strong>
+          上述名称用于解释任务管理中的概念。它们不意味着 HRTOS 的查询接口一定为每个概念提供一个独立返回值。
+          实际状态编码与特殊返回值应以当前版本的头文件和实现为准。
+        </div>
+      </section>
+
+      <section class="section" id="state-query">
+        <div class="section-heading">
+          <div class="section-number">02</div>
+          <div>
+            <h2>状态查询与返回值</h2>
+            <p class="section-intro">将 API 的实际返回约定与概念状态分开理解。</p>
+          </div>
+        </div>
+
+        <p>
+          HRTOS 的任务状态查询接口可用于检查指定任务的状态。
+          但在文档中，应明确区分普通任务状态、当前任务识别结果，以及特殊任务或无效任务的处理方式。
+        </p>
+
+        <div class="code-panel">
+          <div class="code-title">Interface Reference</div>
+          <pre><code>os_task_get_state(id)</code></pre>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>需要确认的项目</th>
+                <th>文档应说明的内容</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>有效任务</td>
+                <td>就绪、运行、挂起等状态的实际编码与判定规则。</td>
+              </tr>
+              <tr>
+                <td>无效或已删除任务</td>
+                <td>返回值是否与普通状态共用同一编码空间，以及是否区分删除过程。</td>
+              </tr>
+              <tr>
+                <td>当前运行任务</td>
+                <td>是否由专门的返回值标记，还是通过当前任务编号与任务控制信息判断。</td>
+              </tr>
+              <tr>
+                <td>高速任务及特殊执行上下文</td>
+                <td>是否沿用普通任务的状态编码，以及查询时如何处理特殊运行标志。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout warning">
+          <strong>版本核对：</strong>
+          旧版文档中出现过 0～4 的返回值解释，其中包括“最近一次被切出的任务”。
+          在没有重新核对 HRTOS 4.0 的实际实现前，不应将这组映射直接视为通用任务状态枚举。
+          尤其需要确认历史任务信息是否属于状态查询结果，还是单独的调度记录。
+        </div>
+      </section>
+
+      <section class="section" id="judgment">
+        <div class="section-heading">
+          <div class="section-number">03</div>
+          <div>
+            <h2>状态判定机制</h2>
+            <p class="section-intro">状态来自任务控制信息与当前执行上下文，而非单一变量。</p>
+          </div>
+        </div>
+
+        <p>
+          在任务状态判定中，任务是否已注册、当前任务编号、调度过程中的任务记录，
+          以及高速任务专用控制信息，都可能影响最终的查询结果。
+          分析这些信息时，应结合具体代码路径理解其用途。
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>控制信息</th>
+                <th>分析重点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="inline-code">OS_PROCESS_OK</code></td>
+                <td>核对任务注册、有效性或相关控制标志的具体含义。</td>
+              </tr>
+              <tr>
+                <td><code class="inline-code">OS_CURRENT_TASK</code></td>
+                <td>核对当前任务编号如何参与运行状态识别。</td>
+              </tr>
+              <tr>
+                <td><code class="inline-code">OS_PREV_TASK</code></td>
+                <td>核对其是否记录上一次任务，以及该记录是否参与状态查询。</td>
+              </tr>
+              <tr>
+                <td>高速任务控制标志</td>
+                <td>核对高速任务的执行标志、现场保存和恢复路径，不能直接假定其与普通任务完全一致。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <strong>实现边界：</strong>
+          上表中的变量名沿用已有工程资料中的命名，用于帮助定位代码。
+          各变量的准确语义、有效范围与相互关系，应以 HRTOS 4.0 源码为准；
+          不应仅凭变量名称推断其全部行为。
+        </div>
+      </section>
+
+      <section class="section" id="transition">
+        <div class="section-heading">
+          <div class="section-number">04</div>
+          <div>
+            <h2>状态转换与任务生命周期</h2>
+            <p class="section-intro">概念流程用于理解过程，不代表每一步都有独立状态编码。</p>
+          </div>
+        </div>
+
+        <p>
+          从概念上看，任务创建后进入可参与调度的阶段，获得处理器后开始执行；
+          运行过程中可能因挂起、等待、调度切换或退出而改变其运行位置。
+          删除请求与最终清理也可能不是同一个瞬间完成。
+        </p>
+
+        <div class="flow" aria-label="任务状态转换示意图">
+          <div class="flow-node">
+            <span class="flow-index">01</span>
+            <div>
+              <strong>创建与注册</strong>
+              <small>建立任务所需的管理信息和运行环境。</small>
+            </div>
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-node">
+            <span class="flow-index">02</span>
+            <div>
+              <strong>就绪</strong>
+              <small>任务具备参与调度的条件。</small>
+            </div>
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-node">
+            <span class="flow-index">03</span>
+            <div>
+              <strong>运行</strong>
+              <small>任务获得处理器执行，直到发生调度或其他控制事件。</small>
+            </div>
+          </div>
+
+          <div class="flow-branch">
+            <div class="flow-node">
+              <span class="flow-index">A</span>
+              <div>
+                <strong>挂起或等待</strong>
+                <small>满足恢复条件后，按相应机制重新参与调度。</small>
+              </div>
+            </div>
+            <div class="flow-node">
+              <span class="flow-index">B</span>
+              <div>
+                <strong>退出或删除</strong>
+                <small>进入相应的结束处理与清理路径。</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <strong>重要区别：</strong>
+          “删除请求 → 清理 → 结束”是描述可能存在的生命周期处理过程；
+          是否延迟到空闲任务清理、清理哪些对象，以及任务何时不再有效，
+          均应结合实际删除实现确认。
+        </div>
+
+        <p>
+          因此，状态转换图适合帮助理解系统行为，但不能替代生命周期文档中的具体接口约定。
+          对任务删除、退出和资源回收的完整说明，请结合
+          <a href="/docs/modules/task/lifecycle.html">任务生命周期</a> 页面阅读。
+        </p>
+      </section>
+
+      <section class="section" id="wait">
+        <div class="section-heading">
+          <div class="section-number">05</div>
+          <div>
+            <h2>任务状态与等待机制</h2>
+            <p class="section-intro">状态回答任务处于什么位置，等待机制解释任务为何暂时不能继续。</p>
+          </div>
+        </div>
+
+        <p>
+          任务可能因延时、同步对象、消息或事件条件而无法继续执行。
+          这些等待条件属于等待机制的语义；它们对任务运行资格的影响，
+          则需要结合内核的状态管理与调度规则理解。
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>层次</th>
+                <th>主要关注点</th>
+                <th>阅读方向</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Task</td>
+                <td>任务是否有效、能否参与调度、是否正在执行。</td>
+                <td>任务状态与生命周期</td>
+              </tr>
+              <tr>
+                <td>Wait</td>
+                <td>等待条件、等待时长，以及条件满足后的处理。</td>
+                <td><a href="/docs/modules/wait/index.html">Wait 模块</a></td>
+              </tr>
+              <tr>
+                <td>Scheduler</td>
+                <td>在符合调度条件的任务中，决定下一步执行对象。</td>
+                <td><a href="/docs/modules/scheduler/index.html">Scheduler 模块</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <strong>注意：</strong>
+          不应将所有等待原因都直接等同于一个固定的任务状态。
+          等待对象、任务状态标志与调度资格之间的实际映射，应以当前内核实现为准。
+        </div>
+      </section>
+
+      <section class="section" id="interface">
+        <div class="section-heading">
+          <div class="section-number">06</div>
+          <div>
+            <h2>相关任务接口</h2>
+            <p class="section-intro">查询、挂起、恢复与退出属于不同的控制操作。</p>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>接口</th>
+                <th>用途</th>
+                <th>核对重点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="inline-code">os_task_get_state(id)</code></td>
+                <td>查询指定任务的状态。</td>
+                <td>参数、返回值与特殊任务的处理规则。</td>
+              </tr>
+              <tr>
+                <td><code class="inline-code">os_task_suspend(id)</code></td>
+                <td>请求挂起指定任务。</td>
+                <td>允许的目标任务、调用上下文与返回约定。</td>
+              </tr>
+              <tr>
+                <td><code class="inline-code">os_task_resume(id)</code></td>
+                <td>请求恢复指定任务。</td>
+                <td>恢复条件以及任务是否立即运行。</td>
+              </tr>
+              <tr>
+                <td><code class="inline-code">os_task_delete(id)</code></td>
+                <td>请求删除指定任务。</td>
+                <td>删除时机、清理方式和资源生命周期。</td>
+              </tr>
+              <tr>
+                <td><code class="inline-code">os_task_exit()</code></td>
+                <td>任务主动退出相关操作。</td>
+                <td>适用上下文以及退出后的处理路径。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout warning">
+          <strong>接口使用原则：</strong>
+          表格描述的是接口的预期职责，不是对所有边界行为的保证。
+          在编写示例代码前，请核对当前版本的公开头文件、函数声明和实现，
+          特别是无效任务、重复挂起、重复恢复以及删除当前任务等情况。
+        </div>
+      </section>
+
+      <section class="section" id="design">
+        <div class="section-heading">
+          <div class="section-number">07</div>
+          <div>
+            <h2>设计与调试要点</h2>
+            <p class="section-intro">将状态模型作为观察内核行为的工具，而不是独立于实现的抽象承诺。</p>
+          </div>
+        </div>
+
+        <ul class="bullet-list">
+          <li>状态表示应尽可能简洁，避免将内部控制过程中的每个步骤都误认为独立状态。</li>
+          <li>任务有效性、当前运行者与历史调度记录应分别理解，不应混用其语义。</li>
+          <li>等待条件与任务运行资格相关，但两者属于不同的分析层次。</li>
+          <li>普通任务与高速任务的状态查询应以各自的实际控制路径为依据。</li>
+          <li>删除与退出的调试应同时关注任务状态、调度行为和后续清理过程。</li>
+        </ul>
+
+        <p>
+          调试任务异常时，建议依次检查任务是否成功创建、是否具备运行资格、
+          调度器是否选择了预期任务、等待条件是否满足，以及退出或删除路径是否按预期完成。
+          将这些问题分开定位，通常比单独观察一个状态值更容易发现根因。
+        </p>
+      </section>
+
+    </div>
+
+    <aside class="sidebar" aria-label="页面导航与相关文档">
+      <div class="side-box">
+        <h2>本页目录</h2>
+        <nav class="side-nav">
+          <a href="#overview">状态模型概述</a>
+          <a href="#state-query">状态查询与返回值</a>
+          <a href="#judgment">状态判定机制</a>
+          <a href="#transition">状态转换与生命周期</a>
+          <a href="#wait">与等待机制的关系</a>
+          <a href="#interface">相关任务接口</a>
+          <a href="#design">设计与调试要点</a>
+        </nav>
+      </div>
+
+      <div class="side-box">
+        <h2>相关文档</h2>
+        <div class="side-links">
+          <a href="/docs/modules/task/index.html">Task 模块总览</a>
+          <a href="/docs/modules/task/lifecycle.html">任务生命周期</a>
+          <a href="/docs/modules/task/priority.html">任务优先级</a>
+          <a href="/docs/modules/task/context-switch.html">上下文切换</a>
+          <a href="/docs/modules/wait/index.html">Wait 模块</a>
+          <a href="/docs/modules/scheduler/index.html">Scheduler 模块</a>
+        </div>
+      </div>
+
+      <div class="side-box">
+        <h2>文档定位</h2>
+        <p class="side-description">
+          本页介绍任务状态的概念模型与分析方法。具体状态编码、接口返回值及边界行为，以对应 HRTOS 版本的实现为准。
+        </p>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="footer">
+    © 2017–2026 HRTOS. Embedded RTOS documentation.
+  </footer>
 
 </main>
 
-
 <script src="https://hrtos.com/header.js"></script>
-
 </body>
-
 </html>

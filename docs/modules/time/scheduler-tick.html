@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -5,222 +6,598 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>调度节拍（Scheduler Tick） | HRTOS Documentation</title>
-<meta name="description" content="HRTOS调度节拍机制说明，包括系统Tick驱动、时间片管理、延时队列更新与实时调度触发机制。" />
+<meta name="description" content="HRTOS 调度节拍文档：介绍系统 Tick、定时器配置、任务延时、时间片与调度触发之间的关系。" />
+<meta name="theme-color" content="#0a1020" />
 
-<link rel="stylesheet" href="https://hrtos.com/global.css">
+<link rel="stylesheet" href="https://hrtos.com/global.css" />
 
 <style>
-:root{
-  --bg:#0f172a;
-  --surface:rgba(15,23,42,.72);
-  --surface-hover:rgba(30,41,59,.92);
-  --border:rgba(148,163,184,.18);
-  --border-strong:rgba(56,189,248,.38);
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
-  color-scheme:dark;
+:root {
+  --tick-bg: #0a1020;
+  --tick-panel: #111b2e;
+  --tick-panel-soft: #0e192b;
+  --tick-code: #070d19;
+  --tick-border: rgba(148, 163, 184, .16);
+  --tick-border-hover: rgba(56, 189, 248, .42);
+  --tick-text: #e6edf8;
+  --tick-muted: #9aabc3;
+  --tick-cyan: #38bdf8;
+  --tick-teal: #5eead4;
+  --tick-radius: 15px;
+  --tick-width: 1160px;
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
-  overflow-x:hidden;
+* {
+  box-sizing: border-box;
 }
 
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background-image:
-    linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
-  background-size:28px 28px;
-  opacity:.14;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
 }
 
-a{
-  color:inherit;
-  text-decoration:none;
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(14, 116, 144, .13), transparent 35rem),
+    radial-gradient(ellipse at 95% 25%, rgba(37, 99, 235, .09), transparent 32rem),
+    var(--tick-bg);
+  color: var(--tick-text);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.75;
 }
 
-.page{
-  width:min(1180px, calc(100% - 40px));
-  margin:0 auto;
-  padding:96px 0 56px;
-  position:relative;
-  z-index:1;
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-/* breadcrumb */
-.breadcrumb{
-  margin-bottom:28px;
-  font-size:.92rem;
-  color:var(--muted);
+.page {
+  position: relative;
+  z-index: 1;
+  width: min(var(--tick-width), calc(100% - 40px));
+  margin: 0 auto;
+  padding: 104px 0 58px;
 }
 
-.breadcrumb a{
-  color:#7dd3fc;
+/* Breadcrumb */
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 25px;
+  color: #8194ae;
+  font-size: .84rem;
 }
 
-.breadcrumb a:hover{
-  color:var(--accent);
+.breadcrumb a {
+  color: #9bcff0;
+  transition: color .2s ease;
 }
 
-/* hero */
-.hero{ margin-bottom:56px; }
-
-.hero-label{
-  display:inline-block;
-  padding:8px 14px;
-  border-radius:999px;
-  border:1px solid rgba(56,189,248,.24);
-  color:#bae6fd;
-  font-size:.9rem;
-  margin-bottom:18px;
+.breadcrumb a:hover {
+  color: var(--tick-cyan);
 }
 
-.hero h1{
-  margin:0 0 16px;
-  font-size:clamp(2.3rem,5vw,4rem);
-  line-height:1.08;
-  font-weight:700;
+.breadcrumb .separator {
+  color: #50647e;
 }
 
-.hero p{
-  margin:0;
-  max-width:760px;
-  color:var(--muted);
-  font-size:1rem;
+/* Hero */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 30px;
+  padding: clamp(28px, 5vw, 52px);
+  border: 1px solid rgba(56, 189, 248, .20);
+  border-radius: 23px;
+  background:
+    linear-gradient(120deg, rgba(15, 38, 64, .97), rgba(12, 22, 40, .97) 64%, rgba(13, 34, 49, .95));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .20);
 }
 
-.meta{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:18px;
+.hero::after {
+  content: "";
+  position: absolute;
+  top: -105px;
+  right: -70px;
+  width: 300px;
+  height: 300px;
+  border: 1px solid rgba(56, 189, 248, .13);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 32px rgba(56, 189, 248, .025),
+    0 0 0 66px rgba(56, 189, 248, .018);
+  pointer-events: none;
 }
 
-.tag{
-  padding:6px 12px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  background:rgba(15,23,42,.45);
-  color:#bae6fd;
-  font-size:.84rem;
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 850px;
 }
 
-/* layout */
-.layout{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 280px;
-  gap:28px;
-  align-items:start;
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 19px;
+  color: #a5e7ff;
+  font-size: .76rem;
+  font-weight: 750;
+  letter-spacing: .13em;
+  text-transform: uppercase;
 }
 
-.content{
-  display:grid;
-  gap:22px;
+.eyebrow::before {
+  content: "";
+  width: 23px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--tick-cyan);
 }
 
-/* section */
-.section{
-  display:grid;
-  gap:12px;
-  padding:24px 22px;
-  background:linear-gradient(180deg, rgba(30,41,59,.72), rgba(15,23,42,.92));
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
+.hero h1 {
+  margin: 0;
+  color: #f3f8ff;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 750;
+  letter-spacing: -.04em;
+  line-height: 1.2;
 }
 
-.section h2{
-  margin:0;
-  font-size:1.35rem;
-  border-left:3px solid var(--accent);
-  padding-left:12px;
+.hero h1 span {
+  display: block;
+  margin-top: 9px;
+  color: var(--tick-cyan);
+  font-size: .48em;
+  font-weight: 600;
+  letter-spacing: .01em;
 }
 
-.section p{
-  margin:0;
-  color:var(--muted);
-  font-size:0.96rem;
+.hero-description {
+  max-width: 750px;
+  margin: 23px 0 0;
+  color: #b4c4d9;
+  font-size: .98rem;
 }
 
-.note{
-  padding:14px 16px;
-  border-left:3px solid var(--accent);
-  border-radius:8px;
-  background:rgba(15,23,42,.6);
-  color:var(--muted);
-  font-size:0.94rem;
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 24px;
 }
 
-.code{
-  background:#020617;
-  border:1px solid rgba(56,189,248,.14);
-  border-radius:8px;
-  padding:16px;
-  font-family:Consolas,monospace;
-  font-size:0.92rem;
-  color:#7dd3fc;
-  line-height:1.65;
-  white-space:pre-wrap;
-  word-break:break-word;
+.tag {
+  padding: 6px 11px;
+  border: 1px solid rgba(148, 163, 184, .20);
+  border-radius: 7px;
+  background: rgba(3, 10, 22, .30);
+  color: #d2e6f8;
+  font-size: .79rem;
 }
 
-/* sidebar */
-.sidebar{
-  display:grid;
-  gap:16px;
+/* Main layout */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 24px;
+  align-items: start;
 }
 
-.box{
-  padding:18px 16px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:rgba(30,41,59,.56);
+.content {
+  display: grid;
+  gap: 19px;
+  min-width: 0;
 }
 
-.box h3{ margin:0 0 12px; font-size:1rem; }
-
-.box a{
-  display:block;
-  color:#7dd3fc;
-  font-size:0.92rem;
-  margin-bottom:8px;
+.section {
+  min-width: 0;
+  padding: 25px;
+  border: 1px solid var(--tick-border);
+  border-radius: var(--tick-radius);
+  background: linear-gradient(155deg, rgba(17, 27, 46, .97), rgba(12, 21, 37, .97));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .12);
+  scroll-margin-top: 100px;
 }
 
-.box a:hover{ color:var(--accent); }
-
-/* footer */
-.footer{
-  text-align:center;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-  color:#8ea3be;
-  font-size:0.9rem;
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  margin-bottom: 20px;
 }
 
-@media(max-width:980px){
-  .layout{grid-template-columns:1fr;}
+.section-index {
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(56, 189, 248, .25);
+  border-radius: 10px;
+  background: rgba(56, 189, 248, .07);
+  color: var(--tick-cyan);
+  font-size: .78rem;
+  font-weight: 800;
 }
 
-@media(max-width:640px){
-  .page{
-    width:min(100% - 24px,1180px);
-    padding-top:84px;
+.section-heading h2 {
+  margin: 0;
+  color: #eff6ff;
+  font-size: 1.22rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.45;
+}
+
+.section-heading p {
+  margin: 4px 0 0;
+  color: var(--tick-muted);
+  font-size: .85rem;
+}
+
+.section p {
+  margin: 0 0 15px;
+  color: #a9b9ce;
+  font-size: .93rem;
+}
+
+.section p:last-child {
+  margin-bottom: 0;
+}
+
+.section strong {
+  color: #e1edfb;
+  font-weight: 650;
+}
+
+/* Notes */
+
+.note {
+  margin: 17px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(56, 189, 248, .13);
+  border-left: 3px solid rgba(56, 189, 248, .72);
+  border-radius: 0 9px 9px 0;
+  background: rgba(56, 189, 248, .045);
+  color: #b3c7dc;
+  font-size: .88rem;
+}
+
+.note strong {
+  color: #d9f3ff;
+}
+
+.note.warning {
+  border-color: rgba(251, 191, 36, .14);
+  border-left-color: rgba(251, 191, 36, .78);
+  background: rgba(251, 191, 36, .035);
+}
+
+.note.warning strong {
+  color: #f6d99a;
+}
+
+/* Concept flow */
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.flow-item {
+  position: relative;
+  min-width: 0;
+  padding: 15px 13px;
+  border: 1px solid rgba(148, 163, 184, .15);
+  border-radius: 11px;
+  background: rgba(4, 12, 25, .42);
+}
+
+.flow-item:first-child {
+  border-color: rgba(56, 189, 248, .28);
+  background: rgba(8, 71, 105, .18);
+}
+
+.flow-item .number {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--tick-cyan);
+  font-family: Consolas, monospace;
+  font-size: .72rem;
+  font-weight: 750;
+}
+
+.flow-item h3 {
+  margin: 0 0 7px;
+  color: #eaf3ff;
+  font-size: .88rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.flow-item p {
+  margin: 0;
+  color: var(--tick-muted);
+  font-size: .79rem;
+  line-height: 1.65;
+}
+
+/* Code */
+
+.code-panel {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 11px;
+  background: var(--tick-code);
+}
+
+.code-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 15px;
+  border-bottom: 1px solid rgba(148, 163, 184, .12);
+  background: rgba(17, 27, 46, .72);
+}
+
+.code-header strong {
+  color: #dce9f8;
+  font-size: .81rem;
+  font-weight: 650;
+}
+
+.code-header span {
+  color: #7289a4;
+  font-family: Consolas, monospace;
+  font-size: .71rem;
+}
+
+.code {
+  overflow-x: auto;
+  padding: 18px;
+  color: #a7dfff;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: .82rem;
+  line-height: 1.9;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.code .comment {
+  color: #7892ad;
+}
+
+.code .keyword {
+  color: #5eead4;
+}
+
+/* Interface table */
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 18px;
+  border: 1px solid rgba(148, 163, 184, .15);
+  border-radius: 10px;
+}
+
+.interface-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+}
+
+.interface-table th,
+.interface-table td {
+  padding: 12px 13px;
+  border-bottom: 1px solid rgba(148, 163, 184, .12);
+  text-align: left;
+  vertical-align: top;
+}
+
+.interface-table th {
+  background: rgba(30, 41, 59, .60);
+  color: #c9d8eb;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.interface-table td {
+  color: #a9b9ce;
+}
+
+.interface-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.interface-table code {
+  color: #9cddff;
+  font-family: Consolas, monospace;
+  font-size: .81rem;
+  overflow-wrap: anywhere;
+}
+
+.pill {
+  display: inline-block;
+  padding: 3px 7px;
+  border: 1px solid rgba(56, 189, 248, .17);
+  border-radius: 5px;
+  background: rgba(56, 189, 248, .06);
+  color: #9cddff;
+  font-size: .72rem;
+  white-space: nowrap;
+}
+
+/* Extension grid */
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.info-card {
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 10px;
+  background: rgba(4, 12, 25, .36);
+}
+
+.info-card h3 {
+  margin: 0 0 6px;
+  color: #e5f1ff;
+  font-size: .9rem;
+  font-weight: 650;
+}
+
+.info-card p {
+  margin: 0;
+  color: var(--tick-muted);
+  font-size: .83rem;
+  line-height: 1.7;
+}
+
+/* Sidebar */
+
+.sidebar {
+  position: sticky;
+  top: 88px;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.box {
+  padding: 18px 17px;
+  border: 1px solid var(--tick-border);
+  border-radius: 12px;
+  background: rgba(17, 27, 46, .84);
+}
+
+.box h3 {
+  margin: 0 0 13px;
+  color: #edf5ff;
+  font-size: .92rem;
+  font-weight: 700;
+}
+
+.box-links {
+  display: grid;
+  gap: 3px;
+}
+
+.box a {
+  display: block;
+  padding: 7px 9px;
+  border-radius: 6px;
+  color: #a8bdd4;
+  font-size: .83rem;
+  line-height: 1.55;
+  transition: color .18s ease, background .18s ease;
+}
+
+.box a:hover {
+  background: rgba(56, 189, 248, .07);
+  color: #9cddff;
+}
+
+.box a.current {
+  background: rgba(56, 189, 248, .08);
+  color: #9cddff;
+}
+
+.sidebar-note {
+  margin: 0;
+  color: var(--tick-muted);
+  font-size: .82rem;
+  line-height: 1.75;
+}
+
+/* Footer */
+
+.footer {
+  margin-top: 48px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(148, 163, 184, .14);
+  color: #8ea3be;
+  font-size: .86rem;
+  text-align: center;
+}
+
+/* Responsive */
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .section{ padding:20px 18px; }
-  .hero p,.section p{ font-size:0.95rem; }
+
+  .sidebar {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .page {
+    width: calc(100% - 24px);
+    padding-top: 86px;
+    padding-bottom: 36px;
+  }
+
+  .hero {
+    padding: 27px 21px;
+    border-radius: 18px;
+  }
+
+  .hero::after {
+    right: -190px;
+  }
+
+  .section {
+    padding: 20px 17px;
+  }
+
+  .flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .interface-table {
+    min-width: 500px;
+  }
+
+  .code {
+    font-size: .76rem;
+    padding: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
 }
 </style>
 </head>
@@ -229,191 +606,383 @@ a{
 
 <main class="page">
 
-  <nav class="breadcrumb">
-    <a href="/docs/index.html">Docs</a> /
-    <a href="/docs/modules/index.html">Modules</a> /
-    <a href="/docs/modules/time/index.html">Time</a> /
-    <span>Scheduler Tick</span>
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/docs/index.html">Docs</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/index.html">Modules</a>
+    <span class="separator">/</span>
+    <a href="/docs/modules/time/index.html">Time</a>
+    <span class="separator">/</span>
+    <span aria-current="page">Scheduler Tick</span>
   </nav>
 
-  <section class="hero">
-    <span class="hero-label">HRTOS Documentation</span>
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">HRTOS / TIME SUBSYSTEM</div>
 
-    <h1>调度节拍（Scheduler Tick）</h1>
+      <h1>
+        调度节拍
+        <span>Scheduler Tick</span>
+      </h1>
 
-    <p>
-      调度节拍是RTOS的时间驱动核心，通过硬件定时器周期性中断，
-      推动任务调度、延时更新与系统时间递增。
-    </p>
+      <p class="hero-description">
+        调度节拍关注系统时间推进与任务调度之间的联系。
+        通过理解 Tick 中断、等待计时、任务状态更新和调度触发的职责边界，
+        可以更准确地分析 HRTOS 的时间管理与任务执行过程。
+      </p>
 
-    <div class="meta">
-      <span class="tag">Time</span>
-      <span class="tag">Tick</span>
-      <span class="tag">Scheduler</span>
+      <div class="hero-tags">
+        <span class="tag">System Tick</span>
+        <span class="tag">Time Management</span>
+        <span class="tag">Task Scheduling</span>
+        <span class="tag">8051 Kernel</span>
+      </div>
     </div>
-  </section>
+  </header>
 
   <div class="layout">
 
     <div class="content">
 
+      <!-- 01 OVERVIEW -->
       <section class="section" id="overview">
-        <h2>概述</h2>
-        <p>
-          Scheduler Tick由硬件定时器周期触发，是系统时间的唯一来源。
-          它驱动延时队列更新、时间片递减与调度决策。
-        </p>
-
-        <p>
-          没有Tick，系统无法进行时间推进，也无法实现Delay与时间片轮转调度。
-        </p>
-
-        <p>
-          Tick频率决定系统精度与开销的平衡（1kHz~10kHz典型范围）。
-        </p>
-      </section>
-
-      <section class="section" id="mechanism">
-        <h2>工作原理</h2>
-
-        <p>
-          每次Tick中断触发时，系统递增全局tick计数器，
-          并依次执行延时队列检查、时间片更新与调度触发。
-        </p>
-
-        <div class="note">
-          Tick ISR必须短小高效，避免影响实时性。
+        <div class="section-heading">
+          <span class="section-index">01</span>
+          <div>
+            <h2>机制概述</h2>
+            <p>系统时间推进与任务调度并不是同一个概念。</p>
+          </div>
         </div>
 
         <p>
-          延时队列按expire_tick排序，到期任务从BLOCKED切换到READY。
+          系统 Tick 为内核提供周期性的时间推进依据。
+          在具体实现中，Tick 相关处理可以与任务等待计时、超时检查、
+          时间片管理及调度触发等机制发生联系。
         </p>
 
         <p>
-          时间片递减用于Round Robin调度，同优先级任务公平切换。
+          需要区分的是：<strong>时间基准、任务状态更新、调度请求和实际上下文切换</strong>
+          属于不同层次。一次 Tick 到来，并不意味着每次都会发生任务切换。
+        </p>
+
+        <div class="note">
+          <strong>阅读重点：</strong>
+          本页介绍调度节拍涉及的机制和接口。具体中断路径、时间片更新条件及调度触发方式，
+          应以 HRTOS 当前内核实现为准。
+        </div>
+      </section>
+
+      <!-- 02 MECHANISM -->
+      <section class="section" id="mechanism">
+        <div class="section-heading">
+          <span class="section-index">02</span>
+          <div>
+            <h2>工作机制</h2>
+            <p>从周期性中断到可能发生的调度处理。</p>
+          </div>
+        </div>
+
+        <div class="flow">
+          <div class="flow-item">
+            <span class="number">STEP 01</span>
+            <h3>Tick 中断</h3>
+            <p>硬件定时器按照配置产生周期性中断。</p>
+          </div>
+
+          <div class="flow-item">
+            <span class="number">STEP 02</span>
+            <h3>时间推进</h3>
+            <p>执行相应的系统时间计数与时间管理处理。</p>
+          </div>
+
+          <div class="flow-item">
+            <span class="number">STEP 03</span>
+            <h3>状态检查</h3>
+            <p>根据内核规则处理等待计时和满足条件的任务。</p>
+          </div>
+
+          <div class="flow-item">
+            <span class="number">STEP 04</span>
+            <h3>调度处理</h3>
+            <p>符合相应触发条件时，进入后续调度流程。</p>
+          </div>
+        </div>
+
+        <div class="note">
+          <strong>关于时间片：</strong>
+          时间片轮转依赖调度器的时间片管理规则。不能仅凭存在周期性 Tick，
+          就推断每次 Tick 都会递减时间片或切换到另一个任务。
+        </div>
+
+        <p>
+          对于任务延时，重点是等待条件何时满足以及任务状态如何更新；
+          对于调度处理，重点则是何时需要重新选择任务，以及内核通过什么路径完成切换。
         </p>
       </section>
 
+      <!-- 03 INTERFACE -->
       <section class="section" id="interface">
-        <h2>关键接口 / 结构</h2>
+        <div class="section-heading">
+          <span class="section-index">03</span>
+          <div>
+            <h2>关键接口</h2>
+            <p>系统 Tick 配置、时间读取与延时相关 API。</p>
+          </div>
+        </div>
 
-        <div class="code">
-extern char os_tick_config(u8 slice_count, u16 tick_value);
+        <div class="code-panel">
+          <div class="code-header">
+            <strong>Time API Reference</strong>
+            <span>HRTOS / C51</span>
+          </div>
+          <div class="code">extern char os_tick_config(u8 slice_count, u16 tick_value);
 extern void os_tick_get(u16 *high, u16 *low);
-extern u32 os_uptime_ms();
+extern u32 os_uptime_ms(void);
 
 extern u16 os_ms_to_tick(u16 ms);
 extern u16 os_sec_to_tick(u8 sec);
 
 extern void os_delay(u16 tick);
-extern void os_delay_ms(unsigned char ms);
+extern void os_delay_ms(unsigned char ms);</div>
         </div>
 
-        <p>
-          <b>os_tick_config</b>：初始化系统Tick，配置时间片数量与硬件定时器周期。
-        </p>
-
-        <div class="note">
-          tick_value 会转换为 (65535 - tick_value + 1) 并写入定时器寄存器 OS_T0_TH0 / OS_T0_TL0。
+        <div class="table-wrap">
+          <table class="interface-table">
+            <thead>
+              <tr>
+                <th>接口</th>
+                <th>作用</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>os_tick_config()</code></td>
+                <td>配置系统 Tick 相关参数，包括时间片配置参数与定时器周期参数。</td>
+              </tr>
+              <tr>
+                <td><code>os_tick_get()</code></td>
+                <td>读取系统 Tick 计数的高、低 16 位。</td>
+              </tr>
+              <tr>
+                <td><code>os_uptime_ms()</code></td>
+                <td>获取以毫秒表示的系统运行时间。</td>
+              </tr>
+              <tr>
+                <td><code>os_ms_to_tick()</code></td>
+                <td>将毫秒数转换为 Tick 数量。</td>
+              </tr>
+              <tr>
+                <td><code>os_sec_to_tick()</code></td>
+                <td>将秒数转换为 Tick 数量。</td>
+              </tr>
+              <tr>
+                <td><code>os_delay()</code></td>
+                <td>任务级 Tick 延时接口。</td>
+              </tr>
+              <tr>
+                <td><code>os_delay_ms()</code></td>
+                <td>毫秒参数的忙等待延时；等待期间持续占用 CPU，不通过任务阻塞机制主动让出处理器。</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <p>
-          初始化流程：清零tick计数 → 设置时间片 → 配置定时器 → 启动系统节拍。
-        </p>
-
-        <p><b>os_tick_get</b>：读取当前系统tick（高16位+低16位）。</p>
-
-        <p><b>os_uptime_ms</b>：返回系统运行时间（毫秒）。</p>
-
-        <p><b>os_ms_to_tick</b>：毫秒转换为tick。</p>
-
-        <p><b>os_sec_to_tick</b>：秒转换为tick。</p>
-
-        <p><b>os_delay</b>：tick级任务阻塞延时。</p>
-
-        <p><b>os_delay_ms</b>：忙等待延时（不参与调度）。</p>
+        <div class="note warning">
+          <strong>使用注意：</strong>
+          <code>os_delay_ms()</code> 属于忙等待，与任务级延时有本质区别。
+          不应将它当作能够阻塞当前任务并让其他任务运行的延时接口。
+        </div>
       </section>
 
+      <!-- 04 CONFIG -->
+      <section class="section" id="configuration">
+        <div class="section-heading">
+          <span class="section-index">04</span>
+          <div>
+            <h2>Tick 配置与时间参数</h2>
+            <p>配置参数决定系统节拍的实际运行行为。</p>
+          </div>
+        </div>
+
+        <p>
+          <code>os_tick_config(u8 slice_count, u16 tick_value)</code>
+          用于配置 HRTOS 的 Tick 相关参数。配置时应结合目标芯片、
+          定时器时钟、内核时间单位及时间片策略理解各参数的含义。
+        </p>
+
+        <div class="code-panel">
+          <div class="code-header">
+            <strong>Timer Reload Calculation</strong>
+            <span>PARAMETER NOTE</span>
+          </div>
+          <div class="code"><span class="comment">// 原文档所述的重装值换算形式</span>
+reload = 65535 - tick_value + 1
+
+<span class="comment">// 结果写入的寄存器</span>
+OS_T0_TH0
+OS_T0_TL0</div>
+        </div>
+
+        <div class="note">
+          <strong>参数说明：</strong>
+          上述公式按原文档提供的描述保留。实际使用时，应核对
+          <code>os_tick_config()</code> 的实现、参数取值范围、定时器工作模式与目标芯片的数据手册，
+          确认计算结果和寄存器配置相匹配。
+        </div>
+
+        <p>
+          初始化顺序、定时器启动时机及参数合法性检查也应以当前内核实现为准，
+          不宜仅根据接口名称推断内部执行顺序。
+        </p>
+      </section>
+
+      <!-- 05 EXECUTION FLOW -->
       <section class="section" id="flow">
-        <h2>运行流程</h2>
+        <div class="section-heading">
+          <span class="section-index">05</span>
+          <div>
+            <h2>运行流程与调度关系</h2>
+            <p>将时间处理与上下文切换分开理解。</p>
+          </div>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-header">
+            <strong>Conceptual Execution Flow</strong>
+            <span>LOGIC OVERVIEW</span>
+          </div>
+          <div class="code"><span class="comment">// 1. 时间基准</span>
+Hardware Timer
+  └─ Tick Interrupt
+       └─ System Time Update
+
+<span class="comment">// 2. 时间相关处理</span>
+  ├─ Waiting-Time Processing
+  ├─ Timeout / Wake-up Conditions
+  └─ Task-State Update
+
+<span class="comment">// 3. 调度相关处理</span>
+  └─ Scheduling Trigger
+       └─ Scheduler / Context Switch
+          <span class="comment">// 是否发生及如何执行，取决于具体条件</span></div>
+        </div>
 
         <p>
-          Timer Interrupt → Tick++ → Delay Check → TimeSlice Update → Scheduler
+          如果等待任务达到唤醒条件，内核可以按照相应规则更新任务状态；
+          任务进入就绪状态之后，是否立即执行，还取决于调度策略、当前执行上下文及相关触发条件。
         </p>
+
+        <p>
+          因此，分析实时响应时间时，应分别关注 Tick 中断处理耗时、
+          调度触发路径、上下文切换开销以及高优先级任务对执行时机的影响。
+        </p>
+      </section>
+
+      <!-- 06 DESIGN NOTES -->
+      <section class="section" id="design">
+        <div class="section-heading">
+          <span class="section-index">06</span>
+          <div>
+            <h2>设计与实时性注意事项</h2>
+            <p>时间精度、处理开销和响应延迟需要共同考虑。</p>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-card">
+            <h3>中断处理开销</h3>
+            <p>Tick 相关中断处理应尽可能精简，避免在中断路径中引入不必要的长耗时操作。</p>
+          </div>
+
+          <div class="info-card">
+            <h3>时间分辨率</h3>
+            <p>Tick 周期决定基于 Tick 的时间管理粒度之一，但不等于整个系统的实际响应延迟。</p>
+          </div>
+
+          <div class="info-card">
+            <h3>时间片策略</h3>
+            <p>时间片轮转行为取决于调度器的具体实现，需结合优先级策略和时间片配置分析。</p>
+          </div>
+
+          <div class="info-card">
+            <h3>精度与开销</h3>
+            <p>提高 Tick 频率通常会增加单位时间内的中断处理次数，应结合应用需求评估。</p>
+          </div>
+        </div>
 
         <div class="note">
-          Tick中断统一驱动系统时间与任务状态变化。
+          <strong>关于 Tickless：</strong>
+          Tickless 是一种可选的低功耗时间管理设计，并非所有 RTOS 都默认支持。
+          本页不将其描述为 HRTOS 已实现的功能；如需介绍，应以实际代码和目标平台支持情况为依据。
         </div>
-
-        <p>
-          到期任务唤醒后进入READY队列，由调度器选择执行。
-        </p>
       </section>
 
-      <section class="section" id="extension">
-        <h2>扩展说明</h2>
-
-        <p>
-          Tickless模式可在空闲时关闭周期中断以降低功耗。
-        </p>
-
-        <p>
-          Tick频率越高精度越高，但ISR开销也增加，需要权衡设计。
-        </p>
-
-        <ul>
-          <li>职责：系统时间基准</li>
-          <li>机制：硬件定时器 + ISR</li>
-          <li>驱动：Delay / Scheduler / Timer</li>
-          <li>优化：Tickless / 低开销ISR</li>
-        </ul>
-      </section>
-
+      <!-- 07 RELATED -->
       <section class="section" id="related">
-        <h2>相关阅读</h2>
-
-        <div class="code">
-Time System（时间系统）
-├─ Delay Mechanism（任务延时）
-├─ Scheduler Tick（系统节拍）
-└─ Timer System（软件定时器）
+        <div class="section-heading">
+          <span class="section-index">07</span>
+          <div>
+            <h2>相关阅读</h2>
+            <p>从时间管理延伸到任务调度与任务状态。</p>
+          </div>
         </div>
 
-        <p>
-          <a href="/docs/modules/time/delay.html">任务延时</a> /
-          <a href="/docs/modules/scheduler/priority-scheduling.html">优先级调度</a> /
-          <a href="/docs/modules/task/state-model.html">任务状态模型</a>
-        </p>
+        <div class="code-panel">
+          <div class="code-header">
+            <strong>Time Subsystem</strong>
+            <span>DOCUMENT MAP</span>
+          </div>
+          <div class="code">Time Module
+  ├─ Tick System
+  ├─ Scheduler Tick
+  ├─ Delay
+  └─ Timer</div>
+        </div>
+
+        <div class="box-links" style="margin-top:16px;">
+          <a href="/docs/modules/time/index.html">→ 时间管理模块</a>
+          <a href="/docs/modules/time/delay.html">→ 任务延时（Delay）</a>
+          <a href="/docs/modules/scheduler/index.html">→ 调度器（Scheduler）</a>
+          <a href="/docs/modules/scheduler/priority-scheduling.html">→ 优先级调度</a>
+          <a href="/docs/modules/task/state-model.html">→ 任务状态模型</a>
+        </div>
       </section>
 
     </div>
 
+    <!-- SIDEBAR -->
     <aside class="sidebar">
 
       <div class="box">
-        <h3>目录导航</h3>
-        <a href="#overview">概述</a>
-        <a href="#mechanism">工作原理</a>
-        <a href="#interface">关键接口</a>
-        <a href="#flow">运行流程</a>
+        <h3>本页目录</h3>
+        <div class="box-links">
+          <a href="#overview">机制概述</a>
+          <a href="#mechanism">工作机制</a>
+          <a href="#interface">关键接口</a>
+          <a href="#configuration">Tick 配置</a>
+          <a href="#flow">运行流程</a>
+          <a href="#design">实时性注意事项</a>
+          <a href="#related">相关阅读</a>
+        </div>
       </div>
 
       <div class="box">
         <h3>相关页面</h3>
-        <a href="/docs/modules/time/delay.html">任务延时</a>
-        <a href="/docs/modules/time/index.html">时间管理</a>
-        <a href="/docs/modules/scheduler/index.html">调度器</a>
-        <a href="/docs/modules/task/state-model.html">任务状态模型</a>
+        <div class="box-links">
+          <a href="/docs/modules/time/index.html">Time Module</a>
+          <a href="/docs/modules/time/delay.html">Delay</a>
+          <a href="/docs/modules/scheduler/index.html">Scheduler</a>
+          <a href="/docs/modules/task/state-model.html">Task State</a>
+        </div>
       </div>
 
       <div class="box">
-        <h3>所属模块</h3>
-        <a href="/docs/modules/time/index.html">Time</a>
-      </div>
-
-      <div class="box">
-        <h3>学习路径</h3>
-        <a href="/docs/modules/time/index.html">Time → Tick核心</a>
+        <h3>本页要点</h3>
+        <p class="sidebar-note">
+          系统时间推进、任务唤醒、调度触发和上下文切换是相互关联但并不等同的过程。
+          分层理解这些机制，有助于准确分析 HRTOS 的调度行为。
+        </p>
       </div>
 
     </aside>
