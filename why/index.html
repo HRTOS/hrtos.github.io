@@ -10,29 +10,33 @@
 
 <style>
 :root{
-  --bg:#0f172a;
+  --bg:#0b1120;
   --text:#e2e8f0;
-  --muted:#94a3b8;
+  --muted:#98a9c1;
   --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 16px 40px rgba(2,6,23,.24);
-  --radius:10px;
+  --border:rgba(148,163,184,.17);
+  --shadow:0 18px 48px rgba(0,0,0,.22);
+  --radius:14px;
 }
 
 *{box-sizing:border-box}
 
+html{scroll-behavior:smooth}
+
 body{
   margin:0;
-  background:var(--bg);
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(14,116,190,.13),transparent 38rem),
+    var(--bg);
   color:var(--text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+  line-height:1.8;
 }
 
 a{
   color:#7dd3fc;
   text-decoration:none;
-  transition:color .2s ease;
+  transition:color .2s ease,border-color .2s ease;
 }
 
 a:hover{color:var(--accent)}
@@ -44,11 +48,13 @@ a:hover{color:var(--accent)}
   gap:20px;
   padding:14px 22px;
   border-bottom:1px solid var(--border);
+  background:rgba(11,17,32,.92);
+  backdrop-filter:blur(14px);
 }
 
 .nav-brand{
-  font-weight:700;
-  letter-spacing:.5px;
+  font-weight:750;
+  letter-spacing:.8px;
 }
 
 .nav-links{
@@ -68,151 +74,512 @@ a:hover{color:var(--accent)}
 .container{
   max-width:1100px;
   margin:0 auto;
-  padding:64px 22px;
+  padding:44px 22px 54px;
 }
 
+/* Hero */
 .hero{
-  margin-bottom:54px;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  margin-bottom:66px;
+  padding:55px 44px 38px;
+  border:1px solid rgba(56,189,248,.25);
+  border-radius:22px;
+  background:
+    radial-gradient(ellipse at 88% 18%,rgba(14,165,233,.19),transparent 35%),
+    linear-gradient(130deg,rgba(18,39,66,.98),rgba(12,21,39,.97) 70%);
+  box-shadow:0 26px 70px rgba(0,0,0,.23);
+}
+
+.hero::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  right:-110px;
+  top:-180px;
+  width:390px;
+  height:390px;
+  border:1px solid rgba(56,189,248,.16);
+  border-radius:50%;
+  box-shadow:
+    0 0 0 36px rgba(56,189,248,.025),
+    0 0 0 72px rgba(56,189,248,.022),
+    0 0 0 108px rgba(56,189,248,.018);
+}
+
+.hero::after{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:3px;
+  background:linear-gradient(180deg,#7dd3fc,#0284c7,transparent);
 }
 
 .eyebrow{
-  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:20px;
   color:var(--accent);
   font-size:12px;
-  font-weight:700;
-  letter-spacing:2px;
+  font-weight:800;
+  letter-spacing:2.2px;
   text-transform:uppercase;
 }
 
+.eyebrow::before{
+  content:"";
+  width:22px;
+  height:2px;
+  background:var(--accent);
+  box-shadow:0 0 12px rgba(56,189,248,.55);
+}
+
 h1{
-  font-size:clamp(2.2rem,4vw,3.4rem);
-  line-height:1.2;
+  max-width:850px;
+  font-size:clamp(2.6rem,6vw,4.5rem);
+  line-height:1.17;
   margin:0 0 20px;
-  letter-spacing:-.5px;
+  letter-spacing:-1.5px;
+  font-weight:800;
+}
+
+.hero-title-accent{
+  color:#7dd3fc;
+  text-shadow:0 0 35px rgba(56,189,248,.17);
 }
 
 .hero-desc{
-  max-width:820px;
-  color:var(--muted);
+  position:relative;
+  z-index:1;
+  max-width:790px;
+  color:#b7c7dc;
   font-size:16px;
   margin:0;
+  line-height:2;
 }
 
 .hero-desc strong{
-  color:var(--text);
-  font-weight:600;
+  color:#f1f7ff;
+  font-weight:650;
 }
 
 .hero-points{
   display:flex;
   flex-wrap:wrap;
-  gap:10px;
-  margin-top:26px;
+  gap:9px;
+  margin-top:28px;
 }
 
 .hero-point{
-  padding:5px 12px;
-  border:1px solid var(--border);
-  border-radius:6px;
-  color:#cbd5e1;
-  font-size:13px;
+  padding:6px 12px;
+  border:1px solid rgba(125,211,252,.22);
+  border-radius:5px;
+  background:rgba(14,165,233,.07);
+  color:#c5eaff;
+  font-size:12px;
+  letter-spacing:.2px;
 }
 
-/* Sections */
+.hero-bottom{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  margin-top:35px;
+  padding-top:19px;
+  border-top:1px solid rgba(148,174,211,.14);
+}
 
+.hero-bottom-label{
+  color:#8197b4;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:11px;
+  letter-spacing:1.6px;
+}
+
+.hero-bottom-link{
+  font-size:13px;
+  font-weight:650;
+}
+
+/* Section structure */
 .section{
-  margin-bottom:48px;
+  margin-bottom:60px;
+  scroll-margin-top:85px;
 }
 
 .section-header{
-  margin-bottom:20px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:22px;
+  margin-bottom:22px;
 }
 
+.section-header-main{min-width:0}
 
 .section-kicker{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:7px;
   color:var(--accent);
-  font-size:14px;
-  font-weight:600;
-  letter-spacing:1px;
-  margin-bottom:5px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:1.8px;
 }
 
+.section-kicker::before{
+  content:"";
+  width:17px;
+  height:1px;
+  background:var(--accent);
+}
 
 .section-title{
-  font-size:21px;
-  font-weight:650;
-  color:#dbeafe;
+  font-size:clamp(21px,3vw,27px);
+  font-weight:720;
+  color:#e5efff;
   margin:0 0 8px;
+  line-height:1.5;
+  letter-spacing:-.3px;
 }
 
 .section-desc{
   color:var(--muted);
   font-size:14px;
   margin:0;
-  max-width:780px;
+  max-width:770px;
 }
 
-/* Cards */
+.section-number{
+  flex-shrink:0;
+  padding:5px 10px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  color:#7086a4;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:12px;
+  letter-spacing:1px;
+}
 
-.grid{
+/* Foundation */
+.foundation-grid{
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-columns:1fr 1fr;
   gap:16px;
 }
 
-.card{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
+.foundation-card{
+  position:relative;
+  overflow:hidden;
   min-width:0;
-  background:rgba(30,41,59,.55);
+  padding:26px;
   border:1px solid var(--border);
   border-radius:var(--radius);
-  padding:22px;
+  background:linear-gradient(145deg,rgba(24,39,62,.85),rgba(15,25,43,.92));
   box-shadow:var(--shadow);
-  transition:border-color .2s ease,transform .2s ease;
+  transition:transform .2s ease,border-color .2s ease;
 }
 
-.card:hover{
-  border-color:rgba(56,189,248,.42);
-  transform:translateY(-2px);
+.foundation-card:hover{
+  transform:translateY(-3px);
+  border-color:rgba(56,189,248,.4);
 }
 
-.card h3{
+.foundation-card::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  width:65px;
+  height:2px;
+  background:linear-gradient(90deg,var(--accent),transparent);
+}
+
+.foundation-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:20px;
+}
+
+.foundation-label{
+  color:#7dd3fc;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:11px;
+  letter-spacing:1.5px;
+}
+
+.foundation-icon{
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  border:1px solid rgba(56,189,248,.22);
+  border-radius:10px;
+  color:#7dd3fc;
+  background:rgba(14,165,233,.08);
+  font-size:19px;
+  font-weight:700;
+}
+
+.foundation-card h3{
   margin:0 0 10px;
-  font-size:17px;
-  font-weight:650;
+  font-size:20px;
+  line-height:1.5;
 }
 
-.card p{
-  margin:0 0 18px;
+.foundation-card p{
+  margin:0 0 22px;
   color:var(--muted);
   font-size:14px;
-  flex:1;
 }
 
-.card a{
-  font-size:14px;
-  font-weight:600;
+.card-link{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  font-weight:700;
 }
 
-.card-wide{
+.card-link span{
+  transition:transform .2s ease;
+}
+
+.card-link:hover span{transform:translateX(4px)}
+
+/* Architecture section */
+.architecture-panel{
+  display:grid;
+  grid-template-columns:.78fr 1.22fr;
+  gap:24px;
+  padding:27px;
+  border:1px solid var(--border);
+  border-radius:16px;
   background:
-    linear-gradient(120deg,rgba(56,189,248,.07),transparent 65%),
-    rgba(30,41,59,.55);
+    radial-gradient(ellipse at 0% 100%,rgba(14,165,233,.08),transparent 45%),
+    rgba(19,30,49,.83);
+  box-shadow:var(--shadow);
 }
 
+.architecture-visual{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:9px;
+  min-height:270px;
+  padding:22px;
+  border:1px solid rgba(56,189,248,.21);
+  border-radius:12px;
+  background:
+    radial-gradient(ellipse at 50% 45%,rgba(14,165,233,.14),transparent 68%),
+    rgba(7,18,33,.58);
+}
+
+.architecture-label{
+  margin-bottom:7px;
+  color:#6f89aa;
+  text-align:center;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:10px;
+  letter-spacing:1.8px;
+}
+
+.arch-layer{
+  padding:11px 9px;
+  border:1px solid rgba(148,174,211,.16);
+  border-radius:7px;
+  background:rgba(25,41,63,.8);
+  text-align:center;
+  color:#c8d8eb;
+  font-size:12px;
+}
+
+.arch-layer.main{
+  padding:15px 9px;
+  border-color:rgba(56,189,248,.46);
+  background:linear-gradient(90deg,rgba(3,105,161,.27),rgba(14,116,144,.13));
+  color:#f0f9ff;
+  font-size:15px;
+  font-weight:750;
+  box-shadow:0 0 25px rgba(14,165,233,.08);
+}
+
+.architecture-copy{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.architecture-copy h3{
+  margin:0 0 12px;
+  font-size:21px;
+  line-height:1.5;
+}
+
+.architecture-copy>p{
+  margin:0 0 13px;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.arch-points{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:9px;
+}
+
+.arch-point{
+  padding:10px 12px;
+  border-left:2px solid rgba(56,189,248,.6);
+  background:rgba(27,45,69,.62);
+  color:#c6d7eb;
+  font-size:12px;
+}
+
+/* Engineering cards */
+.engineering-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+
+.engineering-card{
+  display:flex;
+  align-items:flex-start;
+  gap:16px;
+  min-width:0;
+  padding:22px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(22,34,54,.75);
+  transition:border-color .2s ease,background .2s ease;
+}
+
+.engineering-card:hover{
+  border-color:rgba(56,189,248,.36);
+  background:rgba(24,41,64,.86);
+}
+
+.engineering-index{
+  flex-shrink:0;
+  display:grid;
+  place-items:center;
+  width:36px;
+  height:36px;
+  border:1px solid rgba(56,189,248,.24);
+  border-radius:9px;
+  color:#7dd3fc;
+  background:rgba(14,165,233,.08);
+  font-family:Consolas,"Courier New",monospace;
+  font-size:12px;
+}
+
+.engineering-content{min-width:0}
+
+.engineering-card h3{
+  margin:0 0 7px;
+  font-size:16px;
+  line-height:1.5;
+}
+
+.engineering-card p{
+  margin:0 0 14px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.engineering-card .card-link{font-size:12px}
+
+/* Summary */
 .summary{
-  padding:28px;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  padding:34px;
+  border:1px solid rgba(56,189,248,.3);
+  border-radius:18px;
+  background:
+    radial-gradient(ellipse at 100% 0%,rgba(14,165,233,.14),transparent 42%),
+    linear-gradient(120deg,rgba(15,48,73,.84),rgba(16,27,45,.96) 70%);
+  box-shadow:0 20px 55px rgba(0,0,0,.2);
+}
+
+.summary::after{
+  content:"HRTOS";
+  position:absolute;
+  z-index:-1;
+  right:16px;
+  bottom:-26px;
+  color:rgba(125,211,252,.045);
+  font-size:clamp(64px,10vw,110px);
+  line-height:1;
+  letter-spacing:-5px;
+  font-weight:900;
+}
+
+.summary-label{
+  color:#7dd3fc;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:2px;
+}
+
+.summary h3{
+  max-width:760px;
+  margin:12px 0 15px;
+  font-size:clamp(22px,3.4vw,31px);
+  line-height:1.5;
+  letter-spacing:-.4px;
 }
 
 .summary p{
   max-width:820px;
-  margin-bottom:18px;
+  margin:0 0 23px;
+  color:#b2c4da;
+  font-size:14px;
+}
+
+.summary-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:11px;
+}
+
+.summary-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  padding:10px 15px;
+  border:1px solid rgba(125,211,252,.32);
+  border-radius:7px;
+  background:rgba(14,165,233,.1);
+  color:#c9edff;
+  font-size:13px;
+  font-weight:700;
+}
+
+.summary-link:hover{
+  border-color:rgba(125,211,252,.6);
+  color:#fff;
+}
+
+.summary-link.secondary{
+  border-color:var(--border);
+  background:rgba(15,23,42,.3);
+  color:#aebfd5;
 }
 
 /* Footer */
-
 .footer{
   margin-top:30px;
   border-top:1px solid var(--border);
@@ -237,6 +604,11 @@ h1{
 
 .footer a{color:#7dd3fc}
 
+@media(max-width:760px){
+  .architecture-panel{grid-template-columns:1fr}
+  .architecture-visual{min-height:235px}
+}
+
 @media(max-width:640px){
   .nav{
     align-items:flex-start;
@@ -247,26 +619,68 @@ h1{
 
   .nav-links{gap:14px}
 
-  .container{
-    padding:42px 18px;
+  .container{padding:28px 16px 40px}
+
+  .hero{
+    margin-bottom:44px;
+    padding:34px 22px 26px;
+    border-radius:16px;
   }
 
-  .hero{margin-bottom:42px}
+  h1{
+    font-size:clamp(2.25rem,10vw,3.2rem);
+    letter-spacing:-1px;
+  }
 
-  .grid{grid-template-columns:1fr}
+  .hero-desc{font-size:14px}
 
-  .section{margin-bottom:38px}
+  .hero-bottom{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:10px;
+    margin-top:25px;
+  }
 
-  .card{padding:19px}
+  .section{margin-bottom:43px}
 
-  .summary{padding:22px}
+  .section-header{gap:10px}
+
+  .section-number{font-size:10px}
+
+  .section-title{font-size:22px}
+
+  .foundation-grid,
+  .engineering-grid{grid-template-columns:1fr}
+
+  .foundation-card{padding:22px}
+
+  .architecture-panel{padding:17px}
+
+  .architecture-visual{padding:18px}
+
+  .arch-points{grid-template-columns:1fr}
+
+  .engineering-card{padding:18px;gap:13px}
+
+  .summary{padding:25px 21px}
+
+  .summary h3{font-size:23px}
+
+  .summary-actions{flex-direction:column;align-items:stretch}
+
+  .summary-link{width:100%}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important}
 }
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
+<!-- NAV：保留原有导航结构 -->
 <nav class="nav">
   <div class="nav-brand">HRTOS</div>
 
@@ -282,9 +696,12 @@ h1{
 
   <!-- HERO -->
   <header class="hero">
-    <div class="eyebrow">WHY HRTOS</div>
+    <div class="eyebrow">WHY HRTOS / DESIGN PHILOSOPHY</div>
 
-    <h1>为什么选择 HRTOS</h1>
+    <h1>
+      为什么选择<br>
+      <span class="hero-title-accent">HRTOS</span>
+    </h1>
 
     <p class="hero-desc">
       8051 实时系统的价值，不只是让多个任务运行起来，
@@ -295,140 +712,218 @@ h1{
 
     <div class="hero-points">
       <span class="hero-point">8051 Native</span>
-      <span class="hero-point">实时内核</span>
+      <span class="hero-point">专用实时内核</span>
       <span class="hero-point">中断与调度协同</span>
       <span class="hero-point">持续维护</span>
     </div>
-  </header>
 
+    <div class="hero-bottom">
+      <span class="hero-bottom-label">KERNEL · ENGINEERING · LONG-TERM MAINTENANCE</span>
+      <a class="hero-bottom-link" href="/system-view/index.html">探索系统架构 →</a>
+    </div>
+  </header>
 
   <!-- SECTION 1 -->
   <section class="section">
     <div class="section-header">
-      <div class="section-kicker">01 / FOUNDATION</div>
-      <h2 class="section-title">为什么需要实时系统</h2>
-      <p class="section-desc">
-        从时间约束出发，理解实时系统的设计目标，以及通用系统与实时系统在设计取舍上的区别。
-      </p>
+      <div class="section-header-main">
+        <div class="section-kicker">01 / FOUNDATION</div>
+        <h2 class="section-title">从实时问题出发</h2>
+        <p class="section-desc">
+          理解实时系统的设计目标，以及时间约束如何影响操作系统的架构与实现。
+        </p>
+      </div>
+      <span class="section-number">01—02</span>
     </div>
 
-    <div class="grid">
+    <div class="foundation-grid">
 
-      <article class="card">
+      <article class="foundation-card">
+        <div class="foundation-top">
+          <span class="foundation-label">REAL-TIME CONSTRAINTS</span>
+          <span class="foundation-icon">T</span>
+        </div>
         <h3>实时问题的本质</h3>
         <p>
           实时任务不仅需要得到正确结果，还需要在规定的时间约束内完成。
           时间要求是系统设计的一部分，而不只是运行速度的指标。
         </p>
-        <a href="01-real-time-problem.html">了解实时问题 →</a>
+        <a class="card-link" href="01-real-time-problem.html">
+          了解实时问题 <span>→</span>
+        </a>
       </article>
 
-      <article class="card">
+      <article class="foundation-card">
+        <div class="foundation-top">
+          <span class="foundation-label">SYSTEM TRADE-OFFS</span>
+          <span class="foundation-icon">↔</span>
+        </div>
         <h3>通用系统的设计边界</h3>
         <p>
           通用操作系统通常面向更广泛的任务与资源管理需求。
           在资源受限的 8051 环境中，需要根据实时约束与硬件条件选择合适的设计方案。
         </p>
-        <a href="02-why-general-os-fails.html">了解设计取舍 →</a>
+        <a class="card-link" href="02-why-general-os-fails.html">
+          了解设计取舍 <span>→</span>
+        </a>
       </article>
 
     </div>
   </section>
-
 
   <!-- SECTION 2 -->
   <section class="section">
     <div class="section-header">
-      <div class="section-kicker">02 / ARCHITECTURE</div>
-      <h2 class="section-title">为什么 HRTOS 这样设计</h2>
-      <p class="section-desc">
-        面向 8051 的资源与执行机制，理解确定性约束、调度策略和内核架构之间的关系。
-      </p>
+      <div class="section-header-main">
+        <div class="section-kicker">02 / ARCHITECTURE</div>
+        <h2 class="section-title">围绕 8051 设计内核</h2>
+        <p class="section-desc">
+          面向处理器结构与资源限制，理解时间约束、调度策略和内核机制之间的关系。
+        </p>
+      </div>
+      <span class="section-number">03—04</span>
     </div>
 
-    <div class="grid">
+    <div class="architecture-panel">
+      <div class="architecture-visual">
+        <div class="architecture-label">HRTOS KERNEL STRUCTURE</div>
+        <div class="arch-layer">应用任务</div>
+        <div class="arch-layer main">HRTOS 专用内核</div>
+        <div class="arch-layer">调度 · 上下文 · 中断</div>
+        <div class="arch-layer">8051 CPU / RAM / 定时器</div>
+      </div>
 
-      <article class="card">
-        <h3>确定性与时间约束</h3>
+      <div class="architecture-copy">
+        <h3>让关键机制形成整体</h3>
         <p>
-          实时系统需要关注任务执行路径、调度行为、中断干扰及响应时间。
-          HRTOS 持续推进内核测试与最坏情况执行时间分析，
-          让关键时间特性有更清晰的分析依据。
+          在资源受限的 8051 上，中断入口、上下文保存、任务调度和资源管理彼此关联。
+          只有将这些机制放在同一个设计框架中考虑，才能更好地理解它们对运行行为和时间特性的共同影响。
         </p>
-        <a href="03-determinism-constraint.html">了解确定性约束 →</a>
+        <p>
+          HRTOS 以 8051 为目标平台，围绕这些底层机制进行专用设计，并通过测试与文档不断完善系统的可理解性和可维护性。
+        </p>
+
+        <div class="arch-points">
+          <div class="arch-point">上下文与寄存器管理</div>
+          <div class="arch-point">任务调度与抢占规则</div>
+          <div class="arch-point">中断响应与嵌套行为</div>
+          <div class="arch-point">有限内存与资源约束</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="engineering-grid" style="margin-top:16px">
+
+      <article class="engineering-card">
+        <span class="engineering-index">03</span>
+        <div class="engineering-content">
+          <h3>确定性与时间约束</h3>
+          <p>
+            实时系统需要关注任务执行路径、调度行为、中断干扰及响应时间。
+            HRTOS 通过目标硬件测试与内核验证积累证据；更完整的最坏情况执行时间分析仍需结合适当工具和方法进一步推进。
+          </p>
+          <a class="card-link" href="03-determinism-constraint.html">
+            了解确定性约束 <span>→</span>
+          </a>
+        </div>
       </article>
 
-      <article class="card">
-        <h3>实时系统与通用系统</h3>
-        <p>
-          两类系统有不同的设计目标。
-          HRTOS 以 8051 实时任务管理为核心，
-          关注任务调度、中断处理、上下文切换与有限硬件资源之间的协同。
-        </p>
-        <a href="04-rtos-vs-gpos.html">了解设计目标差异 →</a>
+      <article class="engineering-card">
+        <span class="engineering-index">04</span>
+        <div class="engineering-content">
+          <h3>实时系统与通用系统</h3>
+          <p>
+            两类系统通常具有不同的设计侧重点。
+            HRTOS 以 8051 实时任务管理为核心，关注任务调度、中断处理、上下文切换与有限硬件资源之间的协同。
+          </p>
+          <a class="card-link" href="04-rtos-vs-gpos.html">
+            了解设计目标差异 <span>→</span>
+          </a>
+        </div>
       </article>
 
     </div>
   </section>
-
 
   <!-- SECTION 3 -->
   <section class="section">
     <div class="section-header">
-      <div class="section-kicker">03 / ENGINEERING</div>
-      <h2 class="section-title">为什么不止于一个内核</h2>
-      <p class="section-desc">
-        一个操作系统的工程价值，还取决于内核之外的工具、接口、示例、文档与持续维护。
-      </p>
+      <div class="section-header-main">
+        <div class="section-kicker">03 / ENGINEERING ECOSYSTEM</div>
+        <h2 class="section-title">不止于一个内核</h2>
+        <p class="section-desc">
+          操作系统的工程价值，还取决于工具、接口、示例、文档与持续维护能否形成完整的使用路径。
+        </p>
+      </div>
+      <span class="section-number">ECOSYSTEM</span>
     </div>
 
-    <div class="grid">
+    <div class="engineering-grid">
 
-      <article class="card">
-        <h3>面向实际工程的配套体系</h3>
-        <p>
-          围绕内核构建 Shell、Modbus RTU、驱动支持、示例程序与技术文档，
-          帮助开发者从理解内核走向实际应用。
-        </p>
-        <a href="/docs/index.html">查看技术文档 →</a>
+      <article class="engineering-card">
+        <span class="engineering-index">05</span>
+        <div class="engineering-content">
+          <h3>面向实际工程的配套体系</h3>
+          <p>
+            围绕内核构建 Shell、Modbus RTU、驱动支持、示例程序与技术文档，
+            帮助开发者从理解内核走向实际应用。
+          </p>
+          <a class="card-link" href="/docs/index.html">
+            查看技术文档 <span>→</span>
+          </a>
+        </div>
       </article>
 
-      <article class="card">
-        <h3>长期维护与持续完善</h3>
-        <p>
-          重视已有功能的稳定性、问题修复、回归测试与技术资料的一致性。
-          以持续打磨为主，让系统在长期使用中逐步完善。
-        </p>
-        <a href="summary.html">了解 HRTOS 的设计理念 →</a>
+      <article class="engineering-card">
+        <span class="engineering-index">06</span>
+        <div class="engineering-content">
+          <h3>长期维护与持续完善</h3>
+          <p>
+            重视已有功能的稳定性、问题修复、回归测试与技术资料的一致性。
+            以持续打磨为主，让系统在长期使用中逐步完善。
+          </p>
+          <a class="card-link" href="summary.html">
+            了解设计理念 <span>→</span>
+          </a>
+        </div>
       </article>
 
     </div>
   </section>
 
-
   <!-- SUMMARY -->
   <section class="section">
     <div class="section-header">
-      <div class="section-kicker">04 / PRINCIPLE</div>
-      <h2 class="section-title">HRTOS 的设计出发点</h2>
+      <div class="section-header-main">
+        <div class="section-kicker">04 / PRINCIPLE</div>
+        <h2 class="section-title">HRTOS 的设计出发点</h2>
+      </div>
+      <span class="section-number">THE BIG PICTURE</span>
     </div>
 
-    <div class="card card-wide summary">
+    <div class="summary">
+      <div class="summary-label">BUILT FOR 8051 · DESIGNED FOR ENGINEERING</div>
       <h3>不只让任务运行，更关注整个系统如何协同工作。</h3>
       <p>
         HRTOS 面向 8051 单片机，将实时内核作为基础，
         持续完善任务调度、中断管理、资源控制及配套工程能力。
-        我们重视的不只是功能是否存在，
-        也包括实现是否清晰、行为是否经过测试，以及系统能否长期维护。
+        我们重视的不只是功能是否存在，也包括实现是否清晰、行为是否经过测试，以及系统能否长期维护。
       </p>
-      <a href="/system-view/index.html">查看系统架构 →</a>
+
+      <div class="summary-actions">
+        <a class="summary-link" href="/system-view/index.html">
+          查看系统架构 <span>→</span>
+        </a>
+        <a class="summary-link secondary" href="/docs/index.html">
+          浏览技术文档 <span>→</span>
+        </a>
+      </div>
     </div>
   </section>
 
 </main>
 
-
-<!-- FOOTER -->
+<!-- FOOTER：保留原有结构与文案 -->
 <footer class="footer">
   <div>© 2017–2026 HRTOS · Why HRTOS</div>
 

@@ -13,34 +13,45 @@
 
 <style>
 :root{
-  --bg:#0f172a;
+  --bg:#0b1120;
+  --surface:#111b2e;
+  --surface-2:#142238;
   --text:#e2e8f0;
   --muted:#94a3b8;
   --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 16px 40px rgba(2,6,23,.24);
-  --radius:10px;
+  --accent-soft:#7dd3fc;
+  --border:rgba(148,163,184,.17);
+  --shadow:0 18px 55px rgba(0,0,0,.2);
+  --radius:12px;
 }
 
 *{box-sizing:border-box}
+
+html{scroll-behavior:smooth}
 
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+  line-height:1.8;
+  -webkit-font-smoothing:antialiased;
 }
 
 a{
-  color:#7dd3fc;
+  color:var(--accent-soft);
   text-decoration:none;
-  transition:color .2s ease;
+  transition:color .2s ease,opacity .2s ease;
 }
 
-a:hover{color:var(--accent)}
+a:hover{color:#bae6fd}
 
-/* NAV */
+::selection{
+  background:rgba(56,189,248,.28);
+  color:#fff;
+}
+
+/* NAV — 保留原有导航样式 */
 .nav{
   position:sticky;
   top:0;
@@ -79,115 +90,662 @@ a:hover{color:var(--accent)}
 
 .nav a.active{color:#cfe3ff}
 
-/* CONTENT */
+/* HERO */
 .container{
-  max-width:920px;
+  max-width:1040px;
   margin:0 auto;
-  padding:60px 20px;
+  padding:0 24px 84px;
+}
+
+.hero{
+  position:relative;
+  overflow:hidden;
+  padding:88px 0 54px;
+  border-bottom:1px solid var(--border);
+}
+
+.hero::before{
+  content:"";
+  position:absolute;
+  width:440px;
+  height:440px;
+  right:-180px;
+  top:-150px;
+  border-radius:50%;
+  background:radial-gradient(
+    circle,
+    rgba(14,165,233,.14) 0%,
+    rgba(14,165,233,.045) 38%,
+    transparent 70%
+  );
+  pointer-events:none;
+}
+
+.hero::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(148,163,184,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(148,163,184,.035) 1px,transparent 1px);
+  background-size:38px 38px;
+  mask-image:linear-gradient(to bottom,black,transparent 90%);
+  pointer-events:none;
+}
+
+.hero-inner{
+  position:relative;
+  z-index:1;
 }
 
 .eyebrow{
+  display:flex;
+  align-items:center;
+  gap:11px;
   color:var(--accent);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:2.5px;
+  margin-bottom:26px;
+}
+
+.eyebrow::before{
+  content:"";
+  width:25px;
+  height:2px;
+  background:var(--accent);
+  box-shadow:0 0 12px rgba(56,189,248,.65);
+}
+
+.hero h1{
+  max-width:850px;
+  font-size:clamp(42px,7vw,76px);
+  line-height:1.13;
+  letter-spacing:-2px;
+  font-weight:750;
+  margin:0;
+}
+
+.hero h1 span{
+  display:block;
+  color:transparent;
+  background:linear-gradient(100deg,#f8fafc 5%,#7dd3fc 58%,#38bdf8 100%);
+  background-clip:text;
+  -webkit-background-clip:text;
+}
+
+.hero-sub{
+  max-width:690px;
+  color:#a8b7ca;
+  font-size:clamp(15px,2vw,18px);
+  line-height:1.95;
+  margin:26px 0 0;
+}
+
+.hero-bottom{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:24px;
+  margin-top:44px;
+}
+
+.hero-index{
+  color:#64748b;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:12px;
+  letter-spacing:1.5px;
+}
+
+.hero-index strong{
+  display:block;
+  font-size:30px;
+  font-weight:500;
+  letter-spacing:0;
+  color:#dbeafe;
+  margin-bottom:2px;
+}
+
+.hero-note{
+  max-width:330px;
+  padding-left:16px;
+  border-left:2px solid rgba(56,189,248,.6);
+  color:#94a3b8;
+  font-size:13px;
+}
+
+/* CORE STATEMENT */
+.core-panel{
+  position:relative;
+  overflow:hidden;
+  margin:32px 0 58px;
+  padding:34px 36px;
+  border:1px solid rgba(56,189,248,.26);
+  border-radius:var(--radius);
+  background:
+    linear-gradient(115deg,rgba(14,165,233,.09),transparent 52%),
+    linear-gradient(145deg,#111e32,#0e1728);
+  box-shadow:var(--shadow);
+}
+
+.core-panel::after{
+  content:"01";
+  position:absolute;
+  right:18px;
+  bottom:-43px;
+  color:rgba(125,211,252,.045);
+  font-family:Consolas,monospace;
+  font-size:190px;
+  line-height:1;
+  font-weight:700;
+  pointer-events:none;
+}
+
+.section-kicker{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:var(--accent);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:2px;
+  margin-bottom:13px;
+}
+
+.section-kicker::before{
+  content:"";
+  width:7px;
+  height:7px;
+  background:var(--accent);
+  border-radius:2px;
+  box-shadow:0 0 12px rgba(56,189,248,.6);
+}
+
+.core-panel h2{
+  position:relative;
+  z-index:1;
+  margin:0 0 17px;
+  font-size:25px;
+  line-height:1.45;
+  color:#f1f5f9;
+}
+
+.core-panel p{
+  position:relative;
+  z-index:1;
+  max-width:790px;
+  margin:0 0 12px;
+  color:#c0ccdb;
+}
+
+.equation{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px;
+  margin:27px 0 16px;
+  font-size:clamp(19px,3vw,28px);
+  font-weight:750;
+  letter-spacing:-.5px;
+}
+
+.equation .term{
+  color:#f1f5f9;
+}
+
+.equation .plus{
+  color:var(--accent);
+  font-weight:400;
+}
+
+.en{
+  position:relative;
+  z-index:1;
+  color:#8195ad;
+  font-size:13px;
+  line-height:1.8;
+}
+
+/* CONTENT SECTIONS */
+.section{
+  margin-top:64px;
+}
+
+.section-heading{
+  display:grid;
+  grid-template-columns:54px minmax(0,1fr);
+  gap:18px;
+  align-items:start;
+  margin-bottom:27px;
+}
+
+.section-number{
+  padding-top:5px;
+  color:#38bdf8;
+  font-family:Consolas,"Courier New",monospace;
+  font-size:16px;
+  letter-spacing:1px;
+}
+
+.section-number::after{
+  content:"";
+  display:block;
+  width:27px;
+  height:1px;
+  margin-top:12px;
+  background:rgba(56,189,248,.6);
+}
+
+.section-heading h2{
+  margin:0;
+  color:#f1f5f9;
+  font-size:clamp(23px,3vw,31px);
+  line-height:1.4;
+  letter-spacing:-.5px;
+}
+
+.section-heading p{
+  margin:10px 0 0;
+  max-width:720px;
+  color:var(--muted);
   font-size:14px;
-  font-weight:600;
+}
+
+.content{
+  margin-left:72px;
+}
+
+.content p{
+  margin:0 0 15px;
+  color:#c1ccdb;
+}
+
+.content p:last-child{margin-bottom:0}
+
+/* TIMELINE */
+.timeline{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  margin:30px 0 25px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:linear-gradient(145deg,#111c2e,#0e1727);
+  overflow:hidden;
+}
+
+.timeline-step{
+  position:relative;
+  min-width:0;
+  padding:23px 15px 20px;
+  border-right:1px solid var(--border);
+}
+
+.timeline-step:last-child{border-right:0}
+
+.timeline-step:not(:last-child)::after{
+  content:"";
+  position:absolute;
+  top:36px;
+  right:-4px;
+  width:7px;
+  height:7px;
+  background:#38bdf8;
+  transform:rotate(45deg);
+  box-shadow:0 0 9px rgba(56,189,248,.6);
+  z-index:1;
+}
+
+.step-index{
+  color:#64748b;
+  font-family:Consolas,monospace;
+  font-size:11px;
+  letter-spacing:1px;
+}
+
+.step-node{
+  width:11px;
+  height:11px;
+  margin:14px 0;
+  border:2px solid #38bdf8;
+  border-radius:3px;
+  background:#102338;
+  box-shadow:0 0 13px rgba(56,189,248,.16);
+}
+
+.timeline-step strong{
+  display:block;
+  color:#e2e8f0;
+  font-size:14px;
+  margin-bottom:6px;
+}
+
+.timeline-step p{
+  margin:0;
+  color:#8fa2ba;
+  font-size:12px;
+  line-height:1.7;
+}
+
+.callout{
+  padding:17px 19px;
+  border-left:2px solid #38bdf8;
+  background:linear-gradient(90deg,rgba(56,189,248,.08),rgba(56,189,248,.015));
+  color:#cbd5e1;
+  font-size:14px;
+  line-height:1.85;
+}
+
+/* TWO-COLUMN CONCEPTS */
+.concept-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  margin-top:24px;
+}
+
+.concept{
+  position:relative;
+  overflow:hidden;
+  padding:23px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:linear-gradient(145deg,rgba(20,34,56,.9),rgba(14,23,39,.85));
+  transition:border-color .2s ease,transform .2s ease;
+}
+
+.concept:hover{
+  border-color:rgba(56,189,248,.42);
+  transform:translateY(-2px);
+}
+
+.concept-index{
+  color:#38bdf8;
+  font-family:Consolas,monospace;
+  font-size:11px;
   letter-spacing:1px;
   margin-bottom:12px;
 }
 
-h1{
-  font-size:clamp(30px,4vw,38px);
-  line-height:1.3;
-  margin:0 0 12px;
+.concept h3{
+  margin:0 0 9px;
+  font-size:17px;
+  color:#e5eef9;
 }
 
-.sub{
-  color:var(--muted);
-  margin-bottom:38px;
-  max-width:780px;
+.concept p{
+  margin:0;
+  font-size:13px;
+  line-height:1.85;
+  color:#9aabc0;
 }
 
-/* CARDS */
-.card{
-  background:rgba(17,24,35,.88);
+/* DETERMINISM */
+.analysis-panel{
+  padding:26px;
+  margin-top:22px;
   border:1px solid var(--border);
   border-radius:var(--radius);
-  padding:22px;
-  margin-bottom:18px;
-  box-shadow:var(--shadow);
+  background:#0f192a;
 }
 
-.card-core{
-  border-left:3px solid var(--accent);
-  background:#0f1722;
+.analysis-label{
+  margin-bottom:17px;
+  color:#7187a1;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:1.8px;
 }
 
-.card h2{
-  margin:0 0 12px;
-  font-size:19px;
-  line-height:1.5;
-  color:#cfe3ff;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
-}
-
-.card p{
-  margin:0 0 12px;
-}
-
-.card p:last-child{margin-bottom:0}
-
-.keyline{
-  color:#f1f5f9;
-  font-size:18px;
-  font-weight:600;
-  margin:16px 0;
-}
-
-.en{
-  color:var(--muted);
-  font-size:14px;
-  margin-top:10px;
-}
-
-.flow{
+.analysis-list{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:0 28px;
+}
+
+.analysis-item{
+  display:flex;
   gap:12px;
-  margin-top:16px;
+  align-items:flex-start;
+  padding:15px 0;
+  border-top:1px solid rgba(148,163,184,.12);
 }
 
-.flow-item{
-  min-width:0;
-  padding:15px;
+.analysis-dot{
+  flex:none;
+  width:7px;
+  height:7px;
+  margin-top:9px;
+  border-radius:2px;
+  background:#38bdf8;
+}
+
+.analysis-item strong{
+  display:block;
+  margin-bottom:4px;
+  color:#e2e8f0;
+  font-size:14px;
+}
+
+.analysis-item span{
+  display:block;
+  color:#8fa2ba;
+  font-size:12px;
+  line-height:1.7;
+}
+
+/* FAILURE CONDITIONS */
+.failure-list{
+  margin-top:23px;
+  border-top:1px solid var(--border);
+}
+
+.failure-item{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr);
+  gap:15px;
+  padding:22px 0;
+  border-bottom:1px solid var(--border);
+}
+
+.failure-id{
+  color:#38bdf8;
+  font-family:Consolas,monospace;
+  font-size:12px;
+  padding-top:4px;
+}
+
+.failure-item h3{
+  margin:0 0 5px;
+  color:#e5edf8;
+  font-size:16px;
+}
+
+.failure-item p{
+  margin:0;
+  color:#94a3b8;
+  font-size:13px;
+}
+
+/* HARD / SOFT */
+.model-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:15px;
+  margin-top:24px;
+}
+
+.model{
+  padding:25px;
   border:1px solid var(--border);
-  border-radius:9px;
-  background:rgba(30,41,59,.38);
+  border-radius:10px;
+  background:#101a2b;
 }
 
-.flow-item strong{
-  display:block;
-  color:#dbeafe;
-  margin-bottom:5px;
-  font-size:15px;
+.model.hard{
+  border-top:2px solid #38bdf8;
+  background:linear-gradient(150deg,rgba(14,165,233,.09),#101a2b 65%);
 }
 
-.flow-item span{
-  display:block;
-  color:var(--muted);
-  font-size:14px;
+.model.soft{
+  border-top:2px solid #64748b;
 }
 
-.callout{
-  margin-top:14px;
-  padding:13px 15px;
+.model-label{
+  color:#7f94ad;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:1.5px;
+}
+
+.model h3{
+  margin:9px 0 12px;
+  font-size:23px;
+  color:#f1f5f9;
+}
+
+.model p{
+  margin:0;
+  color:#aab8ca;
+  font-size:13px;
+  line-height:1.9;
+}
+
+/* HRTOS CONNECTION */
+.hrtos-panel{
+  position:relative;
+  overflow:hidden;
+  margin-top:64px;
+  padding:35px;
+  border:1px solid rgba(56,189,248,.28);
+  border-radius:var(--radius);
+  background:
+    linear-gradient(120deg,rgba(14,165,233,.09),transparent 55%),
+    #101a2b;
+}
+
+.hrtos-panel::before{
+  content:"HRTOS";
+  position:absolute;
+  right:-5px;
+  top:5px;
+  color:rgba(125,211,252,.035);
+  font-family:Consolas,monospace;
+  font-size:clamp(70px,13vw,150px);
+  line-height:1;
+  font-weight:700;
+  pointer-events:none;
+}
+
+.hrtos-panel > *{
+  position:relative;
+  z-index:1;
+}
+
+.hrtos-panel h2{
+  margin:0 0 20px;
+  max-width:680px;
+  color:#f1f5f9;
+  font-size:clamp(25px,4vw,36px);
+  line-height:1.4;
+}
+
+.hrtos-panel p{
+  max-width:780px;
+  color:#b5c4d6;
+  margin:0 0 14px;
+}
+
+.hrtos-pillars{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin:27px 0;
+}
+
+.pillar{
+  padding:17px 15px;
+  border:1px solid rgba(148,163,184,.16);
   border-radius:8px;
-  background:rgba(56,189,248,.06);
-  border:1px solid rgba(56,189,248,.16);
-  color:#cbd5e1;
+  background:rgba(8,17,32,.4);
+}
+
+.pillar strong{
+  display:block;
+  margin-bottom:6px;
+  color:#dbeafe;
   font-size:14px;
 }
 
-/* FOOTER */
+.pillar span{
+  display:block;
+  color:#8195ad;
+  font-size:12px;
+  line-height:1.7;
+}
+
+.hrtos-panel .callout{
+  border-left-color:#64748b;
+  background:rgba(148,163,184,.055);
+  color:#aab8ca;
+}
+
+/* CONCLUSION */
+.conclusion{
+  margin-top:64px;
+  padding:31px 0 0;
+  border-top:1px solid var(--border);
+}
+
+.conclusion h2{
+  margin:0 0 18px;
+  font-size:25px;
+  color:#f1f5f9;
+}
+
+.conclusion > p{
+  max-width:830px;
+  color:#b5c4d6;
+}
+
+.conclusion-statement{
+  margin:25px 0;
+  padding:23px 25px;
+  border-left:3px solid #38bdf8;
+  background:linear-gradient(90deg,rgba(56,189,248,.08),transparent);
+  color:#e0f2fe;
+  font-size:clamp(17px,2.5vw,22px);
+  font-weight:650;
+  line-height:1.7;
+}
+
+.page-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:11px;
+  margin-top:29px;
+}
+
+.page-links a{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:11px 15px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  color:#cbd5e1;
+  font-size:13px;
+  transition:border-color .2s ease,background .2s ease;
+}
+
+.page-links a:hover{
+  border-color:rgba(56,189,248,.45);
+  background:rgba(56,189,248,.06);
+  color:#bae6fd;
+}
+
+/* FOOTER — 保留原有页脚样式 */
 .site-footer{
   text-align:center;
   border-top:1px solid var(--border);
@@ -206,6 +764,36 @@ h1{
 
 .footer-links a{font-size:13px}
 
+@media(max-width:760px){
+  .hero{padding:66px 0 38px}
+  .hero h1{letter-spacing:-1.3px}
+  .hero-bottom{align-items:flex-start;flex-direction:column}
+  .hero-note{max-width:100%}
+  .timeline{grid-template-columns:1fr}
+  .timeline-step{
+    display:grid;
+    grid-template-columns:35px 14px minmax(0,1fr);
+    gap:10px;
+    align-items:start;
+    padding:16px;
+    border-right:0;
+    border-bottom:1px solid var(--border);
+  }
+  .timeline-step:last-child{border-bottom:0}
+  .step-index{padding-top:3px}
+  .step-node{margin:4px 0}
+  .timeline-step:not(:last-child)::after{display:none}
+  .timeline-step strong{margin-bottom:4px}
+  .section{margin-top:49px}
+  .section-heading{grid-template-columns:38px minmax(0,1fr);gap:12px}
+  .content{margin-left:50px}
+  .concept-grid,.model-grid{grid-template-columns:1fr}
+  .analysis-list{grid-template-columns:1fr}
+  .hrtos-pillars{grid-template-columns:1fr}
+  .hrtos-panel{padding:25px 21px}
+  .core-panel{padding:27px 23px}
+}
+
 @media(max-width:600px){
   .nav-inner{
     align-items:flex-start;
@@ -215,19 +803,30 @@ h1{
   }
 
   .nav-links{gap:14px}
+  .container{padding:0 18px 60px}
+  .hero h1{font-size:clamp(39px,11vw,54px)}
+  .equation{gap:7px}
+  .content{margin-left:0}
+  .section-heading{margin-bottom:22px}
+  .analysis-panel{padding:20px}
+  .conclusion{margin-top:49px}
+  .page-links{flex-direction:column}
+  .page-links a{justify-content:space-between}
+}
 
-  .container{padding:42px 18px}
-
-  .card{padding:19px}
-
-  .flow{grid-template-columns:1fr}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    transition:none!important;
+    animation:none!important;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
+<!-- NAV — 保留原有导航结构 -->
 <nav class="nav">
   <div class="nav-inner">
     <div class="nav-brand">HRTOS</div>
@@ -243,19 +842,40 @@ h1{
 
 <main class="container">
 
-  <div class="eyebrow">WHY HRTOS / 01</div>
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">WHY HRTOS / FOUNDATIONS</div>
 
-  <h1>实时问题的本质</h1>
+      <h1>
+        实时问题的本质
+        <span>时间，决定正确性。</span>
+      </h1>
 
-  <div class="sub">
-    实时系统关注的不只是任务能否完成，
-    还包括任务能否在规定的时间约束内完成。
-    理解这一点，是理解实时内核设计的起点。
-  </div>
+      <p class="hero-sub">
+        实时系统关注的不只是任务能否完成，
+        还包括任务能否在规定的时间约束内完成。
+        从一个外部事件，到系统给出响应，
+        每一段延迟都可能影响最终结果。
+      </p>
+
+      <div class="hero-bottom">
+        <div class="hero-index">
+          <strong>01 / 06</strong>
+          REAL-TIME FOUNDATIONS
+        </div>
+
+        <div class="hero-note">
+          理解时间约束，是理解实时调度、中断管理与内核设计的起点。
+        </div>
+      </div>
+    </div>
+  </header>
 
   <!-- CORE DEFINITION -->
-  <section class="card card-core">
-    <h2>核心定义</h2>
+  <section class="core-panel">
+    <div class="section-kicker">THE CORE IDEA</div>
+    <h2>功能正确，不代表实时正确。</h2>
 
     <p>
       在实时系统中，计算结果的正确性与结果产生的时间都可能影响系统是否满足要求。
@@ -266,136 +886,295 @@ h1{
       即使计算结果本身正确，也可能意味着该任务未能满足实时要求。
     </p>
 
-    <div class="keyline">
-      实时正确性 = 功能要求 + 时间约束
+    <div class="equation">
+      <span class="term">功能正确性</span>
+      <span class="plus">+</span>
+      <span class="term">时间约束</span>
     </div>
 
     <div class="en">
-      Real-time computing is concerned with both functional correctness and timing requirements.
+      Real-time computing concerns both functional correctness and timing requirements.
     </div>
   </section>
 
-  <!-- TIME CONSTRAINT -->
-  <section class="card">
-    <h2>时间约束的本质</h2>
-
-    <p>
-      实时系统的目标不是单纯追求更快的平均执行速度，
-      而是使关键任务的响应行为满足规定的时间要求。
-    </p>
-
-    <p>
-      对具有明确截止时间的任务，
-      需要分析任务执行时间、调度等待、中断干扰以及资源竞争等因素，
-      判断任务是否能够在规定的时间范围内完成。
-    </p>
-
-    <div class="callout">
-      更快的平均速度不一定意味着更好的实时性能。
-      关键在于系统能否满足具体任务的时间约束。
-    </div>
-  </section>
-
-  <!-- CAUSAL STRUCTURE -->
-  <section class="card">
-    <h2>外部事件为什么会引入时间问题</h2>
-
-    <p>
-      当系统需要响应定时器、外部中断、通信数据或传感器事件时，
-      任务执行就不再只是一个独立的计算过程。
-      事件到达时间、当前系统状态和调度行为，
-      都可能影响最终的响应时刻。
-    </p>
-
-    <div class="keyline">
-      Event → Interrupt → Scheduling → Execution → Response
-    </div>
-
-    <p>
-      因此，分析实时行为不仅需要理解任务本身，
-      还需要考虑任务如何被唤醒、何时获得处理器，
-      以及执行期间可能受到哪些干扰。
-    </p>
-  </section>
-
-  <!-- DETERMINISM -->
-  <section class="card">
-    <h2>确定性与可分析性</h2>
-
-    <p>
-      确定性并不意味着系统中的每个操作都必须花费完全相同的时间。
-      更重要的是，关键执行路径的行为能够被理解，
-      相关的时间上界能够在明确的假设和条件下得到分析。
-    </p>
-
-    <p>
-      对实时系统而言，需要重点关注任务响应时间、
-      中断延迟、调度等待、临界区以及最坏情况下的执行路径。
-    </p>
-
-    <div class="en">
-      Determinism is about predictable behavior under defined conditions, not identical execution time for every operation.
-    </div>
-  </section>
-
-  <!-- FAILURE CONDITIONS -->
-  <section class="card">
-    <h2>什么情况下会违反实时要求</h2>
-
-    <div class="flow">
-      <div class="flow-item">
-        <strong>任务超时</strong>
-        <span>任务未能在规定的截止时间前完成。</span>
-      </div>
-
-      <div class="flow-item">
-        <strong>响应超界</strong>
-        <span>事件到响应的延迟超过系统允许的范围。</span>
-      </div>
-
-      <div class="flow-item">
-        <strong>调度干扰</strong>
-        <span>高优先级任务、临界区或资源竞争影响关键任务响应。</span>
-      </div>
-
-      <div class="flow-item">
-        <strong>资源约束</strong>
-        <span>有限的内存、栈空间或其他资源影响任务正常执行。</span>
+  <!-- SECTION 01 -->
+  <section class="section">
+    <div class="section-heading">
+      <div class="section-number">01</div>
+      <div>
+        <h2>时间约束的本质</h2>
+        <p>平均速度回答“通常有多快”，实时分析还要回答“最迟需要多久”。</p>
       </div>
     </div>
 
-    <p style="margin-top:16px;">
-      是否构成系统故障，取决于具体任务的时间要求、
-      系统安全与功能要求，以及超时后果。
-      不能将所有延迟都直接视为逻辑错误。
-    </p>
+    <div class="content">
+      <p>
+        实时系统的目标不是单纯追求更快的平均执行速度，
+        而是使关键任务的响应行为满足规定的时间要求。
+      </p>
+
+      <p>
+        对具有明确截止时间的任务，
+        需要分析任务执行时间、调度等待、中断干扰以及资源竞争等因素，
+        判断任务是否能够在规定的时间范围内完成。
+      </p>
+
+      <div class="callout">
+        更快的平均速度不一定意味着更好的实时性能。
+        关键在于系统能否满足具体任务的时间约束。
+      </div>
+    </div>
   </section>
 
-  <!-- HARD / SOFT -->
-  <section class="card">
-    <h2>硬实时与软实时</h2>
+  <!-- SECTION 02 -->
+  <section class="section">
+    <div class="section-heading">
+      <div class="section-number">02</div>
+      <div>
+        <h2>从外部事件到最终响应</h2>
+        <p>实时行为不是孤立的任务执行，而是一条完整的响应链路。</p>
+      </div>
+    </div>
 
-    <p>
-      <strong>硬实时：</strong>
-      关键任务必须满足规定的截止时间，
-      超时可能构成不可接受的系统失败。
-    </p>
+    <div class="content">
+      <p>
+        当系统需要响应定时器、外部中断、通信数据或传感器事件时，
+        事件到达时间、当前系统状态和调度行为，
+        都可能影响最终的响应时刻。
+      </p>
 
-    <p>
-      <strong>软实时：</strong>
-      超时通常会降低服务质量或系统效用，
-      但偶发超时不一定意味着整个系统失效。
-    </p>
+      <div class="timeline">
+        <div class="timeline-step">
+          <div class="step-index">STAGE 01</div>
+          <div class="step-node"></div>
+          <div>
+            <strong>外部事件</strong>
+            <p>定时器、通信或传感器触发</p>
+          </div>
+        </div>
 
-    <p>
-      硬实时与软实时描述的是任务时间要求及其违约后果，
-      并不能仅凭操作系统的名称或调度算法来判定。
-    </p>
+        <div class="timeline-step">
+          <div class="step-index">STAGE 02</div>
+          <div class="step-node"></div>
+          <div>
+            <strong>中断响应</strong>
+            <p>识别事件并执行中断处理</p>
+          </div>
+        </div>
+
+        <div class="timeline-step">
+          <div class="step-index">STAGE 03</div>
+          <div class="step-node"></div>
+          <div>
+            <strong>调度决策</strong>
+            <p>确定任务何时获得处理器</p>
+          </div>
+        </div>
+
+        <div class="timeline-step">
+          <div class="step-index">STAGE 04</div>
+          <div class="step-node"></div>
+          <div>
+            <strong>任务执行</strong>
+            <p>处理任务逻辑及相关干扰</p>
+          </div>
+        </div>
+
+        <div class="timeline-step">
+          <div class="step-index">STAGE 05</div>
+          <div class="step-node"></div>
+          <div>
+            <strong>产生响应</strong>
+            <p>输出控制结果或完成处理</p>
+          </div>
+        </div>
+      </div>
+
+      <p>
+        因此，分析实时行为不仅需要理解任务本身，
+        还需要考虑任务如何被唤醒、何时获得处理器，
+        以及执行期间可能受到哪些干扰。
+      </p>
+    </div>
+  </section>
+
+  <!-- SECTION 03 -->
+  <section class="section">
+    <div class="section-heading">
+      <div class="section-number">03</div>
+      <div>
+        <h2>确定性与可分析性</h2>
+        <p>重点不只是执行得快，更是关键行为能够被理解和分析。</p>
+      </div>
+    </div>
+
+    <div class="content">
+      <p>
+        确定性并不意味着系统中的每个操作都必须花费完全相同的时间。
+        更重要的是，关键执行路径的行为能够被理解，
+        相关的时间上界能够在明确的假设和条件下得到分析。
+      </p>
+
+      <div class="concept-grid">
+        <div class="concept">
+          <div class="concept-index">PROPERTY / 01</div>
+          <h3>可预测的执行行为</h3>
+          <p>
+            理解中断、调度、上下文切换与临界区如何影响任务的响应过程。
+          </p>
+        </div>
+
+        <div class="concept">
+          <div class="concept-index">PROPERTY / 02</div>
+          <h3>可分析的时间边界</h3>
+          <p>
+            在明确的硬件、配置与运行假设下，分析关键路径的时间上界。
+          </p>
+        </div>
+      </div>
+
+      <div class="analysis-panel">
+        <div class="analysis-label">KEY FACTORS / TIME ANALYSIS</div>
+
+        <div class="analysis-list">
+          <div class="analysis-item">
+            <div class="analysis-dot"></div>
+            <div>
+              <strong>任务响应时间</strong>
+              <span>从事件或任务就绪到任务获得响应的时间。</span>
+            </div>
+          </div>
+
+          <div class="analysis-item">
+            <div class="analysis-dot"></div>
+            <div>
+              <strong>中断延迟</strong>
+              <span>事件发生到中断处理开始之间的延迟。</span>
+            </div>
+          </div>
+
+          <div class="analysis-item">
+            <div class="analysis-dot"></div>
+            <div>
+              <strong>调度与上下文切换</strong>
+              <span>任务选择、寄存器保存及恢复带来的时间成本。</span>
+            </div>
+          </div>
+
+          <div class="analysis-item">
+            <div class="analysis-dot"></div>
+            <div>
+              <strong>临界区与资源竞争</strong>
+              <span>中断屏蔽、共享资源和任务间干扰造成的等待。</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p style="margin-top:18px;">
+        Determinism is about predictable behavior under defined conditions,
+        not identical execution time for every operation.
+      </p>
+    </div>
+  </section>
+
+  <!-- SECTION 04 -->
+  <section class="section">
+    <div class="section-heading">
+      <div class="section-number">04</div>
+      <div>
+        <h2>什么情况下会违反实时要求</h2>
+        <p>关键在于任务的时间约束，以及超时对系统造成的实际后果。</p>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="failure-list">
+        <div class="failure-item">
+          <div class="failure-id">F / 01</div>
+          <div>
+            <h3>任务超时</h3>
+            <p>任务未能在规定的截止时间前完成。</p>
+          </div>
+        </div>
+
+        <div class="failure-item">
+          <div class="failure-id">F / 02</div>
+          <div>
+            <h3>响应超界</h3>
+            <p>从事件发生到系统产生响应的延迟超过允许范围。</p>
+          </div>
+        </div>
+
+        <div class="failure-item">
+          <div class="failure-id">F / 03</div>
+          <div>
+            <h3>调度与中断干扰</h3>
+            <p>高优先级任务、临界区或资源竞争影响关键任务响应。</p>
+          </div>
+        </div>
+
+        <div class="failure-item">
+          <div class="failure-id">F / 04</div>
+          <div>
+            <h3>资源约束</h3>
+            <p>有限的内存、栈空间或其他资源影响任务正常执行。</p>
+          </div>
+        </div>
+      </div>
+
+      <p style="margin-top:20px;">
+        是否构成系统故障，取决于具体任务的时间要求、
+        系统安全与功能要求，以及超时后果。
+        不能将所有延迟都直接视为逻辑错误。
+      </p>
+    </div>
+  </section>
+
+  <!-- SECTION 05 -->
+  <section class="section">
+    <div class="section-heading">
+      <div class="section-number">05</div>
+      <div>
+        <h2>硬实时与软实时</h2>
+        <p>区别不在于名称，而在于截止时间的约束及违约后果。</p>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="model-grid">
+        <div class="model hard">
+          <div class="model-label">HARD REAL-TIME</div>
+          <h3>硬实时</h3>
+          <p>
+            关键任务必须满足规定的截止时间。
+            超时可能构成不可接受的系统失败，
+            因而需要针对目标场景建立相应的时间保证。
+          </p>
+        </div>
+
+        <div class="model soft">
+          <div class="model-label">SOFT REAL-TIME</div>
+          <h3>软实时</h3>
+          <p>
+            超时通常会降低服务质量或系统效用，
+            但偶发超时不一定意味着整个系统失效。
+          </p>
+        </div>
+      </div>
+
+      <p style="margin-top:20px;">
+        硬实时与软实时描述的是任务时间要求及其违约后果，
+        并不能仅凭操作系统的名称或调度算法来判定。
+      </p>
+    </div>
   </section>
 
   <!-- HRTOS CONNECTION -->
-  <section class="card card-core">
-    <h2>这与 HRTOS 有什么关系</h2>
+  <section class="hrtos-panel">
+    <div class="section-kicker">WHY HRTOS</div>
+
+    <h2>让时间行为成为内核设计的一部分。</h2>
 
     <p>
       在 8051 平台上，处理器资源有限，
@@ -409,6 +1188,23 @@ h1{
       以更系统地理解关键路径的时间成本。
     </p>
 
+    <div class="hrtos-pillars">
+      <div class="pillar">
+        <strong>调度机制</strong>
+        <span>关注任务优先级、调度等待与任务切换。</span>
+      </div>
+
+      <div class="pillar">
+        <strong>中断管理</strong>
+        <span>关注中断响应、嵌套行为与临界区影响。</span>
+      </div>
+
+      <div class="pillar">
+        <strong>工程验证</strong>
+        <span>结合目标硬件测试、编译结果与时间分析。</span>
+      </div>
+    </div>
+
     <div class="callout">
       对具体目标芯片而言，实时性能仍需结合实际编译结果、
       系统配置、硬件条件和分析覆盖范围进行验证。
@@ -417,8 +1213,9 @@ h1{
   </section>
 
   <!-- CONCLUSION -->
-  <section class="card">
-    <h2>核心结论</h2>
+  <section class="conclusion">
+    <div class="section-kicker">THE TAKEAWAY</div>
+    <h2>从时间约束，理解实时系统。</h2>
 
     <p>
       实时系统不是简单地追求执行速度，
@@ -426,24 +1223,27 @@ h1{
       为此，需要理解任务执行、调度、中断、资源竞争与响应时间之间的关系。
     </p>
 
+    <div class="conclusion-statement">
+      真正重要的，不只是系统能够完成任务，
+      而是它能否在要求的时间内完成任务。
+    </div>
+
     <p>
       这也是 HRTOS 设计与持续完善的出发点：
       从实时需求出发，围绕 8051 的实际执行机制构建内核，
       并通过测试、分析和长期维护逐步提高系统的可理解性与可验证性。
     </p>
 
-    <p>
-      <a href="/why/index.html">返回 WHY 首页 →</a>
-      &nbsp;&nbsp;
-      <a href="/system-view/index.html">查看系统架构 →</a>
-      &nbsp;&nbsp;
-      <a href="/docs/index.html">查看技术文档 →</a>
-    </p>
+    <div class="page-links">
+      <a href="/why/index.html">返回 WHY 首页 <span>↗</span></a>
+      <a href="/system-view/index.html">查看系统架构 <span>↗</span></a>
+      <a href="/docs/index.html">查看技术文档 <span>↗</span></a>
+    </div>
   </section>
 
 </main>
 
-<!-- FOOTER -->
+<!-- FOOTER — 保留原有页脚结构与内容 -->
 <footer class="site-footer">
   <div style="margin-bottom:10px;">
     © 2017–2026 HRTOS · WHY Layer
