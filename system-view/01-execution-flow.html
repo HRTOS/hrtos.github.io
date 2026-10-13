@@ -10,286 +10,920 @@
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="execution-flow">
+<meta name="theme-color" content="#060b14">
 
 <style>
 :root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+  --bg:#060b14;
+  --bg2:#0a1423;
+  --panel:#0d192a;
+  --panel2:#112139;
+  --text:#edf5ff;
+  --muted:#a1b3ca;
+  --subtle:#7087a2;
+  --border:rgba(143,180,220,.16);
+  --cyan:#65d8ff;
+  --blue:#5797ff;
+  --amber:#ffbf69;
+  --green:#74e0bd;
+  --max:1180px;
 }
 
 *{box-sizing:border-box}
 
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+html{
+  scroll-behavior:smooth;
+  scroll-padding-top:90px;
 }
 
-/* NAV — 保留原有结构与样式 */
+body{
+  margin:0;
+  color:var(--text);
+  background:
+    radial-gradient(ellipse at 82% 4%,rgba(37,108,190,.14),transparent 38rem),
+    radial-gradient(ellipse at 0% 45%,rgba(24,86,143,.07),transparent 34rem),
+    var(--bg);
+  font-family:Inter,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.85;
+  -webkit-font-smoothing:antialiased;
+  overflow-wrap:break-word;
+}
+
+a{
+  color:var(--cyan);
+  text-decoration:none;
+  transition:color .2s,border-color .2s,background .2s,transform .2s;
+}
+
+a:hover{color:#d5f5ff}
+
+::selection{
+  background:rgba(101,216,255,.28);
+  color:#fff;
+}
+
+/* Navigation */
+
 .nav{
+  position:sticky;
+  top:0;
+  z-index:20;
+  border-bottom:1px solid rgba(143,180,220,.13);
+  background:rgba(6,11,20,.86);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+
+.nav-inner{
+  max-width:1320px;
+  min-height:70px;
+  margin:auto;
+  padding:0 34px;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:14px 24px;
-  border-bottom:1px solid rgba(148,163,184,.12);
-  background:rgba(11,15,20,.92);
-  position:sticky;
-  top:0;
+  gap:24px;
 }
 
-.nav a{
-  color:var(--muted);
-  margin-left:14px;
-  text-decoration:none;
-  font-size:14px;
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  color:#f1f7ff;
+  font-size:19px;
+  font-weight:850;
+  letter-spacing:3px;
 }
 
-.nav a.active{
-  color:#cfe3ff;
+.brand-icon{
+  position:relative;
+  width:25px;
+  height:25px;
+  border:1px solid rgba(101,216,255,.8);
+  transform:rotate(45deg);
+  display:grid;
+  place-items:center;
+}
+
+.brand-icon:after{
+  content:"";
+  width:9px;
+  height:9px;
+  background:var(--cyan);
+  box-shadow:0 0 15px rgba(101,216,255,.7);
+}
+
+.nav-links{
+  display:flex;
+  align-items:center;
+  gap:30px;
+}
+
+.nav-links a{
+  position:relative;
+  padding:24px 0;
+  color:#94a8c1;
+  font-size:12px;
+}
+
+.nav-links a:hover,
+.nav-links a.active{color:#edf7ff}
+
+.nav-links a.active:after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:2px;
+  background:var(--cyan);
+  box-shadow:0 0 12px rgba(101,216,255,.45);
 }
 
 /* Layout */
+
 .container{
-  max-width:920px;
+  width:min(var(--max),calc(100% - 64px));
   margin:0 auto;
-  padding:60px 24px;
 }
 
+/* Hero */
+
 .hero{
-  margin-bottom:34px;
+  position:relative;
+  isolation:isolate;
+  padding:91px 0 57px;
+  overflow:hidden;
+}
+
+.hero-grid{
+  position:absolute;
+  z-index:-2;
+  top:0;
+  right:-4%;
+  width:57%;
+  height:100%;
+  background:
+    linear-gradient(rgba(80,157,224,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(80,157,224,.055) 1px,transparent 1px);
+  background-size:35px 35px;
+  mask-image:linear-gradient(135deg,transparent 0%,#000 45%,transparent 100%);
+  pointer-events:none;
+}
+
+.hero-ring{
+  position:absolute;
+  z-index:-1;
+  top:14%;
+  right:9%;
+  width:270px;
+  height:270px;
+  border:1px solid rgba(101,216,255,.14);
+  border-radius:50%;
+  box-shadow:
+    0 0 0 30px rgba(75,150,224,.025),
+    0 0 0 65px rgba(75,150,224,.02),
+    inset 0 0 65px rgba(50,132,219,.04);
+  pointer-events:none;
+}
+
+.hero-ring:before,
+.hero-ring:after{
+  content:"";
+  position:absolute;
+  border:1px solid rgba(101,216,255,.15);
+  border-radius:50%;
+}
+
+.hero-ring:before{
+  inset:36px -20px;
+  transform:rotate(-36deg);
+}
+
+.hero-ring:after{
+  inset:-20px 55px;
+  transform:rotate(36deg);
 }
 
 .eyebrow{
-  color:#7dd3fc;
-  font-size:12px;
-  font-weight:700;
-  letter-spacing:.14em;
-  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:26px;
+  color:var(--cyan);
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:3px;
 }
 
-h1{
-  font-size:38px;
-  line-height:1.3;
-  margin:0 0 14px;
+.status-dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 13px rgba(101,216,255,.7);
 }
 
-h2{
-  margin:0 0 12px;
-  font-size:19px;
-  line-height:1.5;
-  color:#cfe3ff;
+.hero h1{
+  position:relative;
+  max-width:920px;
+  margin:0;
+  font-size:clamp(43px,6.5vw,76px);
+  font-weight:800;
+  line-height:1.16;
+  letter-spacing:-3px;
 }
 
-h3{
-  margin:0 0 8px;
-  font-size:15px;
-  color:#e2e8f0;
+.hero h1 span{
+  display:block;
+  margin-top:12px;
+  color:transparent;
+  background:linear-gradient(100deg,#f0f8ff,#67d8ff 53%,#659bff);
+  -webkit-background-clip:text;
+  background-clip:text;
 }
 
-p{
-  margin:0 0 12px;
-}
-
-p:last-child{
-  margin-bottom:0;
-}
-
-.sub{
-  color:var(--muted);
-  margin-bottom:20px;
-  max-width:760px;
+.hero-description{
+  max-width:740px;
+  margin:28px 0 0;
+  color:#a5b7ce;
+  font-size:14px;
+  line-height:2.1;
 }
 
 .tags{
   display:flex;
   flex-wrap:wrap;
-  gap:8px;
+  gap:9px;
+  margin-top:29px;
 }
 
 .tag{
-  border:1px solid var(--border);
-  border-radius:999px;
-  padding:4px 10px;
-  color:#cbd5e1;
+  padding:6px 11px;
+  border:1px solid rgba(135,177,218,.19);
+  background:rgba(15,33,54,.54);
+  color:#b8cce2;
+  font-size:9px;
+  font-weight:750;
+  letter-spacing:1px;
+}
+
+.hero-foot{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  margin-top:36px;
+  color:#7188a4;
+  font-size:9px;
+  font-weight:750;
+  letter-spacing:2px;
+}
+
+.hero-foot:before{
+  content:"";
+  width:42px;
+  height:1px;
+  background:var(--cyan);
+}
+
+/* Overview strip */
+
+.overview{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  margin-bottom:82px;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+
+.overview-item{
+  padding:23px 25px;
+  border-right:1px solid var(--border);
+}
+
+.overview-item:last-child{border-right:0}
+
+.overview-label{
+  display:block;
+  margin-bottom:7px;
+  color:#738aa6;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:1.7px;
+}
+
+.overview-value{
+  color:#dceaff;
+  font-size:13px;
+  font-weight:750;
+}
+
+.overview-value span{color:var(--cyan)}
+
+/* Section hierarchy */
+
+.section{
+  margin-bottom:80px;
+}
+
+.section-heading{
+  display:grid;
+  grid-template-columns:76px minmax(0,1fr);
+  gap:22px;
+  align-items:start;
+  margin-bottom:25px;
+}
+
+.section-number{
+  color:rgba(101,216,255,.68);
+  font-size:38px;
+  font-weight:850;
+  line-height:1.2;
+  letter-spacing:-2px;
+}
+
+.section-kicker{
+  margin-bottom:7px;
+  color:var(--cyan);
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:2.5px;
+}
+
+.section-heading h2{
+  margin:0;
+  color:#edf5ff;
+  font-size:clamp(23px,3vw,32px);
+  font-weight:780;
+  letter-spacing:-.8px;
+  line-height:1.5;
+}
+
+.section-intro{
+  max-width:760px;
+  margin:10px 0 0;
+  color:#91a7c1;
   font-size:12px;
+  line-height:2;
 }
 
 /* Cards */
+
 .card{
-  background:rgba(17,24,35,.92);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:22px;
+  position:relative;
+  min-width:0;
   margin-bottom:16px;
-  box-shadow:var(--shadow);
+  padding:34px;
+  border:1px solid var(--border);
+  background:
+    linear-gradient(140deg,rgba(15,29,47,.97),rgba(8,17,29,.98));
+  box-shadow:0 20px 52px rgba(0,0,0,.12);
+  overflow:hidden;
 }
 
-.card h2{
-  border-left:3px solid var(--accent);
-  padding-left:10px;
+.card:before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  width:58px;
+  height:2px;
+  background:linear-gradient(90deg,var(--cyan),transparent);
+}
+
+.card.featured{
+  border-color:rgba(101,216,255,.25);
+  background:
+    radial-gradient(ellipse at 0% 0%,rgba(33,112,179,.13),transparent 55%),
+    linear-gradient(140deg,#10233a,#091421);
+}
+
+.card h3{
+  margin:0 0 17px;
+  color:#e5f0ff;
+  font-size:19px;
+  font-weight:750;
+  line-height:1.5;
+}
+
+.card p{
+  margin:0 0 13px;
+  color:#b0c0d4;
+  font-size:13px;
+  line-height:2.05;
+}
+
+.card p:last-child{margin-bottom:0}
+
+.card-heading{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  margin-bottom:20px;
+}
+
+.card-heading h3{margin:0}
+
+.card-no{
+  display:grid;
+  place-items:center;
+  flex:none;
+  width:33px;
+  height:33px;
+  border:1px solid rgba(101,216,255,.3);
+  background:rgba(101,216,255,.05);
+  color:var(--cyan);
+  font-size:10px;
+  font-weight:850;
 }
 
 .en{
-  color:var(--muted);
-  font-size:13px;
-  margin-top:12px;
+  margin-top:22px;
+  padding-top:17px;
+  border-top:1px solid rgba(148,173,207,.12);
+  color:#8198b4;
+  font-size:11px;
+  line-height:1.9;
 }
 
-/* Execution path diagram */
+/* Execution flow diagram */
+
 .path{
-  background:#0b1220;
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:20px;
-  margin:18px 0 28px;
+  position:relative;
+  margin:28px 0 22px;
+  padding:29px;
+  border:1px solid rgba(123,168,213,.17);
+  background:
+    linear-gradient(rgba(80,157,224,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(80,157,224,.035) 1px,transparent 1px),
+    #081321;
+  background-size:25px 25px;
+  overflow:hidden;
+}
+
+.path-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:24px;
+  padding-bottom:15px;
+  border-bottom:1px solid rgba(143,180,220,.13);
+}
+
+.path-label{
+  color:#d6e8fb;
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:1.6px;
+}
+
+.path-caption{
+  color:#748ba6;
+  font-size:9px;
+  letter-spacing:1px;
 }
 
 .path-node{
-  border:1px solid rgba(56,189,248,.28);
-  background:rgba(15,23,42,.9);
-  border-radius:9px;
-  padding:13px 15px;
+  position:relative;
+  padding:18px 16px;
+  border:1px solid rgba(101,216,255,.27);
+  background:linear-gradient(135deg,rgba(16,39,61,.96),rgba(10,24,40,.96));
   text-align:center;
 }
 
 .path-node strong{
   display:block;
-  color:#e0f2fe;
-  font-size:14px;
+  color:#e4f3ff;
+  font-size:13px;
+  font-weight:750;
 }
 
 .path-node span{
   display:block;
-  color:var(--muted);
-  font-size:12px;
-  margin-top:3px;
+  margin-top:5px;
+  color:#96abc3;
+  font-size:11px;
+  line-height:1.8;
 }
 
+.path-node .node-index{
+  display:block;
+  margin-bottom:7px;
+  color:var(--cyan);
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:1.7px;
+}
+
+.path-node.node-amber{
+  border-color:rgba(255,191,105,.36);
+  background:linear-gradient(135deg,rgba(58,42,26,.5),rgba(23,24,29,.96));
+}
+
+.path-node.node-amber .node-index{color:var(--amber)}
+
+.path-node.node-green{
+  border-color:rgba(116,224,189,.31);
+}
+
+.path-node.node-green .node-index{color:var(--green)}
+
 .path-arrow{
-  text-align:center;
-  color:#64748b;
-  font-size:17px;
-  line-height:1.8;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:42px;
+  color:#7191b1;
+  font-size:20px;
+}
+
+.path-arrow:before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:0;
+  bottom:0;
+  width:1px;
+  background:linear-gradient(transparent,rgba(101,216,255,.36),transparent);
+}
+
+.path-arrow span{
+  position:relative;
+  z-index:1;
+  padding:0 10px;
+  background:#091522;
 }
 
 .path-branch{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
-  margin-top:12px;
-}
-
-.path-branch .path-node{
-  border-color:rgba(245,158,11,.3);
-}
-
-/* Technical blocks */
-.note{
-  border-left:3px solid #60a5fa;
-  padding:12px 15px;
-  background:rgba(30,41,59,.45);
-  color:#cbd5e1;
-  font-size:14px;
+  gap:13px;
   margin-top:14px;
 }
 
+.branch-label{
+  margin:20px 0 11px;
+  color:#7e95af;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:1.5px;
+}
+
+.branch-caption{
+  display:block;
+  margin-top:7px;
+  color:#748aa5;
+  font-size:10px;
+  text-align:center;
+}
+
+/* Notes and formulas */
+
+.note{
+  margin-top:19px;
+  padding:15px 18px;
+  border:1px solid rgba(92,167,218,.13);
+  border-left:2px solid #5caedb;
+  background:rgba(40,105,153,.08);
+  color:#c2d5e9;
+  font-size:12px;
+  line-height:1.95;
+}
+
 .formula{
-  background:#0b1220;
-  border:1px solid var(--border);
-  border-radius:9px;
-  padding:15px 17px;
-  margin:14px 0;
-  color:#e2e8f0;
+  margin:22px 0;
+  padding:22px;
+  border:1px solid rgba(101,216,255,.19);
+  background:
+    linear-gradient(110deg,rgba(36,110,170,.12),rgba(7,17,30,.6));
+  color:#e5f5ff;
   font-size:14px;
-  line-height:1.9;
+  line-height:2;
   overflow-wrap:anywhere;
 }
 
+.formula-label{
+  display:block;
+  margin-bottom:8px;
+  color:var(--cyan);
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:1.8px;
+}
+
+.formula-main{
+  font-size:clamp(13px,2vw,17px);
+  font-weight:750;
+  letter-spacing:.1px;
+}
+
 ul{
+  margin:13px 0 0;
   padding-left:21px;
-  margin:8px 0 0;
 }
 
 li{
-  color:#cbd5e1;
-  font-size:14px;
-  margin-bottom:8px;
+  margin-bottom:9px;
+  padding-left:3px;
+  color:#b8c8dc;
+  font-size:12px;
+  line-height:1.95;
 }
 
-li:last-child{
-  margin-bottom:0;
-}
+li:last-child{margin-bottom:0}
 
-a{
-  color:#7dd3fc;
-  text-decoration:none;
-}
+li strong{color:#e2efff}
 
-a:hover{
-  text-decoration:underline;
-}
+/* Related links */
 
 .related{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
+  gap:11px;
+  margin-top:21px;
 }
 
 .related a{
+  position:relative;
   display:block;
-  border:1px solid var(--border);
-  border-radius:9px;
-  padding:13px 15px;
-  background:#0f1722;
+  min-width:0;
+  padding:18px 19px;
+  border:1px solid rgba(128,170,212,.18);
+  background:rgba(8,19,32,.62);
 }
+
+.related a:after{
+  content:"↗";
+  position:absolute;
+  top:17px;
+  right:17px;
+  color:var(--cyan);
+  font-size:15px;
+  transition:transform .2s;
+}
+
+.related a:hover{
+  border-color:rgba(101,216,255,.48);
+  background:rgba(19,44,69,.48);
+  transform:translateY(-2px);
+}
+
+.related a:hover:after{transform:translate(2px,-2px)}
 
 .related strong{
   display:block;
-  color:#e2e8f0;
-  font-size:14px;
-}
-
-.related span{
-  color:var(--muted);
+  padding-right:25px;
+  color:#e1edff;
   font-size:12px;
 }
 
-/* Footer — 保留原有结构与内容 */
-.site-footer{
-  text-align:center;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding:18px 12px;
-  color:#8ea3be;
-  font-size:.95rem;
+.related span{
+  display:block;
+  margin-top:5px;
+  color:#8fa5be;
+  font-size:11px;
 }
 
-@media(max-width:640px){
-  .container{
-    padding:38px 18px;
+/* Footer */
+
+.site-footer{
+  border-top:1px solid var(--border);
+  background:rgba(3,8,15,.7);
+}
+
+.footer-inner{
+  width:min(var(--max),calc(100% - 64px));
+  margin:auto;
+  padding:32px 0 35px;
+}
+
+.footer-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  padding-bottom:21px;
+  border-bottom:1px solid rgba(143,180,220,.11);
+}
+
+.footer-brand{
+  color:#e7f3ff;
+  font-size:17px;
+  font-weight:850;
+  letter-spacing:3px;
+}
+
+.footer-edition{
+  color:#7087a1;
+  font-size:9px;
+  letter-spacing:1.5px;
+  text-align:right;
+}
+
+.footer-desc{
+  max-width:850px;
+  margin-top:20px;
+  color:#8498b1;
+  font-size:11px;
+  line-height:2;
+}
+
+.footer-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px 23px;
+  margin-top:21px;
+}
+
+.footer-links a{
+  color:#9aafc7;
+  font-size:11px;
+}
+
+.footer-links a:hover{color:var(--cyan)}
+
+.footer-bottom{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  margin-top:25px;
+  color:#586e87;
+  font-size:9px;
+  letter-spacing:1px;
+}
+
+/* Motion */
+
+@keyframes enter{
+  from{opacity:0;transform:translateY(13px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.hero .eyebrow,
+.hero h1,
+.hero-description,
+.hero .tags,
+.hero-foot{
+  animation:enter .7s both;
+}
+
+.hero h1{animation-delay:.08s}
+.hero-description{animation-delay:.15s}
+.hero .tags{animation-delay:.22s}
+.hero-foot{animation-delay:.29s}
+
+/* Responsive */
+
+@media(max-width:900px){
+  .container{width:calc(100% - 48px)}
+  .nav-inner{padding:0 24px}
+  .nav-links{gap:20px}
+
+  .hero h1{font-size:clamp(42px,7vw,62px)}
+  .hero-ring{right:-2%;width:220px;height:220px}
+
+  .section{margin-bottom:67px}
+  .path{padding:22px}
+  .footer-inner{width:calc(100% - 48px)}
+}
+
+@media(max-width:600px){
+  html{scroll-padding-top:110px}
+
+  .nav-inner{
+    min-height:auto;
+    padding:12px 18px 10px;
+    align-items:flex-start;
+    flex-direction:column;
+    gap:8px;
   }
 
-  h1{
-    font-size:30px;
+  .brand{font-size:17px}
+  .brand-icon{width:21px;height:21px}
+
+  .nav-links{
+    width:100%;
+    justify-content:space-between;
+    gap:12px;
   }
 
-  .card{
-    padding:18px;
+  .nav-links a{
+    padding:6px 0 8px;
+    font-size:11px;
   }
 
-  .path{
-    padding:14px;
+  .container{width:calc(100% - 36px)}
+
+  .hero{padding:66px 0 49px}
+  .hero-grid{width:85%;right:-15%}
+  .hero-ring{
+    top:19%;
+    right:-105px;
+    width:190px;
+    height:190px;
+    opacity:.55;
   }
 
-  .path-branch,
-  .related{
+  .eyebrow{
+    font-size:9px;
+    letter-spacing:1.7px;
+    margin-bottom:22px;
+  }
+
+  .hero h1{
+    font-size:clamp(36px,10vw,49px);
+    letter-spacing:-1.9px;
+    line-height:1.24;
+  }
+
+  .hero h1 span{margin-top:8px}
+
+  .hero-description{
+    margin-top:22px;
+    font-size:12px;
+    line-height:2.05;
+  }
+
+  .tags{gap:7px;margin-top:22px}
+  .tag{font-size:8px;padding:6px 8px;letter-spacing:.5px}
+  .hero-foot{font-size:8px;letter-spacing:1px;margin-top:27px}
+
+  .overview{
     grid-template-columns:1fr;
+    margin-bottom:62px;
+  }
+
+  .overview-item{
+    padding:16px 18px;
+    border-right:0;
+    border-bottom:1px solid var(--border);
+  }
+
+  .overview-item:last-child{border-bottom:0}
+  .overview-label{margin-bottom:3px}
+
+  .section{margin-bottom:59px}
+
+  .section-heading{
+    grid-template-columns:43px minmax(0,1fr);
+    gap:12px;
+    margin-bottom:19px;
+  }
+
+  .section-number{font-size:27px;letter-spacing:-1px}
+  .section-kicker{font-size:8px;letter-spacing:1.4px}
+  .section-heading h2{font-size:23px}
+  .section-intro{font-size:11px}
+
+  .card{padding:24px 18px}
+  .card h3{font-size:17px}
+  .card p{font-size:12px}
+
+  .path{padding:15px;margin-top:22px}
+  .path-top{align-items:flex-start;flex-direction:column;gap:5px}
+  .path-label{font-size:9px}
+  .path-caption{font-size:8px}
+
+  .path-node{padding:15px 10px}
+  .path-node strong{font-size:12px}
+  .path-node span{font-size:10px}
+  .path-arrow{height:35px}
+  .path-branch{gap:8px}
+  .path-branch .path-node{padding:14px 8px}
+  .branch-caption{font-size:9px}
+
+  .note{font-size:11px;padding:13px 14px}
+
+  .formula{padding:17px 14px;font-size:12px}
+  .formula-main{font-size:12px}
+
+  ul{padding-left:18px}
+  li{font-size:11px}
+
+  .related{grid-template-columns:1fr;gap:9px}
+  .related a{padding:16px}
+
+  .footer-inner{width:calc(100% - 36px);padding:27px 0}
+  .footer-top{align-items:flex-start;flex-direction:column;gap:5px}
+  .footer-edition{text-align:left}
+  .footer-desc{font-size:10px}
+  .footer-links{gap:13px 17px}
+
+  .footer-bottom{
+    flex-direction:column;
+    gap:6px;
+    line-height:1.8;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+
+  *,*:before,*:after{
+    animation:none!important;
+    transition:none!important;
   }
 }
 </style>
@@ -297,24 +931,39 @@ a:hover{
 
 <body>
 
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
-    <a href="/index.html">首页</a>
-    <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" class="active">System</a>
-    <a href="/docs/index.html">Docs</a>
+<nav class="nav" aria-label="主导航">
+  <div class="nav-inner">
+    <a class="brand" href="/index.html" aria-label="HRTOS 首页">
+      <span class="brand-icon" aria-hidden="true"></span>
+      <span>HRTOS</span>
+    </a>
+
+    <div class="nav-links">
+      <a href="/index.html">首页</a>
+      <a href="/why/index.html">WHY</a>
+      <a href="/system-view/index.html" class="active" aria-current="page">SYSTEM</a>
+      <a href="/docs/index.html">DOCS</a>
+    </div>
   </div>
-</div>
+</nav>
 
 <main class="container">
 
   <header class="hero">
-    <div class="eyebrow">SYSTEM VIEW / EXECUTION MODEL</div>
+    <div class="hero-grid" aria-hidden="true"></div>
+    <div class="hero-ring" aria-hidden="true"></div>
 
-    <h1>执行流模型（Execution Flow）</h1>
+    <div class="eyebrow">
+      <span class="status-dot" aria-hidden="true"></span>
+      SYSTEM VIEW / EXECUTION MODEL
+    </div>
 
-    <p class="sub">
+    <h1>
+      执行流模型
+      <span>Execution Flow.</span>
+    </h1>
+
+    <p class="hero-description">
       执行流描述处理器在任务代码、中断处理程序和内核控制路径之间的运行过程。
       对实时操作系统而言，理解执行流不仅需要知道代码如何执行，
       还需要明确执行路径的切换条件、时间开销与分析边界。
@@ -322,362 +971,613 @@ a:hover{
 
     <div class="tags">
       <span class="tag">8051 RTOS</span>
-      <span class="tag">Execution Path</span>
-      <span class="tag">Interrupt Response</span>
+      <span class="tag">EXECUTION PATH</span>
+      <span class="tag">INTERRUPT RESPONSE</span>
       <span class="tag">WCET / WCRT</span>
+    </div>
+
+    <div class="hero-foot">
+      KERNEL EXECUTION / CONTROL FLOW / TIMING ANALYSIS
     </div>
   </header>
 
-  <section class="card">
-    <h2>核心定义</h2>
+  <div class="overview">
+    <div class="overview-item">
+      <span class="overview-label">01 / CONTROL FLOW</span>
+      <div class="overview-value"><span>执行路径</span>与控制转移</div>
+    </div>
 
-    <p>
-      执行流是处理器从某个明确的起始事件或执行位置出发，
-      沿实际控制路径运行，直到到达指定结束位置的过程。
-    </p>
+    <div class="overview-item">
+      <span class="overview-label">02 / KERNEL MECHANISM</span>
+      <div class="overview-value"><span>调度</span>与上下文管理</div>
+    </div>
 
-    <p>
-      在 HRTOS 中，执行流可能涉及任务运行、内核服务、中断处理、
-      调度判断以及上下文保存与恢复。不同执行路径的组成并不完全相同，
-      因此时间分析必须先明确分析对象。
-    </p>
+    <div class="overview-item">
+      <span class="overview-label">03 / TIMING EVIDENCE</span>
+      <div class="overview-value"><span>时间分析</span>与工程验证</div>
+    </div>
+  </div>
 
-    <div class="en">
-      Execution Flow describes a concrete processor path across task, interrupt,
-      and kernel execution, with explicit entry and exit boundaries.
+  <!-- CORE DEFINITION -->
+
+  <section class="section" id="definition">
+    <header class="section-heading">
+      <div class="section-number">00</div>
+      <div>
+        <div class="section-kicker">CORE DEFINITION</div>
+        <h2>什么是执行流？</h2>
+        <p class="section-intro">
+          先定义分析对象，再讨论控制路径和执行时间。
+        </p>
+      </div>
+    </header>
+
+    <div class="card featured">
+      <div class="card-heading">
+        <span class="card-no">EF</span>
+        <h3>从明确入口，到明确出口</h3>
+      </div>
+
+      <p>
+        执行流是处理器从某个明确的起始事件或执行位置出发，
+        沿实际控制路径运行，直到到达指定结束位置的过程。
+      </p>
+
+      <p>
+        在 HRTOS 中，执行流可能涉及任务运行、内核服务、中断处理、
+        调度判断以及上下文保存与恢复。不同执行路径的组成并不完全相同，
+        因此时间分析必须先明确分析对象。
+      </p>
+
+      <div class="en">
+        EXECUTION FLOW — A concrete processor path with explicit entry and exit boundaries.
+      </div>
     </div>
   </section>
 
-  <section class="card">
-    <h2>执行流的基本结构</h2>
+  <!-- EXECUTION PATH -->
 
-    <p>
-      一条典型的任务执行路径可以抽象为以下过程。
-      这是一种分析视图，而不是要求所有任务都严格经过每一个阶段。
-    </p>
+  <section class="section" id="execution-path">
+    <header class="section-heading">
+      <div class="section-number">01</div>
+      <div>
+        <div class="section-kicker">EXECUTION PATH</div>
+        <h2>执行流的基本结构</h2>
+        <p class="section-intro">
+          一个用于分析的抽象模型：事件进入、内核判断、执行选择，最终继续运行或转移控制流。
+        </p>
+      </div>
+    </header>
 
-    <div class="path">
-      <div class="path-node">
-        <strong>1. 触发条件或执行入口</strong>
-        <span>任务就绪、超时到期、中断到达或任务主动调用内核服务</span>
+    <div class="card">
+      <div class="card-heading">
+        <span class="card-no">01</span>
+        <h3>从事件到处理器执行路径</h3>
       </div>
 
-      <div class="path-arrow">↓</div>
+      <p>
+        一条典型的任务执行路径可以抽象为以下过程。
+        这是一种分析视图，而不是要求所有任务都严格经过每一个阶段。
+      </p>
 
-      <div class="path-node">
-        <strong>2. 内核处理与状态判断</strong>
-        <span>处理事件、检查任务状态，或执行相应内核操作</span>
-      </div>
-
-      <div class="path-arrow">↓</div>
-
-      <div class="path-node">
-        <strong>3. 调度判断（如适用）</strong>
-        <span>根据内核调度规则决定是否需要改变执行对象</span>
-      </div>
-
-      <div class="path-arrow">↓</div>
-
-      <div class="path-node">
-        <strong>4. 执行或上下文恢复</strong>
-        <span>继续当前任务，或切换至符合调度条件的任务</span>
-      </div>
-
-      <div class="path-branch">
-        <div class="path-node">
-          <strong>路径 A：继续运行</strong>
-          <span>当前执行对象保持不变</span>
+      <div class="path">
+        <div class="path-top">
+          <span class="path-label">EXECUTION FLOW / ABSTRACT MODEL</span>
+          <span class="path-caption">CONCEPTUAL PATH · NOT A FIXED IMPLEMENTATION TRACE</span>
         </div>
 
         <div class="path-node">
-          <strong>路径 B：控制流转移</strong>
-          <span>发生中断处理、任务切换或其他内核路径转移</span>
+          <span class="node-index">STAGE 01</span>
+          <strong>触发条件或执行入口</strong>
+          <span>任务就绪、超时到期、中断到达或任务主动调用内核服务</span>
+        </div>
+
+        <div class="path-arrow"><span>↓</span></div>
+
+        <div class="path-node">
+          <span class="node-index">STAGE 02</span>
+          <strong>内核处理与状态判断</strong>
+          <span>处理事件、检查任务状态，或执行相应内核操作</span>
+        </div>
+
+        <div class="path-arrow"><span>↓</span></div>
+
+        <div class="path-node">
+          <span class="node-index">STAGE 03</span>
+          <strong>调度判断（如适用）</strong>
+          <span>根据内核调度规则决定是否需要改变执行对象</span>
+        </div>
+
+        <div class="path-arrow"><span>↓</span></div>
+
+        <div class="path-node node-green">
+          <span class="node-index">STAGE 04</span>
+          <strong>执行或上下文恢复</strong>
+          <span>继续当前任务，或切换至符合调度条件的任务</span>
+        </div>
+
+        <div class="branch-label">POSSIBLE CONTROL-FLOW OUTCOMES</div>
+
+        <div class="path-branch">
+          <div>
+            <div class="path-node node-green">
+              <span class="node-index">PATH A</span>
+              <strong>继续运行</strong>
+              <span>当前执行对象保持不变</span>
+            </div>
+            <span class="branch-caption">CONTINUE CURRENT CONTEXT</span>
+          </div>
+
+          <div>
+            <div class="path-node node-amber">
+              <span class="node-index">PATH B</span>
+              <strong>控制流转移</strong>
+              <span>发生中断处理、任务切换或其他内核路径转移</span>
+            </div>
+            <span class="branch-caption">TRANSFER CONTROL</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="note">
-      关键区别：事件发生不代表必然切换任务；进入调度判断也不代表调度结果一定不同。
-      应以实际执行路径判断哪些处理步骤真正发生。
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>01. 触发来源（Trigger Sources）</h2>
-
-    <p>
-      执行路径可以由多种事件或控制操作引起，不能简单地认为每个任务都由外部中断直接触发。
-    </p>
-
-    <ul>
-      <li>
-        <strong>外部或外设中断：</strong>
-        处理器响应中断请求后进入相应中断服务路径。
-      </li>
-      <li>
-        <strong>系统 Tick 与超时：</strong>
-        系统时基推进后，内核可能处理到期事件并改变相关任务状态。
-      </li>
-      <li>
-        <strong>任务主动调用内核服务：</strong>
-        例如任务延时、等待消息、释放资源或发送消息。
-      </li>
-      <li>
-        <strong>任务状态变化：</strong>
-        某个任务具备运行条件后，可能进入就绪集合，等待调度器选择。
-      </li>
-    </ul>
-
-    <p>
-      这些来源可能影响执行流，但其具体作用取决于 HRTOS 的实际实现。
-      例如，任务变为就绪状态并不意味着它一定会立即运行。
-    </p>
-  </section>
-
-  <section class="card">
-    <h2>02. 调度决策（Scheduling Decision）</h2>
-
-    <p>
-      调度器根据任务就绪情况和内核规定的调度策略，决定接下来应执行哪个任务，
-      或判断当前执行对象是否可以继续运行。
-    </p>
-
-    <ul>
-      <li>任务优先级及同优先级任务的处理规则。</li>
-      <li>当前任务是否仍然具备运行条件。</li>
-      <li>时间片、延时到期和其他调度触发条件。</li>
-      <li>中断返回路径及内核执行环境对调度时机的影响。</li>
-    </ul>
-
-    <p>
-      调度是按照具体算法执行的控制决策，并不天然等同于一个通用的约束优化问题。
-      实时性是否满足，还需要进一步分析执行时间、干扰条件和任务截止时间。
-    </p>
-
-    <div class="en">
-      Scheduling selects the next execution context according to the implemented
-      scheduling policy and the current kernel state.
-    </div>
-
-    <p>
-      参见 <a href="/system-view/04-scheduler-cycle.html">Scheduler Cycle（调度周期）</a>。
-    </p>
-  </section>
-
-  <section class="card">
-    <h2>03. 任务状态与执行资格（Task State）</h2>
-
-    <p>
-      任务状态决定任务当前是否具备被调度执行的条件。
-      就绪状态、运行状态和阻塞状态之间的转换，会改变调度器可选择的任务集合。
-    </p>
-
-    <ul>
-      <li><strong>Ready：</strong>任务具备运行条件，等待获得处理器。</li>
-      <li><strong>Running：</strong>任务当前正在执行。</li>
-      <li><strong>Blocked：</strong>任务正在等待时间、消息或其他事件。</li>
-    </ul>
-
-    <p>
-      上述名称是常见的任务状态抽象。具体状态定义、转换条件和特殊状态，
-      应以 HRTOS 对应版本的实现及文档为准。
-    </p>
-
-    <p>
-      任务状态变化和调度决策密切相关，但二者并不相同：
-      状态描述任务的运行资格，调度决策确定执行对象。
-    </p>
-
-    <p>
-      参见 <a href="/system-view/02-task-lifecycle.html">Task Lifecycle（任务生命周期）</a>。
-    </p>
-  </section>
-
-  <section class="card">
-    <h2>04. 中断介入与路径恢复（Interrupt Interaction）</h2>
-
-    <p>
-      任务执行过程中可能发生中断。处理器随后进入相应中断路径，
-      执行中断处理逻辑，并按照处理器和内核的具体机制返回或转移控制流。
-    </p>
-
-    <ul>
-      <li>中断响应时间受目标处理器、中断优先级和中断屏蔽状态等条件影响。</li>
-      <li>中断服务程序的执行时间会影响被打断任务的后续执行。</li>
-      <li>嵌套中断会引入额外的控制流与上下文管理开销。</li>
-      <li>中断退出后是否进行任务切换，取决于内核实现和当时的调度条件。</li>
-    </ul>
-
-    <p>
-      因此，中断分析不能只测量进入中断到退出中断的时间。
-      对任务实时性而言，还应明确中断对任务执行路径和响应时间的影响。
-    </p>
-
-    <div class="en">
-      Interrupt handling introduces additional execution paths and may affect
-      task response time, context restoration, and scheduling behavior.
-    </div>
-
-    <p>
-      参见 <a href="/system-view/03-interrupt-flow.html">Interrupt Flow（中断流）</a>。
-    </p>
-  </section>
-
-  <section class="card">
-    <h2>05. 执行时间与最坏情况分析（WCET）</h2>
-
-    <p>
-      执行时间必须对应明确的代码路径和测量边界。
-      不同路径可能具有不同的指令序列、分支条件、中断干扰与上下文处理开销。
-    </p>
-
-    <div class="formula">
-      <strong>路径时间分解示意：</strong><br>
-      T<sub>path</sub> = T<sub>entry</sub> + T<sub>processing</sub>
-      + T<sub>switch</sub> + T<sub>execution</sub> + T<sub>exit</sub>
-    </div>
-
-    <p>
-      以上各项是便于分析的时间分解方式，不表示每条路径都会包含所有项目，
-      也不能在没有检查路径边界的情况下直接相加。
-      如果某项不存在，应明确排除；如果不同阶段发生重叠，则应避免重复计数。
-    </p>
-
-    <p>
-      WCET（Worst-Case Execution Time）关注指定执行对象在规定分析条件下的最坏执行时间上界。
-      如果分析目标包含中断干扰、调度等待或资源阻塞，还必须明确这些因素属于 WCET
-      计算范围，还是需要在响应时间分析中单独处理。
-    </p>
-
-    <div class="note">
-      对 8051 目标进行指令级分析时，应以实际编译生成的机器码、目标芯片的指令周期、
-      时钟配置和明确的控制流边界为依据。仅凭源代码长度或平均测量值，
-      不能直接推出可信的最坏时间上界。
-    </div>
-
-    <p>
-      参见 <a href="/system-view/06-time-system.html">Time System（时间系统）</a>
-      与 <a href="/system-view/07-deterministic-chain.html">Deterministic Chain（确定性链）</a>。
-    </p>
-  </section>
-
-  <section class="card">
-    <h2>06. 完成、阻塞与再次调度</h2>
-
-    <p>
-      执行路径结束后，系统可能出现多种情况，而不是每次都进入相同的“完成与返回”阶段。
-    </p>
-
-    <ul>
-      <li><strong>继续执行：</strong>当前任务尚未让出处理器，继续运行其后续代码。</li>
-      <li><strong>主动阻塞或让出：</strong>任务等待事件或主动调用内核服务，调度器可能选择其他任务。</li>
-      <li><strong>任务切换：</strong>内核保存必要上下文，并恢复另一个可运行任务。</li>
-      <li><strong>中断返回：</strong>根据实际控制流恢复原有执行路径，或进入内核定义的后续路径。</li>
-    </ul>
-
-    <p>
-      对持续运行的嵌入式任务而言，“一次执行完成”通常需要人为定义边界，
-      例如一次消息处理、一轮控制计算或一次指定函数调用。
-      只有明确边界，才能对该路径进行重复测量和时间分析。
-    </p>
-  </section>
-
-  <section class="card">
-    <h2>07. 从执行流到实时性验证</h2>
-
-    <p>
-      执行流模型的工程价值，是将抽象的实时性要求转化为可定位、可分析和可验证的具体路径。
-    </p>
-
-    <ul>
-      <li><strong>明确对象：</strong>确定目标任务、事件、函数路径或内核操作。</li>
-      <li><strong>明确边界：</strong>规定从哪个事件或指令位置开始，到哪个位置结束。</li>
-      <li><strong>识别干扰：</strong>分析中断、临界区、上下文切换及资源访问等相关因素。</li>
-      <li><strong>建立证据：</strong>结合反汇编分析、目标硬件测量和压力测试，分别记录结果与适用条件。</li>
-      <li><strong>评估约束：</strong>将有依据的时间结果与指定的响应时间或截止时间要求比较。</li>
-    </ul>
-
-    <div class="formula">
-      Execution Path → Timing Analysis → Evidence → Deadline Evaluation
-    </div>
-
-    <p>
-      执行路径可分析，不等于已经证明整个系统具有硬实时保证。
-      最终结论仍取决于路径覆盖范围、最坏情况假设、系统负载及验证证据的完整性。
-    </p>
-  </section>
-
-  <section class="card">
-    <h2>语义总结</h2>
-
-    <p>
-      执行流连接了任务代码、内核控制路径、中断处理与调度机制。
-      它提供了一种明确分析对象和时间边界的方法，使系统行为能够逐步接受测量、分析和验证。
-    </p>
-
-    <p>
-      对 HRTOS 而言，重点不只是让任务按预期执行，
-      还包括理解执行路径为什么发生、控制流何时转移，以及时间结论在什么条件下成立。
-    </p>
-
-    <div class="en">
-      An analyzable execution path is a foundation for timing analysis,
-      but system-level real-time guarantees require additional evidence.
+      <div class="note">
+        关键区别：事件发生不代表必然切换任务；进入调度判断也不代表调度结果一定不同。
+        应以实际执行路径判断哪些处理步骤真正发生。
+      </div>
     </div>
   </section>
 
-  <section class="card">
-    <h2>相关阅读</h2>
+  <!-- TRIGGER SOURCES -->
 
-    <div class="related">
-      <a href="/system-view/index.html">
-        <strong>System View</strong>
-        <span>系统运行结构总览</span>
-      </a>
+  <section class="section" id="triggers">
+    <header class="section-heading">
+      <div class="section-number">02</div>
+      <div>
+        <div class="section-kicker">TRIGGER SOURCES</div>
+        <h2>执行流从哪里开始？</h2>
+        <p class="section-intro">
+          不同触发来源会进入不同的处理路径，不应将它们统一视为外部中断。
+        </p>
+      </div>
+    </header>
 
-      <a href="/system-view/02-task-lifecycle.html">
-        <strong>Task Lifecycle</strong>
-        <span>任务状态与生命周期</span>
-      </a>
+    <div class="card">
+      <div class="card-heading">
+        <span class="card-no">02</span>
+        <h3>四类常见触发来源</h3>
+      </div>
 
-      <a href="/system-view/03-interrupt-flow.html">
-        <strong>Interrupt Flow</strong>
-        <span>中断进入、处理与返回</span>
-      </a>
+      <p>
+        执行路径可以由多种事件或控制操作引起，不能简单地认为每个任务都由外部中断直接触发。
+      </p>
 
-      <a href="/system-view/04-scheduler-cycle.html">
-        <strong>Scheduler Cycle</strong>
-        <span>调度触发与调度过程</span>
-      </a>
+      <ul>
+        <li>
+          <strong>外部或外设中断：</strong>
+          处理器响应中断请求后进入相应中断服务路径。
+        </li>
+        <li>
+          <strong>系统 Tick 与超时：</strong>
+          系统时基推进后，内核可能处理到期事件并改变相关任务状态。
+        </li>
+        <li>
+          <strong>任务主动调用内核服务：</strong>
+          例如任务延时、等待消息、释放资源或发送消息。
+        </li>
+        <li>
+          <strong>任务状态变化：</strong>
+          某个任务具备运行条件后，可能进入就绪集合，等待调度器选择。
+        </li>
+      </ul>
 
-      <a href="/system-view/06-time-system.html">
-        <strong>Time System</strong>
-        <span>系统时基与时间约束</span>
-      </a>
+      <div class="note">
+        这些来源可能影响执行流，但其具体作用取决于 HRTOS 的实际实现。
+        例如，任务变为就绪状态并不意味着它一定会立即运行。
+      </div>
+    </div>
+  </section>
 
-      <a href="/system-view/07-deterministic-chain.html">
-        <strong>Deterministic Chain</strong>
-        <span>执行确定性与因果关系</span>
-      </a>
+  <!-- SCHEDULING -->
+
+  <section class="section" id="scheduling">
+    <header class="section-heading">
+      <div class="section-number">03</div>
+      <div>
+        <div class="section-kicker">SCHEDULING DECISION</div>
+        <h2>调度器如何决定下一步？</h2>
+        <p class="section-intro">
+          调度是一项控制决策，而不是任务状态变化的同义词。
+        </p>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="card-heading">
+        <span class="card-no">03</span>
+        <h3>调度结果取决于实际内核规则</h3>
+      </div>
+
+      <p>
+        调度器根据任务就绪情况和内核规定的调度策略，决定接下来应执行哪个任务，
+        或判断当前执行对象是否可以继续运行。
+      </p>
+
+      <ul>
+        <li>任务优先级及同优先级任务的处理规则。</li>
+        <li>当前任务是否仍然具备运行条件。</li>
+        <li>时间片、延时到期和其他调度触发条件。</li>
+        <li>中断返回路径及内核执行环境对调度时机的影响。</li>
+      </ul>
+
+      <p>
+        调度是按照具体算法执行的控制决策，并不天然等同于一个通用的约束优化问题。
+        实时性是否满足，还需要进一步分析执行时间、干扰条件和任务截止时间。
+      </p>
+
+      <div class="en">
+        Scheduling selects the next execution context according to the implemented
+        scheduling policy and the current kernel state.
+      </div>
+
+      <p>
+        参见 <a href="/system-view/04-scheduler-cycle.html">Scheduler Cycle（调度周期）</a>。
+      </p>
+    </div>
+  </section>
+
+  <!-- TASK STATE -->
+
+  <section class="section" id="task-state">
+    <header class="section-heading">
+      <div class="section-number">04</div>
+      <div>
+        <div class="section-kicker">TASK STATE</div>
+        <h2>任务状态与执行资格</h2>
+        <p class="section-intro">
+          任务状态描述其运行条件，调度决策则决定处理器接下来执行什么。
+        </p>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="card-heading">
+        <span class="card-no">04</span>
+        <h3>从任务状态理解执行条件</h3>
+      </div>
+
+      <p>
+        任务状态决定任务当前是否具备被调度执行的条件。
+        就绪状态、运行状态和阻塞状态之间的转换，会改变调度器可选择的任务集合。
+      </p>
+
+      <ul>
+        <li><strong>Ready：</strong>任务具备运行条件，等待获得处理器。</li>
+        <li><strong>Running：</strong>任务当前正在执行。</li>
+        <li><strong>Blocked：</strong>任务正在等待时间、消息或其他事件。</li>
+      </ul>
+
+      <p>
+        上述名称是常见的任务状态抽象。具体状态定义、转换条件和特殊状态，
+        应以 HRTOS 对应版本的实现及文档为准。
+      </p>
+
+      <p>
+        任务状态变化和调度决策密切相关，但二者并不相同：
+        状态描述任务的运行资格，调度决策确定执行对象。
+      </p>
+
+      <p>
+        参见 <a href="/system-view/02-task-lifecycle.html">Task Lifecycle（任务生命周期）</a>。
+      </p>
+    </div>
+  </section>
+
+  <!-- INTERRUPT -->
+
+  <section class="section" id="interrupt">
+    <header class="section-heading">
+      <div class="section-number">05</div>
+      <div>
+        <div class="section-kicker">INTERRUPT INTERACTION</div>
+        <h2>中断介入与路径恢复</h2>
+        <p class="section-intro">
+          中断会引入新的执行路径，也可能改变原任务后续执行的时间。
+        </p>
+      </div>
+    </header>
+
+    <div class="card featured">
+      <div class="card-heading">
+        <span class="card-no">05</span>
+        <h3>一次中断，不只是一次函数调用</h3>
+      </div>
+
+      <p>
+        任务执行过程中可能发生中断。处理器随后进入相应中断路径，
+        执行中断处理逻辑，并按照处理器和内核的具体机制返回或转移控制流。
+      </p>
+
+      <ul>
+        <li>中断响应时间受目标处理器、中断优先级和中断屏蔽状态等条件影响。</li>
+        <li>中断服务程序的执行时间会影响被打断任务的后续执行。</li>
+        <li>嵌套中断会引入额外的控制流与上下文管理开销。</li>
+        <li>中断退出后是否进行任务切换，取决于内核实现和当时的调度条件。</li>
+      </ul>
+
+      <p>
+        因此，中断分析不能只测量进入中断到退出中断的时间。
+        对任务实时性而言，还应明确中断对任务执行路径和响应时间的影响。
+      </p>
+
+      <div class="en">
+        Interrupt handling introduces additional execution paths and may affect
+        task response time, context restoration, and scheduling behavior.
+      </div>
+
+      <p>
+        参见 <a href="/system-view/03-interrupt-flow.html">Interrupt Flow（中断流）</a>。
+      </p>
+    </div>
+  </section>
+
+  <!-- WCET -->
+
+  <section class="section" id="timing">
+    <header class="section-heading">
+      <div class="section-number">06</div>
+      <div>
+        <div class="section-kicker">WCET / TIMING ANALYSIS</div>
+        <h2>从执行路径到时间分析</h2>
+        <p class="section-intro">
+          时间结论必须绑定具体路径、起止边界和分析假设。
+        </p>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="card-heading">
+        <span class="card-no">06</span>
+        <h3>建立可解释的时间模型</h3>
+      </div>
+
+      <p>
+        执行时间必须对应明确的代码路径和测量边界。
+        不同路径可能具有不同的指令序列、分支条件、中断干扰与上下文处理开销。
+      </p>
+
+      <div class="formula">
+        <span class="formula-label">TIMING MODEL / DECOMPOSITION</span>
+        <div class="formula-main">
+          T<sub>path</sub> = T<sub>entry</sub> + T<sub>processing</sub>
+          + T<sub>switch</sub> + T<sub>execution</sub> + T<sub>exit</sub>
+        </div>
+      </div>
+
+      <p>
+        以上各项是便于分析的时间分解方式，不表示每条路径都会包含所有项目，
+        也不能在没有检查路径边界的情况下直接相加。
+        如果某项不存在，应明确排除；如果不同阶段发生重叠，则应避免重复计数。
+      </p>
+
+      <p>
+        WCET（Worst-Case Execution Time）关注指定执行对象在规定分析条件下的最坏执行时间上界。
+        如果分析目标包含中断干扰、调度等待或资源阻塞，还必须明确这些因素属于 WCET
+        计算范围，还是需要在响应时间分析中单独处理。
+      </p>
+
+      <div class="note">
+        对 8051 目标进行指令级分析时，应以实际编译生成的机器码、目标芯片的指令周期、
+        时钟配置和明确的控制流边界为依据。仅凭源代码长度或平均测量值，
+        不能直接推出可信的最坏时间上界。
+      </div>
+
+      <p>
+        参见 <a href="/system-view/06-time-system.html">Time System（时间系统）</a>
+        与 <a href="/system-view/07-deterministic-chain.html">Deterministic Chain（确定性链）</a>。
+      </p>
+    </div>
+  </section>
+
+  <!-- EXIT CONDITIONS -->
+
+  <section class="section" id="exit">
+    <header class="section-heading">
+      <div class="section-number">07</div>
+      <div>
+        <div class="section-kicker">CONTROL-FLOW OUTCOMES</div>
+        <h2>执行路径如何结束或转移？</h2>
+        <p class="section-intro">
+          对持续运行的嵌入式任务，需要先定义“一次执行”的分析边界。
+        </p>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="card-heading">
+        <span class="card-no">07</span>
+        <h3>完成、阻塞与再次调度</h3>
+      </div>
+
+      <p>
+        执行路径结束后，系统可能出现多种情况，而不是每次都进入相同的“完成与返回”阶段。
+      </p>
+
+      <ul>
+        <li><strong>继续执行：</strong>当前任务尚未让出处理器，继续运行其后续代码。</li>
+        <li><strong>主动阻塞或让出：</strong>任务等待事件或主动调用内核服务，调度器可能选择其他任务。</li>
+        <li><strong>任务切换：</strong>内核保存必要上下文，并恢复另一个可运行任务。</li>
+        <li><strong>中断返回：</strong>根据实际控制流恢复原有执行路径，或进入内核定义的后续路径。</li>
+      </ul>
+
+      <p>
+        对持续运行的嵌入式任务而言，“一次执行完成”通常需要人为定义边界，
+        例如一次消息处理、一轮控制计算或一次指定函数调用。
+        只有明确边界，才能对该路径进行重复测量和时间分析。
+      </p>
+    </div>
+  </section>
+
+  <!-- VERIFICATION -->
+
+  <section class="section" id="verification">
+    <header class="section-heading">
+      <div class="section-number">08</div>
+      <div>
+        <div class="section-kicker">ENGINEERING VERIFICATION</div>
+        <h2>从执行流到实时性验证</h2>
+        <p class="section-intro">
+          把抽象的实时性要求转化为可定位、可分析、可复核的工程证据。
+        </p>
+      </div>
+    </header>
+
+    <div class="card featured">
+      <div class="card-heading">
+        <span class="card-no">08</span>
+        <h3>形成完整的验证链路</h3>
+      </div>
+
+      <ul>
+        <li><strong>明确对象：</strong>确定目标任务、事件、函数路径或内核操作。</li>
+        <li><strong>明确边界：</strong>规定从哪个事件或指令位置开始，到哪个位置结束。</li>
+        <li><strong>识别干扰：</strong>分析中断、临界区、上下文切换及资源访问等相关因素。</li>
+        <li><strong>建立证据：</strong>结合反汇编分析、目标硬件测量和压力测试，分别记录结果与适用条件。</li>
+        <li><strong>评估约束：</strong>将有依据的时间结果与指定的响应时间或截止时间要求比较。</li>
+      </ul>
+
+      <div class="formula">
+        <span class="formula-label">ENGINEERING VALIDATION CHAIN</span>
+        <div class="formula-main">
+          Execution Path → Timing Analysis → Evidence → Deadline Evaluation
+        </div>
+      </div>
+
+      <p>
+        执行路径可分析，不等于已经证明整个系统具有硬实时保证。
+        最终结论仍取决于路径覆盖范围、最坏情况假设、系统负载及验证证据的完整性。
+      </p>
+    </div>
+  </section>
+
+  <!-- SUMMARY -->
+
+  <section class="section" id="summary">
+    <header class="section-heading">
+      <div class="section-number">09</div>
+      <div>
+        <div class="section-kicker">EXECUTION FLOW SUMMARY</div>
+        <h2>执行流的工程意义</h2>
+        <p class="section-intro">
+          从理解处理器如何运行，到理解时间结论在什么条件下成立。
+        </p>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="card-heading">
+        <span class="card-no">09</span>
+        <h3>语义总结</h3>
+      </div>
+
+      <p>
+        执行流连接了任务代码、内核控制路径、中断处理与调度机制。
+        它提供了一种明确分析对象和时间边界的方法，使系统行为能够逐步接受测量、分析和验证。
+      </p>
+
+      <p>
+        对 HRTOS 而言，重点不只是让任务按预期执行，
+        还包括理解执行路径为什么发生、控制流何时转移，以及时间结论在什么条件下成立。
+      </p>
+
+      <div class="formula">
+        <span class="formula-label">SYSTEM VIEW / KEY PRINCIPLE</span>
+        <div class="formula-main">
+          明确执行路径，定义时间边界，再以工程证据评估实时性。
+        </div>
+      </div>
+
+      <div class="en">
+        An analyzable execution path is a foundation for timing analysis,
+        but system-level real-time guarantees require additional evidence.
+      </div>
+    </div>
+  </section>
+
+  <!-- RELATED -->
+
+  <section class="section" id="related">
+    <header class="section-heading">
+      <div class="section-number">↗</div>
+      <div>
+        <div class="section-kicker">CONTINUE EXPLORING</div>
+        <h2>继续探索 HRTOS</h2>
+        <p class="section-intro">
+          从执行流进入任务、中断、调度与时间系统的其他视图。
+        </p>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="related">
+        <a href="/system-view/index.html">
+          <strong>System View</strong>
+          <span>系统运行结构总览</span>
+        </a>
+
+        <a href="/system-view/02-task-lifecycle.html">
+          <strong>Task Lifecycle</strong>
+          <span>任务状态与生命周期</span>
+        </a>
+
+        <a href="/system-view/03-interrupt-flow.html">
+          <strong>Interrupt Flow</strong>
+          <span>中断进入、处理与返回</span>
+        </a>
+
+        <a href="/system-view/04-scheduler-cycle.html">
+          <strong>Scheduler Cycle</strong>
+          <span>调度触发与调度过程</span>
+        </a>
+
+        <a href="/system-view/06-time-system.html">
+          <strong>Time System</strong>
+          <span>系统时基与时间约束</span>
+        </a>
+
+        <a href="/system-view/07-deterministic-chain.html">
+          <strong>Deterministic Chain</strong>
+          <span>执行确定性与因果关系</span>
+        </a>
+      </div>
     </div>
   </section>
 
 </main>
 
 <footer class="site-footer">
-  © 2017–2026 HRTOS · SYSTEM VIEW
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">HRTOS</div>
+      <div class="footer-edition">SYSTEM VIEW / EXECUTION FLOW</div>
+    </div>
 
-  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
-    System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
-    该层关注“系统如何运行”，而非“为什么这样设计”。
-  </div>
+    <div class="footer-desc">
+      System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。
+      该层关注“系统如何运行”，而非“为什么这样设计”。
+    </div>
 
-  <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
+    <div class="footer-links">
+      <a href="/system-view/index.html">System 首页</a>
+      <a href="/system-view/01-execution-flow.html">执行流</a>
+      <a href="/system-view/02-task-lifecycle.html">任务生命周期</a>
+      <a href="/system-view/04-scheduler-cycle.html">调度周期</a>
+      <a href="/why/index.html">WHY Layer ↗</a>
+      <a href="/docs/index.html">技术文档 ↗</a>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2017–2026 HRTOS</span>
+      <span>8051 NATIVE / REAL-TIME SYSTEM ENGINEERING</span>
+    </div>
   </div>
 </footer>
 

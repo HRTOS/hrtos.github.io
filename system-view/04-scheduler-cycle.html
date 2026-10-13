@@ -10,322 +10,979 @@
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="scheduler-cycle">
+<meta name="theme-color" content="#080e1a">
 
 <style>
-:root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+:root {
+  color-scheme: dark;
+  --bg: #080e1a;
+  --bg-soft: #0b1322;
+  --panel: rgba(15, 25, 43, .82);
+  --panel-strong: #101b2d;
+  --text: #e8f0fc;
+  --muted: #93a5bf;
+  --subtle: #6f829e;
+  --accent: #55d8ff;
+  --accent-2: #7c9cff;
+  --green: #75e6c0;
+  --amber: #f4c875;
+  --border: rgba(145, 173, 211, .15);
+  --border-bright: rgba(85, 216, 255, .32);
+  --shadow: 0 24px 70px rgba(0, 0, 0, .22);
+  --radius: 18px;
+  --max-width: 1080px;
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+* {
+  box-sizing: border-box;
 }
 
-/* NAV */
-.nav{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:14px 24px;
-  border-bottom:1px solid rgba(148,163,184,.12);
-  background:rgba(11,15,20,.92);
-  position:sticky;
-  top:0;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
 }
 
-.nav a{
-  color:var(--muted);
-  margin-left:14px;
-  text-decoration:none;
-  font-size:14px;
-}
-
-.nav a.active{
-  color:#cfe3ff;
-}
-
-/* layout */
-.container{
-  max-width:920px;
-  margin:0 auto;
-  padding:60px 24px;
-}
-
-h1{
-  font-size:38px;
-  line-height:1.25;
-  margin:0 0 14px;
-  letter-spacing:-.025em;
-}
-
-.sub{
-  color:var(--muted);
-  margin-bottom:32px;
-  font-size:16px;
-  max-width:760px;
-}
-
-.eyebrow{
-  color:var(--accent);
-  font-size:12px;
-  font-weight:700;
-  letter-spacing:.14em;
-  text-transform:uppercase;
-  margin-bottom:12px;
-}
-
-.hero{
-  padding:28px;
-  margin-bottom:24px;
-  border:1px solid var(--border);
-  border-radius:14px;
+body {
+  margin: 0;
+  color: var(--text);
   background:
-    radial-gradient(ellipse at top right,rgba(56,189,248,.10),transparent 55%),
-    rgba(17,24,35,.92);
-  box-shadow:var(--shadow);
+    radial-gradient(ellipse at 50% -15%, rgba(44, 104, 180, .19), transparent 48%),
+    radial-gradient(ellipse at 100% 45%, rgba(37, 107, 142, .07), transparent 34%),
+    var(--bg);
+  font-family:
+    "Inter", "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-.hero p:last-child{
-  margin-bottom:0;
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .17;
+  background-image:
+    linear-gradient(rgba(129, 166, 215, .055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(129, 166, 215, .055) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
 }
 
-.hero strong{
-  color:#f8fafc;
+a {
+  color: inherit;
 }
 
-.tags{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-top:18px;
+::selection {
+  color: #06121e;
+  background: var(--accent);
 }
 
-.tag{
-  padding:4px 10px;
-  border:1px solid rgba(56,189,248,.24);
-  border-radius:999px;
-  background:rgba(56,189,248,.07);
-  color:#bae6fd;
-  font-size:12px;
+/* Navigation */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 70px;
+  padding: 0 max(24px, calc((100vw - 1180px) / 2));
+  border-bottom: 1px solid rgba(156, 184, 224, .12);
+  background: rgba(8, 14, 26, .82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-/* card */
-.card{
-  background:rgba(17,24,35,.92);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:22px;
-  margin-bottom:16px;
-  box-shadow:var(--shadow);
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  flex-shrink: 0;
+  color: #f2f7ff;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-decoration: none;
 }
 
-.card h2{
-  margin:0 0 12px;
-  font-size:18px;
-  line-height:1.5;
-  color:#cfe3ff;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
+.brand-mark {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border: 1px solid rgba(85, 216, 255, .5);
+  border-radius: 9px;
+  color: var(--accent);
+  background: linear-gradient(145deg, rgba(85, 216, 255, .16), rgba(124, 156, 255, .06));
+  box-shadow: inset 0 0 18px rgba(85, 216, 255, .08);
+  font-size: 12px;
+  letter-spacing: -.06em;
 }
 
-.card h3{
-  font-size:15px;
-  color:#e2e8f0;
-  margin:18px 0 6px;
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.card p{
-  margin:10px 0;
+.nav a.nav-link {
+  padding: 8px 13px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color .2s ease, background .2s ease, border-color .2s ease;
 }
 
-.card ul{
-  padding-left:22px;
-  margin:10px 0;
+.nav a.nav-link:hover,
+.nav a.nav-link.active {
+  color: #e9f8ff;
+  border-color: rgba(85, 216, 255, .16);
+  background: rgba(85, 216, 255, .065);
 }
 
-.card li{
-  margin:6px 0;
+/* Main layout */
+
+.container {
+  width: min(var(--max-width), 100%);
+  margin: 0 auto;
+  padding: 58px 30px 86px;
 }
 
-.en{
-  color:var(--muted);
-  font-size:13px;
-  margin-top:12px;
-  line-height:1.7;
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 20px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .2em;
+  text-transform: uppercase;
 }
 
-.muted{
-  color:var(--muted);
+.eyebrow::before {
+  content: "";
+  width: 23px;
+  height: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(85, 216, 255, .6);
 }
 
-.flow{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;
-  margin:20px 0;
+.eyebrow span {
+  color: var(--subtle);
+  letter-spacing: .12em;
 }
 
-.flow-step{
-  position:relative;
-  padding:15px 12px;
-  min-height:100px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  border:1px solid rgba(56,189,248,.22);
-  border-radius:9px;
-  background:rgba(15,23,42,.8);
-  text-align:center;
+h1 {
+  max-width: 900px;
+  margin: 0;
+  color: #f1f6ff;
+  font-size: clamp(38px, 6vw, 62px);
+  font-weight: 760;
+  line-height: 1.2;
+  letter-spacing: -.055em;
 }
 
-.flow-step strong{
-  display:block;
-  color:#bae6fd;
-  font-size:14px;
-  margin-bottom:4px;
+.hero-subtitle {
+  margin: 17px 0 0;
+  color: #b6c6dc;
+  font-size: clamp(15px, 2vw, 18px);
+  line-height: 1.85;
 }
 
-.flow-step span{
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.6;
+.hero-subtitle .en-title {
+  color: var(--accent);
+  font-size: .88em;
+  font-weight: 650;
+  letter-spacing: .035em;
 }
 
-.flow-arrow{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:var(--accent);
-  font-size:20px;
+.hero-intro {
+  position: relative;
+  overflow: hidden;
+  margin: 34px 0 24px;
+  padding: 30px;
+  border: 1px solid var(--border-bright);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(85, 216, 255, .105), transparent 42%),
+    radial-gradient(ellipse at 0% 100%, rgba(124, 156, 255, .07), transparent 40%),
+    linear-gradient(135deg, rgba(17, 32, 52, .96), rgba(11, 20, 35, .94));
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, .025);
 }
 
-.cycle{
-  display:grid;
-  grid-template-columns:1fr auto 1fr;
-  align-items:center;
-  gap:10px;
-  margin:20px 0;
+.hero-intro::after {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -35px;
+  width: 210px;
+  height: 210px;
+  border: 1px solid rgba(85, 216, 255, .10);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 25px rgba(85, 216, 255, .025),
+    0 0 0 50px rgba(85, 216, 255, .018);
+  pointer-events: none;
 }
 
-.cycle-node{
-  text-align:center;
-  padding:16px 12px;
-  border:1px solid var(--border);
-  border-radius:9px;
-  background:rgba(15,23,42,.65);
+.intro-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 15px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
 }
 
-.cycle-node strong{
-  display:block;
-  font-size:14px;
-  color:#e2e8f0;
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 12px rgba(117, 230, 192, .65);
 }
 
-.cycle-node span{
-  display:block;
-  margin-top:5px;
-  color:var(--muted);
-  font-size:12px;
+.hero-intro p {
+  position: relative;
+  z-index: 1;
+  max-width: 880px;
+  margin: 0 0 13px;
+  color: #c2d0e3;
+  font-size: 15px;
 }
 
-.cycle-arrow{
-  color:var(--accent);
-  font-size:20px;
+.hero-intro p:last-of-type {
+  margin-bottom: 0;
 }
 
-.note{
-  border-left:3px solid #64748b;
-  padding:12px 15px;
-  margin-top:16px;
-  border-radius:0 8px 8px 0;
-  background:rgba(148,163,184,.06);
-  color:#cbd5e1;
-  font-size:14px;
+.hero-intro strong {
+  color: #f5f9ff;
+  font-weight: 700;
 }
 
-.note strong{
-  color:#f1f5f9;
+.tags {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 23px;
 }
 
-.warning{
-  border-left-color:#f59e0b;
-  background:rgba(245,158,11,.06);
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border: 1px solid rgba(115, 156, 205, .20);
+  border-radius: 8px;
+  color: #c4d5ea;
+  background: rgba(7, 15, 28, .44);
+  font-size: 12px;
+  line-height: 1.7;
 }
 
-.related a{
-  color:var(--accent);
-  text-decoration:none;
+.tag::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
-.related a:hover{
-  text-decoration:underline;
+/* Overview strip */
+
+.overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 44px;
 }
 
-.related p{
-  margin:8px 0;
+.overview-item {
+  min-width: 0;
+  padding: 18px 19px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(18, 31, 51, .74), rgba(11, 19, 33, .58));
 }
 
-.semantic{
-  font-size:15px;
+.overview-index {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .15em;
 }
 
-.semantic strong{
-  color:#bae6fd;
+.overview-item strong {
+  display: block;
+  color: #e8f1ff;
+  font-size: 14px;
+  font-weight: 700;
 }
 
-/* footer */
-.site-footer{
-  text-align:center;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding:18px 12px;
-  color:#8ea3be;
-  font-size:.95rem;
+.overview-item span:last-child {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
 }
 
-@media(max-width:640px){
-  .container{
-    padding:36px 18px;
+/* Sections */
+
+.card {
+  position: relative;
+  margin: 0 0 18px;
+  padding: 30px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(145deg, rgba(16, 27, 45, .91), rgba(11, 19, 33, .89));
+  box-shadow: 0 14px 42px rgba(0, 0, 0, .11);
+  transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease;
+}
+
+.card:hover {
+  border-color: rgba(108, 177, 225, .28);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, .16);
+}
+
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.section-number {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgba(85, 216, 255, .25);
+  border-radius: 12px;
+  color: var(--accent);
+  background: linear-gradient(145deg, rgba(85, 216, 255, .11), rgba(85, 216, 255, .025));
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.section-heading {
+  min-width: 0;
+}
+
+.card h2 {
+  margin: 0;
+  color: #edf4ff;
+  font-size: 20px;
+  font-weight: 720;
+  line-height: 1.5;
+  letter-spacing: -.025em;
+}
+
+.section-kicker {
+  display: block;
+  margin-top: 3px;
+  color: var(--subtle);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.card h3 {
+  margin: 23px 0 7px;
+  color: #dceaff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.card h3:first-child {
+  margin-top: 0;
+}
+
+.card p {
+  margin: 11px 0;
+  color: #b7c5d9;
+  font-size: 14px;
+}
+
+.card strong {
+  color: #e9f2ff;
+  font-weight: 700;
+}
+
+.card ul {
+  display: grid;
+  gap: 10px;
+  margin: 17px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card li {
+  position: relative;
+  padding-left: 21px;
+  color: #b7c5d9;
+  font-size: 14px;
+}
+
+.card li::before {
+  content: "";
+  position: absolute;
+  top: .78em;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  background: rgba(85, 216, 255, .14);
+}
+
+.card li strong {
+  color: #e4efff;
+}
+
+.en {
+  margin-top: 19px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(145, 173, 211, .10);
+  color: #7f94b1;
+  font-size: 12px;
+  line-height: 1.85;
+}
+
+/* Flow diagram */
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 25px 0;
+}
+
+.flow-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: 132px;
+  padding: 20px 17px;
+  overflow: hidden;
+  border: 1px solid rgba(85, 216, 255, .20);
+  border-radius: 13px;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(85, 216, 255, .075), transparent 65%),
+    rgba(7, 15, 28, .72);
+  text-align: left;
+}
+
+.flow-step::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(85, 216, 255, .45);
+}
+
+.flow-step::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 18px;
+  height: 18px;
+  border-right: 1px solid rgba(85, 216, 255, .14);
+  border-bottom: 1px solid rgba(85, 216, 255, .14);
+}
+
+.step-index {
+  margin-bottom: 11px;
+  color: #6887a8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.flow-step strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #dff7ff;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.flow-step span:last-child {
+  color: #91a6c1;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.flow-step:nth-child(2) {
+  border-color: rgba(124, 156, 255, .26);
+}
+
+.flow-step:nth-child(2)::before {
+  background: var(--accent-2);
+}
+
+.flow-step:nth-child(3) {
+  border-color: rgba(117, 230, 192, .22);
+}
+
+.flow-step:nth-child(3)::before {
+  background: var(--green);
+}
+
+.cycle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  margin: 24px 0;
+}
+
+.cycle-node {
+  position: relative;
+  min-width: 0;
+  padding: 22px 18px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(7, 15, 28, .55);
+  text-align: center;
+}
+
+.cycle-node:first-child {
+  border-top: 2px solid #7c9cff;
+}
+
+.cycle-node:last-child {
+  border-top: 2px solid var(--green);
+}
+
+.cycle-node strong {
+  display: block;
+  color: #e5efff;
+  font-size: 14px;
+}
+
+.cycle-node span {
+  display: block;
+  margin-top: 7px;
+  color: #91a6c1;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.cycle-arrow {
+  color: var(--accent);
+  font-size: 25px;
+  text-align: center;
+}
+
+/* Notes */
+
+.note {
+  margin-top: 20px;
+  padding: 15px 18px;
+  border: 1px solid rgba(145, 173, 211, .11);
+  border-left: 3px solid #6885a8;
+  border-radius: 0 11px 11px 0;
+  color: #b6c5d9;
+  background: rgba(119, 148, 186, .055);
+  font-size: 13px;
+  line-height: 1.85;
+}
+
+.note strong {
+  color: #eaf3ff;
+}
+
+.note.warning {
+  border-color: rgba(244, 200, 117, .13);
+  border-left-color: var(--amber);
+  background: rgba(244, 200, 117, .055);
+}
+
+.note.warning strong {
+  color: #ffe2a1;
+}
+
+/* Semantic summary */
+
+.semantic-card {
+  border-color: rgba(85, 216, 255, .25);
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(85, 216, 255, .09), transparent 46%),
+    linear-gradient(135deg, rgba(14, 30, 48, .97), rgba(10, 19, 33, .96));
+}
+
+.semantic-card .section-number {
+  color: var(--green);
+  border-color: rgba(117, 230, 192, .26);
+  background: rgba(117, 230, 192, .06);
+}
+
+.semantic {
+  color: #c5d5e9 !important;
+  font-size: 15px !important;
+  line-height: 2 !important;
+}
+
+.semantic strong {
+  color: #e9fbff;
+}
+
+/* Related reading */
+
+.related {
+  padding-bottom: 26px;
+}
+
+.related-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.related-label {
+  margin: 20px 0 10px;
+  color: #7f94b1;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.related-label:first-of-type {
+  margin-top: 0;
+}
+
+.related-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: #c5d8ee;
+  background: rgba(7, 15, 28, .48);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.related-link span:last-child {
+  flex: 0 0 auto;
+  color: var(--accent);
+  transition: transform .2s ease;
+}
+
+.related-link:hover {
+  color: #f1f8ff;
+  border-color: rgba(85, 216, 255, .32);
+  background: rgba(85, 216, 255, .055);
+}
+
+.related-link:hover span:last-child {
+  transform: translateX(3px);
+}
+
+/* Footer */
+
+.site-footer {
+  padding: 31px 24px 35px;
+  border-top: 1px solid rgba(145, 173, 211, .12);
+  color: #7f94b1;
+  background: rgba(6, 11, 21, .55);
+  text-align: center;
+}
+
+.footer-brand {
+  margin-bottom: 12px;
+  color: #cbd8eb;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.footer-copy {
+  max-width: 760px;
+  margin: 0 auto;
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px 21px;
+  margin-top: 20px;
+}
+
+.footer-links a {
+  color: #91cfe9;
+  font-size: 12px;
+  text-decoration: none;
+  transition: color .2s ease;
+}
+
+.footer-links a:hover {
+  color: #fff;
+}
+
+/* Responsive */
+
+@media (max-width: 760px) {
+  .nav {
+    min-height: 62px;
+    padding: 0 18px;
+    gap: 10px;
   }
 
-  h1{
-    font-size:30px;
+  .brand {
+    gap: 8px;
+    font-size: 15px;
   }
 
-  .hero{
-    padding:21px;
+  .brand-mark {
+    width: 28px;
+    height: 28px;
   }
 
-  .card{
-    padding:18px;
+  .nav-links {
+    gap: 1px;
   }
 
-  .flow{
-    grid-template-columns:1fr;
+  .nav a.nav-link {
+    padding: 7px 8px;
+    font-size: 12px;
   }
 
-  .flow-step{
-    min-height:auto;
-    padding:13px;
+  .container {
+    padding: 43px 20px 64px;
   }
 
-  .cycle{
-    grid-template-columns:1fr;
+  .hero-intro {
+    padding: 24px;
   }
 
-  .cycle-arrow{
-    transform:rotate(90deg);
-    text-align:center;
+  .overview {
+    gap: 9px;
+  }
+
+  .overview-item {
+    padding: 14px;
+  }
+
+  .card {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 560px) {
+  .nav {
+    align-items: center;
+    padding: 0 13px;
+  }
+
+  .nav-links {
+    gap: 0;
+  }
+
+  .nav a.nav-link {
+    padding: 7px 6px;
+    font-size: 11px;
+  }
+
+  .container {
+    padding: 34px 15px 48px;
+  }
+
+  .eyebrow {
+    margin-bottom: 15px;
+    font-size: 10px;
+  }
+
+  h1 {
+    font-size: 37px;
+  }
+
+  .hero-subtitle {
+    font-size: 14px;
+  }
+
+  .hero-intro {
+    margin-top: 26px;
+    padding: 21px;
+    border-radius: 17px;
+  }
+
+  .hero-intro p {
+    font-size: 13px;
+  }
+
+  .tags {
+    gap: 7px;
+  }
+
+  .tag {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .overview {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 30px;
+  }
+
+  .overview-item {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    column-gap: 10px;
+    align-items: center;
+    padding: 12px 15px;
+  }
+
+  .overview-index {
+    grid-row: span 2;
+    margin: 0;
+  }
+
+  .overview-item strong {
+    font-size: 13px;
+  }
+
+  .overview-item span:last-child {
+    margin-top: 1px;
+    font-size: 11px;
+  }
+
+  .card {
+    margin-bottom: 13px;
+    padding: 20px 17px;
+    border-radius: 15px;
+  }
+
+  .section-head {
+    gap: 12px;
+    margin-bottom: 19px;
+  }
+
+  .section-number {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+
+  .card h2 {
+    font-size: 17px;
+  }
+
+  .section-kicker {
+    font-size: 9px;
+  }
+
+  .card p,
+  .card li {
+    font-size: 13px;
+  }
+
+  .flow {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 20px 0;
+  }
+
+  .flow-step {
+    min-height: 0;
+    padding: 16px 17px;
+  }
+
+  .flow-step::after {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .step-index {
+    margin-bottom: 5px;
+  }
+
+  .cycle {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .cycle-node {
+    padding: 17px 14px;
+  }
+
+  .cycle-arrow {
+    font-size: 0;
+    height: 19px;
+  }
+
+  .cycle-arrow::after {
+    content: "↓";
+    font-size: 21px;
+  }
+
+  .note {
+    padding: 13px 14px;
+    font-size: 12px;
+  }
+
+  .related-group {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .site-footer {
+    padding: 25px 17px 30px;
+  }
+
+  .footer-links {
+    gap: 12px 17px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 </style>
@@ -333,34 +990,49 @@ h1{
 
 <body>
 
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
-    <a href="/index.html">首页</a>
-    <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" class="active">System</a>
-    <a href="/docs/index.html">Docs</a>
-  </div>
-</div>
+<header class="nav">
+  <a class="brand" href="/index.html" aria-label="HRTOS 首页">
+    <span class="brand-mark">HR</span>
+    <span>HRTOS</span>
+  </a>
+
+  <nav class="nav-links" aria-label="主导航">
+    <a class="nav-link" href="/index.html">首页</a>
+    <a class="nav-link" href="/why/index.html">Why</a>
+    <a class="nav-link active" href="/system-view/index.html" aria-current="page">System</a>
+    <a class="nav-link" href="/docs/index.html">Docs</a>
+  </nav>
+</header>
 
 <main class="container">
 
-  <div class="eyebrow">SYSTEM VIEW / 04</div>
+  <div class="eyebrow">
+    SYSTEM VIEW <span>/</span> 04
+    <span>/</span> SCHEDULER CYCLE
+  </div>
 
   <h1>调度周期模型</h1>
 
-  <div class="sub">
-    Scheduler Cycle · 从任务就绪与调度决策，到上下文切换、执行恢复和下一次调度触发，理解 HRTOS 的运行控制路径。
-  </div>
+  <p class="hero-subtitle">
+    <span class="en-title">Scheduler Cycle</span>
+    · 从任务就绪与调度决策，到上下文切换、执行恢复和下一次调度触发，理解 HRTOS 的运行控制路径。
+  </p>
 
-  <section class="hero">
+  <section class="hero-intro" aria-label="调度周期模型简介">
+    <div class="intro-label">
+      <span class="status-dot"></span>
+      SYSTEM MECHANISM
+    </div>
+
     <p>
       <strong>调度周期不是简单的任务排序，也不意味着调度器必须不断遍历全部系统状态。</strong>
       它描述的是：当系统运行条件或调度触发条件发生变化时，内核如何确定后续执行路径，并在任务、中断与上下文之间完成控制权转换。
     </p>
+
     <p>
       对 8051 实时操作系统而言，调度过程必须与处理器的寄存器、堆栈、中断入口和返回机制共同考虑。调度算法只是其中一部分，真正的运行行为还取决于内核如何实现这些机制。
     </p>
+
     <div class="tags">
       <span class="tag">任务就绪</span>
       <span class="tag">调度决策</span>
@@ -370,8 +1042,32 @@ h1{
     </div>
   </section>
 
+  <div class="overview" aria-label="调度周期的三个阶段">
+    <div class="overview-item">
+      <span class="overview-index">PHASE 01</span>
+      <strong>调度触发</strong>
+      <span>识别运行条件与事件变化</span>
+    </div>
+    <div class="overview-item">
+      <span class="overview-index">PHASE 02</span>
+      <strong>目标选择</strong>
+      <span>依据任务状态与调度规则决策</span>
+    </div>
+    <div class="overview-item">
+      <span class="overview-index">PHASE 03</span>
+      <strong>上下文管理</strong>
+      <span>按实际需要完成状态保存与恢复</span>
+    </div>
+  </div>
+
   <section class="card">
-    <h2>一、调度周期的核心结构</h2>
+    <div class="section-head">
+      <span class="section-number">01</span>
+      <div class="section-heading">
+        <h2>调度周期的核心结构</h2>
+        <span class="section-kicker">Scheduling Pipeline</span>
+      </div>
+    </div>
 
     <p>
       从系统运行角度，可以把调度过程理解为三个相互关联的阶段：形成调度条件、确定执行目标、恢复相应执行上下文。
@@ -380,15 +1076,18 @@ h1{
 
     <div class="flow">
       <div class="flow-step">
-        <strong>01 · 调度触发</strong>
+        <span class="step-index">STEP / 01</span>
+        <strong>调度触发</strong>
         <span>任务状态变化、时钟事件或内核控制路径</span>
       </div>
       <div class="flow-step">
-        <strong>02 · 执行目标选择</strong>
+        <span class="step-index">STEP / 02</span>
+        <strong>执行目标选择</strong>
         <span>依据当前可运行任务与调度规则确定目标</span>
       </div>
       <div class="flow-step">
-        <strong>03 · 执行上下文转换</strong>
+        <span class="step-index">STEP / 03</span>
+        <strong>执行上下文转换</strong>
         <span>必要时保存与恢复处理器执行状态</span>
       </div>
     </div>
@@ -403,7 +1102,13 @@ h1{
   </section>
 
   <section class="card">
-    <h2>二、调度器依据什么作出决策？</h2>
+    <div class="section-head">
+      <span class="section-number">02</span>
+      <div class="section-heading">
+        <h2>调度器依据什么作出决策？</h2>
+        <span class="section-kicker">Scheduling Conditions</span>
+      </div>
+    </div>
 
     <p>
       调度器的决策依据来自内核维护的任务运行状态及其调度规则，而不是对所有可能执行路径进行通用意义上的“最优解搜索”。
@@ -431,7 +1136,13 @@ h1{
   </section>
 
   <section class="card">
-    <h2>三、调度决策不等于上下文切换</h2>
+    <div class="section-head">
+      <span class="section-number">03</span>
+      <div class="section-heading">
+        <h2>调度决策不等于上下文切换</h2>
+        <span class="section-kicker">Context Management</span>
+      </div>
+    </div>
 
     <p>
       调度器确定下一步执行目标后，内核还需要根据当前执行状态完成控制权转换。如果目标任务与当前任务不同，通常需要处理相应的上下文保存与恢复；如果目标仍是当前任务，则可能无需执行完整的任务切换。
@@ -442,7 +1153,7 @@ h1{
         <strong>当前执行上下文</strong>
         <span>寄存器、堆栈与任务执行位置</span>
       </div>
-      <div class="cycle-arrow">→</div>
+      <div class="cycle-arrow" aria-label="转换到">→</div>
       <div class="cycle-node">
         <strong>目标执行上下文</strong>
         <span>恢复对应状态并继续执行</span>
@@ -464,7 +1175,13 @@ h1{
   </section>
 
   <section class="card">
-    <h2>四、中断如何影响调度周期？</h2>
+    <div class="section-head">
+      <span class="section-number">04</span>
+      <div class="section-heading">
+        <h2>中断如何影响调度周期？</h2>
+        <span class="section-kicker">Interrupt Interaction</span>
+      </div>
+    </div>
 
     <p>
       中断路径与普通任务调度路径相互关联，但不能简单地视为同一条流程。中断请求到达后，处理器是否立即接受、能否嵌套、何时退出，以及退出后是否进入任务调度路径，都取决于具体的中断控制与内核实现。
@@ -472,14 +1189,17 @@ h1{
 
     <div class="flow">
       <div class="flow-step">
+        <span class="step-index">EVENT / 01</span>
         <strong>中断请求</strong>
         <span>产生事件，等待处理器接受</span>
       </div>
       <div class="flow-step">
+        <span class="step-index">HANDLER / 02</span>
         <strong>中断处理</strong>
         <span>执行中断服务路径并维护必要状态</span>
       </div>
       <div class="flow-step">
+        <span class="step-index">RETURN / 03</span>
         <strong>退出与恢复</strong>
         <span>按内核机制返回原执行路径或进入后续调度</span>
       </div>
@@ -500,7 +1220,13 @@ h1{
   </section>
 
   <section class="card">
-    <h2>五、时间片与优先级如何参与调度？</h2>
+    <div class="section-head">
+      <span class="section-number">05</span>
+      <div class="section-heading">
+        <h2>时间片与优先级如何参与调度？</h2>
+        <span class="section-kicker">Priority & Time Slice</span>
+      </div>
+    </div>
 
     <p>
       时间片与优先级是两类不同的调度控制因素。优先级决定任务之间的相对调度关系；时间片机制则可以限制特定调度模式下任务连续占用处理器的时间。
@@ -527,7 +1253,13 @@ h1{
   </section>
 
   <section class="card">
-    <h2>六、怎样验证调度周期的实际行为？</h2>
+    <div class="section-head">
+      <span class="section-number">06</span>
+      <div class="section-heading">
+        <h2>怎样验证调度周期的实际行为？</h2>
+        <span class="section-kicker">Verification Methods</span>
+      </div>
+    </div>
 
     <p>
       调度周期不仅是概念模型，也应能够通过代码审查、指令分析和目标板测试进行验证。不同方法回答的问题不同，宜交叉使用。
@@ -562,8 +1294,14 @@ h1{
     </div>
   </section>
 
-  <section class="card">
-    <h2>七、调度周期模型的语义总结</h2>
+  <section class="card semantic-card">
+    <div class="section-head">
+      <span class="section-number">07</span>
+      <div class="section-heading">
+        <h2>调度周期模型的语义总结</h2>
+        <span class="section-kicker">Model Summary</span>
+      </div>
+    </div>
 
     <p class="semantic">
       <strong>调度周期描述的是内核如何从调度触发条件进入执行目标选择，并通过必要的上下文管理完成后续运行。</strong>
@@ -580,41 +1318,61 @@ h1{
   </section>
 
   <section class="card related">
-    <h2>相关阅读</h2>
+    <div class="section-head">
+      <span class="section-number">↗</span>
+      <div class="section-heading">
+        <h2>相关阅读</h2>
+        <span class="section-kicker">Explore System View</span>
+      </div>
+    </div>
 
-    <p><b>System View</b></p>
-    <p><a href="/system-view/index.html">返回总览 →</a></p>
+    <div class="related-label">SYSTEM VIEW</div>
+    <div class="related-group">
+      <a class="related-link" href="/system-view/index.html">
+        <span>System View 总览</span><span>↗</span>
+      </a>
+      <a class="related-link" href="/system-view/03-interrupt-flow.html">
+        <span>03 中断流模型 · 上一篇</span><span>←</span>
+      </a>
+      <a class="related-link" href="/system-view/05-memory-view.html">
+        <span>05 内存视图模型 · 下一篇</span><span>→</span>
+      </a>
+    </div>
 
-    <p><b>上一篇 · 中断流模型</b></p>
-    <p><a href="/system-view/03-interrupt-flow.html">03 中断流模型 ←</a></p>
-
-    <p><b>下一篇 · 内存视图模型</b></p>
-    <p><a href="/system-view/05-memory-view.html">05 内存视图模型 →</a></p>
-
-    <p><b>扩展阅读</b></p>
-    <p><a href="/system-view/01-execution-flow.html">01 执行流模型</a></p>
-    <p><a href="/system-view/02-task-lifecycle.html">02 任务生命周期</a></p>
-    <p><a href="/system-view/06-time-system.html">06 时间系统</a></p>
-    <p><a href="/system-view/07-deterministic-chain.html">07 确定性链路</a></p>
+    <div class="related-label">RELATED MODELS</div>
+    <div class="related-group">
+      <a class="related-link" href="/system-view/01-execution-flow.html">
+        <span>01 执行流模型</span><span>↗</span>
+      </a>
+      <a class="related-link" href="/system-view/02-task-lifecycle.html">
+        <span>02 任务生命周期</span><span>↗</span>
+      </a>
+      <a class="related-link" href="/system-view/06-time-system.html">
+        <span>06 时间系统</span><span>↗</span>
+      </a>
+      <a class="related-link" href="/system-view/07-deterministic-chain.html">
+        <span>07 确定性链路</span><span>↗</span>
+      </a>
+    </div>
   </section>
 
 </main>
 
 <footer class="site-footer">
-  © 2017–2026 HRTOS · SYSTEM VIEW
+  <div class="footer-brand">HRTOS <span style="color:#526983;">/</span> SYSTEM VIEW</div>
 
-  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
-    System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
+  <div class="footer-copy">
+    © 2017–2026 HRTOS · System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
     该层关注“系统如何运行”，而非“为什么这样设计”。
   </div>
 
-  <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
-  </div>
+  <nav class="footer-links" aria-label="系统视图导航">
+    <a href="/system-view/index.html">System 首页</a>
+    <a href="/system-view/01-execution-flow.html">执行流</a>
+    <a href="/system-view/02-task-lifecycle.html">任务生命周期</a>
+    <a href="/system-view/04-scheduler-cycle.html">调度周期</a>
+    <a href="/why/index.html">→ WHY Layer</a>
+  </nav>
 </footer>
 
 </body>

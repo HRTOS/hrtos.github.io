@@ -11,367 +11,1033 @@
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="deterministic-chain">
+<meta name="theme-color" content="#080e1b">
 
 <style>
-:root{
-  --bg:#0f172a;
-  --panel:#111c30;
-  --panel2:#142238;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --accent2:#7dd3fc;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.28);
-  --radius:12px;
-  --green:#86efac;
-  --yellow:#fde68a;
-  --red:#fca5a5;
+:root {
+  color-scheme: dark;
+  --bg: #080e1b;
+  --panel: #101b2e;
+  --panel-2: #14233a;
+  --text: #e8effa;
+  --muted: #9aabc4;
+  --subtle: #70839f;
+  --accent: #67d7ff;
+  --accent-2: #38bdf8;
+  --border: rgba(148, 177, 214, .15);
+  --border-active: rgba(103, 215, 255, .30);
+  --green: #77e4c2;
+  --yellow: #ffc777;
+  --red: #fca5a5;
+  --violet: #b8a7ff;
+  --shadow: 0 22px 55px rgba(0, 0, 0, .22);
+  --radius: 16px;
+  --content-width: 1040px;
 }
 
-*{box-sizing:border-box}
+* {
+  box-sizing: border-box;
+}
 
-html{scroll-behavior:smooth}
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
 
-body{
-  margin:0;
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-wrap: break-word;
+  color: var(--text);
   background:
-    radial-gradient(ellipse at 50% -10%,rgba(56,189,248,.09),transparent 46%),
+    radial-gradient(ellipse at 50% -18%, rgba(39, 112, 177, .19), transparent 54%),
+    radial-gradient(ellipse at 100% 42%, rgba(50, 90, 160, .065), transparent 36%),
     var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.8;
+  font-family:
+    "Segoe UI",
+    "PingFang SC",
+    "Microsoft YaHei",
+    system-ui,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* NAV */
-.nav{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:14px 24px;
-  border-bottom:1px solid rgba(148,163,184,.12);
-  background:rgba(11,15,20,.92);
-  position:sticky;
-  top:0;
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  opacity: .19;
+  background-image:
+    linear-gradient(rgba(137, 174, 216, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(137, 174, 216, .045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 80%);
 }
 
-.nav a{
-  color:var(--muted);
-  margin-left:14px;
-  text-decoration:none;
-  font-size:14px;
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color .2s ease, background .2s ease, border-color .2s ease;
 }
 
-.nav a.active{
-  color:#cfe3ff;
+a:hover {
+  color: #c5f2ff;
 }
 
-/* layout */
-.container{
-  max-width:920px;
-  margin:0 auto;
-  padding:54px 24px 64px;
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
-h1{
-  font-size:clamp(30px,5vw,40px);
-  line-height:1.3;
-  letter-spacing:-.5px;
-  margin:0 0 14px;
+::selection {
+  color: #07111e;
+  background: #8be2ff;
 }
 
-h2,h3{line-height:1.45}
+/* Navigation */
 
-p{margin:10px 0}
-
-a{transition:color .2s ease}
-
-a:hover{color:#bae6fd!important}
-
-.sub{
-  color:var(--muted);
-  margin-bottom:26px;
-  font-size:17px;
-  max-width:760px;
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 68px;
+  padding: 0 max(24px, calc((100vw - 1200px) / 2));
+  border-bottom: 1px solid rgba(148, 177, 214, .13);
+  background: rgba(7, 13, 25, .86);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
-.hero{
-  padding:30px;
-  border:1px solid rgba(56,189,248,.25);
-  border-radius:16px;
+.brand {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 11px;
+  color: #f0f6ff;
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: .07em;
+}
+
+.brand:hover {
+  color: #f0f6ff;
+}
+
+.brand-mark {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid rgba(103, 215, 255, .38);
+  border-radius: 9px;
+  color: var(--accent);
+  background: linear-gradient(145deg, rgba(56, 189, 248, .20), rgba(56, 189, 248, .035));
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.brand small {
+  display: block;
+  margin-top: -4px;
+  color: var(--subtle);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .18em;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+  background: rgba(148, 177, 214, .07);
+}
+
+.nav-links a.active {
+  border-color: rgba(103, 215, 255, .19);
+  color: var(--accent);
+  background: rgba(56, 189, 248, .085);
+}
+
+/* Layout */
+
+.container {
+  width: min(var(--content-width), 100%);
+  margin: 0 auto;
+  padding: 58px 28px 72px;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 18px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  width: 25px;
+  height: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(103, 215, 255, .5);
+  content: "";
+}
+
+h1 {
+  margin: 0;
+  color: #f3f7ff;
+  font-size: clamp(35px, 5vw, 49px);
+  font-weight: 760;
+  line-height: 1.25;
+  letter-spacing: -.045em;
+}
+
+h2,
+h3 {
+  line-height: 1.5;
+}
+
+p {
+  margin: 12px 0;
+}
+
+/* Hero */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 27px;
+  padding: 39px;
+  border: 1px solid var(--border-active);
+  border-radius: 22px;
   background:
-    linear-gradient(135deg,rgba(14,116,144,.16),rgba(17,24,39,.94) 62%),
-    var(--panel);
-  box-shadow:var(--shadow);
-  margin-bottom:20px;
+    radial-gradient(ellipse at 87% 8%, rgba(56, 189, 248, .16), transparent 38%),
+    radial-gradient(ellipse at 10% 100%, rgba(99, 102, 241, .075), transparent 45%),
+    linear-gradient(135deg, rgba(18, 33, 55, .97), rgba(10, 18, 33, .97));
+  box-shadow: var(--shadow), inset 0 1px rgba(255, 255, 255, .025);
 }
 
-.hero-kicker{
-  color:var(--accent2);
-  font-size:12px;
-  font-weight:700;
-  letter-spacing:1.7px;
-  text-transform:uppercase;
-  margin-bottom:12px;
+.hero::before {
+  position: absolute;
+  top: 0;
+  left: 39px;
+  width: 110px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  content: "";
 }
 
-.hero p{
-  color:#cbd5e1;
-  max-width:760px;
+.hero::after {
+  position: absolute;
+  right: -90px;
+  bottom: -165px;
+  width: 350px;
+  height: 350px;
+  border: 1px solid rgba(103, 215, 255, .10);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 32px rgba(103, 215, 255, .018),
+    0 0 0 70px rgba(103, 215, 255, .013);
+  pointer-events: none;
+  content: "";
 }
 
-.tags{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-top:20px;
+.hero-kicker {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 21px;
+  color: var(--accent);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
 }
 
-.tag{
-  font-size:12px;
-  color:#bae6fd;
-  border:1px solid rgba(56,189,248,.22);
-  background:rgba(56,189,248,.07);
-  padding:4px 10px;
-  border-radius:999px;
+.hero-kicker::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px rgba(119, 228, 194, .5);
+  content: "";
 }
 
-.card{
-  background:rgba(17,24,35,.88);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:24px;
-  margin-bottom:16px;
-  box-shadow:var(--shadow);
+.hero h1 {
+  position: relative;
+  z-index: 1;
 }
 
-.card h2{
-  margin:0 0 14px;
-  font-size:19px;
-  color:#cfe3ff;
-  border-left:3px solid var(--accent);
-  padding-left:11px;
+.hero .sub {
+  position: relative;
+  z-index: 1;
+  margin: 12px 0 24px;
+  color: #9fdfff;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: .035em;
+  line-height: 1.8;
 }
 
-.card h3{
-  font-size:15px;
-  color:#dbeafe;
-  margin:18px 0 6px;
+.hero p {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  color: #bdcbe0;
 }
 
-.en{
-  color:var(--muted);
-  font-size:13px;
-  margin-top:12px;
+.hero p strong {
+  color: #f1f7ff;
+  font-weight: 700;
 }
 
-.lead{
-  color:#dbeafe;
-  font-size:16px;
+.hero-divider {
+  position: relative;
+  z-index: 1;
+  height: 1px;
+  margin: 25px 0 22px;
+  background: linear-gradient(90deg, rgba(103, 215, 255, .35), rgba(148, 177, 214, .09), transparent);
 }
 
-.muted{color:var(--muted)}
-
-.small{
-  font-size:13px;
-  color:var(--muted);
+.tags {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 21px;
 }
 
-.flow{
-  display:flex;
-  align-items:stretch;
-  justify-content:center;
-  gap:8px;
-  margin:24px 0 16px;
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 29px;
+  padding: 4px 11px;
+  border: 1px solid rgba(103, 215, 255, .19);
+  border-radius: 7px;
+  color: #b9e7fa;
+  background: rgba(56, 189, 248, .055);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
-.flow-node{
-  flex:1;
-  min-width:0;
-  padding:15px 8px;
-  text-align:center;
-  background:rgba(30,41,59,.78);
-  border:1px solid rgba(125,211,252,.22);
-  border-radius:10px;
+/* Cards */
+
+.card {
+  position: relative;
+  margin-bottom: 17px;
+  padding: 30px 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(145deg, rgba(18, 30, 49, .88), rgba(11, 19, 34, .95));
+  box-shadow: 0 12px 35px rgba(0, 0, 0, .13);
+  transition: border-color .22s ease, box-shadow .22s ease;
 }
 
-.flow-node strong{
-  display:block;
-  color:#e0f2fe;
-  font-size:13px;
-  line-height:1.5;
+.card:hover {
+  border-color: rgba(103, 215, 255, .24);
+  box-shadow: 0 17px 42px rgba(0, 0, 0, .19);
 }
 
-.flow-node span{
-  display:block;
-  color:var(--muted);
-  font-size:11px;
-  margin-top:5px;
+.card h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 13px;
+  margin: 0 0 19px;
+  color: #e6f0ff;
+  font-size: 19px;
+  font-weight: 720;
+  letter-spacing: -.018em;
 }
 
-.flow-arrow{
-  display:flex;
-  align-items:center;
-  color:var(--accent);
-  font-size:20px;
-  flex-shrink:0;
+.card h2::before {
+  align-self: stretch;
+  flex: 0 0 3px;
+  min-height: 23px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--accent), rgba(56, 189, 248, .24));
+  box-shadow: 0 0 13px rgba(56, 189, 248, .13);
+  content: "";
 }
 
-.note{
-  padding:14px 16px;
-  border-left:3px solid var(--accent);
-  border-radius:0 8px 8px 0;
-  background:rgba(56,189,248,.07);
-  color:#cbd5e1;
-  margin-top:16px;
+.card h3 {
+  margin: 24px 0 7px;
+  color: #cfe3fa;
+  font-size: 15px;
+  font-weight: 700;
 }
 
-.warning{
-  border-left-color:#fbbf24;
-  background:rgba(251,191,36,.07);
+.card p {
+  color: #b5c4d9;
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
-  margin-top:16px;
+.card strong {
+  color: #e8f2ff;
+  font-weight: 680;
 }
 
-.mini{
-  padding:17px;
-  border:1px solid var(--border);
-  background:rgba(15,23,42,.5);
-  border-radius:10px;
-  min-width:0;
+.lead {
+  color: #dbeafe !important;
+  font-size: 16px;
+  line-height: 1.9;
 }
 
-.mini h3{
-  margin:0 0 7px;
-  font-size:15px;
+.muted,
+.small {
+  color: var(--muted);
 }
 
-.mini p{
-  margin:0;
-  color:#b9c7d8;
-  font-size:14px;
+.small {
+  font-size: 12px;
+  line-height: 1.85;
 }
 
-.code-flow{
-  margin:16px 0;
-  padding:17px;
-  border-radius:10px;
-  background:#0b1220;
-  border:1px solid rgba(148,163,184,.17);
-  color:#bae6fd;
-  font-family:Consolas,"SFMono-Regular",monospace;
-  font-size:13px;
-  line-height:1.9;
-  overflow-wrap:anywhere;
+.en {
+  margin-top: 19px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(148, 177, 214, .10);
+  color: #8498b4;
+  font-size: 12px;
+  line-height: 1.8;
 }
 
-.metric{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;
-  margin:18px 0;
+/* Causal flow */
+
+.flow {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 8px;
+  margin: 25px 0 16px;
+  padding: 17px;
+  border: 1px solid rgba(103, 215, 255, .13);
+  border-radius: 13px;
+  background: rgba(7, 16, 30, .48);
 }
 
-.metric-item{
-  padding:15px 12px;
-  border:1px solid var(--border);
-  border-radius:10px;
-  background:rgba(15,23,42,.5);
+.flow-node {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 18px 8px;
+  border: 1px solid rgba(125, 211, 252, .22);
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(24, 43, 67, .88), rgba(13, 25, 43, .9));
+  text-align: center;
 }
 
-.metric-item strong{
-  display:block;
-  font-size:15px;
-  color:#bae6fd;
-  margin-bottom:4px;
+.flow-node:first-child {
+  border-color: rgba(119, 228, 194, .28);
 }
 
-.metric-item span{
-  display:block;
-  font-size:12px;
-  color:var(--muted);
+.flow-node:last-child {
+  border-color: rgba(184, 167, 255, .29);
 }
 
-.list{
-  padding-left:20px;
-  margin:10px 0;
+.flow-node strong {
+  display: block;
+  color: #e0f2fe;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.55;
 }
 
-.list li{margin:7px 0}
-
-.check{
-  color:var(--green);
-  font-weight:600;
+.flow-node span {
+  display: block;
+  margin-top: 6px;
+  color: #91a6c1;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  line-height: 1.6;
 }
 
-.related a{
-  color:var(--accent);
-  text-decoration:none;
+.flow-arrow {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--accent);
+  font-size: 19px;
 }
 
-.related p{margin:7px 0}
+/* Content grids */
 
-hr{
-  border:0;
-  border-top:1px solid var(--border);
-  margin:22px 0;
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 19px;
 }
 
-/* footer */
-.site-footer{
-  text-align:center;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding-top:12px;
-  color:#8ea3be;
-  font-size:.95rem;
+.mini {
+  min-width: 0;
+  padding: 19px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(20, 35, 58, .78), rgba(11, 20, 36, .7));
+  transition: border-color .2s ease, background .2s ease;
 }
 
-@media(max-width:680px){
-  .container{padding:36px 16px 48px}
-  .hero{padding:22px}
-  .card{padding:19px}
-  .nav{padding:12px 14px}
-  .nav a{margin-left:8px;font-size:12px}
-  .flow{flex-direction:column;gap:6px}
-  .flow-arrow{justify-content:center;transform:rotate(90deg);height:18px}
-  .grid{grid-template-columns:1fr}
-  .metric{grid-template-columns:1fr}
+.mini:hover {
+  border-color: rgba(103, 215, 255, .23);
+  background: rgba(20, 35, 58, .85);
+}
+
+.mini h3 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 9px;
+  color: #d9ebff;
+  font-size: 14px;
+}
+
+.mini h3::before {
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  background: var(--accent);
+  content: "";
+}
+
+.mini p {
+  margin: 0;
+  color: #9eafc7;
+  font-size: 13px;
+  line-height: 1.85;
+}
+
+/* Response metrics */
+
+.metric {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.metric-item {
+  position: relative;
+  min-width: 0;
+  padding: 20px 17px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(155deg, rgba(20, 35, 58, .84), rgba(10, 19, 34, .85));
+}
+
+.metric-item::before {
+  position: absolute;
+  top: 0;
+  left: 17px;
+  width: 31px;
+  height: 2px;
+  background: var(--metric-color, var(--accent));
+  content: "";
+}
+
+.metric-item:nth-child(1) {
+  --metric-color: var(--green);
+}
+
+.metric-item:nth-child(2) {
+  --metric-color: var(--accent);
+}
+
+.metric-item:nth-child(3) {
+  --metric-color: var(--violet);
+}
+
+.metric-item strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--metric-color, var(--accent));
+  font-size: 15px;
+}
+
+.metric-item span {
+  display: block;
+  color: #9aabc4;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+/* Technical flow blocks */
+
+.code-flow {
+  margin: 20px 0;
+  padding: 22px 23px;
+  overflow-x: auto;
+  border: 1px solid rgba(103, 215, 255, .19);
+  border-radius: 12px;
+  color: #bdeaff;
+  background:
+    radial-gradient(ellipse at 0 0, rgba(56, 189, 248, .075), transparent 65%),
+    rgba(7, 15, 28, .94);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.code-flow::selection {
+  color: #07111e;
+  background: #8be2ff;
+}
+
+/* Lists */
+
+.list {
+  margin: 15px 0;
+  padding-left: 22px;
+}
+
+.list li {
+  margin: 10px 0;
+  padding-left: 3px;
+  color: #b5c4d9;
+}
+
+.list li::marker {
+  color: #63c9ef;
+}
+
+.check {
+  color: var(--green);
+  font-weight: 700;
+}
+
+/* Notes */
+
+.note {
+  margin-top: 20px;
+  padding: 15px 18px;
+  border: 1px solid rgba(103, 215, 255, .12);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+  color: #afbed2;
+  background: rgba(56, 189, 248, .055);
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.note strong {
+  color: #dff4ff;
+}
+
+.note.warning {
+  border-color: rgba(255, 199, 119, .18);
+  border-left-color: var(--yellow);
+  background: linear-gradient(100deg, rgba(245, 158, 11, .075), rgba(245, 158, 11, .018));
+}
+
+.note.warning strong {
+  color: #ffdaa0;
+}
+
+hr {
+  height: 1px;
+  margin: 23px 0;
+  border: 0;
+  background: var(--border);
+}
+
+/* Related pages */
+
+.related {
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(56, 189, 248, .07), transparent 45%),
+    linear-gradient(145deg, rgba(17, 29, 48, .96), rgba(10, 18, 32, .96));
+}
+
+.related h2 {
+  margin-bottom: 24px;
+}
+
+.related p {
+  margin: 10px 0;
+}
+
+.related p b {
+  color: #dbe8f9;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.related p:has(> b) {
+  margin-top: 23px;
+}
+
+.related p:has(> b):first-of-type {
+  margin-top: 0;
+}
+
+.related p a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #8ddfff;
+  font-size: 13px;
+}
+
+.related p a:hover {
+  color: #d3f5ff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Footer */
+
+.site-footer {
+  padding: 30px 24px 36px;
+  border-top: 1px solid rgba(148, 177, 214, .12);
+  background: rgba(6, 11, 21, .48);
+  color: #8093ae;
+  text-align: center;
+}
+
+.footer-brand {
+  margin-bottom: 12px;
+  color: #c1d0e4;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .13em;
+}
+
+.footer-description {
+  max-width: 800px;
+  margin: 0 auto;
+  color: #8193ac;
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+  margin-top: 21px;
+}
+
+.footer-links a {
+  color: #82cfea;
+  font-size: 12px;
+}
+
+.footer-links a:hover {
+  color: #d4f5ff;
+}
+
+/* Responsive */
+
+@media (max-width: 760px) {
+  .nav {
+    gap: 14px;
+    padding: 10px 18px;
+  }
+
+  .nav-links {
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-links a {
+    padding: 6px 9px;
+    font-size: 12px;
+  }
+
+  .container {
+    padding: 39px 18px 54px;
+  }
+
+  .hero {
+    padding: 30px 25px;
+    border-radius: 18px;
+  }
+
+  .hero::before {
+    left: 25px;
+  }
+
+  .card {
+    padding: 25px 23px;
+  }
+
+  .flow {
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .flow-node {
+    padding: 15px 5px;
+  }
+
+  .flow-node strong {
+    font-size: 12px;
+  }
+
+  .flow-arrow {
+    font-size: 15px;
+  }
+
+  .metric {
+    gap: 9px;
+  }
+
+  .metric-item {
+    padding: 17px 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  body {
+    font-size: 14px;
+  }
+
+  .nav {
+    min-height: 60px;
+    gap: 8px;
+    padding: 9px 12px;
+  }
+
+  .brand {
+    gap: 7px;
+    font-size: 14px;
+  }
+
+  .brand-mark {
+    width: 29px;
+    height: 29px;
+  }
+
+  .brand small {
+    font-size: 8px;
+  }
+
+  .nav-links {
+    gap: 1px;
+  }
+
+  .nav-links a {
+    min-height: 33px;
+    padding: 5px 7px;
+    font-size: 11px;
+  }
+
+  .container {
+    padding: 31px 14px 42px;
+  }
+
+  .hero {
+    padding: 25px 20px;
+    margin-bottom: 17px;
+  }
+
+  .hero::before {
+    left: 20px;
+  }
+
+  .hero-kicker {
+    font-size: 10px;
+  }
+
+  h1 {
+    font-size: 35px;
+  }
+
+  .hero .sub {
+    font-size: 11px;
+  }
+
+  .hero p {
+    font-size: 13px;
+  }
+
+  .tags {
+    gap: 6px;
+  }
+
+  .tag {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .card {
+    padding: 22px 18px;
+    margin-bottom: 13px;
+    border-radius: 13px;
+  }
+
+  .card h2 {
+    gap: 10px;
+    font-size: 17px;
+  }
+
+  .lead {
+    font-size: 15px;
+  }
+
+  .flow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .flow-node {
+    padding: 14px 12px;
+    text-align: left;
+  }
+
+  .flow-node strong {
+    font-size: 13px;
+  }
+
+  .flow-node span {
+    margin-top: 3px;
+  }
+
+  .flow-arrow {
+    justify-content: center;
+    height: 17px;
+    transform: rotate(90deg);
+  }
+
+  .grid,
+  .metric {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .mini {
+    padding: 17px;
+  }
+
+  .metric-item {
+    padding: 17px;
+  }
+
+  .code-flow {
+    padding: 17px 14px;
+    font-size: 11px;
+    line-height: 1.9;
+  }
+
+  .note {
+    padding: 13px 14px;
+    font-size: 12px;
+  }
+
+  .site-footer {
+    padding: 25px 17px 30px;
+  }
+
+  .footer-links {
+    gap: 10px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
+<header class="nav">
+  <a class="brand" href="/index.html" aria-label="HRTOS 首页">
+    <span class="brand-mark">H</span>
+    <span>
+      HRTOS
+      <small>REAL-TIME SYSTEMS</small>
+    </span>
+  </a>
+
+  <nav class="nav-links" aria-label="主导航">
     <a href="/index.html">首页</a>
     <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" class="active">System</a>
+    <a href="/system-view/index.html" class="active" aria-current="page">System</a>
     <a href="/docs/index.html">Docs</a>
-  </div>
-</div>
+  </nav>
+</header>
 
 <main class="container">
 
+  <div class="eyebrow">SYSTEM VIEW / 07</div>
+
   <header class="hero">
     <div class="hero-kicker">HRTOS / SYSTEM VIEW / 07</div>
+
     <h1>确定性因果链</h1>
-    <div class="sub">Deterministic Chain · 从事件发生到结果完成，分析实时系统的时间边界。</div>
+
+    <div class="sub">
+      Deterministic Chain · 从事件发生到结果完成，分析实时系统的时间边界。
+    </div>
+
     <p>
       实时系统不仅要回答“执行了什么”，还需要回答：
       <strong>事件何时被系统感知、经过哪些执行阶段、结果何时产生，以及这个时间是否满足要求。</strong>
     </p>
+
+    <div class="hero-divider"></div>
+
     <div class="tags">
       <span class="tag">Event-to-Response</span>
       <span class="tag">Timing Bound</span>
-      <span class="tag">Interrupt & Scheduling</span>
+      <span class="tag">Interrupt &amp; Scheduling</span>
       <span class="tag">WCET Analysis</span>
       <span class="tag">Verification</span>
     </div>
@@ -379,18 +1045,22 @@ hr{
 
   <section class="card">
     <h2>核心定义：把执行路径转化为时间模型</h2>
+
     <p class="lead">
       确定性因果链，是对一个系统事件如何沿着实际执行路径传播、处理并产生结果的结构化描述。
     </p>
+
     <p>
       它把事件来源、事件识别、中断处理、任务就绪、调度决策、任务执行、资源访问和结果输出连接起来，
       并为相关阶段建立明确的时间边界与验证条件。
     </p>
+
     <div class="note">
       <strong>关键区别：</strong>
       画出一条流程，只能说明可能的执行顺序；
       建立确定性因果链，还需要明确每个阶段的进入条件、执行路径、干扰因素、时间上界和完成判据。
     </div>
+
     <div class="en">
       A deterministic chain connects an event to its observable outcome through a bounded and analyzable execution path.
     </div>
@@ -398,6 +1068,7 @@ hr{
 
   <section class="card">
     <h2>1. 因果链的基本结构</h2>
+
     <p>
       对于由外部事件触发、需要任务参与处理的典型实时场景，可以使用下面的分析路径：
     </p>
@@ -405,27 +1076,35 @@ hr{
     <div class="flow">
       <div class="flow-node">
         <strong>事件发生</strong>
-        <span>Event</span>
+        <span>EVENT</span>
       </div>
-      <div class="flow-arrow">→</div>
+
+      <div class="flow-arrow" aria-hidden="true">→</div>
+
       <div class="flow-node">
         <strong>事件识别</strong>
-        <span>Detection</span>
+        <span>DETECTION</span>
       </div>
-      <div class="flow-arrow">→</div>
+
+      <div class="flow-arrow" aria-hidden="true">→</div>
+
       <div class="flow-node">
         <strong>中断 / 通知</strong>
-        <span>ISR / Signal</span>
+        <span>ISR / SIGNAL</span>
       </div>
-      <div class="flow-arrow">→</div>
+
+      <div class="flow-arrow" aria-hidden="true">→</div>
+
       <div class="flow-node">
         <strong>调度与切换</strong>
-        <span>Scheduling</span>
+        <span>SCHEDULING</span>
       </div>
-      <div class="flow-arrow">→</div>
+
+      <div class="flow-arrow" aria-hidden="true">→</div>
+
       <div class="flow-node">
         <strong>处理与输出</strong>
-        <span>Execution</span>
+        <span>EXECUTION</span>
       </div>
     </div>
 
@@ -438,14 +1117,17 @@ hr{
         <h3>执行顺序</h3>
         <p>哪些阶段存在先后依赖？是否可能被高优先级中断、任务或资源竞争打断？</p>
       </div>
+
       <div class="mini">
         <h3>时间边界</h3>
         <p>每个阶段最多需要多少时间？哪些延迟来自硬件，哪些来自内核和应用程序？</p>
       </div>
+
       <div class="mini">
         <h3>状态条件</h3>
         <p>事件到达时，CPU 正在执行什么？目标任务是否就绪？是否存在临界区或阻塞？</p>
       </div>
+
       <div class="mini">
         <h3>完成判据</h3>
         <p>以任务开始、数据处理完成，还是物理输出生效作为链路的终点？</p>
@@ -455,9 +1137,11 @@ hr{
 
   <section class="card">
     <h2>2. 事件层：确定因果分析的起点</h2>
+
     <p>
       因果链必须从可识别的事件开始。常见来源包括：
     </p>
+
     <ul class="list">
       <li><strong>外部事件：</strong>GPIO 输入变化、传感器信号、外部设备请求。</li>
       <li><strong>定时事件：</strong>定时器中断、系统 Tick、周期性采样触发。</li>
@@ -479,6 +1163,7 @@ hr{
 
   <section class="card">
     <h2>3. 中断与调度层：从事件到任务执行</h2>
+
     <p>
       对中断驱动的任务处理路径，需要区分几个经常被混为一谈的时间点：
     </p>
@@ -488,10 +1173,12 @@ hr{
         <strong>中断响应</strong>
         <span>事件到 ISR 开始执行</span>
       </div>
+
       <div class="metric-item">
         <strong>任务响应</strong>
         <span>事件到目标任务开始处理</span>
       </div>
+
       <div class="metric-item">
         <strong>结果响应</strong>
         <span>事件到预期结果实际完成</span>
@@ -505,6 +1192,7 @@ hr{
     </p>
 
     <h3>需要逐项核对的因素</h3>
+
     <ul class="list">
       <li>中断何时能够被 CPU 接受，是否受到中断屏蔽或更高优先级中断影响。</li>
       <li>中断处理程序执行了多少工作，是否存在嵌套和共享资源访问。</li>
@@ -522,6 +1210,7 @@ hr{
 
   <section class="card">
     <h2>4. 执行层：WCET 是重要边界，而不是全部证明</h2>
+
     <p>
       当目标任务开始运行后，需要分析从任务入口到目标操作完成的执行路径。
       这里的关键概念是最坏情况执行时间（Worst-Case Execution Time，WCET）。
@@ -540,6 +1229,7 @@ hr{
     </p>
 
     <h3>8051 平台上的执行时间分析</h3>
+
     <ul class="list">
       <li>从目标芯片和编译配置出发，确认指令集、时钟条件和实际生成的机器代码。</li>
       <li>检查条件分支、循环上界、调用路径和可达代码，识别可能的最长执行路径。</li>
@@ -556,6 +1246,7 @@ hr{
 
   <section class="card">
     <h2>5. 哪些因素会让时间边界变得难以证明？</h2>
+
     <p>
       真正的问题不是某项机制的名称，而是它是否引入了未建模、无界或难以验证的行为。
     </p>
@@ -565,22 +1256,27 @@ hr{
         <h3>执行路径不明确</h3>
         <p>循环次数、递归深度或条件分支缺少可验证的边界，使最长路径难以确定。</p>
       </div>
+
       <div class="mini">
         <h3>中断干扰未建模</h3>
         <p>嵌套深度、到达频率、屏蔽区和处理时间未纳入响应时间分析。</p>
       </div>
+
       <div class="mini">
         <h3>资源等待无上界</h3>
         <p>锁竞争、任务阻塞或外部设备等待可能使完成时间超出预期。</p>
       </div>
+
       <div class="mini">
         <h3>内存行为不明确</h3>
         <p>分配失败、碎片、资源耗尽或访问路径不确定，可能影响执行和完成时间。</p>
       </div>
+
       <div class="mini">
         <h3>调度假设不成立</h3>
         <p>优先级、任务状态或调度触发条件与分析模型不一致。</p>
       </div>
+
       <div class="mini">
         <h3>验证范围不足</h3>
         <p>仅测试常见路径或平均负载，没有覆盖最不利状态和关键干扰组合。</p>
@@ -596,11 +1292,13 @@ hr{
 
   <section class="card">
     <h2>6. 从“可预测”走向“可验证”</h2>
+
     <p>
       确定性不能只依赖设计者的直觉。它需要明确的假设、可复查的实现证据，以及与目标平台相匹配的验证方法。
     </p>
 
     <h3>建议建立的验证链</h3>
+
     <div class="code-flow">系统需求
   ↓ 定义触发条件、截止时间和完成判据
 事件模型
@@ -629,6 +1327,7 @@ hr{
 
   <section class="card">
     <h2>7. 如何判断一条因果链满足实时要求？</h2>
+
     <p>
       判断依据不是“系统运行得很快”，而是从明确的起点到明确的终点，
       在规定的工作条件与假设下，能够证明或充分论证其响应时间满足应用要求。
@@ -639,14 +1338,17 @@ hr{
         <h3>起点明确</h3>
         <p>说明计时从物理事件、硬件捕获、ISR 入口还是软件识别时刻开始。</p>
       </div>
+
       <div class="mini">
         <h3>终点明确</h3>
         <p>说明计时结束于任务启动、计算完成、输出寄存器更新还是外部信号生效。</p>
       </div>
+
       <div class="mini">
         <h3>约束明确</h3>
         <p>给出截止时间、输入到达条件、系统负载和允许的干扰范围。</p>
       </div>
+
       <div class="mini">
         <h3>证据充分</h3>
         <p>时间上界、实现路径和目标平台验证能够相互对应，已知限制得到记录。</p>
@@ -663,6 +1365,7 @@ hr{
 
   <section class="card">
     <h2>8. 与 System View 其他模型的关系</h2>
+
     <p>
       确定性因果链不是孤立的功能模块，而是将前面各个系统模型连接起来的分析视角。
     </p>
@@ -684,13 +1387,16 @@ hr{
 
   <section class="card">
     <h2>语义总结</h2>
+
     <p class="lead">
       确定性因果链的核心，是让事件到结果之间的执行路径、状态条件与时间边界变得可描述、可分析、可验证。
     </p>
+
     <p>
       一个实时系统不仅需要正确地执行任务，还需要在规定的条件下，于规定的时间范围内完成关键工作。
       对这一目标的论证，必须同时覆盖内核机制、应用执行路径、硬件行为和实际运行条件。
     </p>
+
     <div class="en">
       Deterministic behavior requires an analyzable event-to-outcome path, explicit timing constraints, and evidence that the required deadlines are met under stated assumptions.
     </div>
@@ -722,20 +1428,22 @@ hr{
 </main>
 
 <footer class="site-footer">
-  © 2017–2026 HRTOS · SYSTEM VIEW
+  <div class="footer-brand">
+    © 2017–2026 HRTOS · SYSTEM VIEW
+  </div>
 
-  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
+  <div class="footer-description">
     System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
     该层关注“系统如何运行”，而非“为什么这样设计”。
   </div>
 
-  <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
-  </div>
+  <nav class="footer-links" aria-label="System View 页面导航">
+    <a href="/system-view/index.html">System 首页</a>
+    <a href="/system-view/01-execution-flow.html">执行流</a>
+    <a href="/system-view/02-task-lifecycle.html">任务生命周期</a>
+    <a href="/system-view/04-scheduler-cycle.html">调度周期</a>
+    <a href="/why/index.html">→ WHY Layer</a>
+  </nav>
 </footer>
 
 </body>

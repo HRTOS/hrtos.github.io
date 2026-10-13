@@ -7,287 +7,1079 @@
 
 <title>Interrupt Flow | HRTOS 8051 RTOS System View</title>
 <meta name="description" content="HRTOS 8051 实时操作系统中断流模型：分析中断响应、嵌套处理、上下文保护、中断退出与任务调度之间的关系。">
-
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="interrupt-flow">
+<meta name="theme-color" content="#070d18">
 
 <style>
-:root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+:root {
+  color-scheme: dark;
+  --bg: #070d18;
+  --surface: #0c1525;
+  --surface-2: #101d30;
+  --surface-3: #13243a;
+  --text: #e8f0fc;
+  --muted: #91a4bf;
+  --subtle: #617590;
+  --accent: #52d6ff;
+  --blue: #6e9cff;
+  --green: #65e6c1;
+  --amber: #f2c879;
+  --violet: #b6a0ff;
+  --border: rgba(151, 180, 220, .15);
+  --border-strong: rgba(82, 214, 255, .30);
+  --shadow: 0 22px 65px rgba(0, 0, 0, .24);
+  --content: 1120px;
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+* {
+  box-sizing: border-box;
 }
 
-/* NAV — 保留原有结构与样式 */
-.nav{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:14px 24px;
-  border-bottom:1px solid rgba(148,163,184,.12);
-  background:rgba(11,15,20,.92);
-  position:sticky;
-  top:0;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 92px;
 }
 
-.nav a{
-  color:var(--muted);
-  margin-left:14px;
-  text-decoration:none;
-  font-size:14px;
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 48% -16%, rgba(41, 103, 191, .19), transparent 46%),
+    radial-gradient(ellipse at 100% 42%, rgba(24, 116, 160, .055), transparent 36%),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
 }
 
-.nav a.active{
-  color:#cfe3ff;
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  background-image:
+    linear-gradient(rgba(142, 174, 219, .025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(142, 174, 219, .025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 78%);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color .2s ease, border-color .2s ease,
+    background .2s ease, transform .2s ease;
+}
+
+a:hover {
+  color: #b5efff;
+}
+
+::selection {
+  color: #fff;
+  background: rgba(51, 153, 255, .35);
+}
+
+/* Navigation */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  min-height: 72px;
+  padding: 0 max(28px, calc((100vw - 1240px) / 2));
+  border-bottom: 1px solid rgba(151, 180, 220, .12);
+  background: rgba(7, 13, 24, .84);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.brand-mark {
+  position: relative;
+  display: grid;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  border: 1px solid rgba(82, 214, 255, .55);
+  border-radius: 9px;
+  background: linear-gradient(145deg, rgba(82, 214, 255, .17), rgba(110, 156, 255, .04));
+  box-shadow: inset 0 0 15px rgba(82, 214, 255, .08);
+}
+
+.brand-mark::before,
+.brand-mark::after {
+  position: absolute;
+  width: 11px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  content: "";
+}
+
+.brand-mark::before {
+  transform: translateY(-3px);
+}
+
+.brand-mark::after {
+  width: 7px;
+  transform: translateY(3px);
+  opacity: .7;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.nav a {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.nav-links a {
+  padding: 9px 13px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, .035);
+}
+
+.nav-links a.active {
+  color: var(--accent);
+  border-color: rgba(82, 214, 255, .17);
+  background: rgba(82, 214, 255, .065);
 }
 
 /* Layout */
-.container{
-  max-width:920px;
-  margin:0 auto;
-  padding:60px 24px;
+
+.container {
+  width: min(var(--content), calc(100% - 48px));
+  margin: 0 auto;
+  padding: 0 0 96px;
 }
 
-.hero{
-  margin-bottom:34px;
+/* Hero */
+
+.hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(265px, .8fr);
+  align-items: center;
+  gap: 44px;
+  min-height: 430px;
+  padding: 75px 0 65px;
+  border-bottom: 1px solid var(--border);
 }
 
-.eyebrow{
-  color:#7dd3fc;
-  font-size:12px;
-  font-weight:700;
-  letter-spacing:.14em;
-  margin-bottom:12px;
+.hero::before {
+  position: absolute;
+  top: 30px;
+  left: -55px;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: rgba(43, 127, 255, .075);
+  filter: blur(78px);
+  content: "";
+  pointer-events: none;
 }
 
-h1{
-  font-size:38px;
-  line-height:1.3;
-  margin:0 0 14px;
+.hero-copy {
+  position: relative;
+  z-index: 1;
 }
 
-h2{
-  margin:0 0 12px;
-  font-size:19px;
-  line-height:1.5;
-  color:#cfe3ff;
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 22px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .2em;
+  text-transform: uppercase;
 }
 
-p{
-  margin:0 0 12px;
+.eyebrow::before {
+  width: 24px;
+  height: 1px;
+  background: var(--accent);
+  content: "";
+  box-shadow: 0 0 12px rgba(82, 214, 255, .7);
 }
 
-p:last-child{
-  margin-bottom:0;
+.hero h1 {
+  max-width: 720px;
+  margin: 0;
+  font-size: clamp(35px, 4.2vw, 52px);
+  font-weight: 760;
+  letter-spacing: -.045em;
+  line-height: 1.25;
 }
 
-.sub{
-  color:var(--muted);
-  margin-bottom:20px;
-  max-width:760px;
+.hero h1 .en-title {
+  display: block;
+  margin-top: 7px;
+  color: transparent;
+  background: linear-gradient(100deg, #eaf5ff 5%, #7ddcff 54%, #8baeff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
-.tags{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
+.sub {
+  max-width: 690px;
+  margin: 24px 0 25px;
+  color: #9aadc6;
+  font-size: 14px;
+  line-height: 2;
 }
 
-.tag{
-  border:1px solid var(--border);
-  border-radius:999px;
-  padding:4px 10px;
-  color:#cbd5e1;
-  font-size:12px;
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-/* Cards */
-.card{
-  background:rgba(17,24,35,.92);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:22px;
-  margin-bottom:16px;
-  box-shadow:var(--shadow);
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .018);
+  color: #bac9dd;
+  font-size: 11px;
+  letter-spacing: .025em;
 }
 
-.card h2{
-  border-left:3px solid var(--accent);
-  padding-left:10px;
+.tag::before {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  content: "";
 }
 
-.en{
-  color:var(--muted);
-  font-size:13px;
-  margin-top:12px;
+/* Hero interrupt console */
+
+.hero-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 23px;
+  border: 1px solid var(--border-strong);
+  border-radius: 17px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(82, 214, 255, .085), transparent 66%),
+    linear-gradient(145deg, rgba(16, 29, 48, .95), rgba(9, 17, 31, .98));
+  box-shadow: var(--shadow), 0 0 44px rgba(35, 140, 255, .07);
 }
 
-/* Flow diagram */
-.flow{
-  background:#0b1220;
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:18px;
-  margin:16px 0;
+.hero-panel::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 85px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent));
+  content: "";
 }
 
-.flow-node{
-  background:#111c2c;
-  border:1px solid rgba(56,189,248,.3);
-  border-radius:9px;
-  padding:13px 15px;
-  text-align:center;
+.panel-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid var(--border);
 }
 
-.flow-node strong{
-  display:block;
-  color:#e0f2fe;
-  font-size:14px;
+.panel-label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .16em;
 }
 
-.flow-node span{
-  display:block;
-  color:var(--muted);
-  font-size:12px;
-  margin-top:3px;
+.panel-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green);
+  font-size: 10px;
 }
 
-.flow-arrow{
-  text-align:center;
-  color:#64748b;
-  line-height:2;
-  font-size:13px;
+.panel-indicator::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px rgba(101, 230, 193, .65);
+  content: "";
 }
 
-.flow-branches{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
-  margin-top:12px;
+.signal {
+  position: relative;
+  height: 91px;
+  margin: 15px 0;
+  overflow: hidden;
+  border: 1px solid rgba(82, 214, 255, .13);
+  border-radius: 9px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 17px,
+      rgba(82, 214, 255, .035) 18px
+    ),
+    rgba(4, 12, 24, .55);
 }
 
-/* Technical details */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
-  margin-top:16px;
+.signal svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-.item{
-  background:#0f1722;
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:15px;
+.signal-label {
+  position: absolute;
+  top: 7px;
+  left: 10px;
+  color: #718aa8;
+  font-size: 9px;
+  letter-spacing: .12em;
 }
 
-.item strong{
-  display:block;
-  color:#7dd3fc;
-  font-size:14px;
-  margin-bottom:5px;
+.console-flow {
+  display: grid;
+  gap: 0;
 }
 
-.item p{
-  color:#cbd5e1;
-  font-size:13px;
-  line-height:1.75;
+.console-step {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 9px;
+  border-bottom: 1px solid rgba(151, 180, 220, .09);
 }
 
-.note{
-  border-left:3px solid #60a5fa;
-  padding:12px 15px;
-  background:rgba(30,41,59,.45);
-  color:#cbd5e1;
-  font-size:14px;
-  margin-top:14px;
+.console-step:last-child {
+  border-bottom: 0;
 }
 
-ul{
-  padding-left:21px;
-  margin:8px 0 0;
+.step-no {
+  color: #557798;
+  font-size: 10px;
+  font-weight: 750;
 }
 
-li{
-  color:#cbd5e1;
-  font-size:14px;
-  margin-bottom:8px;
+.console-step strong {
+  display: block;
+  color: #e3f1ff;
+  font-size: 11px;
+  font-weight: 700;
 }
 
-li:last-child{
-  margin-bottom:0;
+.console-step span {
+  color: #7f95b1;
+  font-size: 10px;
 }
 
-.related{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
+.step-status {
+  padding: 3px 6px;
+  border: 1px solid rgba(82, 214, 255, .17);
+  border-radius: 4px;
+  color: var(--accent) !important;
+  font-size: 9px !important;
 }
 
-.related a{
-  display:block;
-  border:1px solid var(--border);
-  border-radius:9px;
-  padding:13px 15px;
-  background:#0f1722;
-  text-decoration:none;
+.panel-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 13px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  color: #6e84a0;
+  font-size: 9px;
+  letter-spacing: .07em;
 }
 
-.related a:hover{
-  border-color:rgba(56,189,248,.5);
+/* Sections */
+
+.card {
+  position: relative;
+  margin-top: 23px;
+  padding: 30px 32px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(16, 28, 46, .87), rgba(10, 18, 32, .93));
+  box-shadow: 0 15px 40px rgba(0, 0, 0, .10);
+  transition: border-color .25s ease, transform .25s ease,
+    box-shadow .25s ease;
 }
 
-.related strong{
-  display:block;
-  color:#e2e8f0;
-  font-size:14px;
+.card:hover {
+  border-color: rgba(122, 174, 225, .27);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, .17);
 }
 
-.related span{
-  color:var(--muted);
-  font-size:12px;
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 21px;
 }
 
-/* Footer — 保留原有结构与内容 */
-.site-footer{
-  text-align:center;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding:18px 12px;
-  color:#8ea3be;
-  font-size:.95rem;
+.section-index {
+  flex: 0 0 auto;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(82, 214, 255, .23);
+  border-radius: 10px;
+  background: rgba(82, 214, 255, .055);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .03em;
 }
 
-@media(max-width:640px){
-  .container{
-    padding:38px 18px;
+.section-heading h2 {
+  margin: 0;
+  color: #e5efff;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: -.015em;
+}
+
+.section-kicker {
+  display: block;
+  margin-top: 2px;
+  color: var(--subtle);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.card p {
+  margin: 0 0 14px;
+  color: #c1cee0;
+  font-size: 14px;
+  line-height: 2;
+}
+
+.card p:last-child {
+  margin-bottom: 0;
+}
+
+.card strong {
+  color: #e8f2ff;
+  font-weight: 650;
+}
+
+.en {
+  margin-top: 19px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(151, 180, 220, .11);
+  color: #8197b4;
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+/* Technical information grid */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.item {
+  position: relative;
+  overflow: hidden;
+  min-height: 135px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(19, 36, 58, .78), rgba(11, 20, 35, .78));
+  transition: transform .2s ease, border-color .2s ease,
+    background .2s ease;
+}
+
+.item::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 2px;
+  background: var(--item-color, var(--accent));
+  content: "";
+}
+
+.item:nth-child(4n + 2) {
+  --item-color: var(--blue);
+}
+
+.item:nth-child(4n + 3) {
+  --item-color: var(--green);
+}
+
+.item:nth-child(4n + 4) {
+  --item-color: var(--violet);
+}
+
+.item:hover {
+  transform: translateY(-3px);
+  border-color: rgba(82, 214, 255, .29);
+  background: linear-gradient(135deg, rgba(21, 43, 68, .88), rgba(11, 20, 35, .88));
+}
+
+.item strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--item-color, var(--accent));
+  font-size: 13px;
+}
+
+.item p {
+  margin: 0;
+  color: #aabbd0;
+  font-size: 12px;
+  line-height: 1.95;
+}
+
+/* Flow diagrams */
+
+.flow {
+  position: relative;
+  overflow: hidden;
+  margin: 25px 0 19px;
+  padding: 27px;
+  border: 1px solid rgba(117, 160, 213, .19);
+  border-radius: 15px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(44, 109, 183, .11), transparent 60%),
+    #091322;
+}
+
+.flow-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  color: #8ea6c5;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .14em;
+}
+
+.flow-label span:last-child {
+  color: #59718f;
+  font-weight: 500;
+  letter-spacing: .04em;
+}
+
+.flow-node {
+  position: relative;
+  width: min(100%, 450px);
+  margin: 0 auto;
+  padding: 16px 20px;
+  border: 1px solid rgba(82, 214, 255, .24);
+  border-radius: 10px;
+  background: linear-gradient(110deg, rgba(18, 39, 63, .95), rgba(15, 29, 48, .95));
+  text-align: center;
+  transition: border-color .2s ease, background .2s ease;
+}
+
+.flow-node:hover {
+  border-color: rgba(82, 214, 255, .52);
+}
+
+.flow-node strong {
+  display: block;
+  color: #e5f5ff;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.flow-node span {
+  display: block;
+  margin-top: 4px;
+  color: #91a6c0;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.flow-node.hardware {
+  border-color: rgba(110, 156, 255, .36);
+  background: linear-gradient(110deg, rgba(24, 42, 78, .85), rgba(15, 29, 48, .95));
+}
+
+.flow-node.isr {
+  border-color: rgba(82, 214, 255, .4);
+  background: linear-gradient(110deg, rgba(15, 49, 68, .8), rgba(12, 29, 43, .96));
+}
+
+.flow-node.return {
+  border-color: rgba(101, 230, 193, .33);
+  background: linear-gradient(110deg, rgba(15, 53, 53, .68), rgba(12, 29, 43, .96));
+}
+
+.flow-arrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  color: #7592b4;
+  font-size: 11px;
+  text-align: center;
+}
+
+.flow-arrow::before {
+  display: block;
+  width: 1px;
+  height: 19px;
+  background: linear-gradient(to bottom, rgba(82, 214, 255, .12), rgba(82, 214, 255, .75));
+  content: "";
+}
+
+.flow-arrow span {
+  color: #9bb0c9;
+}
+
+.flow-branches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  margin-top: 5px;
+}
+
+.flow-branches .flow-node {
+  width: 100%;
+  min-height: 105px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.flow-caption {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(151, 180, 220, .11);
+  color: #778ba7;
+  font-size: 11px;
+  line-height: 1.9;
+}
+
+/* Interrupt layers */
+
+.interrupt-stack {
+  display: grid;
+  gap: 8px;
+  margin: 23px 0;
+}
+
+.interrupt-layer {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 15px 17px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(12, 24, 41, .8);
+}
+
+.layer-number {
+  color: #52799d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.layer-content strong {
+  display: block;
+  color: #dcecff;
+  font-size: 12px;
+}
+
+.layer-content span {
+  display: block;
+  margin-top: 3px;
+  color: #8da3be;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.layer-connector {
+  width: 1px;
+  height: 13px;
+  margin-left: 52px;
+  background: linear-gradient(to bottom, rgba(82, 214, 255, .7), rgba(82, 214, 255, .12));
+}
+
+/* Notes and lists */
+
+.note {
+  margin-top: 21px;
+  padding: 16px 19px;
+  border: 1px solid rgba(82, 214, 255, .14);
+  border-left: 3px solid #4bbbe8;
+  border-radius: 0 10px 10px 0;
+  background: linear-gradient(90deg, rgba(34, 113, 163, .105), rgba(34, 113, 163, .018));
+  color: #afc3da;
+  font-size: 12px;
+  line-height: 1.95;
+}
+
+ul {
+  display: grid;
+  gap: 9px;
+  margin: 15px 0 19px;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  position: relative;
+  padding-left: 22px;
+  color: #b8c7da;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+li::before {
+  position: absolute;
+  top: .75em;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border: 1px solid #52c9ef;
+  border-radius: 2px;
+  background: rgba(82, 214, 255, .15);
+  content: "";
+}
+
+.card p a {
+  border-bottom: 1px solid rgba(82, 214, 255, .3);
+}
+
+.card p a:hover {
+  border-bottom-color: var(--accent);
+}
+
+/* Related pages */
+
+.related {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.related a {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 91px;
+  padding: 18px 43px 18px 18px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(13, 25, 42, .76);
+}
+
+.related a::after {
+  position: absolute;
+  top: 50%;
+  right: 17px;
+  color: #5f83ad;
+  font-size: 17px;
+  content: "↗";
+  transform: translateY(-50%);
+  transition: color .2s ease, transform .2s ease;
+}
+
+.related a:hover {
+  transform: translateY(-2px);
+  border-color: rgba(82, 214, 255, .32);
+  background: rgba(24, 47, 72, .48);
+}
+
+.related a:hover::after {
+  color: var(--accent);
+  transform: translate(2px, -50%);
+}
+
+.related strong {
+  color: #e3efff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.related span {
+  margin-top: 4px;
+  color: #8297b2;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+/* Footer */
+
+.site-footer {
+  padding: 36px 24px 30px;
+  border-top: 1px solid var(--border);
+  background: rgba(5, 10, 18, .55);
+  color: #7f93ad;
+  text-align: center;
+}
+
+.footer-brand {
+  margin-bottom: 10px;
+  color: #c7d9ef;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+
+.footer-description {
+  max-width: 800px;
+  margin: 0 auto;
+  font-size: 11px;
+  line-height: 2;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 22px;
+  margin-top: 21px;
+}
+
+.footer-links a {
+  color: #79ccef;
+  font-size: 11px;
+}
+
+.footer-links a:hover {
+  color: #d0f4ff;
+}
+
+/* Responsive */
+
+@media (min-width: 900px) {
+  .card {
+    padding: 32px 36px;
   }
 
-  h1{
-    font-size:30px;
+  .card:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 850px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    min-height: auto;
+    padding: 58px 0 42px;
   }
 
-  .card{
-    padding:18px;
+  .hero-panel {
+    max-width: 540px;
+  }
+
+  .hero h1 {
+    font-size: clamp(35px, 6vw, 47px);
+  }
+}
+
+@media (max-width: 640px) {
+  html {
+    scroll-padding-top: 76px;
+  }
+
+  .nav {
+    min-height: 62px;
+    gap: 10px;
+    padding: 0 14px;
+  }
+
+  .brand {
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .brand-mark {
+    width: 26px;
+    height: 26px;
+  }
+
+  .nav-links {
+    gap: 0;
+  }
+
+  .nav-links a {
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  .container {
+    width: calc(100% - 32px);
+    padding-bottom: 58px;
+  }
+
+  .hero {
+    padding: 44px 0 34px;
+    gap: 25px;
+  }
+
+  .eyebrow {
+    margin-bottom: 17px;
+    font-size: 9px;
+  }
+
+  .hero h1 {
+    font-size: 34px;
+  }
+
+  .sub {
+    margin: 18px 0 20px;
+    font-size: 13px;
+    line-height: 1.95;
+  }
+
+  .tag {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  .hero-panel {
+    padding: 17px;
+  }
+
+  .card {
+    margin-top: 15px;
+    padding: 22px 18px;
+    border-radius: 14px;
+  }
+
+  .section-heading {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .section-index {
+    width: 31px;
+    height: 31px;
+    border-radius: 8px;
+  }
+
+  .section-heading h2 {
+    font-size: 17px;
+  }
+
+  .card p {
+    font-size: 13px;
+    line-height: 1.95;
   }
 
   .grid,
   .flow-branches,
-  .related{
-    grid-template-columns:1fr;
+  .related {
+    grid-template-columns: 1fr;
+  }
+
+  .item {
+    min-height: auto;
+    padding: 17px;
+  }
+
+  .flow {
+    padding: 18px 13px;
+  }
+
+  .flow-label {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .flow-node {
+    padding: 14px 10px;
+  }
+
+  .flow-branches .flow-node {
+    min-height: 84px;
+  }
+
+  .interrupt-layer {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .layer-connector {
+    margin-left: 35px;
+  }
+
+  .note {
+    padding: 13px 14px;
+    font-size: 11px;
+  }
+
+  .related a {
+    min-height: 78px;
+  }
+
+  .site-footer {
+    padding: 28px 18px;
+  }
+
+  .footer-links {
+    gap: 10px 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
   }
 }
 </style>
@@ -295,39 +1087,125 @@ li:last-child{
 
 <body>
 
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
+<nav class="nav" aria-label="主导航">
+  <a class="brand" href="/index.html" aria-label="HRTOS 首页">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span>HRTOS</span>
+  </a>
+
+  <div class="nav-links">
     <a href="/index.html">首页</a>
     <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" class="active">System</a>
+    <a href="/system-view/index.html" class="active" aria-current="page">System</a>
     <a href="/docs/index.html">Docs</a>
   </div>
-</div>
+</nav>
 
 <main class="container">
 
   <header class="hero">
-    <div class="eyebrow">SYSTEM VIEW / INTERRUPT FLOW</div>
+    <div class="hero-copy">
+      <div class="eyebrow">SYSTEM VIEW / INTERRUPT FLOW</div>
 
-    <h1>中断流模型（Interrupt Flow）</h1>
+      <h1>
+        中断流模型
+        <span class="en-title">Interrupt Flow</span>
+      </h1>
 
-    <p class="sub">
-      中断是处理器响应外部事件和内部时基的重要机制。
-      在实时操作系统中，中断处理不仅决定事件响应路径，
-      也会影响任务执行连续性、调度时机、上下文保护与最坏响应时间。
-    </p>
+      <p class="sub">
+        中断是处理器响应外部事件和内部时基的重要机制。
+        在实时操作系统中，中断处理不仅决定事件响应路径，
+        也会影响任务执行连续性、调度时机、上下文保护与最坏响应时间。
+      </p>
 
-    <div class="tags">
-      <span class="tag">Interrupt Response</span>
-      <span class="tag">Nested Interrupts</span>
-      <span class="tag">Context Protection</span>
-      <span class="tag">8051 Architecture</span>
+      <div class="tags">
+        <span class="tag">Interrupt Response</span>
+        <span class="tag">Nested Interrupts</span>
+        <span class="tag">Context Protection</span>
+        <span class="tag">8051 Architecture</span>
+      </div>
     </div>
+
+    <aside class="hero-panel" aria-label="中断处理路径概览">
+      <div class="panel-top">
+        <span class="panel-label">INTERRUPT PIPELINE</span>
+        <span class="panel-indicator">CONTROL FLOW</span>
+      </div>
+
+      <div class="signal">
+        <span class="signal-label">INTERRUPT EVENT / CONCEPTUAL WAVEFORM</span>
+        <svg viewBox="0 0 320 75" role="img" aria-label="中断信号的概念示意波形">
+          <defs>
+            <linearGradient id="signalGradient" x1="0" x2="1">
+              <stop offset="0%" stop-color="#52d6ff" stop-opacity=".3"/>
+              <stop offset="50%" stop-color="#52d6ff"/>
+              <stop offset="100%" stop-color="#6e9cff"/>
+            </linearGradient>
+          </defs>
+          <path d="M0 53 H42 V53 H57 V20 H93 V53 H143 V53 H158 V20 H190 V53 H238 V53 H253 V20 H286 V53 H320"
+                fill="none" stroke="url(#signalGradient)" stroke-width="2"
+                stroke-linejoin="round"/>
+          <path d="M0 62 H320" stroke="#36506d" stroke-width=".7"
+                stroke-dasharray="3 5"/>
+          <path d="M57 12 V66 M158 12 V66 M253 12 V66"
+                stroke="#52d6ff" stroke-opacity=".19" stroke-width="1"
+                stroke-dasharray="3 4"/>
+        </svg>
+      </div>
+
+      <div class="console-flow">
+        <div class="console-step">
+          <span class="step-no">01</span>
+          <div>
+            <strong>Request</strong>
+            <span>请求产生与等待</span>
+          </div>
+          <span class="step-status">EVENT</span>
+        </div>
+
+        <div class="console-step">
+          <span class="step-no">02</span>
+          <div>
+            <strong>Acceptance</strong>
+            <span>硬件接受与入口</span>
+          </div>
+          <span class="step-status">ENTRY</span>
+        </div>
+
+        <div class="console-step">
+          <span class="step-no">03</span>
+          <div>
+            <strong>ISR / Context</strong>
+            <span>中断执行与状态保护</span>
+          </div>
+          <span class="step-status">ISR</span>
+        </div>
+
+        <div class="console-step">
+          <span class="step-no">04</span>
+          <div>
+            <strong>Exit / Return</strong>
+            <span>返回或进入后续内核路径</span>
+          </div>
+          <span class="step-status">EXIT</span>
+        </div>
+      </div>
+
+      <div class="panel-bottom">
+        <span>REQUEST → RESPONSE → RETURN</span>
+        <span>8051 / RTOS</span>
+      </div>
+    </aside>
   </header>
 
   <section class="card">
-    <h2>核心定义</h2>
+    <div class="section-heading">
+      <span class="section-index">00</span>
+      <div>
+        <h2>核心定义</h2>
+        <span class="section-kicker">Core Concept</span>
+      </div>
+    </div>
 
     <p>
       中断流描述从中断请求产生，到处理器接受请求、执行中断服务程序，
@@ -351,7 +1229,13 @@ li:last-child{
   </section>
 
   <section class="card">
-    <h2>01. 中断请求与接受条件</h2>
+    <div class="section-heading">
+      <span class="section-index">01</span>
+      <div>
+        <h2>中断请求与接受条件</h2>
+        <span class="section-kicker">Request & Acceptance</span>
+      </div>
+    </div>
 
     <p>
       中断请求可以来自定时器、外部引脚、串行通信接口及其他外设。
@@ -360,7 +1244,7 @@ li:last-child{
 
     <div class="grid">
       <div class="item">
-        <strong>请求产生</strong>
+        <strong>请求产生 / Request</strong>
         <p>
           外设事件发生并形成中断请求。具体请求标志、触发方式及清除规则
           由芯片外设和中断控制机制决定。
@@ -368,7 +1252,7 @@ li:last-child{
       </div>
 
       <div class="item">
-        <strong>请求接受</strong>
+        <strong>请求接受 / Acceptance</strong>
         <p>
           处理器根据中断使能、优先级、当前执行状态和架构规则，
           判断何时能够响应请求。
@@ -376,7 +1260,7 @@ li:last-child{
       </div>
 
       <div class="item">
-        <strong>中断屏蔽</strong>
+        <strong>中断屏蔽 / Masking</strong>
         <p>
           全局中断关闭或相关中断被屏蔽时，请求的响应可能延迟。
           延迟上界取决于屏蔽区间、请求行为和硬件规则。
@@ -384,7 +1268,7 @@ li:last-child{
       </div>
 
       <div class="item">
-        <strong>请求积压与丢失</strong>
+        <strong>请求积压与丢失 / Pending Events</strong>
         <p>
           不同外设对待处理事件的记录能力不同。必须确认请求标志、
           FIFO 或计数机制是否能保留连续发生的事件。
@@ -399,7 +1283,13 @@ li:last-child{
   </section>
 
   <section class="card">
-    <h2>02. 中断响应路径</h2>
+    <div class="section-heading">
+      <span class="section-index">02</span>
+      <div>
+        <h2>中断响应路径</h2>
+        <span class="section-kicker">Interrupt Response Path</span>
+      </div>
+    </div>
 
     <p>
       中断响应路径包含从请求等待到 ISR 开始执行的过程。
@@ -408,38 +1298,49 @@ li:last-child{
     </p>
 
     <div class="flow">
+      <div class="flow-label">
+        <span>INTERRUPT ENTRY SEQUENCE</span>
+        <span>Request → Acceptance → ISR</span>
+      </div>
+
       <div class="flow-node">
         <strong>Interrupt Request</strong>
         <span>外设或定时器产生请求</span>
       </div>
 
-      <div class="flow-arrow">↓</div>
+      <div class="flow-arrow">
+        <span>请求等待与接受条件判断</span>
+      </div>
 
-      <div class="flow-node">
+      <div class="flow-node hardware">
         <strong>Acceptance Conditions</strong>
         <span>检查使能、屏蔽和优先级条件</span>
       </div>
 
-      <div class="flow-arrow">↓</div>
+      <div class="flow-arrow">
+        <span>硬件响应与控制流转移</span>
+      </div>
 
-      <div class="flow-node">
+      <div class="flow-node hardware">
         <strong>Hardware Entry</strong>
         <span>处理器进入中断入口</span>
       </div>
 
-      <div class="flow-arrow">↓</div>
+      <div class="flow-arrow">
+        <span>入口代码与必要的上下文保护</span>
+      </div>
 
-      <div class="flow-node">
+      <div class="flow-node isr">
         <strong>ISR Prologue</strong>
         <span>执行入口代码及必要的上下文保护</span>
       </div>
-    </div>
 
-    <p>
-      在分析时，可以将响应时间拆分为请求等待、硬件接受与入口延迟，
-      以及 ISR 入口代码开始执行前的必要处理。
-      具体拆分边界应保持一致，避免同一开销重复计入。
-    </p>
+      <div class="flow-caption">
+        在分析时，可以将响应时间拆分为请求等待、硬件接受与入口延迟，
+        以及 ISR 入口代码开始执行前的必要处理。
+        具体拆分边界应保持一致，避免同一开销重复计入。
+      </div>
+    </div>
 
     <div class="en">
       Interrupt response latency and ISR execution time are distinct quantities
@@ -448,7 +1349,13 @@ li:last-child{
   </section>
 
   <section class="card">
-    <h2>03. ISR 执行与上下文保护</h2>
+    <div class="section-heading">
+      <span class="section-index">03</span>
+      <div>
+        <h2>ISR 执行与上下文保护</h2>
+        <span class="section-kicker">ISR Execution & Context Protection</span>
+      </div>
+    </div>
 
     <p>
       ISR 执行期间，内核必须确保中断处理代码与被打断的任务、
@@ -459,6 +1366,36 @@ li:last-child{
       在 8051 架构上，这一问题尤其依赖寄存器组、堆栈、特殊功能寄存器
       和编译器生成代码的具体使用方式。不能简单假定所有寄存器都会由硬件自动保存。
     </p>
+
+    <div class="interrupt-stack">
+      <div class="interrupt-layer">
+        <span class="layer-number">LAYER 01</span>
+        <div class="layer-content">
+          <strong>硬件中断入口</strong>
+          <span>确认芯片自动完成的入口操作、返回地址保存与中断控制行为。</span>
+        </div>
+      </div>
+
+      <div class="layer-connector"></div>
+
+      <div class="interrupt-layer">
+        <span class="layer-number">LAYER 02</span>
+        <div class="layer-content">
+          <strong>软件上下文保护</strong>
+          <span>保护内核和 ISR 需要保留的寄存器、状态及相关执行信息。</span>
+        </div>
+      </div>
+
+      <div class="layer-connector"></div>
+
+      <div class="interrupt-layer">
+        <span class="layer-number">LAYER 03</span>
+        <div class="layer-content">
+          <strong>ISR 处理与内核交互</strong>
+          <span>执行中断处理逻辑，并遵守内核规定的调用与退出约定。</span>
+        </div>
+      </div>
+    </div>
 
     <ul>
       <li>确认硬件自动完成的中断入口操作与返回操作。</li>
@@ -476,7 +1413,13 @@ li:last-child{
   </section>
 
   <section class="card">
-    <h2>04. 中断嵌套与优先级</h2>
+    <div class="section-heading">
+      <span class="section-index">04</span>
+      <div>
+        <h2>中断嵌套与优先级</h2>
+        <span class="section-kicker">Nested Interrupts & Priority</span>
+      </div>
+    </div>
 
     <p>
       中断嵌套指处理器在一个 ISR 尚未结束时，再接受另一个符合条件的中断请求。
@@ -486,7 +1429,7 @@ li:last-child{
 
     <div class="grid">
       <div class="item">
-        <strong>优先级规则</strong>
+        <strong>优先级规则 / Priority</strong>
         <p>
           优先级影响中断接受与抢占关系，但高优先级请求能否立即执行，
           还受到中断使能、屏蔽状态和架构规则的约束。
@@ -494,7 +1437,7 @@ li:last-child{
       </div>
 
       <div class="item">
-        <strong>嵌套边界</strong>
+        <strong>嵌套边界 / Nesting Boundaries</strong>
         <p>
           可分析的嵌套行为需要明确允许的中断组合、最大嵌套深度
           及各层入口和返回所需的资源。
@@ -502,7 +1445,7 @@ li:last-child{
       </div>
 
       <div class="item">
-        <strong>堆栈预算</strong>
+        <strong>堆栈预算 / Stack Budget</strong>
         <p>
           每增加一层嵌套，都可能增加返回地址、寄存器保存和局部调用的堆栈消耗。
           必须按最深合法路径核算。
@@ -510,7 +1453,7 @@ li:last-child{
       </div>
 
       <div class="item">
-        <strong>重入与共享状态</strong>
+        <strong>重入与共享状态 / Reentrancy</strong>
         <p>
           嵌套 ISR 可能再次访问共享数据或调用相同函数。
           必须审查重入安全性、原子性和共享状态保护。
@@ -525,7 +1468,13 @@ li:last-child{
   </section>
 
   <section class="card">
-    <h2>05. 中断退出与任务调度</h2>
+    <div class="section-heading">
+      <span class="section-index">05</span>
+      <div>
+        <h2>中断退出与任务调度</h2>
+        <span class="section-kicker">Interrupt Exit & Scheduling</span>
+      </div>
+    </div>
 
     <p>
       ISR 结束后，处理器可能返回被中断的执行路径，也可能在内核规定的条件下
@@ -534,30 +1483,43 @@ li:last-child{
     </p>
 
     <div class="flow">
-      <div class="flow-node">
+      <div class="flow-label">
+        <span>INTERRUPT EXIT PATH</span>
+        <span>ISR Completion → Next Execution</span>
+      </div>
+
+      <div class="flow-node isr">
         <strong>ISR Completion</strong>
         <span>完成本次中断处理</span>
       </div>
 
-      <div class="flow-arrow">↓</div>
+      <div class="flow-arrow">
+        <span>根据内核规则决定后续控制流</span>
+      </div>
 
       <div class="flow-branches">
-        <div class="flow-node">
+        <div class="flow-node return">
           <strong>Return Path</strong>
           <span>满足返回条件时恢复原执行路径</span>
         </div>
 
-        <div class="flow-node">
+        <div class="flow-node hardware">
           <strong>Kernel / Scheduling Path</strong>
           <span>符合内核条件时继续处理调度或上下文切换</span>
         </div>
       </div>
 
-      <div class="flow-arrow">↓</div>
+      <div class="flow-arrow">
+        <span>恢复执行上下文或进入下一执行路径</span>
+      </div>
 
       <div class="flow-node">
         <strong>Next Execution</strong>
         <span>恢复原任务或执行内核选择的后续任务</span>
+      </div>
+
+      <div class="flow-caption">
+        该图描述可能的控制流分支，不意味着每次中断退出都会触发调度或任务切换。
       </div>
     </div>
 
@@ -575,7 +1537,13 @@ li:last-child{
   </section>
 
   <section class="card">
-    <h2>06. 中断对实时性的影响</h2>
+    <div class="section-heading">
+      <span class="section-index">06</span>
+      <div>
+        <h2>中断对实时性的影响</h2>
+        <span class="section-kicker">Interrupt Timing & Interference</span>
+      </div>
+    </div>
 
     <p>
       中断会占用处理器时间，也可能延迟任务执行或其他中断的响应。
@@ -583,18 +1551,34 @@ li:last-child{
       对任务执行造成的综合干扰。
     </p>
 
-    <ul>
-      <li><strong>响应延迟：</strong>从请求发生到规定的响应起点之间的时间。</li>
-      <li><strong>ISR 执行时间：</strong>中断处理路径实际占用的处理器时间。</li>
-      <li><strong>屏蔽时间：</strong>相关请求不能被接受的时间区间。</li>
-      <li><strong>嵌套开销：</strong>多层中断的入口、退出与上下文保护开销。</li>
-      <li><strong>任务干扰：</strong>中断执行使任务被推迟的时间及其对响应时间的影响。</li>
-    </ul>
+    <div class="grid">
+      <div class="item">
+        <strong>响应延迟 / Response Latency</strong>
+        <p>从请求发生到规定的响应起点之间的时间。</p>
+      </div>
 
-    <p>
-      这些指标的计算边界必须明确。例如，ISR 执行时间是否包含入口和退出代码，
+      <div class="item">
+        <strong>ISR 执行时间 / Execution Time</strong>
+        <p>中断处理路径实际占用的处理器时间。</p>
+      </div>
+
+      <div class="item">
+        <strong>屏蔽时间 / Masking Interval</strong>
+        <p>相关请求不能被接受的时间区间。</p>
+      </div>
+
+      <div class="item">
+        <strong>嵌套开销 / Nesting Overhead</strong>
+        <p>多层中断的入口、退出与上下文保护开销。</p>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>任务干扰：</strong>
+      中断执行使任务被推迟的时间及其对响应时间的影响，也应纳入分析。
+      指标的计算边界必须明确，例如 ISR 执行时间是否包含入口和退出代码，
       会影响测量结果之间的可比性。
-    </p>
+    </div>
 
     <div class="en">
       Real-time analysis must account for interrupt latency,
@@ -604,7 +1588,13 @@ li:last-child{
   </section>
 
   <section class="card">
-    <h2>07. 中断路径的验证方法</h2>
+    <div class="section-heading">
+      <span class="section-index">07</span>
+      <div>
+        <h2>中断路径的验证方法</h2>
+        <span class="section-kicker">Verification & Measurement</span>
+      </div>
+    </div>
 
     <p>
       中断行为需要结合静态代码分析、目标芯片上的测量与压力测试。
@@ -613,7 +1603,7 @@ li:last-child{
 
     <div class="grid">
       <div class="item">
-        <strong>静态路径分析</strong>
+        <strong>静态路径分析 / Static Analysis</strong>
         <p>
           检查中断入口、寄存器保存、调用链、返回路径与条件分支，
           识别可能增加执行时间的路径。
@@ -621,7 +1611,7 @@ li:last-child{
       </div>
 
       <div class="item">
-        <strong>硬件时序测量</strong>
+        <strong>硬件时序测量 / Hardware Timing</strong>
         <p>
           使用 GPIO、定时器或逻辑分析仪测量请求至响应、
           ISR 执行区间及中断退出后的行为。
@@ -629,7 +1619,7 @@ li:last-child{
       </div>
 
       <div class="item">
-        <strong>嵌套压力测试</strong>
+        <strong>嵌套压力测试 / Nesting Stress Test</strong>
         <p>
           在允许的中断组合下检查上下文完整性、最大堆栈占用
           和共享数据保护。
@@ -637,7 +1627,7 @@ li:last-child{
       </div>
 
       <div class="item">
-        <strong>边界条件验证</strong>
+        <strong>边界条件验证 / Boundary Testing</strong>
         <p>
           覆盖中断屏蔽、请求同时到达、连续触发和调度边界等情况，
           检查事件是否丢失以及返回路径是否正确。
@@ -653,7 +1643,13 @@ li:last-child{
   </section>
 
   <section class="card">
-    <h2>语义总结</h2>
+    <div class="section-heading">
+      <span class="section-index">∑</span>
+      <div>
+        <h2>语义总结</h2>
+        <span class="section-kicker">Key Takeaways</span>
+      </div>
+    </div>
 
     <p>
       中断流不只是 ISR 的执行顺序，而是从事件请求、硬件响应、
@@ -673,7 +1669,13 @@ li:last-child{
   </section>
 
   <section class="card">
-    <h2>相关阅读</h2>
+    <div class="section-heading">
+      <span class="section-index">↗</span>
+      <div>
+        <h2>相关阅读</h2>
+        <span class="section-kicker">Explore System View</span>
+      </div>
+    </div>
 
     <div class="related">
       <a href="/system-view/index.html">
@@ -706,19 +1708,20 @@ li:last-child{
 </main>
 
 <footer class="site-footer">
-  © 2017–2026 HRTOS · SYSTEM VIEW
+  <div class="footer-brand">HRTOS · SYSTEM VIEW</div>
 
-  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
+  <div class="footer-description">
+    © 2017–2026 HRTOS<br>
     System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
     该层关注“系统如何运行”，而非“为什么这样设计”。
   </div>
 
-  <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
+  <div class="footer-links">
+    <a href="/system-view/index.html">System 首页</a>
+    <a href="/system-view/01-execution-flow.html">执行流</a>
+    <a href="/system-view/02-task-lifecycle.html">任务生命周期</a>
+    <a href="/system-view/04-scheduler-cycle.html">调度周期</a>
+    <a href="/why/index.html">→ WHY Layer</a>
   </div>
 </footer>
 

@@ -10,318 +10,905 @@
 
 <meta name="page-role" content="system-view">
 <meta name="semantic-node" content="memory-view">
+<meta name="theme-color" content="#080e1a">
 
 <style>
-:root{
-  --bg:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --accent:#38bdf8;
-  --border:rgba(148,163,184,.18);
-  --shadow:0 20px 48px rgba(2,6,23,.34);
-  --radius:10px;
+:root {
+  color-scheme: dark;
+  --bg: #080e1a;
+  --text: #e8f0fc;
+  --muted: #93a5bf;
+  --subtle: #7186a3;
+  --accent: #55d8ff;
+  --blue: #829cff;
+  --green: #75e6c0;
+  --amber: #f4c875;
+  --border: rgba(145,173,211,.15);
+  --border-bright: rgba(85,216,255,.28);
+  --panel: rgba(15,25,43,.88);
+  --shadow: 0 20px 60px rgba(0,0,0,.20);
+  --radius: 17px;
+  --max-width: 1080px;
 }
 
-*{box-sizing:border-box}
+* { box-sizing: border-box; }
 
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  line-height:1.75;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 95px;
 }
 
-/* NAV */
-.nav{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:14px 24px;
-  border-bottom:1px solid rgba(148,163,184,.12);
-  background:rgba(11,15,20,.92);
-  position:sticky;
-  top:0;
-}
-
-.nav a{
-  color:var(--muted);
-  margin-left:14px;
-  text-decoration:none;
-  font-size:14px;
-}
-
-.nav a.active{
-  color:#cfe3ff;
-}
-
-/* layout */
-.container{
-  max-width:920px;
-  margin:0 auto;
-  padding:60px 24px;
-}
-
-h1{
-  font-size:38px;
-  line-height:1.25;
-  margin:0 0 14px;
-  letter-spacing:-.025em;
-}
-
-.sub{
-  color:var(--muted);
-  margin-bottom:32px;
-  font-size:16px;
-  max-width:760px;
-}
-
-.eyebrow{
-  color:var(--accent);
-  font-size:12px;
-  font-weight:700;
-  letter-spacing:.14em;
-  margin-bottom:12px;
-}
-
-.hero{
-  padding:28px;
-  margin-bottom:24px;
-  border:1px solid var(--border);
-  border-radius:14px;
+body {
+  margin: 0;
+  color: var(--text);
   background:
-    radial-gradient(ellipse at top right,rgba(56,189,248,.10),transparent 55%),
-    rgba(17,24,35,.92);
-  box-shadow:var(--shadow);
+    radial-gradient(ellipse at 48% -15%, rgba(44,104,180,.19), transparent 48%),
+    radial-gradient(ellipse at 100% 40%, rgba(37,107,142,.06), transparent 35%),
+    var(--bg);
+  font-family: "Inter","Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-.hero p:last-child{
-  margin-bottom:0;
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .15;
+  background-image:
+    linear-gradient(rgba(129,166,215,.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(129,166,215,.055) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, #000, transparent 85%);
 }
 
-.hero strong{
-  color:#f8fafc;
+a { color: inherit; }
+
+::selection {
+  color: #06121e;
+  background: var(--accent);
 }
 
-.tags{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-top:18px;
+/* Navigation */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 70px;
+  padding: 0 max(24px, calc((100vw - 1180px)/2));
+  border-bottom: 1px solid rgba(156,184,224,.12);
+  background: rgba(8,14,26,.84);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-.tag{
-  padding:4px 10px;
-  border:1px solid rgba(56,189,248,.24);
-  border-radius:999px;
-  background:rgba(56,189,248,.07);
-  color:#bae6fd;
-  font-size:12px;
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  flex-shrink: 0;
+  color: #f2f7ff;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-decoration: none;
 }
 
-/* card */
-.card{
-  background:rgba(17,24,35,.92);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:22px;
-  margin-bottom:16px;
-  box-shadow:var(--shadow);
+.brand-mark {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border: 1px solid rgba(85,216,255,.48);
+  border-radius: 9px;
+  color: var(--accent);
+  background: linear-gradient(145deg,rgba(85,216,255,.16),rgba(124,156,255,.06));
+  box-shadow: inset 0 0 18px rgba(85,216,255,.08);
+  font-size: 12px;
+  letter-spacing: -.06em;
 }
 
-.card h2{
-  margin:0 0 12px;
-  font-size:18px;
-  line-height:1.5;
-  color:#cfe3ff;
-  border-left:3px solid var(--accent);
-  padding-left:10px;
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.card h3{
-  font-size:15px;
-  color:#e2e8f0;
-  margin:18px 0 6px;
+.nav a.nav-link {
+  padding: 8px 13px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color .2s ease, background .2s ease, border-color .2s ease;
 }
 
-.card p{
-  margin:10px 0;
+.nav a.nav-link:hover,
+.nav a.nav-link.active {
+  color: #e9f8ff;
+  border-color: rgba(85,216,255,.16);
+  background: rgba(85,216,255,.065);
 }
 
-.card ul{
-  padding-left:22px;
-  margin:10px 0;
+/* Main layout */
+
+.container {
+  width: min(var(--max-width),100%);
+  margin: 0 auto;
+  padding: 58px 30px 86px;
 }
 
-.card li{
-  margin:6px 0;
+.eyebrow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 11px;
+  margin-bottom: 20px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .2em;
+  text-transform: uppercase;
 }
 
-.en{
-  color:var(--muted);
-  font-size:13px;
-  margin-top:12px;
-  line-height:1.7;
+.eyebrow .slash {
+  color: var(--subtle);
 }
 
-.muted{
-  color:var(--muted);
+h1 {
+  margin: 0;
+  color: #f1f6ff;
+  font-size: clamp(38px,6vw,62px);
+  font-weight: 760;
+  line-height: 1.2;
+  letter-spacing: -.055em;
 }
 
-.memory-grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
-  margin:18px 0;
+.sub {
+  max-width: 850px;
+  margin: 17px 0 0;
+  color: #b6c6dc;
+  font-size: clamp(15px,2vw,18px);
+  line-height: 1.85;
 }
 
-.memory-item{
-  padding:16px;
-  border:1px solid var(--border);
-  border-radius:9px;
-  background:rgba(15,23,42,.72);
-  min-width:0;
+.en-title {
+  color: var(--accent);
+  font-size: .88em;
+  font-weight: 650;
+  letter-spacing: .035em;
 }
 
-.memory-item strong{
-  display:block;
-  color:#bae6fd;
-  font-size:16px;
-  margin-bottom:5px;
+/* Hero */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin: 34px 0 24px;
+  padding: 30px;
+  border: 1px solid var(--border-bright);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 100% 0%,rgba(85,216,255,.10),transparent 43%),
+    radial-gradient(ellipse at 0% 100%,rgba(124,156,255,.07),transparent 42%),
+    linear-gradient(135deg,rgba(17,32,52,.96),rgba(11,20,35,.94));
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.025);
 }
 
-.memory-item span{
-  display:block;
-  color:var(--muted);
-  font-size:13px;
-  line-height:1.65;
+.hero::after {
+  content: "";
+  position: absolute;
+  top: -75px;
+  right: -35px;
+  width: 210px;
+  height: 210px;
+  border: 1px solid rgba(85,216,255,.11);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 25px rgba(85,216,255,.025),
+    0 0 0 50px rgba(85,216,255,.018);
+  pointer-events: none;
 }
 
-.flow{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;
-  margin:20px 0;
+.hero-label {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 15px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
 }
 
-.flow-step{
-  padding:15px 12px;
-  min-width:0;
-  border:1px solid rgba(56,189,248,.22);
-  border-radius:9px;
-  background:rgba(15,23,42,.8);
-  text-align:center;
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 12px rgba(117,230,192,.6);
 }
 
-.flow-step strong{
-  display:block;
-  color:#bae6fd;
-  font-size:14px;
-  margin-bottom:5px;
+.hero p {
+  position: relative;
+  z-index: 1;
+  max-width: 880px;
+  margin: 0 0 13px;
+  color: #c2d0e3;
+  font-size: 14px;
 }
 
-.flow-step span{
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.6;
+.hero p:last-of-type { margin-bottom: 0; }
+
+.hero strong {
+  color: #f5f9ff;
+  font-weight: 700;
 }
 
-.memory-chain{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-wrap:wrap;
-  gap:10px;
-  margin:20px 0;
-  padding:18px;
-  border:1px solid var(--border);
-  border-radius:9px;
-  background:rgba(15,23,42,.65);
+.tags {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 23px;
 }
 
-.memory-chain span{
-  padding:7px 11px;
-  border-radius:6px;
-  background:rgba(56,189,248,.08);
-  color:#bae6fd;
-  font-size:13px;
-  text-align:center;
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border: 1px solid rgba(115,156,205,.20);
+  border-radius: 8px;
+  color: #c4d5ea;
+  background: rgba(7,15,28,.44);
+  font-size: 12px;
+  line-height: 1.7;
 }
 
-.memory-chain b{
-  color:var(--accent);
-  font-size:16px;
+.tag::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
-.note{
-  border-left:3px solid #64748b;
-  padding:12px 15px;
-  margin-top:16px;
-  border-radius:0 8px 8px 0;
-  background:rgba(148,163,184,.06);
-  color:#cbd5e1;
-  font-size:14px;
+/* Memory overview */
+
+.memory-overview {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 11px;
+  margin: 0 0 43px;
 }
 
-.note strong{
-  color:#f1f5f9;
+.space-card {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(145deg,rgba(18,31,51,.86),rgba(11,19,33,.72));
 }
 
-.warning{
-  border-left-color:#f59e0b;
-  background:rgba(245,158,11,.06);
+.space-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 2px;
+  background: var(--space-color,var(--accent));
+  box-shadow: 0 0 12px var(--space-color,var(--accent));
 }
 
-.related a{
-  color:var(--accent);
-  text-decoration:none;
+.space-code {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--space-color,var(--accent));
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: .01em;
 }
 
-.related a:hover{
-  text-decoration:underline;
+.space-name {
+  display: block;
+  color: #e4efff;
+  font-size: 12px;
+  font-weight: 700;
 }
 
-.related p{
-  margin:8px 0;
+.space-description {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
 }
 
-/* footer */
-.site-footer{
-  text-align:center;
-  border-top:1px solid rgba(148,163,184,.14);
-  padding:18px 12px;
-  color:#8ea3be;
-  font-size:.95rem;
+/* Sections */
+
+.card {
+  position: relative;
+  margin: 0 0 18px;
+  padding: 30px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(145deg,rgba(16,27,45,.92),rgba(11,19,33,.90));
+  box-shadow: 0 14px 42px rgba(0,0,0,.11);
+  transition: border-color .25s ease, box-shadow .25s ease;
 }
 
-@media(max-width:640px){
-  .container{
-    padding:36px 18px;
+.card:hover {
+  border-color: rgba(108,177,225,.27);
+  box-shadow: 0 20px 48px rgba(0,0,0,.16);
+}
+
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.section-number {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgba(85,216,255,.25);
+  border-radius: 12px;
+  color: var(--accent);
+  background: linear-gradient(145deg,rgba(85,216,255,.11),rgba(85,216,255,.025));
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.section-heading { min-width: 0; }
+
+.card h2 {
+  margin: 0;
+  color: #edf4ff;
+  font-size: 20px;
+  font-weight: 720;
+  line-height: 1.5;
+  letter-spacing: -.025em;
+}
+
+.section-kicker {
+  display: block;
+  margin-top: 3px;
+  color: var(--subtle);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.card h3 {
+  margin: 23px 0 7px;
+  color: #dceaff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.card h3:first-child { margin-top: 0; }
+
+.card p {
+  margin: 11px 0;
+  color: #b7c5d9;
+  font-size: 14px;
+}
+
+.card strong {
+  color: #e9f2ff;
+  font-weight: 700;
+}
+
+.card ul {
+  display: grid;
+  gap: 10px;
+  margin: 17px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card li {
+  position: relative;
+  padding-left: 21px;
+  color: #b7c5d9;
+  font-size: 14px;
+}
+
+.card li::before {
+  content: "";
+  position: absolute;
+  top: .78em;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  background: rgba(85,216,255,.14);
+}
+
+.card li strong { color: #e4efff; }
+
+.en {
+  margin-top: 19px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(145,173,211,.10);
+  color: #7f94b1;
+  font-size: 12px;
+  line-height: 1.85;
+}
+
+/* Memory space cards */
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.memory-item {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 21px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background:
+    radial-gradient(ellipse at 100% 0%,rgba(85,216,255,.055),transparent 55%),
+    rgba(7,15,28,.54);
+}
+
+.memory-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 28px;
+  height: 2px;
+  background: var(--space-color,var(--accent));
+}
+
+.memory-item strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--space-color,var(--accent));
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+.memory-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.85;
+}
+
+/* Flow diagram */
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 12px;
+  margin: 25px 0;
+}
+
+.flow-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: 130px;
+  padding: 20px 17px;
+  overflow: hidden;
+  border: 1px solid rgba(85,216,255,.20);
+  border-radius: 13px;
+  background:
+    radial-gradient(ellipse at 0% 0%,rgba(85,216,255,.075),transparent 65%),
+    rgba(7,15,28,.72);
+}
+
+.flow-step::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 2px;
+  background: var(--step-color,var(--accent));
+  box-shadow: 0 0 12px var(--step-color,var(--accent));
+}
+
+.step-index {
+  margin-bottom: 11px;
+  color: #6887a8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.flow-step strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #dff7ff;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.flow-step span:last-child {
+  color: #91a6c1;
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.flow-step:nth-child(2) { --step-color: var(--blue); }
+.flow-step:nth-child(3) { --step-color: var(--green); }
+
+/* Resource relationship */
+
+.memory-chain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 23px 0;
+  padding: 23px 17px;
+  border: 1px solid rgba(85,216,255,.15);
+  border-radius: 13px;
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(85,216,255,.055),transparent 70%),
+    rgba(7,15,28,.55);
+}
+
+.memory-chain span {
+  padding: 8px 12px;
+  border: 1px solid rgba(85,216,255,.18);
+  border-radius: 8px;
+  color: #c5eaff;
+  background: rgba(85,216,255,.055);
+  font-size: 12px;
+  text-align: center;
+}
+
+.memory-chain b {
+  color: var(--accent);
+  font-size: 16px;
+}
+
+/* Notes */
+
+.note {
+  margin-top: 20px;
+  padding: 15px 18px;
+  border: 1px solid rgba(145,173,211,.11);
+  border-left: 3px solid #6885a8;
+  border-radius: 0 11px 11px 0;
+  color: #b6c5d9;
+  background: rgba(119,148,186,.055);
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.note strong { color: #eaf3ff; }
+
+.note.warning {
+  border-color: rgba(244,200,117,.13);
+  border-left-color: var(--amber);
+  background: rgba(244,200,117,.055);
+}
+
+.note.warning strong { color: #ffe2a1; }
+
+/* Semantic summary */
+
+.semantic-card {
+  border-color: rgba(85,216,255,.25);
+  background:
+    radial-gradient(ellipse at 100% 0%,rgba(85,216,255,.085),transparent 46%),
+    linear-gradient(135deg,rgba(14,30,48,.97),rgba(10,19,33,.96));
+}
+
+.semantic-card .section-number {
+  color: var(--green);
+  border-color: rgba(117,230,192,.26);
+  background: rgba(117,230,192,.06);
+}
+
+.semantic-card p {
+  color: #c5d5e9;
+  font-size: 15px;
+  line-height: 2;
+}
+
+.semantic-card p strong { color: #e9fbff; }
+
+/* Related links */
+
+.related-group {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.related-label {
+  margin: 22px 0 10px;
+  color: #7f94b1;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.related-label:first-of-type { margin-top: 0; }
+
+.related-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: #c5d8ee;
+  background: rgba(7,15,28,.48);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color .2s ease,border-color .2s ease,background .2s ease;
+}
+
+.related-link .arrow {
+  flex: 0 0 auto;
+  color: var(--accent);
+  transition: transform .2s ease;
+}
+
+.related-link:hover {
+  color: #f1f8ff;
+  border-color: rgba(85,216,255,.32);
+  background: rgba(85,216,255,.055);
+}
+
+.related-link:hover .arrow { transform: translateX(3px); }
+
+/* Footer */
+
+.site-footer {
+  padding: 31px 24px 35px;
+  border-top: 1px solid rgba(145,173,211,.12);
+  color: #7f94b1;
+  background: rgba(6,11,21,.55);
+  text-align: center;
+}
+
+.footer-brand {
+  margin-bottom: 12px;
+  color: #cbd8eb;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.footer-copy {
+  max-width: 760px;
+  margin: 0 auto;
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px 21px;
+  margin-top: 20px;
+}
+
+.footer-links a {
+  color: #91cfe9;
+  font-size: 12px;
+  text-decoration: none;
+  transition: color .2s ease;
+}
+
+.footer-links a:hover { color: #fff; }
+
+/* Responsive */
+
+@media (max-width: 760px) {
+  .nav {
+    min-height: 62px;
+    padding: 0 18px;
+    gap: 10px;
   }
 
-  h1{
-    font-size:30px;
+  .brand {
+    gap: 8px;
+    font-size: 15px;
   }
 
-  .hero{
-    padding:21px;
+  .brand-mark {
+    width: 28px;
+    height: 28px;
   }
 
-  .card{
-    padding:18px;
+  .nav-links { gap: 1px; }
+
+  .nav a.nav-link {
+    padding: 7px 8px;
+    font-size: 12px;
   }
+
+  .container { padding: 43px 20px 64px; }
+
+  .hero { padding: 24px; }
+
+  .card { padding: 24px; }
+
+  .memory-overview { gap: 9px; }
+
+  .space-card { padding: 15px 12px; }
+}
+
+@media (max-width: 560px) {
+  .nav { padding: 0 13px; }
+
+  .brand { gap: 7px; font-size: 14px; }
+
+  .brand-mark {
+    width: 26px;
+    height: 26px;
+  }
+
+  .nav-links { gap: 0; }
+
+  .nav a.nav-link {
+    padding: 7px 6px;
+    font-size: 11px;
+  }
+
+  .container { padding: 34px 15px 48px; }
+
+  .eyebrow {
+    gap: 8px;
+    margin-bottom: 15px;
+    font-size: 10px;
+  }
+
+  h1 { font-size: 37px; }
+
+  .sub { font-size: 14px; }
+
+  .hero {
+    margin-top: 26px;
+    padding: 21px;
+    border-radius: 17px;
+  }
+
+  .hero p { font-size: 13px; }
+
+  .tags { gap: 7px; }
+
+  .tag {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .memory-overview {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 9px;
+    margin-bottom: 30px;
+  }
+
+  .space-card { padding: 15px; }
+
+  .space-code { font-size: 19px; }
+
+  .space-description { font-size: 11px; }
+
+  .card {
+    margin-bottom: 13px;
+    padding: 20px 17px;
+    border-radius: 15px;
+  }
+
+  .section-head {
+    gap: 12px;
+    margin-bottom: 19px;
+  }
+
+  .section-number {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+
+  .card h2 { font-size: 17px; }
+
+  .section-kicker { font-size: 9px; }
+
+  .card p,
+  .card li { font-size: 13px; }
 
   .memory-grid,
-  .flow{
-    grid-template-columns:1fr;
+  .flow {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 
-  .flow-step{
-    text-align:left;
+  .memory-item { padding: 18px; }
+
+  .flow-step {
+    min-height: 0;
+    padding: 16px 17px;
   }
 
-  .memory-chain{
-    justify-content:flex-start;
+  .step-index { margin-bottom: 5px; }
+
+  .memory-chain {
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 17px 13px;
+  }
+
+  .memory-chain span {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+
+  .memory-chain b { font-size: 14px; }
+
+  .note {
+    padding: 13px 14px;
+    font-size: 12px;
+  }
+
+  .related-group {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .site-footer { padding: 25px 17px 30px; }
+
+  .footer-links { gap: 12px 17px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 </style>
@@ -329,33 +916,48 @@ h1{
 
 <body>
 
-<div class="nav">
-  <div style="font-weight:600;">HRTOS</div>
-  <div>
-    <a href="/index.html">首页</a>
-    <a href="/why/index.html">Why</a>
-    <a href="/system-view/index.html" class="active">System</a>
-    <a href="/docs/index.html">Docs</a>
-  </div>
-</div>
+<header class="nav">
+  <a class="brand" href="/index.html" aria-label="HRTOS 首页">
+    <span class="brand-mark">HR</span>
+    <span>HRTOS</span>
+  </a>
+
+  <nav class="nav-links" aria-label="主导航">
+    <a class="nav-link" href="/index.html">首页</a>
+    <a class="nav-link" href="/why/index.html">Why</a>
+    <a class="nav-link active" href="/system-view/index.html" aria-current="page">System</a>
+    <a class="nav-link" href="/docs/index.html">Docs</a>
+  </nav>
+</header>
 
 <main class="container">
 
-  <div class="eyebrow">SYSTEM VIEW / 05</div>
+  <div class="eyebrow">
+    SYSTEM VIEW <span class="slash">/</span> 05
+    <span class="slash">/</span> MEMORY VIEW
+  </div>
 
   <h1>内存视图模型</h1>
 
-  <div class="sub">
-    Memory View · 从 8051 存储空间、任务上下文与堆栈布局出发，理解内存容量、访问方式和资源边界如何影响 HRTOS 的运行行为。
-  </div>
+  <p class="sub">
+    <span class="en-title">Memory View</span>
+    · 从 8051 存储空间、任务上下文与堆栈布局出发，理解内存容量、访问方式和资源边界如何影响 HRTOS 的运行行为。
+  </p>
 
   <section class="hero">
+    <div class="hero-label">
+      <span class="status-dot"></span>
+      MEMORY ARCHITECTURE
+    </div>
+
     <p>
       <strong>对于 8051 实时操作系统，内存不仅决定系统能容纳多少任务和内核对象，也直接影响上下文管理、中断安全性与资源配置。</strong>
     </p>
+
     <p>
       HRTOS 的内存视图关注的是实际的存储空间、静态数据布局、任务上下文和运行时堆栈。它不是泛泛讨论内存优化，而是解释内核如何在有限的片上 RAM 与扩展 RAM 条件下组织运行资源。
     </p>
+
     <div class="tags">
       <span class="tag">8051 存储模型</span>
       <span class="tag">DATA / IDATA / XDATA</span>
@@ -365,27 +967,59 @@ h1{
     </div>
   </section>
 
+  <div class="memory-overview" aria-label="8051 存储空间概览">
+    <div class="space-card" style="--space-color:#55d8ff;">
+      <span class="space-code">DATA</span>
+      <span class="space-name">直接寻址数据区</span>
+      <span class="space-description">片内数据访问与有限 RAM 预算</span>
+    </div>
+    <div class="space-card" style="--space-color:#829cff;">
+      <span class="space-code">IDATA</span>
+      <span class="space-name">间接寻址数据区</span>
+      <span class="space-description">内部 RAM 与间接访问方式</span>
+    </div>
+    <div class="space-card" style="--space-color:#75e6c0;">
+      <span class="space-code">XDATA</span>
+      <span class="space-name">扩展数据空间</span>
+      <span class="space-description">内核对象与扩展 RAM 资源</span>
+    </div>
+    <div class="space-card" style="--space-color:#f4c875;">
+      <span class="space-code">CODE</span>
+      <span class="space-name">程序代码空间</span>
+      <span class="space-description">程序指令与常量存储</span>
+    </div>
+  </div>
+
   <section class="card">
-    <h2>一、8051 的内存不是单一地址空间</h2>
+    <div class="section-head">
+      <span class="section-number">01</span>
+      <div class="section-heading">
+        <h2>8051 的内存不是单一地址空间</h2>
+        <span class="section-kicker">8051 Memory Model</span>
+      </div>
+    </div>
 
     <p>
       经典 MCS-51 架构具有不同类型的存储空间。它们的寻址方式、容量和访问指令存在差异，不能简单地把所有 RAM 看作一块可互换的连续内存。
     </p>
 
     <div class="memory-grid">
-      <div class="memory-item">
+      <div class="memory-item" style="--space-color:#55d8ff;">
         <strong>DATA</strong>
         <span>片内直接寻址数据区。访问方式和容量受具体 8051 兼容芯片实现限制。</span>
       </div>
-      <div class="memory-item">
+
+      <div class="memory-item" style="--space-color:#829cff;">
         <strong>IDATA</strong>
         <span>通过间接寻址访问的片内数据区。实际可用范围取决于目标芯片的内部 RAM 结构。</span>
       </div>
-      <div class="memory-item">
+
+      <div class="memory-item" style="--space-color:#75e6c0;">
         <strong>XDATA</strong>
         <span>外部数据存储器寻址空间。增强型 8051 芯片可能在片内集成扩展 RAM，但具体容量和访问成本需查阅芯片资料。</span>
       </div>
-      <div class="memory-item">
+
+      <div class="memory-item" style="--space-color:#f4c875;">
         <strong>CODE</strong>
         <span>程序代码与常量所在的代码空间，通常与数据空间采用不同的寻址机制。</span>
       </div>
@@ -402,7 +1036,13 @@ h1{
   </section>
 
   <section class="card">
-    <h2>二、HRTOS 内存布局的核心对象</h2>
+    <div class="section-head">
+      <span class="section-number">02</span>
+      <div class="section-heading">
+        <h2>HRTOS 内存布局的核心对象</h2>
+        <span class="section-kicker">Kernel Memory Layout</span>
+      </div>
+    </div>
 
     <p>
       RTOS 的内存开销不仅来自内核代码，还包括运行期间必须维护的状态。对 HRTOS 这样的 8051 系统，需要特别关注以下几类对象。
@@ -449,7 +1089,13 @@ h1{
   </section>
 
   <section class="card">
-    <h2>三、为什么任务上下文会影响内存预算？</h2>
+    <div class="section-head">
+      <span class="section-number">03</span>
+      <div class="section-heading">
+        <h2>为什么任务上下文会影响内存预算？</h2>
+        <span class="section-kicker">Task Context</span>
+      </div>
+    </div>
 
     <p>
       任务上下文用于在执行权发生转换时保存和恢复必要的状态。上下文设计会影响每个任务需要占用的存储空间，也会影响切换过程中的保存、恢复与访问开销。
@@ -461,14 +1107,19 @@ h1{
 
     <div class="flow">
       <div class="flow-step">
+        <span class="step-index">PHASE / 01</span>
         <strong>保存状态</strong>
         <span>保留后续恢复所需的执行信息</span>
       </div>
+
       <div class="flow-step">
+        <span class="step-index">PHASE / 02</span>
         <strong>切换执行目标</strong>
         <span>更新当前执行任务及相关状态</span>
       </div>
+
       <div class="flow-step">
+        <span class="step-index">PHASE / 03</span>
         <strong>恢复状态</strong>
         <span>使目标任务能够从规定位置继续执行</span>
       </div>
@@ -485,7 +1136,13 @@ h1{
   </section>
 
   <section class="card">
-    <h2>四、堆栈预算是运行安全的基础</h2>
+    <div class="section-head">
+      <span class="section-number">04</span>
+      <div class="section-heading">
+        <h2>堆栈预算是运行安全的基础</h2>
+        <span class="section-kicker">Stack Budget</span>
+      </div>
+    </div>
 
     <p>
       堆栈不足可能导致返回地址、保存的寄存器或其他运行数据被覆盖，最终表现为任务异常、中断返回错误或难以复现的系统故障。
@@ -509,7 +1166,13 @@ h1{
   </section>
 
   <section class="card">
-    <h2>五、动态分配、静态布局与内存池</h2>
+    <div class="section-head">
+      <span class="section-number">05</span>
+      <div class="section-heading">
+        <h2>动态分配、静态布局与内存池</h2>
+        <span class="section-kicker">Memory Allocation Strategy</span>
+      </div>
+    </div>
 
     <p>
       内存管理方式会影响空间利用率、运行时开销及故障排查难度。不同方案各有适用场景，关键是理解其成本和约束，而不是将某一种方案视为所有 RTOS 的唯一正确选择。
@@ -537,7 +1200,13 @@ h1{
   </section>
 
   <section class="card">
-    <h2>六、内存布局如何影响实时执行？</h2>
+    <div class="section-head">
+      <span class="section-number">06</span>
+      <div class="section-heading">
+        <h2>内存布局如何影响实时执行？</h2>
+        <span class="section-kicker">Memory & Timing</span>
+      </div>
+    </div>
 
     <p>
       内存对实时性的影响并不只来自分配器。对于 8051 系统，存储空间类型、访问指令、堆栈活动和中断干扰都可能改变实际执行开销。
@@ -568,7 +1237,13 @@ h1{
   </section>
 
   <section class="card">
-    <h2>七、如何验证实际内存占用？</h2>
+    <div class="section-head">
+      <span class="section-number">07</span>
+      <div class="section-heading">
+        <h2>如何验证实际内存占用？</h2>
+        <span class="section-kicker">Memory Verification</span>
+      </div>
+    </div>
 
     <p>
       对 HRTOS 的内存评估应以目标芯片与实际构建结果为依据。源码中的变量声明只能提供部分信息，不能替代最终链接结果和运行时堆栈分析。
@@ -603,8 +1278,14 @@ h1{
     </div>
   </section>
 
-  <section class="card">
-    <h2>八、内存视图模型的语义总结</h2>
+  <section class="card semantic-card">
+    <div class="section-head">
+      <span class="section-number">08</span>
+      <div class="section-heading">
+        <h2>内存视图模型的语义总结</h2>
+        <span class="section-kicker">Model Summary</span>
+      </div>
+    </div>
 
     <p>
       <strong>内存视图描述的是内核如何在具体硬件的存储空间限制下，组织任务状态、执行上下文、堆栈和系统资源。</strong>
@@ -624,41 +1305,61 @@ h1{
   </section>
 
   <section class="card related">
-    <h2>相关阅读</h2>
+    <div class="section-head">
+      <span class="section-number">↗</span>
+      <div class="section-heading">
+        <h2>相关阅读</h2>
+        <span class="section-kicker">Explore System View</span>
+      </div>
+    </div>
 
-    <p><b>System View</b></p>
-    <p><a href="/system-view/index.html">返回总览 →</a></p>
+    <div class="related-label">SYSTEM VIEW</div>
+    <div class="related-group">
+      <a class="related-link" href="/system-view/index.html">
+        <span>System View 总览</span><span class="arrow">↗</span>
+      </a>
+      <a class="related-link" href="/system-view/04-scheduler-cycle.html">
+        <span>04 调度周期模型 · 上一篇</span><span class="arrow">←</span>
+      </a>
+      <a class="related-link" href="/system-view/06-time-system.html">
+        <span>06 时间系统 · 下一篇</span><span class="arrow">→</span>
+      </a>
+    </div>
 
-    <p><b>上一篇 · 调度周期模型</b></p>
-    <p><a href="/system-view/04-scheduler-cycle.html">04 调度周期模型 ←</a></p>
-
-    <p><b>下一篇 · 时间系统</b></p>
-    <p><a href="/system-view/06-time-system.html">06 时间系统 →</a></p>
-
-    <p><b>扩展阅读</b></p>
-    <p><a href="/system-view/01-execution-flow.html">01 执行流模型</a></p>
-    <p><a href="/system-view/02-task-lifecycle.html">02 任务生命周期</a></p>
-    <p><a href="/system-view/03-interrupt-flow.html">03 中断流模型</a></p>
-    <p><a href="/system-view/07-deterministic-chain.html">07 确定性链路</a></p>
+    <div class="related-label">RELATED MODELS</div>
+    <div class="related-group">
+      <a class="related-link" href="/system-view/01-execution-flow.html">
+        <span>01 执行流模型</span><span class="arrow">↗</span>
+      </a>
+      <a class="related-link" href="/system-view/02-task-lifecycle.html">
+        <span>02 任务生命周期</span><span class="arrow">↗</span>
+      </a>
+      <a class="related-link" href="/system-view/03-interrupt-flow.html">
+        <span>03 中断流模型</span><span class="arrow">↗</span>
+      </a>
+      <a class="related-link" href="/system-view/07-deterministic-chain.html">
+        <span>07 确定性链路</span><span class="arrow">↗</span>
+      </a>
+    </div>
   </section>
 
 </main>
 
 <footer class="site-footer">
-  © 2017–2026 HRTOS · SYSTEM VIEW
+  <div class="footer-brand">HRTOS <span style="color:#526983;">/</span> SYSTEM VIEW</div>
 
-  <div style="font-size:13px;color:#8ea3be;line-height:1.8;max-width:860px;margin:0 auto;">
-    System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
+  <div class="footer-copy">
+    © 2017–2026 HRTOS · System View 描述 HRTOS 内核的运行结构，包括执行流、调度周期、中断路径与内存约束。<br>
     该层关注“系统如何运行”，而非“为什么这样设计”。
   </div>
 
-  <div style="margin-top:14px;font-size:13px;">
-    <a href="/system-view/index.html" style="color:#38bdf8;margin-right:12px;">System 首页</a>
-    <a href="/system-view/01-execution-flow.html" style="color:#38bdf8;margin-right:12px;">执行流</a>
-    <a href="/system-view/02-task-lifecycle.html" style="color:#38bdf8;margin-right:12px;">任务生命周期</a>
-    <a href="/system-view/04-scheduler-cycle.html" style="color:#38bdf8;margin-right:12px;">调度周期</a>
-    <a href="/why/index.html" style="color:#38bdf8;">→ WHY Layer</a>
-  </div>
+  <nav class="footer-links" aria-label="系统视图导航">
+    <a href="/system-view/index.html">System 首页</a>
+    <a href="/system-view/01-execution-flow.html">执行流</a>
+    <a href="/system-view/02-task-lifecycle.html">任务生命周期</a>
+    <a href="/system-view/04-scheduler-cycle.html">调度周期</a>
+    <a href="/why/index.html">→ WHY Layer</a>
+  </nav>
 </footer>
 
 </body>
