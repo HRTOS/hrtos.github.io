@@ -2,23 +2,58 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>HRTOS - 8051 Hard Real-Time Operating System | 硬实时操作系统</title>
-<meta name="description" content="HRTOS 是面向 8051 单片机的实时操作系统，围绕任务调度、中断管理、上下文切换与资源控制构建专用内核，并提供 Shell、Modbus RTU、系统组件、驱动、API 文档和实验示例。">
+<title>8051操作系统 HRTOS - 51单片机实时操作系统 | 硬实时操作系统</title>
+<meta name="description" content="HRTOS 是面向 8051（51 单片机）的实时操作系统，专注硬实时方向的任务调度、中断管理、上下文切换与系统资源管理，提供实时内核、Shell、Modbus RTU、IPC、驱动、API 文档、系统手册和工程示例，持续建设完整的 8051 RTOS 开发生态。">
+<meta name="keywords" content="8051操作系统,8051 RTOS,8051实时操作系统,51单片机操作系统,51单片机实时操作系统,硬实时操作系统,嵌入式实时操作系统,8051实时内核,实时任务调度,优先级抢占调度,8051任务管理,中断管理,上下文切换,系统资源管理,8051 RTOS开发,HRTOS">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#050816">
+
 <link rel="canonical" href="https://hrtos.com/">
 <link rel="icon" type="image/svg+xml" href="/images/favicon.svg">
-<meta property="og:title" content="HRTOS - 8051 实时操作系统">
-<meta property="og:description" content="面向 8051 单片机的专用实时操作系统，提供内核、系统组件、通信模块、驱动、技术文档与实验示例。">
+
+<meta property="og:title" content="8051操作系统 HRTOS - 51单片机实时操作系统">
+<meta property="og:description" content="HRTOS 面向经典 8051 单片机，提供实时内核、任务调度、中断管理、上下文切换、系统组件、通信模块、驱动、API 参考与工程示例。">
+<meta property="og:type" content="website">
 <meta property="og:url" content="https://hrtos.com/">
+<meta property="og:site_name" content="HRTOS">
+<meta property="og:locale" content="zh_CN">
+
 <script type="application/ld+json">
 {
- "@context":"https://schema.org",
- "@type":"SoftwareApplication",
- "name":"HRTOS",
-"applicationCategory": "DeveloperApplication",
-"operatingSystem": "8051-based embedded systems",
-"description": "HRTOS is a real-time operating system for 8051 microcontrollers, with a dedicated kernel, system components, communication modules, documentation and examples."
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": "https://hrtos.com/#software",
+  "name": "HRTOS",
+  "url": "https://hrtos.com/",
+  "applicationCategory": "DeveloperApplication",
+  "applicationSubCategory": "8051 实时操作系统",
+  "operatingSystem": "8051-based embedded systems",
+  "inLanguage": "zh-CN",
+  "description": "HRTOS 是面向经典 8051（51 单片机）的实时操作系统，专注实时任务调度、中断管理、上下文切换与系统资源管理，提供 Shell、Modbus RTU、IPC、驱动、API 文档、系统手册和工程示例。",
+  "keywords": [
+    "8051操作系统",
+    "8051 RTOS",
+    "51单片机操作系统",
+    "51单片机实时操作系统",
+    "硬实时操作系统",
+    "嵌入式实时操作系统",
+    "实时内核",
+    "任务调度",
+    "中断管理",
+    "上下文切换"
+  ],
+  "featureList": [
+    "8051 实时内核",
+    "实时任务调度",
+    "中断管理",
+    "上下文切换",
+    "系统资源管理",
+    "Shell",
+    "Modbus RTU",
+    "IPC",
+    "驱动与 API 参考",
+    "工程示例"
+  ]
 }
 </script>
 <style>
@@ -840,7 +875,7 @@ pre.code .type{color:#f472b6; font-weight:600;}
 <header class="nav" id="navbar" role="banner">
   <div class="logo"><a href="/index.html">HRTOS</a></div>
   <nav class="nav-links" aria-label="主导航">
-    <a href="/docs/index.html">系统总览</a>
+    <a href="/docs/index.html">生态中心</a>
     <a href="/docs/api_v2/index.html">API参考</a>
     <a href="/docs/examples/index.html">实验示例</a>
     <a href="/download/index.html">下载中心</a>
@@ -852,10 +887,14 @@ pre.code .type{color:#f472b6; font-weight:600;}
   <div class="container hero-inner reveal">
     <div class="eyebrow">8051 RTOS · Hard Real-Time · Complete Ecosystem</div>
     <h1>HRTOS</h1>
-    <p class="hero-subtitle">
-面向经典 8051 单片机，专门设计任务调度、中断管理、上下文切换与资源控制机制，
-配套系统组件、外设驱动、技术文档和实验示例，支持从基础应用到复杂实时系统的开发。
+
+<p class="hero-subtitle">
+  面向经典 8051（51 单片机）的硬实时操作系统，
+  专注实时内核、任务调度、中断管理、上下文切换与系统资源管理，
+  配套 Shell、Modbus RTU、IPC、外设驱动、API 文档和工程示例，
+  为 8051 实时系统开发提供完整的技术基础。
 </p>
+
 
     <div class="hero-proof">
       <div class="proof-item">
@@ -892,7 +931,9 @@ pre.code .type{color:#f472b6; font-weight:600;}
         <article class="panel-card large reveal">
           <span class="card-kicker">Hard Real-Time Kernel</span>
           <h3>实时内核</h3>
-          <p>以优先级抢占调度、任务管理、中断处理、上下文切换与实时执行控制为核心，针对 8051 的处理器架构、中断机制与资源约束进行专门设计，为应用提供有序、可控的实时运行基础。</p>
+          <p>以优先级抢占调度、任务管理、中断处理、上下文切换与实时执行控制为核心，
+              针对 8051 单片机的处理器架构、中断机制与有限存储资源进行专门设计，
+              为 51 单片机实时应用提供有序、可控的内核运行基础。</p>
           <div class="architecture-meta">
             <div class="meta-line">建立清晰的任务调度与执行机制。</div>
             <div class="meta-line">支持系统行为分析与功能验证。</div>
@@ -905,7 +946,9 @@ pre.code .type{color:#f472b6; font-weight:600;}
         <article class="panel-card medium reveal">
           <span class="card-kicker">System Components</span>
           <h3>系统组件</h3>
-            <p>围绕实际嵌入式项目提供 Shell、Modbus RTU、IPC、内存管理等系统组件，覆盖任务协作、通信交互与资源管理等常见需求，帮助开发者将内核能力转化为可集成、可复用的工程功能。</p>
+            <p>围绕 8051 嵌入式应用提供 Shell、Modbus RTU、IPC、内存管理等系统组件，
+              覆盖任务协作、通信交互与资源管理等常见需求，
+              帮助开发者将实时操作系统内核能力转化为可集成、可复用的工程功能。</p>
             <div class="architecture-meta">
               <div class="meta-line">模块化组织常用系统服务与通信功能。</div>
               <div class="meta-line">为实际嵌入式项目提供组件支持。</div>
@@ -919,7 +962,9 @@ pre.code .type{color:#f472b6; font-weight:600;}
         <article class="panel-card small reveal">
           <span class="card-kicker">Development Ecosystem</span>
           <h3>开发资源</h3>
-          <p>提供系统手册、API 参考、快速入门、基础实验、外设驱动与工程示例，帮助开发者理解系统机制、掌握接口用法，并逐步完成应用开发与项目集成。</p>
+          <p>提供 8051 RTOS 系统手册、API 参考、快速入门、基础实验、外设驱动与工程示例，
+            帮助开发者理解实时操作系统机制、掌握接口用法，
+             并逐步完成 51 单片机应用开发与项目集成。</p>
           <div class="architecture-meta">
             <div class="meta-line">文档与示例配套，便于学习和集成。</div>
             <div class="meta-line">覆盖从基础实验到工程应用的开发过程。</div>
@@ -940,7 +985,9 @@ pre.code .type{color:#f472b6; font-weight:600;}
           <div class="trust-summary">
             <span class="section-kicker">Foundation</span>
             <h3>不止于运行，更注重验证与维护</h3>
-            <p>一个面向工程应用的 RTOS，不仅要保障任务稳定运行，还应具备清晰的系统架构、可验证的关键功能，以及完善的开发文档、配套组件与工程示例，为实际项目开发、系统集成和长期维护提供全面支持。</p>
+            <p>一个面向工程应用的 8051 实时操作系统，不仅要关注任务运行，
+              还需要清晰的系统架构、可验证的关键机制，以及配套的开发文档、
+              系统组件、驱动与工程示例，为 51 单片机项目开发、系统集成和长期维护提供支持。</p>
           </div>
           <div class="trust-badge">
             <strong>8051 Focus</strong>
@@ -1064,7 +1111,7 @@ pre.code .type{color:#f472b6; font-weight:600;}
     <div class="container">
       <div class="cta-shell reveal">
         <h2>为 8051 打造完整实时操作系统</h2>
-        <p>从系统架构和 API 文档开始了解 HRTOS，也可以直接查看示例工程、驱动与系统组件。根据项目需求逐步完成技术评估、功能验证与工程集成。</p>
+        <p>从 HRTOS 系统架构、8051 RTOS API 文档和内核模块开始了解，也可以直接查看实验示例、外设驱动与系统组件，逐步完成 8051 实时操作系统的技术评估、功能验证与工程集成。</p>
         <div class="cta-actions">
           <a class="btn primary" href="/docs/index.html">探索 HRTOS 生态</a>
           <a class="btn" href="/download/index.html">开始使用 HRTOS</a>
