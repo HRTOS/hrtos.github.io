@@ -1,206 +1,565 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>HRTOS 系统手册</title>
-
-<meta name="description" content="HRTOS RTOS documentation center">
-
+<meta name="description" content="HRTOS 8051 实时操作系统系统手册，涵盖内核架构、任务管理、调度机制、通信机制、中断管理、内存布局与系统扩展。">
+<meta name="theme-color" content="#0f172a">
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <style>
-:root{
-  --bg:#0f172a;
-  --panel:#0f172a;
-  --surface:rgba(15,23,42,0.7);
-  --border:rgba(148,163,184,0.18);
-  --accent:#38bdf8;
-  --muted:#94a3b8;
-  --text:#e2e8f0;
+:root {
+  --bg: #0b1220;
+  --panel: #0f172a;
+  --surface: #162238;
+  --surface-hover: #1e293b;
+  --border: rgba(148, 163, 184, .17);
+  --accent: #38bdf8;
+  --accent-soft: rgba(56, 189, 248, .12);
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --sidebar-width: 280px;
+  --topbar-height: 58px;
 }
 
-*{box-sizing:border-box}
+* {
+  box-sizing: border-box;
+}
 
-body{
-  margin:0;
-  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  background:var(--bg);
-  color:var(--text);
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
   min-height: 100vh;
   min-height: 100dvh;
-  display:flex;
-  flex-direction:column;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", "PingFang SC",
+               "Microsoft YaHei", sans-serif;
+  line-height: 1.7;
 }
 
-/* ================= 顶栏 ================= */
-.topbar{
-  height:54px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:0 18px;
-  background:rgba(15,23,42,0.95);
-  border-bottom:1px solid var(--border);
+/* 顶部导航 */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 24px;
+  background: rgba(15, 23, 42, .96);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
 }
 
-.topbar .logo{
-  color:var(--accent);
-  font-weight:700;
+.logo {
+  flex-shrink: 0;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 1px;
 }
 
-.topbar a{
-  color:var(--muted);
-  margin-left:14px;
-  text-decoration:none;
-}
-.topbar a:hover{color:var(--accent)}
-
-/* ================= 主体 ================= */
-.main{
-  display:flex;
-  flex:1;
-  overflow:hidden;
+.logo a {
+  color: var(--accent);
+  text-decoration: none;
 }
 
-/* ================= 左侧导航（完整树） ================= */
-#sidebar{
-  width:320px;
-  background:#0f172a;
-  border-right:1px solid var(--border);
-  overflow-y:auto;
-  padding:12px;
+.top-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 22px;
 }
 
-.group-title{
-  font-size:12px;
-  color:#64748b;
-  margin:18px 0 6px;
-  padding-left:6px;
-  border-left:2px solid rgba(56,189,248,0.3);
+.top-links a {
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: none;
+  transition: color .2s;
 }
 
-.item{
-  font-size:14px;
-  padding:8px 10px;
-  border-radius:6px;
-  cursor:pointer;
-  color:#cbd5e1;
-  transition:.2s;
+.top-links a:hover,
+.top-links a.current {
+  color: var(--accent);
 }
 
-.item:hover{
-  background:#1e293b;
-  color:var(--accent);
+/* 主体布局 */
+
+.main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
 }
 
-.item.active{
-  background:#1e40af;
-  color:white;
+/* 左侧导航 */
+
+#sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 18px 14px 28px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
 }
 
-/* ================= 右侧内容 ================= */
-#content{
-  flex:1;
-  padding:26px;
-  overflow-y:auto;
+.sidebar-heading {
+  padding: 0 10px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 1.5px;
 }
 
-/* markdown */
-#content h1,h2,h3{color:var(--accent)}
-#content code{background:#111827;padding:2px 6px;border-radius:4px}
-#content pre{
-  background:#0f172a;
-  border:1px solid var(--border);
-  padding:12px;
-  border-radius:8px;
-  overflow-x:auto;
+.search-box {
+  padding: 0 4px 16px;
 }
 
-/* ================= 首页 ================= */
-.hero{
-  padding:18px 0 20px;
-  border-bottom:1px solid var(--border);
+.search-box input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  outline: none;
+  background: #0b1220;
+  color: var(--text);
+  font-size: 13px;
 }
 
-.hero h1{
-  margin:0;
-  font-size:2.4rem;
+.search-box input:focus {
+  border-color: var(--accent);
 }
 
-.hero p{
-  color:var(--muted);
-  max-width:900px;
+.search-box input::placeholder {
+  color: #64748b;
 }
 
-/* 卡片 */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:16px;
-  margin-top:20px;
+.group-title {
+  margin: 17px 0 7px;
+  padding-left: 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  border-left: 2px solid rgba(56, 189, 248, .45);
 }
 
-.card{
-  background:linear-gradient(180deg,rgba(30,41,59,0.7),rgba(15,23,42,0.95));
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:16px;
-  cursor:pointer;
-  transition:.2s;
+.item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  margin: 2px 0;
+  border-radius: 6px;
+  color: #cbd5e1;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .18s, color .18s;
 }
 
-.card:hover{
-  transform:translateY(-6px);
-  border-color:rgba(56,189,248,0.5);
+.item:hover {
+  background: var(--surface-hover);
+  color: var(--accent);
 }
 
-.card h3{margin:0}
-.card p{color:var(--muted);font-size:14px}
+.item.active {
+  background: rgba(37, 99, 235, .22);
+  color: #7dd3fc;
+  box-shadow: inset 2px 0 var(--accent);
+}
 
-@media(max-width:900px){
-  #sidebar{width:240px}
-  .grid{grid-template-columns:1fr}
+.item-number {
+  min-width: 23px;
+  color: #64748b;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.item.active .item-number {
+  color: var(--accent);
+}
+
+.no-results {
+  padding: 16px 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* 右侧内容 */
+
+#content {
+  flex: 1;
+  min-width: 0;
+  padding: 34px clamp(18px, 4vw, 56px) 64px;
+  overflow-y: auto;
+}
+
+.content-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+/* 文档内容 */
+
+#content h1,
+#content h2,
+#content h3,
+#content h4 {
+  color: var(--accent);
+  line-height: 1.4;
+  scroll-margin-top: 76px;
+}
+
+#content h1 {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+#content h2 {
+  margin-top: 36px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+#content h3 {
+  margin-top: 26px;
+}
+
+#content p,
+#content li {
+  color: #cbd5e1;
+}
+
+#content a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+#content a:hover {
+  text-decoration: underline;
+}
+
+#content code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #7dd3fc;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: .9em;
+}
+
+#content pre {
+  overflow-x: auto;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #080e1a;
+  line-height: 1.65;
+}
+
+#content pre code {
+  padding: 0;
+  background: transparent;
+  color: #dbeafe;
+}
+
+#content blockquote {
+  margin: 20px 0;
+  padding: 10px 18px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--muted);
+}
+
+#content table {
+  width: 100%;
+  margin: 20px 0;
+  border-collapse: collapse;
+  display: block;
+  overflow-x: auto;
+}
+
+#content th,
+#content td {
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  text-align: left;
+  white-space: normal;
+}
+
+#content th {
+  background: var(--surface);
+  color: #7dd3fc;
+}
+
+#content tr:nth-child(even) {
+  background: rgba(30, 41, 59, .35);
+}
+
+#content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+#content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 28px 0;
+}
+
+/* 首页 */
+
+.hero {
+  padding: 16px 0 26px;
+  border-bottom: 1px solid var(--border);
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.hero h1 {
+  margin: 10px 0 12px;
+  padding: 0 !important;
+  border: none !important;
+  color: #f1f5f9 !important;
+  font-size: clamp(30px, 4vw, 46px);
+  letter-spacing: -1px;
+}
+
+.hero p {
+  max-width: 760px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.meta-tag {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: #cbd5e1;
+  background: rgba(30, 41, 59, .45);
+  font-size: 12px;
+}
+
+.section-heading {
+  margin: 30px 0 16px;
+  color: #f1f5f9;
+  font-size: 19px;
+  font-weight: 650;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.card {
+  min-height: 136px;
+  padding: 19px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: linear-gradient(
+    150deg,
+    rgba(30, 41, 59, .78),
+    rgba(15, 23, 42, .88)
+  );
+  cursor: pointer;
+  transition: transform .2s, border-color .2s,
+              background .2s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(56, 189, 248, .55);
+  background: linear-gradient(
+    150deg,
+    rgba(30, 58, 88, .8),
+    rgba(15, 23, 42, .95)
+  );
+}
+
+.card-icon {
+  margin-bottom: 9px;
+  font-size: 22px;
+}
+
+.card h3 {
+  margin: 0 0 8px !important;
+  color: #e2e8f0 !important;
+  font-size: 15px;
+}
+
+.card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.doc-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.doc-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, .5);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  transition: border-color .2s, background .2s;
+}
+
+.doc-link:hover {
+  border-color: rgba(56, 189, 248, .45);
+  background: var(--surface);
+}
+
+.doc-link .number {
+  color: var(--accent);
+  font-family: Consolas, monospace;
+  font-size: 12px;
+}
+
+.home-footer {
+  margin-top: 32px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* 加载状态 */
+
+.status {
+  padding: 30px 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status.error {
+  color: #fca5a5;
+}
+
+.status button {
+  margin-top: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* 底部 */
+
+.footer {
+  padding: 15px 20px;
+  border-top: 1px solid var(--border);
+  color: #64748b;
+  text-align: center;
+  font-size: 12px;
+}
+
+/* 响应式 */
+
+@media (max-width: 1050px) {
+  :root {
+    --sidebar-width: 240px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
+  .topbar {
+    position: relative;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+    padding: 12px 16px;
+  }
 
-  /* 1. 主布局改成上下结构 */
-  .main{
+  .top-links {
+    gap: 17px;
+  }
+
+  .top-links a {
+    font-size: 13px;
+  }
+
+  .main {
     flex-direction: column;
   }
 
-  /* 2. sidebar 变成顶部全宽 */
-  #sidebar{
+  #sidebar {
     width: 100%;
-    height: auto;
-    max-height: 240px;
+    max-height: 255px;
+    padding: 12px;
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
 
-  /* 3. 内容区适配 */
-  #content{
-    padding: 14px;
+  .sidebar-heading {
+    padding-bottom: 8px;
   }
 
-  /* 4. 卡片改为单列 */
-  .grid{
+  .search-box {
+    padding-bottom: 8px;
+  }
+
+  .group-title {
+    margin-top: 10px;
+  }
+
+  #content {
+    padding: 22px 16px 40px;
+    overflow: visible;
+  }
+
+  .grid {
     grid-template-columns: 1fr;
   }
 
-  /* 5. 顶栏字体稍微缩小 */
-  .topbar{
-    flex-wrap: wrap;
-    height: auto;
-    padding: 10px;
+  .doc-list {
+    grid-template-columns: 1fr;
   }
 
-  .topbar a{
-    margin-left: 8px;
-    font-size: 13px;
+  .card {
+    min-height: 112px;
   }
 }
 </style>
@@ -208,193 +567,638 @@ body{
 
 <body>
 
-<div class="topbar">
+<header class="topbar">
   <div class="logo">
-    <a href="https://hrtos.com/index.html" style="color:#38bdf8;text-decoration:none;">HRTOS</a>
+    <a href="https://hrtos.com/index.html">HRTOS</a>
   </div>
 
-  <div>
+  <nav class="top-links" aria-label="主导航">
     <a href="https://hrtos.com/index.html">首页</a>
-    <a href="https://hrtos.com/docs/index.html">Docs</a>
+    <a href="https://hrtos.com/docs/index.html" class="current">Docs</a>
     <a href="https://hrtos.com/docs/api_v2/index.html">API</a>
     <a href="https://hrtos.com/docs/examples_v2/index.html">示例</a>
     <a href="https://hrtos.com/download/index.html">下载</a>
-  </div>
-</div>
+  </nav>
+</header>
 
-<div class="main">
+<main class="main">
 
-  <div id="sidebar"></div>
-  <div id="content"></div>
+  <aside id="sidebar" aria-label="系统手册目录">
+    <div class="sidebar-heading">SYSTEM MANUAL / 系统手册</div>
 
-</div>
+    <div class="search-box">
+      <input
+        id="docSearch"
+        type="search"
+        placeholder="搜索文档标题..."
+        aria-label="搜索文档标题"
+        autocomplete="off"
+      >
+    </div>
+
+    <div id="navTree"></div>
+  </aside>
+
+  <section id="content" aria-live="polite">
+    <div class="content-inner">
+      <div class="status">正在初始化系统手册...</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  HRTOS · 8051 实时操作系统 · System Manual
+</footer>
 
 <script>
+"use strict";
 
-/* =========================
-   🚨 完整文档结构（未删减）
-   ========================= */
+/* ==================================================
+   1. 最新系统手册目录
+   所有 Markdown 文件均相对于当前 HTML 所在目录加载
+   ================================================== */
+
 const docs = [
-    { group: "内核系统", file: "README.md", name: "系统总览" },
-    { group: "内核系统", file: "01_kernel_overview.md", name: "内核概述" },
-    { group: "内核系统", file: "02_directory_analysis.md", name: "目录结构分析" },
-
-    { group: "调度系统", file: "03_scheduler_design.md", name: "调度器设计" },
-
-    { group: "任务系统", file: "04_task_management.md", name: "任务管理" },
-
-    { group: "通信机制", file: "05_event_design.md", name: "事件机制" },
-    { group: "通信机制", file: "06_queue_design.md", name: "消息队列" },
-    { group: "通信机制", file: "07_mutex_design.md", name: "互斥锁" },
-    { group: "通信机制", file: "08_semaphore_design.md", name: "信号量" },
-
-    { group: "内核系统", file: "09_timer_system.md", name: "定时系统" },
-    { group: "中断系统", file: "10_interrupt_design.md", name: "中断管理" },
-
-    { group: "内存管理", file: "11_memory_layout.md", name: "内存布局" },
-
-    { group: "移植层", file: "12_porting_layer.md", name: "移植层" },
-
-    { group: "内核系统", file: "13_kernel_startup.md", name: "内核启动" },
-
-    { group: "设计模型", file: "14_state_machine.md", name: "状态机设计" },
-    { group: "设计模型", file: "15_module_dependencies.md", name: "模块依赖" },
-    { group: "设计模型", file: "16_call_flow.md", name: "调用流程" },
-
-    { group: "数据结构", file: "17_data_structures.md", name: "数据结构" },
-
-    { group: "设计原则", file: "18_design_principles.md", name: "设计原则" },
-
-    { group: "扩展指南", file: "19_extension_guide.md", name: "扩展指南" },
-
-    { group: "调试工具", file: "20_debugging.md", name: "调试方法" }
+  {
+    group: "内核系统",
+    file: "00_README.md",
+    name: "系统总览",
+    icon: "◈",
+    description: "系统定位、整体架构与核心功能"
+  },
+  {
+    group: "内核系统",
+    file: "01_kernel_overview.md",
+    name: "内核概述",
+    icon: "▦",
+    description: "内核组成、核心模块与工作机制"
+  },
+  {
+    group: "内核系统",
+    file: "02_directory_analysis.md",
+    name: "目录结构分析",
+    icon: "▤",
+    description: "源码组织、模块划分与文件职责"
+  },
+  {
+    group: "内核系统",
+    file: "03_kernel_startup.md",
+    name: "内核启动",
+    icon: "↗",
+    description: "初始化流程、启动入口与运行准备"
+  },
+  {
+    group: "任务与调度",
+    file: "04_task_management.md",
+    name: "任务管理",
+    icon: "▣",
+    description: "任务创建、删除、切换与生命周期"
+  },
+  {
+    group: "任务与调度",
+    file: "05_scheduler_design.md",
+    name: "调度器设计",
+    icon: "⚡",
+    description: "优先级调度、抢占机制与时间片"
+  },
+  {
+    group: "任务与调度",
+    file: "06_state_machine.md",
+    name: "状态机设计",
+    icon: "◇",
+    description: "任务状态、状态转换与运行条件"
+  },
+  {
+    group: "通信与同步",
+    file: "07_wait_design.md",
+    name: "等待机制",
+    icon: "◷",
+    description: "等待条件、阻塞处理与唤醒流程"
+  },
+  {
+    group: "通信与同步",
+    file: "08_event_design.md",
+    name: "事件机制",
+    icon: "◉",
+    description: "事件通知、等待与任务同步"
+  },
+  {
+    group: "通信与同步",
+    file: "09_semaphore_design.md",
+    name: "信号量",
+    icon: "⇄",
+    description: "资源计数、任务同步与等待处理"
+  },
+  {
+    group: "通信与同步",
+    file: "10_mutex_design.md",
+    name: "互斥锁",
+    icon: "⌑",
+    description: "互斥访问、锁管理与优先级继承"
+  },
+  {
+    group: "通信与同步",
+    file: "11_queue_design.md",
+    name: "消息队列",
+    icon: "▤",
+    description: "消息发送、接收与队列管理"
+  },
+  {
+    group: "通信与同步",
+    file: "12_mailbox_design.md",
+    name: "邮箱机制",
+    icon: "✉",
+    description: "邮箱通信、消息传递与任务协作"
+  },
+  {
+    group: "底层系统",
+    file: "13_timer_system.md",
+    name: "定时系统",
+    icon: "◷",
+    description: "系统时基、延时与定时处理"
+  },
+  {
+    group: "底层系统",
+    file: "14_interrupt_design.md",
+    name: "中断管理",
+    icon: "ϟ",
+    description: "中断响应、嵌套与中断处理约束"
+  },
+  {
+    group: "底层系统",
+    file: "15_memory_layout.md",
+    name: "内存布局",
+    icon: "▥",
+    description: "8051 存储空间、栈与内存规划"
+  },
+  {
+    group: "架构与扩展",
+    file: "16_call_flow.md",
+    name: "调用流程",
+    icon: "⇢",
+    description: "关键 API、内核调用与执行路径"
+  },
+  {
+    group: "架构与扩展",
+    file: "17_porting_layer.md",
+    name: "移植层",
+    icon: "⇆",
+    description: "硬件适配、编译环境与平台接口"
+  },
+  {
+    group: "架构与扩展",
+    file: "18_design_principles.md",
+    name: "设计原则",
+    icon: "◎",
+    description: "内核设计约束、实现思路与取舍"
+  },
+  {
+    group: "架构与扩展",
+    file: "19_extension_guide.md",
+    name: "扩展指南",
+    icon: "＋",
+    description: "模块扩展、功能集成与开发规范"
+  },
+  {
+    group: "开发与调试",
+    file: "20_debugging.md",
+    name: "调试方法",
+    icon: "⌕",
+    description: "问题定位、运行检查与调试技巧"
+  }
 ];
 
+/* ==================================================
+   2. 页面状态与基础配置
+   ================================================== */
+
 const sidebar = document.getElementById("sidebar");
+const navTree = document.getElementById("navTree");
 const content = document.getElementById("content");
+const searchInput = document.getElementById("docSearch");
 
-/* =========================
-   构建左侧完整树
-   ========================= */
-const groups = {};
+let currentFile = null;
+let requestId = 0;
 
-docs.forEach(d=>{
-    if(!groups[d.group]) groups[d.group]=[];
-    groups[d.group].push(d);
+const docByFile = new Map(
+  docs.map(doc => [doc.file, doc])
+);
+
+/* ==================================================
+   3. Markdown 渲染配置
+   ================================================== */
+
+if (typeof marked !== "undefined") {
+  marked.setOptions({
+    gfm: true,
+    breaks: false
+  });
+}
+
+/* ==================================================
+   4. 构建左侧导航树
+   ================================================== */
+
+function buildSidebar(filter = "") {
+  navTree.replaceChildren();
+
+  const keyword = filter.trim().toLowerCase();
+  const groups = new Map();
+
+  docs.forEach(doc => {
+    const searchable = (
+      doc.name + " " +
+      doc.file + " " +
+      doc.group + " " +
+      doc.description
+    ).toLowerCase();
+
+    if (keyword && !searchable.includes(keyword)) {
+      return;
+    }
+
+    if (!groups.has(doc.group)) {
+      groups.set(doc.group, []);
+    }
+
+    groups.get(doc.group).push(doc);
+  });
+
+  if (groups.size === 0) {
+    const empty = document.createElement("div");
+    empty.className = "no-results";
+    empty.textContent = "没有找到匹配的文档";
+    navTree.appendChild(empty);
+    return;
+  }
+
+  groups.forEach((items, groupName) => {
+    const heading = document.createElement("div");
+    heading.className = "group-title";
+    heading.textContent = groupName;
+    navTree.appendChild(heading);
+
+    items.forEach(doc => {
+      const item = document.createElement("div");
+      item.className = "item";
+      item.dataset.file = doc.file;
+      item.title = doc.description;
+      item.setAttribute("role", "button");
+      item.setAttribute("tabindex", "0");
+
+      const number = document.createElement("span");
+      number.className = "item-number";
+      number.textContent = doc.file.slice(0, 2);
+
+      const label = document.createElement("span");
+      label.textContent = doc.name;
+
+      item.append(number, label);
+
+      item.addEventListener("click", () => {
+        openDoc(doc.file);
+      });
+
+      item.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openDoc(doc.file);
+        }
+      });
+
+      navTree.appendChild(item);
+    });
+  });
+
+  updateActiveItem();
+}
+
+function updateActiveItem() {
+  navTree.querySelectorAll(".item").forEach(item => {
+    const active = item.dataset.file === currentFile;
+    item.classList.toggle("active", active);
+
+    if (active) {
+      item.setAttribute("aria-current", "page");
+    } else {
+      item.removeAttribute("aria-current");
+    }
+  });
+}
+
+/* ==================================================
+   5. 首页
+   ================================================== */
+
+function showHome() {
+  currentFile = null;
+  updateActiveItem();
+
+  const inner = document.createElement("div");
+  inner.className = "content-inner";
+
+  inner.innerHTML = `
+    <section class="hero">
+      <div class="eyebrow">HRTOS / SYSTEM DOCUMENTATION</div>
+
+      <h1>HRTOS 系统手册</h1>
+
+      <p>
+        面向 8051 单片机的实时操作系统技术文档。
+        系统化介绍内核架构、任务管理、调度机制、
+        通信与同步、底层实现及扩展开发。
+      </p>
+
+      <div class="hero-meta">
+        <span class="meta-tag">8051 Native</span>
+        <span class="meta-tag">Kernel Architecture</span>
+        <span class="meta-tag">Real-Time Scheduling</span>
+        <span class="meta-tag">21 篇技术文档</span>
+      </div>
+    </section>
+
+    <h2 class="section-heading">文档导航</h2>
+
+    <div class="grid" id="homeCards"></div>
+
+    <h2 class="section-heading">完整文档目录</h2>
+
+    <div class="doc-list" id="homeDocList"></div>
+
+    <div class="home-footer">
+      HRTOS System Manual · 通过左侧目录或下方文档入口浏览内容
+    </div>
+  `;
+
+  const cards = [
+    {
+      title: "内核系统",
+      icon: "◈",
+      description: "系统总览、内核概述、目录结构与启动流程",
+      target: "00_README.md"
+    },
+    {
+      title: "任务与调度",
+      icon: "⚡",
+      description: "任务生命周期、调度器与状态机",
+      target: "04_task_management.md"
+    },
+    {
+      title: "通信与同步",
+      icon: "⇄",
+      description: "等待、事件、信号量、互斥锁、队列与邮箱",
+      target: "07_wait_design.md"
+    },
+    {
+      title: "底层系统",
+      icon: "▥",
+      description: "定时系统、中断管理与内存布局",
+      target: "13_timer_system.md"
+    },
+    {
+      title: "架构与扩展",
+      icon: "⇢",
+      description: "调用流程、移植层、设计原则与扩展指南",
+      target: "16_call_flow.md"
+    },
+    {
+      title: "开发与调试",
+      icon: "⌕",
+      description: "内核运行检查、问题分析与调试方法",
+      target: "20_debugging.md"
+    }
+  ];
+
+  const cardContainer = inner.querySelector("#homeCards");
+
+  cards.forEach(card => {
+    const el = document.createElement("article");
+    el.className = "card";
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", "0");
+
+    const icon = document.createElement("div");
+    icon.className = "card-icon";
+    icon.textContent = card.icon;
+
+    const title = document.createElement("h3");
+    title.textContent = card.title;
+
+    const desc = document.createElement("p");
+    desc.textContent = card.description;
+
+    el.append(icon, title, desc);
+
+    el.addEventListener("click", () => openDoc(card.target));
+
+    el.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openDoc(card.target);
+      }
+    });
+
+    cardContainer.appendChild(el);
+  });
+
+  const list = inner.querySelector("#homeDocList");
+
+  docs.forEach(doc => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "doc-link";
+
+    const number = document.createElement("span");
+    number.className = "number";
+    number.textContent = doc.file.slice(0, 2);
+
+    const label = document.createElement("span");
+    label.textContent = doc.name;
+
+    button.append(number, label);
+    button.title = doc.description;
+
+    button.addEventListener("click", () => openDoc(doc.file));
+
+    list.appendChild(button);
+  });
+
+  content.replaceChildren(inner);
+}
+
+/* ==================================================
+   6. 加载 Markdown 文档
+   ================================================== */
+
+async function openDoc(file, options = {}) {
+  const doc = docByFile.get(file);
+
+  if (!doc) {
+    showError("找不到对应的文档配置：" + file);
+    return;
+  }
+
+  const { updateHash = true } = options;
+
+  const thisRequest = ++requestId;
+
+  currentFile = file;
+  updateActiveItem();
+
+  if (updateHash) {
+    const hash = "#" + encodeURIComponent(file);
+    if (location.hash !== hash) {
+      history.pushState(null, "", hash);
+    }
+  }
+
+  const inner = document.createElement("div");
+  inner.className = "content-inner";
+
+  const status = document.createElement("div");
+  status.className = "status";
+  status.textContent = "正在加载：" + doc.name + "...";
+
+  inner.appendChild(status);
+  content.replaceChildren(inner);
+
+  try {
+    const response = await fetch(
+      "./" + encodeURIComponent(file),
+      { cache: "no-cache" }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        "HTTP " + response.status + " " + response.statusText
+      );
+    }
+
+    const markdown = await response.text();
+
+    if (thisRequest !== requestId) {
+      return;
+    }
+
+    if (typeof marked === "undefined") {
+      throw new Error("Markdown 渲染库加载失败，请检查网络连接");
+    }
+
+    const article = document.createElement("article");
+    article.className = "content-inner";
+
+    /*
+     * Markdown 文件必须是可信的站点内容。
+     * 如果文档允许第三方提交内容，生产环境应增加 HTML 清洗。
+     */
+    article.innerHTML = marked.parse(markdown);
+
+    content.replaceChildren(article);
+
+    document.title = doc.name + " - HRTOS 系统手册";
+
+    // 每次切换文档，回到正文顶部。
+    content.scrollTop = 0;
+
+  } catch (error) {
+    if (thisRequest !== requestId) {
+      return;
+    }
+
+    showError(
+      "文档加载失败：" + doc.name,
+      error.message,
+      () => openDoc(file)
+    );
+  }
+}
+
+/* ==================================================
+   7. 加载失败提示
+   ================================================== */
+
+function showError(title, detail = "", retry = null) {
+  const inner = document.createElement("div");
+  inner.className = "content-inner";
+
+  const heading = document.createElement("h2");
+  heading.style.color = "#fca5a5";
+  heading.textContent = title;
+
+  const message = document.createElement("p");
+  message.className = "status error";
+  message.textContent = detail || "请检查 Markdown 文件是否存在。";
+
+  inner.append(heading, message);
+
+  if (retry) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "重新加载";
+    button.addEventListener("click", retry);
+    message.appendChild(document.createElement("br"));
+    message.appendChild(button);
+  }
+
+  content.replaceChildren(inner);
+}
+
+/* ==================================================
+   8. URL 哈希与浏览器历史记录
+   ================================================== */
+
+function loadFromHash() {
+  const rawHash = location.hash.slice(1);
+
+  if (!rawHash) {
+    requestId++;
+    currentFile = null;
+    document.title = "HRTOS 系统手册";
+    showHome();
+    return;
+  }
+
+  let hash;
+
+  try {
+    hash = decodeURIComponent(rawHash);
+  } catch {
+    hash = rawHash;
+  }
+
+  // 兼容旧版使用不带 .md 的文件名哈希。
+  let doc = docByFile.get(hash);
+
+  if (!doc) {
+    doc = docs.find(item =>
+      item.file.replace(/\.md$/i, "") === hash
+    );
+  }
+
+  if (doc) {
+    openDoc(doc.file, { updateHash: false });
+  } else {
+    requestId++;
+    currentFile = null;
+    document.title = "HRTOS 系统手册";
+    showHome();
+  }
+}
+
+window.addEventListener("hashchange", loadFromHash);
+window.addEventListener("popstate", loadFromHash);
+
+/* ==================================================
+   9. 搜索与初始化
+   ================================================== */
+
+searchInput.addEventListener("input", event => {
+  buildSidebar(event.target.value);
 });
 
-for(const g in groups){
-
-    const gt = document.createElement("div");
-    gt.className="group-title";
-    gt.innerText=g;
-    sidebar.appendChild(gt);
-
-    groups[g].forEach(d=>{
-
-        const item=document.createElement("div");
-        item.className="item";
-        item.innerText=d.name;
-        item.dataset.file=d.file;
-
-        item.onclick=()=>loadDoc(d.file);
-
-        sidebar.appendChild(item);
-    });
-}
-
-/* =========================
-   首页
-   ========================= */
-function showHome(){
-    content.innerHTML=`
-      <div class="hero">
-        <h1>HRTOS 系统手册</h1>
-        <p>轻量级实时操作系统 · 内核 / 调度 / IPC / 内存管理完整参考</p>
-      </div>
-
-      <div class="grid">
-
-        <div class="card" onclick="location.hash='01_kernel_overview'">
-          <h3>📌 内核系统</h3>
-          <p>任务调度 / 生命周期 / 内核结构</p>
-        </div>
-
-        <div class="card" onclick="location.hash='03_scheduler_design'">
-          <h3>⚡ 调度系统</h3>
-          <p>优先级调度 / 时间片 / 抢占机制</p>
-        </div>
-
-        <div class="card" onclick="location.hash='05_event_design'">
-          <h3>🔗 通信机制</h3>
-          <p>信号量 / 队列 / 事件 / 互斥锁</p>
-        </div>
-
-        <div class="card" onclick="location.hash='11_memory_layout'">
-          <h3>🧠 内存管理</h3>
-          <p>栈 / 堆 / 内存保护 / 分配策略</p>
-        </div>
-
-        <div class="card" onclick="location.hash='10_interrupt_design'">
-          <h3>⚙️ 中断系统</h3>
-          <p>嵌套中断 / 延迟 / 优先级</p>
-        </div>
-
-        <div class="card" onclick="location.hash='20_debugging'">
-          <h3>🛠 调试工具</h3>
-          <p>日志 / 断点 / 运行分析</p>
-        </div>
-
-      </div>
-    `;
-}
-
-/* =========================
-   加载 MD
-   ========================= */
-async function loadDoc(file){
-
-    try{
-
-        setActive(file);
-
-        content.innerHTML="Loading...";
-
-        const res=await fetch("./"+file);
-        const text=await res.text();
-
-        content.innerHTML=marked.parse(text);
-
-        location.hash=file.replace(".md","");
-
-    }catch(e){
-        content.innerHTML="❌ 加载失败："+file;
-    }
-}
-
-/* =========================
-   高亮
-   ========================= */
-function setActive(file){
-    document.querySelectorAll(".item").forEach(el=>{
-        el.classList.toggle("active",el.dataset.file===file);
-    });
-}
-
-/* =========================
-   hash支持
-   ========================= */
-function loadFromHash(){
-    const hash=location.hash.replace("#","");
-    if(!hash) return showHome();
-
-    const target=docs.find(d=>d.file.includes(hash));
-    if(target) loadDoc(target.file);
-    else showHome();
-}
-
+buildSidebar();
 loadFromHash();
-window.onhashchange=loadFromHash;
 
 </script>
 
