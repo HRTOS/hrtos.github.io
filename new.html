@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#05080d">
+  <meta name="color-scheme" content="dark">
+  <title>HRTOS — 8051 实时操作系统 | 51 单片机 RTOS 内核与完整开发生态</title>
+  <meta name="description" content="HRTOS 是面向经典 8051（MCS-51）单片机的实时操作系统，专注实时内核、优先级调度、中断管理、上下文切换与系统资源管理。提供 Shell、Modbus RTU、IPC、驱动、API 参考、系统手册和工程示例，持续维护完整的 8051 RTOS 开发体系。">
+  <meta name="keywords" content="HRTOS,8051操作系统,8051 RTOS,8051实时操作系统,51单片机操作系统,51单片机实时操作系统,硬实时操作系统,嵌入式实时操作系统,8051实时内核,实时任务调度,优先级抢占调度,8051任务管理,中断管理,上下文切换,系统资源管理,8051 RTOS开发,Keil C51,MCS-51">
+  <meta name="author" content="HRTOS">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://hrtos.com/">
+  <link rel="icon" type="image/svg+xml" href="/images/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:site_name" content="HRTOS">
+  <meta property="og:title" content="HRTOS — 面向 8051 的实时操作系统">
+  <meta property="og:description" content="专注 8051 实时内核、任务调度、中断管理与完整工程开发生态。">
+  <meta property="og:url" content="https://hrtos.com/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="HRTOS — 8051 实时操作系统">
+  <meta name="twitter:description" content="为经典 8051 架构构建持续维护的实时操作系统与工程开发体系。">
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"SoftwareApplication",
+    "@id":"https://hrtos.com/#software",
+    "name":"HRTOS",
+    "alternateName":"8051 RTOS",
+    "url":"https://hrtos.com/",
+    "applicationCategory":"DeveloperApplication",
+    "applicationSubCategory":"8051 实时操作系统",
+    "operatingSystem":"8051 / MCS-51 based embedded systems",
+    "inLanguage":"zh-CN",
+    "description":"HRTOS 是面向经典 8051（MCS-51）单片机的实时操作系统，专注实时内核、任务调度、中断管理、上下文切换与系统资源管理，并提供 Shell、Modbus RTU、IPC、驱动、API 文档、系统手册和工程示例。",
+    "keywords":"8051操作系统,8051 RTOS,51单片机实时操作系统,HRTOS,实时内核,任务调度,中断管理",
+    "featureList":[
+      "8051 实时内核","优先级任务调度","中断管理","上下文切换",
+      "系统资源管理","Shell","Modbus RTU","IPC","驱动与 API 参考","工程示例"
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebSite",
+    "@id":"https://hrtos.com/#website",
+    "url":"https://hrtos.com/",
+    "name":"HRTOS",
+    "inLanguage":"zh-CN",
+    "description":"HRTOS 8051 实时操作系统官方网站，提供系统文档、API 参考、开发示例与下载资源。"
+  }
+  </script>
+  <style>
+    :root{
+      --bg:#05080d;--bg2:#080e17;--panel:#0b131e;--line:rgba(161,190,218,.14);
+      --text:#edf5fb;--muted:#8da1b4;--cyan:#8cecff;--blue:#4da9ff;
+      --max:1200px;--ease:cubic-bezier(.2,.75,.2,1)
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;scroll-padding-top:90px}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"SF Pro Display","Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65;overflow-x:hidden}
+    a{color:inherit;text-decoration:none}
+    button,a{-webkit-tap-highlight-color:transparent}
+    .wrap{width:min(var(--max),calc(100% - 48px));margin:auto}
+    .noise{position:fixed;inset:0;pointer-events:none;z-index:10;opacity:.12;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");mix-blend-mode:soft-light}
+    .topline{height:1px;background:linear-gradient(90deg,transparent,rgba(110,207,255,.65),transparent)}
+    .nav{height:76px;position:fixed;z-index:20;inset:0 0 auto;border-bottom:1px solid transparent;transition:background .3s,border-color .3s}
+    .nav.scrolled{background:rgba(5,8,13,.84);backdrop-filter:blur(18px);border-color:var(--line)}
+    .nav-inner{height:100%;display:flex;align-items:center;justify-content:space-between;gap:24px}
+    .brand{display:flex;align-items:center;gap:12px;font-size:17px;font-weight:800;letter-spacing:.2em}
+    .brand-mark{width:29px;height:29px;border:1px solid rgba(140,236,255,.7);display:grid;place-items:center;transform:rotate(45deg);box-shadow:0 0 22px rgba(77,169,255,.2)}
+    .brand-mark:after{content:"";width:9px;height:9px;background:var(--cyan);box-shadow:0 0 14px var(--cyan)}
+    .brand span:last-child{color:#f2f8fc}
+    .nav-links{display:flex;align-items:center;gap:30px;color:#9fb1c1;font-size:13px}
+    .nav-links a{transition:color .2s}.nav-links a:hover{color:var(--cyan)}
+    .nav-cta{border:1px solid rgba(140,236,255,.35);padding:9px 15px;color:var(--cyan);letter-spacing:.04em}
+    .menu-toggle{display:none;background:none;border:1px solid var(--line);color:white;padding:8px 11px}
+    .hero{min-height:850px;height:100svh;max-height:1080px;position:relative;display:flex;align-items:center;isolation:isolate;overflow:hidden;border-bottom:1px solid var(--line)}
+    .hero:before{content:"";position:absolute;inset:0;z-index:-3;background:radial-gradient(ellipse at 72% 46%,rgba(24,105,153,.2),transparent 36%),radial-gradient(ellipse at 18% 72%,rgba(24,61,105,.15),transparent 34%),linear-gradient(115deg,#05080d 12%,#07111c 58%,#05080d 100%)}
+    .hero-grid{position:absolute;inset:0;z-index:-2;opacity:.22;background-image:linear-gradient(rgba(125,186,220,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(125,186,220,.12) 1px,transparent 1px);background-size:72px 72px;mask-image:linear-gradient(90deg,transparent 2%,#000 52%,#000 100%)}
+    .hero-art{position:absolute;z-index:-1;width:min(62vw,850px);aspect-ratio:1;right:-5%;top:48%;transform:translateY(-50%);pointer-events:none}
+    .core{position:absolute;inset:25%;border-radius:50%;background:radial-gradient(circle,rgba(130,231,255,.26),rgba(44,132,192,.1) 26%,transparent 68%);filter:blur(12px);animation:pulse 6s ease-in-out infinite}
+    .orbit{position:absolute;inset:12%;border:1px solid rgba(127,211,244,.24);border-radius:50%;transform:rotate(-28deg) scaleY(.48);box-shadow:0 0 45px rgba(46,151,207,.08),inset 0 0 45px rgba(46,151,207,.04)}
+    .orbit.o2{inset:20%;transform:rotate(48deg) scaleY(.58);border-color:rgba(117,179,231,.32);animation:spin 34s linear infinite}
+    .orbit.o3{inset:4%;transform:rotate(90deg) scaleY(.28);border-color:rgba(110,221,255,.16)}
+    .orbit:after{content:"";position:absolute;width:8px;height:8px;top:16%;left:17%;border-radius:50%;background:#a9f1ff;box-shadow:0 0 20px 5px rgba(105,219,255,.8)}
+    .orbit.o2:after{top:78%;left:79%;width:5px;height:5px}
+    .core-ring{position:absolute;inset:33%;border:1px solid rgba(153,229,255,.58);transform:rotate(45deg);box-shadow:0 0 35px rgba(89,192,255,.18),inset 0 0 28px rgba(89,192,255,.1)}
+    .core-ring:before,.core-ring:after{content:"";position:absolute;inset:15%;border:1px solid rgba(124,211,255,.4);transform:rotate(30deg)}
+    .core-ring:after{inset:30%;transform:rotate(60deg);background:radial-gradient(circle,rgba(144,237,255,.18),transparent 70%)}
+    .trace{position:absolute;height:1px;background:linear-gradient(90deg,transparent,rgba(132,222,255,.65),transparent);transform-origin:left;opacity:.6}
+    .t1{width:48%;top:42%;left:3%;transform:rotate(18deg)}.t2{width:40%;top:67%;left:48%;transform:rotate(-22deg)}
+    .hero-content{padding-top:90px;position:relative;z-index:2;max-width:690px}
+    .overline{display:flex;align-items:center;gap:12px;color:#9ab5c9;font-size:11px;letter-spacing:.24em;text-transform:uppercase}
+    .overline:before{content:"";width:34px;height:1px;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+    h1{font-size:clamp(76px,12vw,154px);letter-spacing:-.095em;line-height:.88;margin:32px 0 24px;font-weight:780;color:#f1f8fc}
+    h1 .glow{color:var(--cyan);text-shadow:0 0 42px rgba(111,218,255,.25)}
+    .hero-cn{font-size:clamp(21px,2.4vw,29px);font-weight:500;letter-spacing:.04em;margin:0 0 15px;color:#e7f2f8}
+    .hero-desc{max-width:600px;color:#91a7b9;font-size:15px;line-height:2;margin:0}
+    .hero-actions{display:flex;align-items:center;gap:13px;margin-top:34px;flex-wrap:wrap}
+    .button{display:inline-flex;align-items:center;justify-content:center;gap:18px;padding:14px 20px;font-size:13px;letter-spacing:.04em;border:1px solid rgba(143,218,245,.42);transition:transform .25s,border-color .25s,background .25s}
+    .button.primary{background:var(--cyan);color:#041018;border-color:var(--cyan);font-weight:750}
+    .button:hover{transform:translateY(-3px);border-color:var(--cyan)}
+    .button.secondary{color:#dceaf2;background:rgba(8,19,29,.35)}
+    .arrow{font-size:18px;line-height:1}
+    .hero-foot{position:absolute;bottom:34px;left:0;right:0;display:flex;justify-content:space-between;align-items:center;color:#647d90;font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+    .scroll-cue{display:flex;align-items:center;gap:12px}.scroll-cue:before{content:"";height:1px;width:44px;background:#62869e}
+    .hero-index{font-variant-numeric:tabular-nums}
+    .section{padding:130px 0;position:relative}
+    .section-head{display:grid;grid-template-columns:.7fr 1.3fr;gap:50px;align-items:end;margin-bottom:58px}
+    .eyebrow{color:var(--cyan);font-size:10px;letter-spacing:.22em;text-transform:uppercase}
+    h2{font-size:clamp(35px,5vw,62px);letter-spacing:-.055em;line-height:1.12;margin:15px 0 0;font-weight:650}
+    .section-intro{max-width:570px;color:var(--muted);font-size:14px;line-height:2;margin:0 0 4px}
+    .architecture{background:linear-gradient(180deg,#080e16,#060a10)}
+    .architecture-grid{display:grid;grid-template-columns:1.18fr .82fr;gap:16px}
+    .feature{position:relative;min-height:330px;padding:34px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(14,30,44,.88),rgba(7,14,23,.88));overflow:hidden}
+    .feature:after{content:"";position:absolute;width:250px;height:250px;right:-100px;bottom:-135px;border:1px solid rgba(123,221,255,.2);border-radius:50%;box-shadow:0 0 0 25px rgba(123,221,255,.025),0 0 0 55px rgba(123,221,255,.02)}
+    .feature.primary-feature{grid-row:span 2;min-height:500px;background:radial-gradient(ellipse at 82% 80%,rgba(29,115,158,.2),transparent 38%),linear-gradient(135deg,#0d1b29,#080e17 70%)}
+    .feature-number{font-size:11px;letter-spacing:.16em;color:#6f91a7}
+    .feature-icon{width:46px;height:46px;margin:28px 0 22px;border:1px solid rgba(140,236,255,.42);display:grid;place-items:center;color:var(--cyan);font-size:20px}
+    .feature h3{font-size:25px;letter-spacing:-.035em;margin:0 0 12px;font-weight:620}
+    .feature p{max-width:520px;color:#91a7b8;font-size:13px;line-height:2;margin:0}
+    .feature-link{display:inline-flex;gap:12px;align-items:center;margin-top:25px;color:var(--cyan);font-size:12px;letter-spacing:.04em}
+    .feature-code{position:absolute;right:25px;bottom:22px;color:rgba(128,202,232,.14);font:700 82px/1 monospace;letter-spacing:-.1em}
+    .primary-feature .feature-code{font-size:120px;right:28px;bottom:25px}
+    .capabilities{background:#05080d}
+    .cap-grid{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
+    .cap{padding:26px 23px;min-height:170px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transition:background .25s}
+    .cap:hover{background:rgba(92,183,224,.06)}
+    .cap small{color:#66879c;font-size:10px;letter-spacing:.16em}
+    .cap h3{font-size:17px;margin:20px 0 7px;font-weight:600}
+    .cap p{font-size:12px;line-height:1.8;color:#8499aa;margin:0}
+    .statement{padding:110px 0;background:linear-gradient(110deg,#0a1420,#07101a 60%,#080d14);border-block:1px solid var(--line);overflow:hidden}
+    .statement-inner{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+    .statement h2{font-size:clamp(36px,5vw,64px)}
+    .statement-copy{color:#9aafbf;font-size:14px;line-height:2.1;max-width:520px}
+    .principles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:36px}
+    .principle{border-top:1px solid rgba(140,236,255,.4);padding-top:15px}
+    .principle strong{display:block;font-size:12px;color:#dcebf3;letter-spacing:.08em}
+    .principle span{display:block;font-size:11px;color:#71899b;margin-top:7px;line-height:1.7}
+    .diagram{min-height:360px;position:relative;border:1px solid var(--line);background:radial-gradient(circle at center,rgba(37,121,163,.13),transparent 55%),rgba(3,9,15,.5);display:grid;place-items:center;overflow:hidden}
+    .diagram:before,.diagram:after{content:"";position:absolute;border:1px solid rgba(125,207,239,.16);border-radius:50%;width:260px;height:260px}
+    .diagram:after{width:340px;height:340px}
+    .diagram-core{width:118px;height:118px;border:1px solid rgba(140,236,255,.7);display:grid;place-items:center;color:var(--cyan);font-size:14px;letter-spacing:.14em;box-shadow:0 0 45px rgba(78,180,224,.13),inset 0 0 35px rgba(78,180,224,.1);background:rgba(9,28,40,.72);z-index:1}
+    .diagram-node{position:absolute;padding:8px 11px;border:1px solid rgba(130,195,224,.24);background:#09131e;color:#9bb8c9;font-size:10px;letter-spacing:.08em}
+    .n1{top:13%;left:50%;transform:translateX(-50%)}.n2{right:8%;top:48%}.n3{bottom:13%;left:50%;transform:translateX(-50%)}.n4{left:8%;top:48%}
+    .resources{background:#080e16}
+    .resource-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .resource{padding:26px;border:1px solid var(--line);background:rgba(8,17,27,.75);min-height:190px;transition:transform .25s,border-color .25s}
+    .resource:hover{transform:translateY(-4px);border-color:rgba(140,236,255,.45)}
+    .resource .tag{font-size:10px;color:var(--cyan);letter-spacing:.16em}
+    .resource h3{font-size:19px;margin:17px 0 8px;font-weight:600}
+    .resource p{font-size:12px;line-height:1.9;color:#879eaf;margin:0}
+    .resource a{display:inline-flex;margin-top:18px;color:#d4e8f2;font-size:12px;gap:10px}
+    .code-section{background:#05080d}
+    .code-layout{display:grid;grid-template-columns:.8fr 1.2fr;gap:45px;align-items:start}
+    .code-copy h2{font-size:clamp(34px,4vw,50px)}
+    .code-copy p{font-size:13px;line-height:2;color:#8ca2b4;margin-top:18px}
+    .code-window{border:1px solid rgba(131,190,220,.2);background:#080f18;box-shadow:0 24px 80px rgba(0,0,0,.25)}
+    .code-bar{height:42px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 15px;gap:7px;color:#7891a4;font-size:10px}
+    .dot{width:6px;height:6px;border-radius:50%;background:#426277}
+    pre{margin:0;padding:25px;overflow:auto;color:#b9d1df;font:12px/1.9 "SFMono-Regular",Consolas,monospace;white-space:pre}
+    .kw{color:#79cfff}.fn{color:#b6e6a5}.cm{color:#617d91}
+    .cta{padding:115px 0;text-align:center;background:radial-gradient(ellipse at 50% 100%,rgba(27,105,148,.18),transparent 50%),#080e16;border-top:1px solid var(--line)}
+    .cta h2{font-size:clamp(38px,6vw,70px);max-width:850px;margin:18px auto}
+    .cta p{max-width:640px;margin:0 auto;color:#8da4b5;font-size:14px;line-height:2}
+    .cta .hero-actions{justify-content:center}
+    footer{padding:35px 0 42px;background:#04070b;border-top:1px solid var(--line)}
+    .footer-top{display:flex;align-items:center;justify-content:space-between;gap:25px;padding-bottom:25px}
+    .footer-brand{font-weight:800;letter-spacing:.2em}
+    .footer-note{color:#708697;font-size:11px}
+    .footer-links{display:flex;flex-wrap:wrap;gap:18px;color:#8ca1b1;font-size:11px}
+    .footer-links a:hover{color:var(--cyan)}
+    .copyright{border-top:1px solid rgba(140,180,205,.1);padding-top:20px;margin-top:20px;color:#526879;font-size:10px;letter-spacing:.04em}
+    .reveal{opacity:1;transform:none}
+    .js-motion .reveal{opacity:0;transform:translateY(22px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+    .js-motion .reveal.visible{opacity:1;transform:none}
+    @keyframes spin{to{transform:rotate(408deg) scaleY(.58)}}
+    @keyframes pulse{0%,100%{opacity:.65;transform:scale(.94)}50%{opacity:1;transform:scale(1.06)}}
+    @media(max-width:900px){
+      .nav-links{gap:15px}.hero-art{right:-22%;width:78vw;opacity:.75}
+      .section-head{grid-template-columns:1fr;gap:18px}.architecture-grid{grid-template-columns:1fr 1fr}
+      .feature.primary-feature{grid-row:auto;grid-column:span 2;min-height:370px}
+      .cap-grid{grid-template-columns:repeat(2,1fr)}.statement-inner{grid-template-columns:1fr}
+      .diagram{min-height:320px}.code-layout{grid-template-columns:1fr}.resource-grid{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:640px){
+      .wrap{width:min(var(--max),calc(100% - 36px))}.nav{height:66px}.nav-links{display:none;position:absolute;top:65px;left:0;right:0;padding:18px;background:rgba(5,9,15,.97);border-bottom:1px solid var(--line);flex-direction:column;align-items:stretch;gap:0}
+      .nav-links.open{display:flex}.nav-links a{padding:12px 18px}.nav-cta{margin-top:8px;text-align:center}.menu-toggle{display:block}
+      .hero{min-height:760px;height:auto;padding:130px 0 110px}.hero-art{width:115vw;right:-53%;top:52%;opacity:.52}
+      .hero-content{padding-top:35px}.hero h1{font-size:clamp(76px,22vw,112px);margin-top:28px}.hero-desc{font-size:13px}
+      .hero-foot{bottom:22px;font-size:8px}.section{padding:86px 0}.section-head{margin-bottom:35px}
+      .architecture-grid,.resource-grid{grid-template-columns:1fr}.feature.primary-feature{grid-column:auto;min-height:390px}.feature{min-height:270px;padding:26px}
+      .cap-grid{grid-template-columns:1fr 1fr}.cap{padding:19px 15px;min-height:160px}.cap h3{font-size:15px}
+      .statement{padding:82px 0}.principles{grid-template-columns:1fr;gap:20px}.diagram{min-height:285px}
+      .resource{min-height:160px}.code-layout{gap:25px}pre{font-size:10px;padding:18px}
+      .cta{padding:85px 0}.footer-top{align-items:flex-start;flex-direction:column}.footer-links{gap:12px 17px}
+    }
+    @media(prefers-reduced-motion:reduce){
+      html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+      .js-motion .reveal{opacity:1;transform:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="topline"></div>
+  <header class="nav" id="navbar">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/" aria-label="HRTOS 首页"><i class="brand-mark" aria-hidden="true"></i><span>HRTOS</span></a>
+      <nav class="nav-links" id="navLinks" aria-label="主导航">
+        <a href="/docs/index.html">生态中心</a>
+        <a href="/docs/architecture/index.html">系统架构</a>
+        <a href="/docs/api_v2/index.html">API 参考</a>
+        <a href="/docs/examples/index.html">实验示例</a>
+        <a href="/download/index.html">下载中心</a>
+        <a class="nav-cta" href="/docs/guide/index.html">探索文档 ↗</a>
+      </nav>
+      <button class="menu-toggle" id="menuToggle" aria-label="打开导航菜单" aria-expanded="false">菜单</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="core"></div><div class="orbit"></div><div class="orbit o2"></div><div class="orbit o3"></div><div class="core-ring"></div>
+        <div class="trace t1"></div><div class="trace t2"></div>
+      </div>
+      <div class="wrap">
+        <div class="hero-content">
+          <div class="overline">8051 NATIVE SYSTEMS&nbsp; / &nbsp;REAL-TIME ENGINEERING</div>
+          <h1 id="hero-title">HR<span class="glow">TOS</span></h1>
+          <p class="hero-cn">为经典 8051 架构构建实时系统</p>
+          <p class="hero-desc">面向 8051（MCS-51）单片机的实时操作系统。以专用内核为基础，围绕任务调度、中断管理、上下文切换与系统资源管理，构建持续维护的 8051 RTOS 开发体系。</p>
+          <div class="hero-actions">
+            <a class="button primary" href="/docs/index.html">进入生态中心 <span class="arrow">↗</span></a>
+            <a class="button secondary" href="/download/index.html">获取 HRTOS <span class="arrow">→</span></a>
+          </div>
+        </div>
+      </div>
+      <div class="wrap hero-foot"><span class="scroll-cue">SCROLL TO EXPLORE</span><span class="hero-index">8051 / MCS-51 &nbsp;·&nbsp; ENGINEERED FOR REAL TIME</span></div>
+    </section>
+
+    <section class="section architecture" id="architecture">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div><div class="eyebrow">01 / SYSTEM ARCHITECTURE</div><h2>不止一个内核。<br>是一套开发体系。</h2></div>
+          <p class="section-intro">HRTOS 将实时内核能力与系统组件、驱动、技术文档和工程示例连接起来。开发者可以从理解底层运行机制开始，逐步完成 8051 实时应用的设计、验证与集成。</p>
+        </div>
+        <div class="architecture-grid">
+          <article class="feature primary-feature reveal">
+            <div class="feature-number">01 — CORE ENGINE</div><div class="feature-icon">⌘</div>
+            <h3>实时内核</h3>
+            <p>围绕优先级任务调度、任务管理、中断处理、上下文切换与实时执行控制进行专门设计，结合 8051 处理器架构、中断机制和有限存储资源，建立清晰、有序的系统运行基础。</p>
+            <a class="feature-link" href="/docs/architecture/index.html">探索系统架构 <span>↗</span></a>
+            <div class="feature-code" aria-hidden="true">01</div>
+          </article>
+          <article class="feature reveal">
+            <div class="feature-number">02 — SYSTEM SERVICES</div><div class="feature-icon">⌁</div>
+            <h3>系统组件</h3>
+            <p>提供 Shell、Modbus RTU、IPC 等系统服务，支持任务协作、通信交互与应用功能集成。</p>
+            <a class="feature-link" href="/docs/modules/index.html">查看系统组件 <span>↗</span></a>
+            <div class="feature-code" aria-hidden="true">02</div>
+          </article>
+          <article class="feature reveal">
+            <div class="feature-number">03 — DEVELOPER TOOLKIT</div><div class="feature-icon">⌘</div>
+            <h3>开发资源</h3>
+            <p>系统手册、API 参考、快速入门、外设驱动与工程示例，覆盖从机制理解到项目集成的开发过程。</p>
+            <a class="feature-link" href="/docs/index.html">进入文档中心 <span>↗</span></a>
+            <div class="feature-code" aria-hidden="true">03</div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section capabilities" id="capabilities">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div><div class="eyebrow">02 / KERNEL CAPABILITIES</div><h2>围绕实时运行<br>构建关键机制。</h2></div>
+          <p class="section-intro">从任务生命周期到中断上下文，从时间管理到任务间通信，HRTOS 将嵌入式实时系统的关键能力组织在统一的内核与组件体系之中。</p>
+        </div>
+        <div class="cap-grid reveal">
+          <article class="cap"><small>01 / SCHEDULING</small><h3>任务调度</h3><p>组织多任务执行与优先级管理。</p></article>
+          <article class="cap"><small>02 / INTERRUPT</small><h3>中断管理</h3><p>面向 8051 中断机制设计运行控制。</p></article>
+          <article class="cap"><small>03 / CONTEXT</small><h3>上下文切换</h3><p>管理任务执行现场与切换过程。</p></article>
+          <article class="cap"><small>04 / TIME</small><h3>时间管理</h3><p>提供延时、等待与系统时间相关机制。</p></article>
+          <article class="cap"><small>05 / SYNCHRONIZATION</small><h3>同步与互斥</h3><p>支持任务间同步与共享资源协调。</p></article>
+          <article class="cap"><small>06 / IPC</small><h3>进程间通信</h3><p>通过消息与事件机制组织任务协作。</p></article>
+          <article class="cap"><small>07 / RESOURCE</small><h3>资源管理</h3><p>面向有限 RAM 与系统资源进行组织。</p></article>
+          <article class="cap"><small>08 / EXTENSION</small><h3>扩展组件</h3><p>连接 Shell、Modbus RTU 与应用模块。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="statement">
+      <div class="wrap statement-inner">
+        <div class="reveal">
+          <div class="eyebrow">03 / DESIGN PHILOSOPHY</div>
+          <h2>专注 8051。<br>把系统做到完整。</h2>
+          <p class="statement-copy">HRTOS 面向经典 8051（MCS-51）架构，关注处理器执行模型、硬件资源约束与嵌入式应用中的实际需求。项目建设不仅包含内核，也重视配套组件、开发资料、示例工程与长期维护。</p>
+          <div class="principles">
+            <div class="principle"><strong>8051 NATIVE</strong><span>围绕经典 51 架构进行设计</span></div>
+            <div class="principle"><strong>COMPLETE</strong><span>内核、组件与开发资源协同</span></div>
+            <div class="principle"><strong>MAINTAINED</strong><span>持续完善与维护项目资料</span></div>
+          </div>
+        </div>
+        <div class="diagram reveal" role="img" aria-label="HRTOS 实时内核与任务调度、中断管理、时间管理和系统组件之间的关系示意图">
+          <span class="diagram-node n1">TASK SCHEDULING</span><span class="diagram-node n2">INTERRUPT</span>
+          <span class="diagram-node n3">SYSTEM SERVICES</span><span class="diagram-node n4">TIME & IPC</span>
+          <div class="diagram-core">HRTOS<br><small style="font-size:8px;letter-spacing:.2em">KERNEL</small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section resources" id="resources">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div><div class="eyebrow">04 / DEVELOPER RESOURCES</div><h2>从技术文档<br>走向工程实践。</h2></div>
+          <p class="section-intro">围绕 8051 RTOS 的学习、开发与集成，提供清晰的文档入口与配套资源。无论是初次了解系统，还是查阅接口和实验工程，都可以从这里开始。</p>
+        </div>
+        <div class="resource-grid">
+          <article class="resource reveal"><div class="tag">DOCUMENTATION</div><h3>系统文档</h3><p>了解 HRTOS 的整体结构、设计理念、系统模型与使用方式。</p><a href="/docs/index.html">浏览文档中心 ↗</a></article>
+          <article class="resource reveal"><div class="tag">API REFERENCE</div><h3>API 参考</h3><p>查阅内核接口、任务管理、时间管理、同步与通信等 API。</p><a href="/docs/api_v2/index.html">查阅 API ↗</a></article>
+          <article class="resource reveal"><div class="tag">ARCHITECTURE</div><h3>系统架构</h3><p>理解 HRTOS 内核结构、任务运行机制与系统设计。</p><a href="/docs/architecture/index.html">查看架构 ↗</a></article>
+          <article class="resource reveal"><div class="tag">EXAMPLES</div><h3>实验示例</h3><p>通过示例工程理解接口调用与常见功能的组织方式。</p><a href="/docs/examples/index.html">查看示例 ↗</a></article>
+          <article class="resource reveal"><div class="tag">DRIVERS & MODULES</div><h3>驱动与组件</h3><p>了解系统组件、外设驱动与可复用的工程模块。</p><a href="/docs/modules/index.html">浏览组件 ↗</a></article>
+          <article class="resource reveal"><div class="tag">DOWNLOAD</div><h3>下载中心</h3><p>获取 HRTOS 相关开发资源，开始构建 8051 实时应用。</p><a href="/download/index.html">前往下载 ↗</a></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section code-section">
+      <div class="wrap code-layout">
+        <div class="code-copy reveal">
+          <div class="eyebrow">05 / QUICK START</div>
+          <h2>从一个任务，<br>理解实时系统。</h2>
+          <p>下面的示例展示两个独立任务的基本组织方式。通过任务入口与延时调用，可以直观理解 HRTOS 应用程序的基本结构。具体接口、参数和工程配置请以对应版本的 API 文档为准。</p>
+          <a class="feature-link" href="/docs/learn/index.html">开始学习 HRTOS <span>↗</span></a>
+        </div>
+        <div class="code-window reveal">
+          <div class="code-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span style="margin-left:8px">dual_task_demo.c</span></div>
+          <pre><span class="cm">/* HRTOS — Dual Task Example */</span>
+<span class="kw">#include</span> "hrtos.h"
+
+<span class="kw">#define</span> FAST_TASK_ID   1
+<span class="kw">#define</span> SLOW_TASK_ID   2
+
+<span class="kw">static void</span> <span class="fn">fast_task</span>(<span class="kw">void</span>)
+{
+    <span class="kw">while</span> (1)
+    {
+        LED_FAST = !LED_FAST;
+        <span class="fn">os_delay</span>(2);
+    }
+}
+
+<span class="kw">static void</span> <span class="fn">slow_task</span>(<span class="kw">void</span>)
+{
+    <span class="kw">while</span> (1)
+    {
+        LED_SLOW = !LED_SLOW;
+        <span class="fn">os_delay</span>(25);
+    }
+}
+
+<span class="kw">void</span> <span class="fn">hrtos_main</span>(<span class="kw">void</span>)
+{
+    <span class="fn">os_task_create</span>((<span class="kw">unsigned int</span>)fast_task, FAST_TASK_ID, 7, 5);
+    <span class="fn">os_task_create</span>((<span class="kw">unsigned int</span>)slow_task, SLOW_TASK_ID, 3, 5);
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="wrap reveal">
+        <div class="eyebrow">BUILD WITH HRTOS</div>
+        <h2>为 8051 实时应用，<br>建立可靠的系统基础。</h2>
+        <p>从系统架构、内核 API 与开发文档开始了解 HRTOS，也可以直接查看实验示例、系统组件与下载资源。</p>
+        <div class="hero-actions"><a class="button primary" href="/docs/index.html">探索 HRTOS 生态 <span class="arrow">↗</span></a><a class="button secondary" href="/download/index.html">开始使用 <span class="arrow">→</span></a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="footer-top"><a class="footer-brand" href="/">HRTOS</a><div class="footer-note">8051 REAL-TIME OPERATING SYSTEM</div></div>
+      <nav class="footer-links" aria-label="页脚导航">
+        <a href="/docs/index.html">文档中心</a><a href="/docs/learn/index.html">RTOS 学习</a><a href="/docs/architecture/index.html">系统架构</a><a href="/docs/system/index.html">系统模型</a><a href="/docs/modules/index.html">内核模块</a><a href="/docs/api_v2/index.html">API 参考</a><a href="/docs/examples/index.html">实验示例</a><a href="/download/index.html">下载中心</a>
+      </nav>
+      <div class="copyright">© 2017–2026 HRTOS. All rights reserved. &nbsp; Designed for 8051 embedded real-time systems.</div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const nav = document.getElementById('navbar');
+      const menu = document.getElementById('menuToggle');
+      const links = document.getElementById('navLinks');
+      const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 18);
+      onScroll();
+      window.addEventListener('scroll', onScroll, {passive:true});
+      menu.addEventListener('click', () => {
+        const open = links.classList.toggle('open');
+        menu.setAttribute('aria-expanded', String(open));
+        menu.setAttribute('aria-label', open ? '关闭导航菜单' : '打开导航菜单');
+      });
+      links.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+        links.classList.remove('open');
+        menu.setAttribute('aria-expanded','false');
+      }));
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+        document.documentElement.classList.add('js-motion');
+        const observer = new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, {threshold:.12, rootMargin:'0px 0px -30px 0px'});
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+      }
+    })();
+  </script>
+</body>
+</html>
